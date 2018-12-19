@@ -6,7 +6,7 @@ choice, friend!
 
 ## Files needed
 You should be able to just copy the following folders into your own Unity
-Project
+Host App
 * MRETestBed\Assets\Assemblies
 * MRETestBed\Assets\Resources
 * MRETestBed\Assets\TestBed Assets\Scripts
@@ -25,6 +25,25 @@ Run through all the tests in the functional test MRE to see if everything
 works.
 
 
+## Back compatibility and Updates
+One of the most important considerations when implementing the MRE SDK into a 
+title is to making sure that all deployed MREs will run. Once the MRE SDK
+exits beta stage, the MRE Unity client library will guarantee backwards
+compatiblity with old MRE protocols. This means any MRE deployed will always
+run. However, this relationship only works one way - as the MRE feature set
+grows, any host app will need to take regular client library updates to keep
+up-to-date. The MRE SDK will simply reject connecting to a host app if it uses
+an outdated client library. 
+
+There are therefore two important host app implementation details
+* properly recognize server rejections caused by versioning, and to message to 
+the user that they need to update their host app.
+* commit to regularly pull in an updated client library.
+
+We have not yet established a release cadence for client libraries and SDK
+updates, but it will be more relevant after beta. 
+
+
 ## Auto-updating MREUnityRuntimeLib DLL
 In the MREUnityRuntimeLib solution directory, there is a `MREUnityProjects.xml`
 file (generated automatically if it isn't found). This is used to automatically
@@ -34,7 +53,6 @@ file, for where you want to copy the compiled DLLs.
 
 
 ## Unknown References compiler error
-
 If you got compiler errors (unknown references), it may be because you are 
 using different version of Unity - no problem, but you may need to add 
 additional hintpaths in two locations in two csproj files. Open the project 

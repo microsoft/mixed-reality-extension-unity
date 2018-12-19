@@ -31,30 +31,30 @@ You should now see a slowly spinning Hello World label and a clickable cube.
 ## Scene Descriptions
 The MRETestbed project contains 4 Unity3d scenes set up for different testing purposes
 * `HelloWorld.Unity`: Connects to a single MRE in the cloud on startup, no interaction needed
+* `FunctionalTest-localhost.Unity`. Requires a locally deployed functional test MRE from the [SDK Repository](https://github.com/Microsoft/mixed-reality-extension-sdk#How-to-Build-and-Deploy-the-SDK-functional-tests). Generates a launch pad for each of the functional tests - just walk close to trigger them. Or touch the "run all" trigger to load every single functional test. There is also a pad for changing the global root - it moves, scales, and rotates everything in the world, which simplifies checking the 3d math.
 * `TriggerVolumeTestBed-localhost.Unity`: Connects to a localhost MRE when you walk close - useful for testing user join/leave.
 * `SynchronizationTest-localhost.Unity`: Connects twice to twice to a localhost MREs with the same session ID. When you click on the two spheres you will see 2 different connections to the same server, so you can perform basic multiuser testing without multiple machines or multiple unity instances.
-* `FunctionalTest-localhost.Unity`. Requires a locally deployed functional test MRE from the [MRE Repository](https://github.com/Microsoft/mixed-reality-extension-sdk). Generates a launch pad for each of the functional tests - just walk close to trigger them. Or touch the "run all" trigger to load every single functional test. There is also a pad for changing the global root - it moves, scales, and rotates everything in the world, which simplifies checking the 3d math.
 
 The Localhost samples requires a local node server running, see the [Sample repository](
-https://github.com/Microsoft/mixed-reality-extension-sdk-samples) for localhost deployment.
+https://github.com/Microsoft/mixed-reality-extension-sdk-samples#How-to-Build-and-Run-the-Hello-World-sample) for localhost deployment.
 
 
 ## To Debug the Unity Runtime DLL 
 * From within the Unity3D editor click `Assets->Open C# Project`. This opens Visual Studio and generates a solution file and project files
-* In the Solution Explorer, right click on `Solution 'MRETestBed' (3 projects)` and click `Add->Existing Project...`, and select MREUnityRuntime\MREUnityRuntimeLib\MREUnityRuntimeLib.csproj
+* In the Solution Explorer, right click on `Solution 'MRETestBed' (3 projects)`, click `Add->Existing Project...`, and select MREUnityRuntime\MREUnityRuntimeLib\MREUnityRuntimeLib.csproj
 * Select `Debug->Attach Unity Debugger` (requires the Visual Studio Unity Tools installed to show up), and choose Project MRETestBed, type Editor
 
-The Unity Runtime DLL debugging is not 100% reliable, but pressing stop in Unity Editor, rebuilding the MREUnityRuntimeLib project in Visual Studio, and pressing play in the Unity Editor tends to fix it.
+Putting breakpoints inside the MREUnityRuntimeLib DLL is not always working, but pressing stop in Unity Editor, rebuilding the MREUnityRuntimeLib project in Visual Studio, and pressing play in the Unity Editor tends to fix it.
 
 
 ## Integration guide
-If you want to integrate the the MRE SDK into your own project, please see [INTEGRATING.md](INTEGRATING.md)
+If you want to integrate the MRE SDK into your own Unity3D project, please see [INTEGRATING.md](INTEGRATING.md)
 
 
 ## Overview
 * For more information, please see 
 the [Mixed Reality Extension SDK](
-https://github.com/Microsoft/mixed-reality-extension-sdk) repository's [README.md](https://github.com/Microsoft/mixed-reality-extension-sdk-unity/blob/master/README.md) is the best source of information about features, current state, limitations, goal, major known issues, and roadmap.
+https://github.com/Microsoft/mixed-reality-extension-sdk) repository's [README.md](https://github.com/Microsoft/mixed-reality-extension-sdk/blob/master/README.md) is the best source of information about features, current state, limitations, goal, major known issues, and roadmap.
 * We welcome contributions. Please see [CONTRIBUTING.md](CONTRIBUTING.md)
 if you are interested in helping out.
 
