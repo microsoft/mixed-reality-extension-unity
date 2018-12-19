@@ -3,9 +3,9 @@
 Want to help out? Great! Here are a couple of ways to help:
 
 ## Build a cool MRE with the SDK itself
-Look at the [samples](
-https://github.com/microsoft/mixed-reality-extension-sdk-samples) as a starting
-point to make your own MRE. Try to deploy it and tell us how it went.
+Clone the [samples](
+https://github.com/microsoft/mixed-reality-extension-sdk-samples) and start
+making your own MRE. Try to deploy it and tell us how it went.
 
 
 ## Integrate the MRE Unity DLL into your own Unity3D project
@@ -16,7 +16,7 @@ test MRE to see if everything works. For more info, please see
 
 
 ## Implement features in the MRE SDK and the Unity DLL
-Wonderful! New features often require both a SDK side and Unity side set
+New features often require both a SDK side and Unity side set
 of changes. We usually implement both sides simultaneously, and add at least
 one functional test to verify the functionality. We highly recommend reaching
 out to the MRE team on slack to discuss any architecture before implementing,

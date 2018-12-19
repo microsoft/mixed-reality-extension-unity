@@ -7,19 +7,19 @@ choice, friend!
 ## Files needed
 You should be able to just copy the following folders into your own Unity
 Host App
-* MRETestBed\Assets\Assemblies
-* MRETestBed\Assets\Resources
-* MRETestBed\Assets\TestBed Assets\Scripts
+* `MRETestBed\Assets\Assemblies`
+* `MRETestBed\Assets\Resources`
+* `MRETestBed\Assets\TestBed Assets\Scripts`
 
 And then just instantiate an MREComponent and set the URL to
-ws://mre-hello-world.azurewebsites.net
+`ws://mre-hello-world.azurewebsites.net`
 
 
 ## Verifying an Integration
 We try to always have MREs deployed here for the latest master build:
-* ws://mre-hello-world.azurewebsites.net
-* ws://mre-solar-system.azurewebsites.net
-* ws://mre-functional-tests.azurewebsites.net
+* `ws://mre-hello-world.azurewebsites.net`
+* `ws://mre-solar-system.azurewebsites.net`
+* `ws://mre-functional-tests.azurewebsites.net`
 
 Run through all the tests in the functional test MRE to see if everything
 works.
@@ -27,13 +27,12 @@ works.
 
 ## Back compatibility and Updates
 One of the most important considerations when implementing the MRE SDK into a 
-title is to making sure that all deployed MREs will run. Once the MRE SDK
-exits beta stage, the MRE Unity client library will guarantee backwards
-compatiblity with old MRE protocols. This means any MRE deployed will always
-run. However, this relationship only works one way - as the MRE feature set
-grows, any host app will need to take regular client library updates to keep
-up-to-date. The MRE SDK will simply reject connecting to a host app if it uses
-an outdated client library. 
+title is compatibility. Once the MRE SDK exits beta stage, the MRE Unity client
+library will guarantee backwards compatiblity with old MRE protocols. This
+means any MRE deployed will always run. However, back compatibility only works
+one way. As the MRE feature set grows, any host app will need to take regular 
+client library updates to keep up-to-date. The MRE SDK will simply reject
+connecting to a host app if it uses an outdated client library. 
 
 There are therefore two important host app implementation details
 * properly recognize server rejections caused by versioning, and to message to 
@@ -41,7 +40,8 @@ the user that they need to update their host app.
 * commit to regularly pull in an updated client library.
 
 We have not yet established a release cadence for client libraries and SDK
-updates, but it will be more relevant after beta. 
+updates, but after exiting beta stage there will be a grace period between
+client library updates and matching sdk updates. 
 
 
 ## Auto-updating MREUnityRuntimeLib DLL
