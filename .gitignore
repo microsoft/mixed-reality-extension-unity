@@ -62,12 +62,8 @@ StyleCopReport.xml
 *_p.c
 *_i.h
 *.ilk
-*.meta
 *.obj
-*.iobj
 *.pch
-*.pdb
-*.ipdb
 *.pgc
 *.pgd
 *.rsp
@@ -169,7 +165,7 @@ publish/
 *.azurePubxml
 # Note: Comment the next line if you want to checkin your web deploy settings,
 # but database connection strings (with potential passwords) will be unencrypted
-*.pubxml
+#*.pubxml
 *.publishproj
 
 # Microsoft Azure Web App publish settings. Comment the next line if you want to
@@ -180,12 +176,14 @@ PublishScripts/
 # NuGet Packages
 *.nupkg
 # The packages folder can be ignored because of Package Restore
-**/[Pp]ackages/*
+**/packages/*
 # except build/, which is used as an MSBuild target.
-!**/[Pp]ackages/build/
+!**/packages/build/
+# except if below the node folder
+!**/node/packages/*
 # Uncomment if necessary however generally it will be regenerated when needed
-#!**/[Pp]ackages/repositories.config
-# NuGet v3's project.json files produces more ignorable files
+#!**/packages/repositories.config
+# NuGet v3's project.json files produces more ignoreable files
 *.nuget.props
 *.nuget.targets
 
