@@ -1,0 +1,21 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+using System;
+using UnityEngine;
+
+namespace MixedRealityExtension.PluginInterfaces
+{
+    /// <summary>
+    /// A factory class that creates actors from host library resources
+    /// </summary>
+    public interface ILibraryResourceFactory
+    {
+        /// <summary>
+        /// Instantiate a host-defined actor by resource ID. Will throw an ArgumentException if the resourceId is not recognized.
+        /// </summary>
+        /// <param name="resourceId">A string that uniquely identifies a library resource to the host app</param>
+        /// <param name="parent">The Unity GameObject to attach the library object to</param>
+        /// <param name="callback">A function to be called with the spawned GameObject</param>
+        void CreateFromLibrary(string resourceId, GameObject parent, Action<GameObject> callback);
+    }
+}
