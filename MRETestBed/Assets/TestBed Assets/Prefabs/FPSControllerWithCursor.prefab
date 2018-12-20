@@ -31,7 +31,6 @@ GameObject:
   - component: {fileID: 8100000}
   - component: {fileID: 12474086}
   - component: {fileID: 114927512063701160}
-  - component: {fileID: 114573033676359002}
   m_Layer: 2
   m_Name: FirstPersonCharacter
   m_TagString: MainCamera
@@ -352,18 +351,6 @@ MeshFilter:
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1207568431607562}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
---- !u!114 &114573033676359002
-MonoBehaviour:
-  m_ObjectHideFlags: 1
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 100100000}
-  m_GameObject: {fileID: 100002}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 21a1775b0cd11da4fa138f0701709dac, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  UserGameObject: {fileID: 100000}
 --- !u!114 &114927512063701160
 MonoBehaviour:
   m_ObjectHideFlags: 1
