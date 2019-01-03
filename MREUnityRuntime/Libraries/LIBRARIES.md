@@ -6,8 +6,8 @@
 * SHA of included builds: 4446a51
 * Commit date: December 6, 2018
 
-## Newtonsoft.Json.dll and Newtonsoft.Json.xml
+## Newtonsoft.Json.dll, Newtonsoft.Json.pdb and Newtonsoft.Json.xml
 
-Modified fork of the Newtonsoft.Json codebase that fixes the issues with running it on IL2CPP.
-
-External repo with these fixes not available yet.
+* Repo: https://github.com/AltspaceVR/Newtonsoft.Json
+* SHA of included builds: c1947aa
+* Commit date: December 12, 2018
