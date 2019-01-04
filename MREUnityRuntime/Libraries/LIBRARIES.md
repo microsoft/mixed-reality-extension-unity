@@ -9,5 +9,5 @@
 ## Newtonsoft.Json.dll, Newtonsoft.Json.pdb and Newtonsoft.Json.xml
 
 * Repo: https://github.com/AltspaceVR/Newtonsoft.Json
-* SHA of included builds: c1947aa
-* Commit date: December 12, 2018
+* SHA of included builds: 3e8f1da
+* Commit date: January 4, 2019
