@@ -3,8 +3,8 @@
 ## UnityGLTF.dll and GLTFSerialization.dll
 
 * Repo: https://github.com/KhronosGroup/UnityGLTF
-* SHA of included builds: 4446a51
-* Commit date: December 6, 2018
+* SHA of included builds: 8d4b9d7
+* Commit date: December 26, 2018
 
 ## Newtonsoft.Json.dll and Newtonsoft.Json.xml
 

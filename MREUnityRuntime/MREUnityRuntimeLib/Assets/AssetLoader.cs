@@ -10,6 +10,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.ExceptionServices;
 using MixedRealityExtension.Messaging;
 using MixedRealityExtension.Messaging.Commands;
 using MixedRealityExtension.Messaging.Payloads;
@@ -28,9 +29,9 @@ namespace MixedRealityExtension.Assets
     /// <summary>
     /// Callback delegate for handling when actors have been successfully created in the engine.
     /// </summary>
-    /// <param name="createdActors">The list of actors that were created.</param>
-    /// <param name="rootGO">The root unity game object for the created asset.</param>
-    internal delegate void OnCreatedActorsHandler(IList<Actor> createdActors, GameObject rootGO);
+    /// <param name="createdActors">The list of actors that were created. createdActors[0] is the root.</param>
+    /// <param name="exception">If the actor creation failed, this will contain the exception info.</param>
+    internal delegate void OnCreatedActorsHandler(IList<Actor> createdActors, ExceptionDispatchInfo exception);
 
     internal class AssetLoader : ICommandHandlerContext
     {
@@ -52,15 +53,15 @@ namespace MixedRealityExtension.Assets
             return parent?.gameObject ?? _app.SceneRoot;
         }
 
-        internal void PostCreatePerObject(GameObject rootGO, List<Actor> createdActors, OnCreatedActorsHandler callback)
+        /*internal void PostCreatePerObject(List<Actor> createdActors, OnCreatedActorsHandler callback)
         {
             if (rootGO != null)
             {
                 rootGO.layer = UnityConstants.ActorLayerIndex;
-                callback?.Invoke(createdActors, rootGO);
+                callback?.Invoke(createdActors, null);
             }
 
-        }
+        }*/
 
         internal void CreateFromLibrary(string resourceId, Guid? parentId, OnCreatedActorsHandler callback)
         {
@@ -70,10 +71,17 @@ namespace MixedRealityExtension.Assets
             factory.CreateFromLibrary(
                 resourceId,
                 GetGameObjectFromParentId(parentId),
-                spawnedGO =>
+                (spawnedGO, ex) =>
                 {
+                    if (ex != null)
+                    {
+                        callback?.Invoke(null, ex);
+                        return;
+                    }
+
                     List<Actor> actors = new List<Actor>() { spawnedGO.AddComponent<Actor>() };
-                    PostCreatePerObject(spawnedGO, actors, callback);
+                    spawnedGO.layer = UnityConstants.ActorLayerIndex;
+                    callback?.Invoke(actors, null);
                 }
             );
         }
@@ -87,32 +95,32 @@ namespace MixedRealityExtension.Assets
                     definition, GetGameObjectFromParentId(parentId), addCollider);
 
                 List<Actor> actors = new List<Actor>() { newGO.AddComponent<Actor>() };
-                PostCreatePerObject(newGO, actors, callback);
-
+                newGO.layer = UnityConstants.ActorLayerIndex;
+                callback?.Invoke(actors, null);
             }
             catch (Exception e)
             {
                 MREAPI.Logger.LogError($"Failed to create primitive.  Exception: {e.Message}\nStack Trace: {e.StackTrace}");
+                callback?.Invoke(null, ExceptionDispatchInfo.Capture(e));
             }
-
         }
 
         internal void CreateEmpty(Guid? parentId, OnCreatedActorsHandler callback)
         {
             GameObject newGO = new GameObject();
+            newGO.layer = UnityConstants.ActorLayerIndex;
             newGO.transform.SetParent(GetGameObjectFromParentId(parentId).transform, false);
 
             List<Actor> actors = new List<Actor>() { newGO.AddComponent<Actor>() };
-            PostCreatePerObject(newGO, actors, callback);
+            callback?.Invoke(actors, null);
         }
 
         internal void CreateFromGLTF(string resourceUrl, string assetName, Guid? parentId, ColliderType colliderType, OnCreatedActorsHandler callback)
         {
-            GameObject rootGO = null;
             IList<Actor> actors = new List<Actor>();
 
             UtilMethods.GetUrlParts(resourceUrl, out string rootUrl, out string filename);
-            var loader = new WebRequestLoader(rootUrl, _asyncHelper);
+            var loader = new WebRequestLoader(rootUrl);
             var importer = MREAPI.AppsAPI.GLTFImporterFactory.CreateImporter(filename, loader, _asyncHelper);
 
             var parent = _app.FindActor(parentId ?? Guid.Empty) as Actor;
@@ -120,26 +128,26 @@ namespace MixedRealityExtension.Assets
 
             importer.Collider = colliderType.ToGLTFColliderType();
 
-            importer.LoadSceneAsync(-1, rootObject =>
+            importer.LoadSceneAsync(onLoadComplete: (rootObject, ex) =>
             {
-                if (rootObject != null)
+                if (ex != null)
                 {
-                    rootGO = rootObject;
-
-                    MWGOTreeWalker.VisitTree(rootGO, (go) =>
-                    {
-                        // Set layer index
-                        go.layer = UnityConstants.ActorLayerIndex;
-
-                        // Wrap as an actor and clear parent if the object is the scene root.
-                        var engineActor = go.AddComponent<Actor>();
-                        actors.Add(engineActor);
-                    });
-
-                    importer.Dispose();
+                    callback?.Invoke(null, ex);
+                    return;
                 }
 
-                callback?.Invoke(actors, rootGO);
+                MWGOTreeWalker.VisitTree(rootObject, (go) =>
+                {
+                    // Set layer index
+                    go.layer = UnityConstants.ActorLayerIndex;
+
+                    // Wrap as an actor and clear parent if the object is the scene root.
+                    actors.Add(go.AddComponent<Actor>());
+                });
+
+                importer.Dispose();
+
+                callback?.Invoke(actors, null);
             });
         }
 
@@ -148,7 +156,9 @@ namespace MixedRealityExtension.Assets
             GameObject prefab = MREAPI.AppsAPI.AssetCache.GetAsset(prefabId) as GameObject;
             if (prefab == null)
             {
-                throw new ArgumentException($"Asset {prefabId} does not exist or is the wrong type.");
+                callback?.Invoke(null, ExceptionDispatchInfo.Capture(
+                    new ArgumentException($"Asset {prefabId} does not exist or is the wrong type.")));
+                return;
             }
 
             GameObject instance = UnityEngine.Object.Instantiate(
@@ -157,26 +167,7 @@ namespace MixedRealityExtension.Assets
             var actorList = new List<Actor>();
             MWGOTreeWalker.VisitTree(instance, go => actorList.Add(go.AddComponent<Actor>()));
 
-            callback?.Invoke(actorList, instance);
-        }
-
-        private IEnumerator DownloadFile(string url)
-        {
-            // TODO: file caching
-            using (UnityWebRequest uwr = UnityWebRequest.Get(url))
-            {
-                yield return uwr.SendWebRequest();
-
-                if (uwr.isNetworkError || uwr.isHttpError)
-                {
-                    yield return $"{uwr.method} {uwr.url} - {uwr.responseCode} {uwr.error}";
-                }
-                else
-                {
-                    var bytes = uwr.downloadHandler.data;
-                    yield return new MemoryStream(bytes, 0, bytes.Length, false, true);
-                }
-            }
+            callback?.Invoke(actorList, null);
         }
 
         [CommandHandler(typeof(LoadAssets))]
@@ -200,7 +191,7 @@ namespace MixedRealityExtension.Assets
             }
             catch(Exception e)
             {
-                Continue(null, e.Message);
+                Continue(null, e.ToString());
             }
 
             void Continue(IEnumerable<Asset> assets, string failureMessage)
@@ -224,7 +215,7 @@ namespace MixedRealityExtension.Assets
 
             // download file
             UtilMethods.GetUrlParts(source.Uri.AbsoluteUri, out string rootUrl, out string filename);
-            var loader = new WebRequestLoader(rootUrl, _asyncHelper);
+            var loader = new WebRequestLoader(rootUrl);
             await loader.LoadStream(filename);
 
             // pre-parse glTF document so we can get a scene count

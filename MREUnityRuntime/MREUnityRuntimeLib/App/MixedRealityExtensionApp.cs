@@ -21,6 +21,7 @@ using MixedRealityExtension.Util;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.ExceptionServices;
 using System.Threading;
 using UnityEngine;
 
@@ -407,62 +408,68 @@ namespace MixedRealityExtension.App
             if (_actorManager.HasActor(payload.Actor?.Id) && _actorManager.IsActorReserved(payload.Actor?.Id))
             {
                 SendCreateActorResponse(payload, OperationResultCode.Success);
+                return;
             }
-            else
+
+            _actorManager.Reserve(payload.Actor?.Id);
+
+            _assetLoader.CreateFromGLTF(
+                payload.ResourceUrl, payload.AssetName, payload.Actor?.ParentId, payload.ColliderType,
+                MiddleCreateFromGLTF
+            );
+
+            void MiddleCreateFromGLTF(IList<Actor> createdActors, ExceptionDispatchInfo ex)
             {
-                _actorManager.Reserve(payload.Actor?.Id);
-
-                _assetLoader.CreateFromGLTF(payload.ResourceUrl, payload.AssetName, payload.Actor?.ParentId, payload.ColliderType, (createdActors, rootGO) =>
+                if (ex != null)
                 {
-                    if (rootGO != null)
-                    {
-                        _ownedGameObjects.Add(rootGO);
-                    }
+                    EndCreateFromGLTF(null, ex);
+                    return;
+                }
 
-                    var actors = new List<Actor>();
-                    DeterministicGuids guids = new DeterministicGuids(payload.Actor?.Id);
-                    foreach (var createdActor in createdActors)
-                    {
-                        var actor = _actorManager.AddActor(guids.Next(), createdActor);
-                        actors.Add(actor);
-                    }
+                DeterministicGuids guids = new DeterministicGuids(payload.Actor?.Id);
+                foreach (var createdActor in createdActors)
+                {
+                    _ownedGameObjects.Add(createdActor.gameObject);
+                    _actorManager.AddActor(guids.Next(), createdActor);
+                    createdActor.AddSubscriptions(payload.Subscriptions);
+                }
 
-                    actors.FirstOrDefault()?.ApplyPatch(payload.Actor);
-                    foreach (var actor in actors)
-                    {
-                        actor.AddSubscriptions(payload.Subscriptions);
-                    }
+                createdActors.FirstOrDefault()?.ApplyPatch(payload.Actor);
 
-                    EndCreateFromGLTF(payload, actors);
-                });
+                EndCreateFromGLTF(createdActors, null);
             }
-        }
 
-        private void EndCreateFromGLTF(CreateFromGLTF payload, IList<Actor> actors)
-        {
-            OperationResultCode resultCode = (actors.Count > 0) ? OperationResultCode.Success : OperationResultCode.Error;
-            Trace trace = new Trace()
+            void EndCreateFromGLTF(IList<Actor> actors, ExceptionDispatchInfo ex)
             {
-                Severity = (resultCode == OperationResultCode.Success) ? TraceSeverity.Info : TraceSeverity.Error,
-                Message = (resultCode == OperationResultCode.Success) ?
-                    string.Format("Successfully created {0} objects from glTF.", actors.Count) :
-                    "Failed to create objects"
-            };
-
-            Protocol.Send(new ObjectSpawned()
-            {
-                Result = new OperationResult()
+                OperationResultCode resultCode = (ex != null) ? OperationResultCode.Error : OperationResultCode.Success;
+                Trace trace = new Trace()
                 {
-                    ResultCode = resultCode,
-                    Message = trace.Message
-                },
-                Traces = new List<Trace>() { trace },
-                Actors = actors.Select((actor) => actor.GeneratePatch(SubscriptionType.All)).ToList()
-            },
-            payload.MessageId);
+                    Severity = (resultCode == OperationResultCode.Success) ? TraceSeverity.Info : TraceSeverity.Error,
+                    Message = (resultCode == OperationResultCode.Success) ?
+                        $"Successfully created {actors.Count} objects from glTF." :
+                        ex.SourceException.ToString()
+                };
 
-            Monitor.Exit(_createFromGLTFQueue);
-            ProcessCreateFromGLTFQueue();
+                Protocol.Send(new ObjectSpawned()
+                    {
+                        Result = new OperationResult()
+                        {
+                            ResultCode = resultCode,
+                            Message = trace.Message
+                        },
+                        Traces = new List<Trace>() {trace},
+                        Actors = actors?.Select((actor) => actor.GeneratePatch(SubscriptionType.All)).ToList() ?? new List<ActorPatch>()
+                    },
+                    payload.MessageId);
+
+                if (ex != null)
+                {
+                    Debug.LogException(ex.SourceException);
+                }
+
+                Monitor.Exit(_createFromGLTFQueue);
+                ProcessCreateFromGLTFQueue();
+            }
         }
 
         private OperationResult EnableRigidBody(Guid actorId, RigidBodyPatch rigidBodyPatch)
@@ -642,7 +649,7 @@ namespace MixedRealityExtension.App
                 try
                 {
                     _assetLoader.CreateFromLibrary(payload.ResourceId, payload.Actor?.ParentId,
-                        (createdActors, rootGO) => ProcessCreatedActors(payload, createdActors, rootGO));
+                        (createdActors, ex) => ProcessCreatedActors(payload, createdActors, createdActors?[0].gameObject));
                 }
                 catch
                 {
@@ -665,7 +672,7 @@ namespace MixedRealityExtension.App
                 try
                 {
                     _assetLoader.CreatePrimitive(payload.Definition, payload.Actor?.ParentId, payload.AddCollider,
-                        (createdActors, rootGO) => ProcessCreatedActors(payload, createdActors, rootGO));
+                        (createdActors, rootGO) => ProcessCreatedActors(payload, createdActors, createdActors?[0].gameObject));
                 }
                 catch
                 {
@@ -688,7 +695,7 @@ namespace MixedRealityExtension.App
                 try
                 {
                     _assetLoader.CreateEmpty(payload.Actor?.ParentId,
-                        (createdActors, rootGO) => ProcessCreatedActors(payload, createdActors, rootGO));
+                        (createdActors, rootGO) => ProcessCreatedActors(payload, createdActors, createdActors?[0].gameObject));
                 }
                 catch
                 {
@@ -711,7 +718,7 @@ namespace MixedRealityExtension.App
                 try
                 {
                     _assetLoader.CreateFromPrefab(payload.PrefabId, payload.Actor?.ParentId,
-                        (createdActors, rootGO) => ProcessCreatedActors(payload, createdActors, rootGO));
+                        (createdActors, rootGO) => ProcessCreatedActors(payload, createdActors, createdActors?[0].gameObject));
                 }
                 catch
                 {
