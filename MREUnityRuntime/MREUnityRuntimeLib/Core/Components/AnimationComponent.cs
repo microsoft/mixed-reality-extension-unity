@@ -170,7 +170,10 @@ namespace MixedRealityExtension.Core.Components
                         ApplyRootMotion(animation[animationName].clip, animation[animationName].time, animationTime ?? 0f);
                     }
 
-                    // animation[animationName].time = animationTime ?? 0;
+                    if (animationTime.HasValue)
+                    {
+                        animation[animationName].time = animationTime.Value;
+                    }
                     animation[animationName].speed = 0f;
 
                     AnimationStopped(animationName, animation[animationName].time);
