@@ -7,7 +7,10 @@ using System.Text;
 
 namespace MixedRealityExtension.Util
 {
-    internal static class UtilMethods
+    /// <summary>
+    /// MRE Runtime Utilities
+    /// </summary>
+    public static class UtilMethods
     {
         /// <summary>
         /// Converts an enum from one type to another based on matching strings for the possible values of the enums.
@@ -34,7 +37,7 @@ namespace MixedRealityExtension.Util
         /// // Result will be the string matching of Gender.Male.ToString() and Sex.Male.ToString()
         /// Sex sex = UnityHelpers.ConvertEnum(gen);
         /// </example>
-        public static ReturnT ConvertEnum<ReturnT, SourceT>(SourceT source)
+        internal static ReturnT ConvertEnum<ReturnT, SourceT>(SourceT source)
         {
             if (typeof(ReturnT).IsEnum && typeof(SourceT).IsEnum)
             {
@@ -53,7 +56,7 @@ namespace MixedRealityExtension.Util
             }
         }
 
-        public static IEnumerable<FlagT> GetFlagEnumerable<FlagT>() where FlagT : struct, IComparable
+        internal static IEnumerable<FlagT> GetFlagEnumerable<FlagT>() where FlagT : struct, IComparable
         {
             if (!typeof(FlagT).IsEnum)
             {
@@ -70,6 +73,11 @@ namespace MixedRealityExtension.Util
             return Enum.GetValues(typeof(FlagT)).Cast<FlagT>();
         }
 
+        /// <summary>
+        /// Generates a GUID from the provided string. Note the result is not a valid GUID (not compliant with RFC 4122), only shaped like a GUID (a reasonably unique 16-byte value).
+        /// </summary>
+        /// <param name="str"></param>
+        /// <returns></returns>
         public static Guid StringToGuid(string str)
         {
             var stringbytes = Encoding.ASCII.GetBytes(str);
@@ -84,7 +92,7 @@ namespace MixedRealityExtension.Util
         /// <param name="url">The base absolute URL</param>
         /// <param name="rootUrl">Everything preceding the final slash in the URL</param>
         /// <param name="filename">Everything after the final slash</param>
-        public static void GetUrlParts(string url, out string rootUrl, out string filename)
+        internal static void GetUrlParts(string url, out string rootUrl, out string filename)
         {
             var uri = new Uri(url);
 
