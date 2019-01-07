@@ -908,6 +908,13 @@ namespace MixedRealityExtension.App
                 .ResumeAnimation(payload.AnimationName);
         }
 
+        [CommandHandler(typeof(ResetAnimation))]
+        private void OnResetAnimation(ResetAnimation payload)
+        {
+            _actorManager.FindActor(payload.ActorId)?.GetOrCreateActorComponent<AnimationComponent>()
+                .ResetAnimation(payload.AnimationName);
+        }
+
         [CommandHandler(typeof(SyncAnimations))]
         private void OnSyncAnimations(SyncAnimations payload)
         {

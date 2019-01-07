@@ -200,7 +200,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c08c6a44e83210c48bc797284376afc5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  MREURL: ws://mre-hello-world.azurewebsites.net
+  MREURL: ws://127.0.0.1:3901
   SessionID: foo
   AppID: solar-system-app
   AutoStart: 0
@@ -210,7 +210,7 @@ MonoBehaviour:
   UserGameObject: {fileID: 276664683}
   SerifFont: {fileID: 12800000, guid: 70daac12c1ea27648bb12988a837e0a6, type: 3}
   SansSerifFont: {fileID: 12800000, guid: 7a83a8b8d6810db4aa50e3bde952e2c4, type: 3}
-  DefaultPrimMaterial: {fileID: 2100000, guid: 265cb5b418966a64ea212597d469fa33, type: 2}
+  DefaultPrimMaterial: {fileID: 10303, guid: 0000000000000000f000000000000000, type: 0}
 --- !u!114 &1141388992
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -366,7 +366,7 @@ Transform:
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 1942328352}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: -2.72, z: 0}
+  m_LocalPosition: {x: 0, y: -0.6, z: 0}
   m_LocalScale: {x: 200, y: 1, z: 200}
   m_Children: []
   m_Father: {fileID: 0}

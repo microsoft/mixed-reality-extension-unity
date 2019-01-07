@@ -130,6 +130,10 @@ namespace MixedRealityExtension.Core.Components
 
                 var animation = GetOrCreateUnityAnimationComponent();
                 animation.AddClip(clip, animationName);
+                animation[animationName].speed = 0f;
+                animation[animationName].weight = 0f;
+                // Animations are always enabled. Playing vs. not playing is controlled by the speed and weight properties.
+                animation[animationName].enabled = true;
 
                 callback?.Invoke();
             });
@@ -147,7 +151,6 @@ namespace MixedRealityExtension.Core.Components
                     _hasRootMotion[animationName] = hasRootMotion.HasValue && hasRootMotion.Value;
                     int scalar = paused.HasValue ? paused.Value ? 0 : 1 : 1;
                     float time = animationTime ?? 0;
-                    animation[animationName].enabled = scalar > 0 ? true : false;
                     animation[animationName].speed = 1f * scalar;
                     animation[animationName].weight = 1f * scalar;
                     animation[animationName].time = time;
@@ -167,8 +170,8 @@ namespace MixedRealityExtension.Core.Components
                         ApplyRootMotion(animation[animationName].clip, animation[animationName].time, animationTime ?? 0f);
                     }
 
-                    animation[animationName].time = animationTime ?? 0;
-                    animation[animationName].enabled = false;
+                    // animation[animationName].time = animationTime ?? 0;
+                    animation[animationName].speed = 0f;
 
                     AnimationStopped(animationName, animation[animationName].time);
                 }
@@ -182,14 +185,14 @@ namespace MixedRealityExtension.Core.Components
             {
                 if (animation[animationName] != null)
                 {
-                    if (animation[animationName].enabled)
+                    if (animation[animationName].speed > 0)
                     {
                         if (_hasRootMotion.TryGetValue(animationName, out bool dictionaryValue) && dictionaryValue)
                         {
                             ApplyRootMotion(animation[animationName].clip, animation[animationName].time, 0f);
                         }
                     }
-                    GetUnityAnimationComponent()?.Rewind(animationName);
+                    animation[animationName].time = 0;
                 }
             }
         }
@@ -201,7 +204,6 @@ namespace MixedRealityExtension.Core.Components
             {
                 if (animation[animationName] != null)
                 {
-                    animation[animationName].enabled = false;
                     animation[animationName].speed = 0f;
                     animation[animationName].weight = 0f;
                     AnimationStopped(animationName, animation[animationName].time);
@@ -216,7 +218,6 @@ namespace MixedRealityExtension.Core.Components
             {
                 if (animation[animationName] != null)
                 {
-                    animation[animationName].enabled = true;
                     animation[animationName].speed = 1f;
                     animation[animationName].weight = 1f;
                 }
@@ -241,7 +242,7 @@ namespace MixedRealityExtension.Core.Components
                             ActorId = this.AttachedActor.Id,
                             AnimationName = animationState.name,
                             AnimationTime = animationState.time,
-                            Paused = !animationState.enabled,
+                            Paused = animationState.speed == 0,
                             HasRootMotion = hasRootMotion
                         });
                     }
@@ -309,12 +310,7 @@ namespace MixedRealityExtension.Core.Components
             if (!animationEvent.animationState.wrapMode.FromUnityWrapMode().IsLooping())
             {
                 AnimationStopped(animationEvent.animationState.name, animationEvent.animationState.time);
-                animationEvent.animationState.time = 0;
-                animationEvent.animationState.enabled = false;
-            }
-            else
-            {
-                animationEvent.animationState.time -= animationEvent.animationState.clip.length;
+                animationEvent.animationState.speed = 0f;
             }
         }
 
