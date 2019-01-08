@@ -339,7 +339,6 @@ namespace MixedRealityExtension.Core.Components
                 return false;
             }
 
-<<<<<<< HEAD
             bool SlerpQuaternion(out Quaternion dest, Quaternion start, QuaternionPatch end, float t)
             {
                 if (end != null)
@@ -350,13 +349,6 @@ namespace MixedRealityExtension.Core.Components
                 dest = Quaternion.identity;
                 return false;
             }
-=======
-                    if (animationTime.HasValue)
-                    {
-                        animation[animationName].time = animationTime.Value;
-                    }
-                    animation[animationName].speed = 0f;
->>>>>>> Remove commented code
 
             void BuildKeyframePosition(MWAnimationKeyframe keyframe, float t)
             {
@@ -397,6 +389,7 @@ namespace MixedRealityExtension.Core.Components
                 Quaternion value;
                 if (SlerpQuaternion(out value, transform.localRotation, finalTransform.Rotation, t))
                 {
+<<<<<<< HEAD
                     keyframe.Value.Transform.Rotation = new QuaternionPatch(value);
                 }
             }
@@ -434,6 +427,16 @@ namespace MixedRealityExtension.Core.Components
                 if (animatePosition)
                 {
                     keyframe.Value.Transform.Position = new Vector3Patch();
+=======
+                    if (animation[animationName].speed != 0)
+                    {
+                        if (_hasRootMotion.TryGetValue(animationName, out bool dictionaryValue) && dictionaryValue)
+                        {
+                            ApplyRootMotion(animation[animationName].clip, animation[animationName].time, 0f);
+                        }
+                    }
+                    animation[animationName].time = 0;
+>>>>>>> Address PR feedback
                 }
                 if (animateRotation)
                 {
