@@ -188,7 +188,7 @@ namespace MixedRealityExtension.Core.Components
             {
                 if (animation[animationName] != null)
                 {
-                    if (animation[animationName].speed > 0)
+                    if (animation[animationName].speed != 0)
                     {
                         if (_hasRootMotion.TryGetValue(animationName, out bool dictionaryValue) && dictionaryValue)
                         {
