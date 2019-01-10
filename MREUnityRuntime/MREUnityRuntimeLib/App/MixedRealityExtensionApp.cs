@@ -400,7 +400,8 @@ namespace MixedRealityExtension.App
             }
             catch (Exception ex)
             {
-                EndCreateFromGLTF(failureMessage: UtilMethods.FormatException(ex));
+                EndCreateFromGLTF(failureMessage: UtilMethods.FormatException(
+                    "An unexpected error occurred while loading the glTF model.", ex));
                 return;
             }
 

@@ -97,7 +97,7 @@ namespace MixedRealityExtension.Util
             filename = uri.Segments[uri.Segments.Length - 1];
         }
 
-        public static string FormatException(Exception ex)
+        internal static string FormatException(string message, Exception ex)
         {
             UnityEngine.Debug.LogException(ex);
 
@@ -110,7 +110,7 @@ namespace MixedRealityExtension.Util
                 l.Contains("MixedRealityExtension") ||
                 l.Contains("UnityGLTF") ||
                 l.Contains("Rethrow")));
-            return $"An unexpected error occurred while loading the model/asset. The trace is below:\n{error}\n{trace}";
+            return $"{message} The trace is below:\n{error}\n{trace}";
         }
     }
 }

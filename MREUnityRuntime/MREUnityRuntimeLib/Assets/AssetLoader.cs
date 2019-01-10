@@ -141,7 +141,8 @@ namespace MixedRealityExtension.Assets
             }
             catch (Exception e)
             {
-                failureMessage = UtilMethods.FormatException(e);
+                failureMessage = UtilMethods.FormatException(
+                    $"An unexpected error occurred while loading the asset [{payload.Source}].", e);
             }
             finally
             {
