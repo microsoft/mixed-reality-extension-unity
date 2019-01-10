@@ -16,17 +16,27 @@ namespace MixedRealityExtension.Assets
         private readonly Dictionary<Guid, Object> assets = new Dictionary<Guid, Object>(100);
         private readonly Dictionary<AssetSource, List<Guid>> assetsBySource = new Dictionary<AssetSource, List<Guid>>(10);
         private readonly GameObject cacheRoot;
+        private readonly GameObject emptyTemplate;
 
         public AssetCache(GameObject root = null)
         {
             cacheRoot = root ?? new GameObject("MRE Cache Root");
             cacheRoot.SetActive(false);
+
+            emptyTemplate = new GameObject("Empty");
+            emptyTemplate.transform.SetParent(cacheRoot.transform, false);
         }
 
         /// <inheritdoc cref="CacheRootGO"/>
         public GameObject CacheRootGO()
         {
             return cacheRoot;
+        }
+
+        /// <inheritdoc cref="EmptyTemplate"/>
+        public GameObject EmptyTemplate()
+        {
+            return emptyTemplate;
         }
 
         /// <inheritdoc cref="GetAssetIdsInSource"/>

@@ -21,9 +21,6 @@ using MixedRealityExtension.Util;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Http;
-using System.Runtime.ExceptionServices;
-using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
 
@@ -403,7 +400,7 @@ namespace MixedRealityExtension.App
             }
             catch (Exception ex)
             {
-                EndCreateFromGLTF(failureMessage: FormatException(ex));
+                EndCreateFromGLTF(failureMessage: UtilMethods.FormatException(ex));
                 return;
             }
 
@@ -441,28 +438,6 @@ namespace MixedRealityExtension.App
                         Actors = actors?.Select((actor) => actor.GeneratePatch(SubscriptionType.All)).ToList() ?? new List<ActorPatch>()
                     },
                     payload.MessageId);
-            }
-
-            string FormatException(Exception ex)
-            {
-                Debug.LogException(ex);
-                /*if (ex is HttpRequestException)
-                {
-                    return $"HttpRequestException: {ex.Message}";
-                }
-                else
-                {*/
-                    // Unrecognized error types should send a usable stack trace back up to the app,
-                    // so the user can report it and we can fix it. But Tasks add a ton of noise to stack
-                    // traces. This code filters out everything but the actionable data.
-                    var lines = ex?.ToString().Split(new []{'\n', '\r'}, StringSplitOptions.RemoveEmptyEntries);
-                    var error = lines[0];
-                    var trace = string.Join("\n", lines.Where(l =>
-                        l.Contains("MixedRealityExtension") ||
-                        l.Contains("UnityGLTF") ||
-                        l.Contains("Rethrow")));
-                    return $"An unexpected error occurred while loading the glTF. The trace is below:\n{error}\n{trace}";
-                //}
             }
         }
 
@@ -631,7 +606,7 @@ namespace MixedRealityExtension.App
         }
 
         [CommandHandler(typeof(CreateFromLibrary))]
-        private void OnCreateFromLibrary(CreateFromLibrary payload)
+        private async void OnCreateFromLibrary(CreateFromLibrary payload)
         {
             if (_actorManager.HasActor(payload.Actor?.Id) && _actorManager.IsActorReserved(payload.Actor?.Id))
             {
@@ -642,20 +617,8 @@ namespace MixedRealityExtension.App
                 _actorManager.Reserve(payload.Actor?.Id);
                 try
                 {
-                    //_assetLoader.CreateFromLibrary(payload.ResourceId, payload.Actor?.ParentId,
-                    //    createdActors => ProcessCreatedActors(payload, createdActors, createdActors?[0].gameObject));
-                    _assetLoader.CreateFromLibrary(payload.ResourceId, payload.Actor?.ParentId).ContinueWith(task =>
-                    {
-                        if (task.IsFaulted)
-                        {
-                            SendCreateActorResponse(payload, failureMessage: task.Exception?.ToString());
-                        }
-                        else
-                        {
-                            var actors = task.Result;
-                            SendCreateActorResponse(payload, actors: actors);
-                        }
-                    });
+                    var actors = await _assetLoader.CreateFromLibrary(payload.ResourceId, payload.Actor?.ParentId);
+                    ProcessCreatedActors(payload, actors, actors?[0].gameObject);
                 }
                 catch (Exception e)
                 {

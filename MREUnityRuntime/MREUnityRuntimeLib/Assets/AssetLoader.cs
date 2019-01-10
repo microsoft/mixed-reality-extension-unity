@@ -4,43 +4,28 @@ using MixedRealityExtension.API;
 using MixedRealityExtension.App;
 using MixedRealityExtension.Core;
 using MixedRealityExtension.Core.Types;
-using MixedRealityExtension.PluginInterfaces;
-using MixedRealityExtension.Util.Unity;
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Net.Http;
-using System.Runtime.ExceptionServices;
-using System.Threading.Tasks;
 using MixedRealityExtension.Messaging;
 using MixedRealityExtension.Messaging.Commands;
 using MixedRealityExtension.Messaging.Payloads;
 using MixedRealityExtension.Util;
+using MixedRealityExtension.Util.Unity;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using UnityEngine;
-using UnityEngine.Networking;
 using UnityGLTF;
 using UnityGLTF.Loader;
-using Object = UnityEngine.Object;
 
 namespace MixedRealityExtension.Assets
 {
     using LoaderFunction = Func<AssetSource, Task<IList<Asset>>>;
-
-    /// <summary>
-    /// Callback delegate for handling when actors have been successfully created in the engine.
-    /// </summary>
-    /// <param name="createdActors">The list of actors that were created. createdActors[0] is the root. Null with errors.</param>
-    /// <param name="failureMessage">If an error occurs during load, this message is what failed. Null otherwise.</param>
-    internal delegate void OnCreatedActorsHandler(IList<Actor> createdActors, string failureMessage);
 
     internal class AssetLoader : ICommandHandlerContext
     {
         private readonly MonoBehaviour _owner;
         private readonly MixedRealityExtensionApp _app;
         private readonly AsyncCoroutineHelper _asyncHelper;
-        private readonly GameObject emptyTemplate = new GameObject();
 
         internal AssetLoader(MonoBehaviour owner, MixedRealityExtensionApp app)
         {
@@ -48,7 +33,6 @@ namespace MixedRealityExtension.Assets
             _app = app ?? throw new ArgumentException("Asset loader requires a MixedRealityExtensionApp to be associated with.");
             _asyncHelper = _owner.gameObject.GetComponent<AsyncCoroutineHelper>() ??
                            _owner.gameObject.AddComponent<AsyncCoroutineHelper>();
-            emptyTemplate.transform.SetParent(MREAPI.AppsAPI.AssetCache.CacheRootGO().transform);
         }
 
         internal GameObject GetGameObjectFromParentId(Guid? parentId)
@@ -56,16 +40,6 @@ namespace MixedRealityExtension.Assets
             var parent = _app.FindActor(parentId ?? Guid.Empty) as Actor;
             return parent?.gameObject ?? _app.SceneRoot;
         }
-
-        /*internal void PostCreatePerObject(List<Actor> createdActors, OnCreatedActorsHandler callback)
-        {
-            if (rootGO != null)
-            {
-                rootGO.layer = UnityConstants.ActorLayerIndex;
-                callback?.Invoke(createdActors, null);
-            }
-
-        }*/
 
         internal async Task<IList<Actor>> CreateFromLibrary(string resourceId, Guid? parentId)
         {
@@ -90,7 +64,10 @@ namespace MixedRealityExtension.Assets
 
         internal IList<Actor> CreateEmpty(Guid? parentId)
         {
-            GameObject newGO = GameObject.Instantiate(emptyTemplate, GetGameObjectFromParentId(parentId).transform, false);
+            GameObject newGO = GameObject.Instantiate(
+                MREAPI.AppsAPI.AssetCache.EmptyTemplate(),
+                GetGameObjectFromParentId(parentId).transform,
+                false);
             newGO.layer = UnityConstants.ActorLayerIndex;
 
             return new List<Actor>() { newGO.AddComponent<Actor>() };
@@ -164,7 +141,7 @@ namespace MixedRealityExtension.Assets
             }
             catch (Exception e)
             {
-                failureMessage = FormatException(e);
+                failureMessage = UtilMethods.FormatException(e);
             }
             finally
             {
@@ -177,25 +154,6 @@ namespace MixedRealityExtension.Assets
                         Assets = assets ?? new Asset[] { }
                     }
                 });
-            }
-
-            string FormatException(Exception ex)
-            {
-                Debug.LogException(ex);
-                if (ex is HttpRequestException)
-                {
-                    return $"HttpRequestException: {ex.Message}";
-                }
-                else
-                {
-                    // Unrecognized error types should send a usable stack trace back up to the app,
-                    // so the user can report it and we can fix it. But Tasks add a ton of noise to stack
-                    // traces. This code filters out everything but the actionable data.
-                    var lines = ex?.ToString().Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
-                    var error = lines[0];
-                    var trace = string.Join("\n", lines.Where(l => l.Contains("MixedRealityExtension") || l.Contains("UnityGLTF")));
-                    return $"An unexpected error occurred while loading the glTF. The trace is below:\n{error}\n{trace}";
-                }
             }
         }
 
