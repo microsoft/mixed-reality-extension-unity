@@ -2,23 +2,20 @@
 // Licensed under the MIT License.
 using System;
 using System.Runtime.ExceptionServices;
+using System.Threading.Tasks;
 using UnityEngine;
 using MixedRealityExtension.PluginInterfaces;
 
 public class ResourceFactory : ILibraryResourceFactory
 {
-    public void CreateFromLibrary(string resourceId, GameObject parent, Action<GameObject, ExceptionDispatchInfo> callback)
+    public async Task<GameObject> CreateFromLibrary(string resourceId, GameObject parent)
     {
         var prefab = Resources.Load<GameObject>($"Library/{resourceId}");
         if (prefab == null)
         {
-            var libPlaceholderActor = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            libPlaceholderActor.transform.SetParent(parent.transform, false);
-            callback(libPlaceholderActor, null);
-            return;
+            throw new ArgumentException($"Resource with ID {resourceId} not found");
         }
 
-        var libActor = GameObject.Instantiate(prefab, parent?.transform, false);
-        callback(libActor, null);
+        return GameObject.Instantiate(prefab, parent?.transform, false);
     }
 }

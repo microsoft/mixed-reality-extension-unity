@@ -40,7 +40,7 @@ namespace MixedRealityExtension.Assets
         /// <summary>
         /// Loaded from a glTF file.
         /// </summary>
-        Gltf,
+        GLTF,
 
         /// <summary>
         /// Loaded from a host library.

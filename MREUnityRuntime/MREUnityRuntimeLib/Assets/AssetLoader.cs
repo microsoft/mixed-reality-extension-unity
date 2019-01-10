@@ -10,7 +10,10 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Net.Http;
 using System.Runtime.ExceptionServices;
+using System.Threading.Tasks;
 using MixedRealityExtension.Messaging;
 using MixedRealityExtension.Messaging.Commands;
 using MixedRealityExtension.Messaging.Payloads;
@@ -23,21 +26,21 @@ using Object = UnityEngine.Object;
 
 namespace MixedRealityExtension.Assets
 {
-    using LoaderCallback = Action<IEnumerable<Asset>, string>;
-    using LoaderFunction = Action<AssetSource, Action<IEnumerable<Asset>, string>>;
+    using LoaderFunction = Func<AssetSource, Task<IList<Asset>>>;
 
     /// <summary>
     /// Callback delegate for handling when actors have been successfully created in the engine.
     /// </summary>
-    /// <param name="createdActors">The list of actors that were created. createdActors[0] is the root.</param>
-    /// <param name="exception">If the actor creation failed, this will contain the exception info.</param>
-    internal delegate void OnCreatedActorsHandler(IList<Actor> createdActors, ExceptionDispatchInfo exception);
+    /// <param name="createdActors">The list of actors that were created. createdActors[0] is the root. Null with errors.</param>
+    /// <param name="failureMessage">If an error occurs during load, this message is what failed. Null otherwise.</param>
+    internal delegate void OnCreatedActorsHandler(IList<Actor> createdActors, string failureMessage);
 
     internal class AssetLoader : ICommandHandlerContext
     {
         private readonly MonoBehaviour _owner;
         private readonly MixedRealityExtensionApp _app;
         private readonly AsyncCoroutineHelper _asyncHelper;
+        private readonly GameObject emptyTemplate = new GameObject();
 
         internal AssetLoader(MonoBehaviour owner, MixedRealityExtensionApp app)
         {
@@ -45,6 +48,7 @@ namespace MixedRealityExtension.Assets
             _app = app ?? throw new ArgumentException("Asset loader requires a MixedRealityExtensionApp to be associated with.");
             _asyncHelper = _owner.gameObject.GetComponent<AsyncCoroutineHelper>() ??
                            _owner.gameObject.AddComponent<AsyncCoroutineHelper>();
+            emptyTemplate.transform.SetParent(MREAPI.AppsAPI.AssetCache.CacheRootGO().transform);
         }
 
         internal GameObject GetGameObjectFromParentId(Guid? parentId)
@@ -63,62 +67,37 @@ namespace MixedRealityExtension.Assets
 
         }*/
 
-        internal void CreateFromLibrary(string resourceId, Guid? parentId, OnCreatedActorsHandler callback)
+        internal async Task<IList<Actor>> CreateFromLibrary(string resourceId, Guid? parentId)
         {
             var factory = MREAPI.AppsAPI.LibraryResourceFactory
                 ?? throw new ArgumentException("Cannot spawn resource from non-existent library.");
 
-            factory.CreateFromLibrary(
-                resourceId,
-                GetGameObjectFromParentId(parentId),
-                (spawnedGO, ex) =>
-                {
-                    if (ex != null)
-                    {
-                        callback?.Invoke(null, ex);
-                        return;
-                    }
-
-                    List<Actor> actors = new List<Actor>() { spawnedGO.AddComponent<Actor>() };
-                    spawnedGO.layer = UnityConstants.ActorLayerIndex;
-                    callback?.Invoke(actors, null);
-                }
-            );
+            var spawnedGO = await factory.CreateFromLibrary(resourceId, GetGameObjectFromParentId(parentId));
+            spawnedGO.layer = UnityConstants.ActorLayerIndex;
+            return new List<Actor>() { spawnedGO.AddComponent<Actor>() };
         }
 
-        internal void CreatePrimitive(PrimitiveDefinition definition, Guid? parentId, bool addCollider, OnCreatedActorsHandler callback)
+        internal IList<Actor> CreatePrimitive(PrimitiveDefinition definition, Guid? parentId, bool addCollider)
         {
             var factory = MREAPI.AppsAPI.PrimitiveFactory;
-            try
-            {
-                GameObject newGO = factory.CreatePrimitive(
-                    definition, GetGameObjectFromParentId(parentId), addCollider);
-
-                List<Actor> actors = new List<Actor>() { newGO.AddComponent<Actor>() };
-                newGO.layer = UnityConstants.ActorLayerIndex;
-                callback?.Invoke(actors, null);
-            }
-            catch (Exception e)
-            {
-                MREAPI.Logger.LogError($"Failed to create primitive.  Exception: {e.Message}\nStack Trace: {e.StackTrace}");
-                callback?.Invoke(null, ExceptionDispatchInfo.Capture(e));
-            }
-        }
-
-        internal void CreateEmpty(Guid? parentId, OnCreatedActorsHandler callback)
-        {
-            GameObject newGO = new GameObject();
-            newGO.layer = UnityConstants.ActorLayerIndex;
-            newGO.transform.SetParent(GetGameObjectFromParentId(parentId).transform, false);
+            GameObject newGO = factory.CreatePrimitive(
+                definition, GetGameObjectFromParentId(parentId), addCollider);
 
             List<Actor> actors = new List<Actor>() { newGO.AddComponent<Actor>() };
-            callback?.Invoke(actors, null);
+            newGO.layer = UnityConstants.ActorLayerIndex;
+            return actors;
         }
 
-        internal void CreateFromGLTF(string resourceUrl, string assetName, Guid? parentId, ColliderType colliderType, OnCreatedActorsHandler callback)
+        internal IList<Actor> CreateEmpty(Guid? parentId)
         {
-            IList<Actor> actors = new List<Actor>();
+            GameObject newGO = GameObject.Instantiate(emptyTemplate, GetGameObjectFromParentId(parentId).transform, false);
+            newGO.layer = UnityConstants.ActorLayerIndex;
 
+            return new List<Actor>() { newGO.AddComponent<Actor>() };
+        }
+
+        internal async Task<IList<Actor>> CreateFromGLTF(string resourceUrl, string assetName, Guid? parentId, ColliderType colliderType)
+        {
             UtilMethods.GetUrlParts(resourceUrl, out string rootUrl, out string filename);
             var loader = new WebRequestLoader(rootUrl);
             var importer = MREAPI.AppsAPI.GLTFImporterFactory.CreateImporter(filename, loader, _asyncHelper);
@@ -128,37 +107,29 @@ namespace MixedRealityExtension.Assets
 
             importer.Collider = colliderType.ToGLTFColliderType();
 
-            importer.LoadSceneAsync(onLoadComplete: (rootObject, ex) =>
+            await importer.LoadSceneAsync().ConfigureAwait(true);
+
+            IList<Actor> actors = new List<Actor>();
+            MWGOTreeWalker.VisitTree(importer.LastLoadedScene, (go) =>
             {
-                if (ex != null)
-                {
-                    callback?.Invoke(null, ex);
-                    return;
-                }
+                // Set layer index
+                go.layer = UnityConstants.ActorLayerIndex;
 
-                MWGOTreeWalker.VisitTree(rootObject, (go) =>
-                {
-                    // Set layer index
-                    go.layer = UnityConstants.ActorLayerIndex;
-
-                    // Wrap as an actor and clear parent if the object is the scene root.
-                    actors.Add(go.AddComponent<Actor>());
-                });
-
-                importer.Dispose();
-
-                callback?.Invoke(actors, null);
+                // Wrap as an actor and clear parent if the object is the scene root.
+                actors.Add(go.AddComponent<Actor>());
             });
+
+            importer.Dispose();
+
+            return actors;
         }
 
-        internal void CreateFromPrefab(Guid prefabId, Guid? parentId, OnCreatedActorsHandler callback)
+        internal IList<Actor> CreateFromPrefab(Guid prefabId, Guid? parentId)
         {
             GameObject prefab = MREAPI.AppsAPI.AssetCache.GetAsset(prefabId) as GameObject;
             if (prefab == null)
             {
-                callback?.Invoke(null, ExceptionDispatchInfo.Capture(
-                    new ArgumentException($"Asset {prefabId} does not exist or is the wrong type.")));
-                return;
+                throw new ArgumentException($"Asset {prefabId} does not exist or is the wrong type.");
             }
 
             GameObject instance = UnityEngine.Object.Instantiate(
@@ -167,34 +138,35 @@ namespace MixedRealityExtension.Assets
             var actorList = new List<Actor>();
             MWGOTreeWalker.VisitTree(instance, go => actorList.Add(go.AddComponent<Actor>()));
 
-            callback?.Invoke(actorList, null);
+            return actorList;
         }
 
         [CommandHandler(typeof(LoadAssets))]
-        private void LoadAssets(LoadAssets payload)
+        private async Task LoadAssets(LoadAssets payload)
         {
             LoaderFunction loader;
 
             switch (payload.Source.ContainerType)
             {
-                case AssetContainerType.Gltf:
-                    loader = LoadAssetsFromGltf;
+                case AssetContainerType.GLTF:
+                    loader = LoadAssetsFromGLTF;
                     break;
                 default:
                     throw new Exception(
                         $"Cannot load assets from unknown container type {payload.Source.ContainerType.ToString()}");
             }
 
+            IList<Asset> assets = null;
+            string failureMessage = null;
             try
             {
-                loader(payload.Source, Continue);
+                assets = await loader(payload.Source);
             }
-            catch(Exception e)
+            catch (Exception e)
             {
-                Continue(null, e.ToString());
+                failureMessage = FormatException(e);
             }
-
-            void Continue(IEnumerable<Asset> assets, string failureMessage)
+            finally
             {
                 _app.Protocol.Send(new Message()
                 {
@@ -202,13 +174,32 @@ namespace MixedRealityExtension.Assets
                     Payload = new AssetsLoaded()
                     {
                         FailureMessage = failureMessage,
-                        Assets = assets
+                        Assets = assets ?? new Asset[] { }
                     }
                 });
             }
+
+            string FormatException(Exception ex)
+            {
+                Debug.LogException(ex);
+                if (ex is HttpRequestException)
+                {
+                    return $"HttpRequestException: {ex.Message}";
+                }
+                else
+                {
+                    // Unrecognized error types should send a usable stack trace back up to the app,
+                    // so the user can report it and we can fix it. But Tasks add a ton of noise to stack
+                    // traces. This code filters out everything but the actionable data.
+                    var lines = ex?.ToString().Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
+                    var error = lines[0];
+                    var trace = string.Join("\n", lines.Where(l => l.Contains("MixedRealityExtension") || l.Contains("UnityGLTF")));
+                    return $"An unexpected error occurred while loading the glTF. The trace is below:\n{error}\n{trace}";
+                }
+            }
         }
 
-        private async void LoadAssetsFromGltf(AssetSource source, LoaderCallback callback)
+        private async Task<IList<Asset>> LoadAssetsFromGLTF(AssetSource source)
         {
             IList<Asset> assets = new List<Asset>();
             DeterministicGuids guidGenerator = new DeterministicGuids(UtilMethods.StringToGuid(source.Uri.AbsoluteUri));
@@ -250,7 +241,8 @@ namespace MixedRealityExtension.Assets
             assets.Add(def);
 
             importer.Dispose();
-            callback?.Invoke(assets, null);
+
+            return assets;
         }
     }
 }
