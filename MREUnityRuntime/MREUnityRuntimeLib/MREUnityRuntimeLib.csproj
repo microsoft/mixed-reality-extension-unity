@@ -87,6 +87,7 @@
     <Compile Include="Assets\AssetCache.cs" />
     <Compile Include="Assets\AssetGroup.cs" />
     <Compile Include="Assets\AssetSource.cs" />
+    <Compile Include="Assets\MreGltfImporter.cs" />
     <Compile Include="Core\Interfaces\IUserInfo.cs" />
     <Compile Include="Core\UserManager.cs" />
     <Compile Include="Messaging\Payloads\AssetCommandPayloads.cs" />

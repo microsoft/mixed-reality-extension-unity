@@ -406,6 +406,17 @@ namespace MixedRealityExtension.Core
                 Name = patch.Name;
             }
 
+            // Material
+            if (patch.MaterialId != null)
+            {
+                var sharedMat = MREAPI.AppsAPI.AssetCache.GetAsset(patch.MaterialId.Value) as Material;
+                if (sharedMat != null)
+                {
+                    var renderer = GetComponent<Renderer>();
+                    renderer.sharedMaterial = sharedMat;
+                }
+            }
+
             // Transform
             var transformPatch = patch.Transform;
             if (transformPatch != null)
