@@ -15,6 +15,9 @@ namespace MixedRealityExtension.PluginInterfaces
         /// <returns>The GameObject all cache assets should be beneath</returns>
         GameObject CacheRootGO();
 
+        /// <returns>The GameObject cloned by Actor.CreateEmpty calls</returns>
+        GameObject EmptyTemplate();
+
         /// <summary>
         /// Retrieve the IDs of assets loaded from a source.
         /// </summary>

@@ -856,6 +856,7 @@ MonoBehaviour:
   - primitives-test
   - root-motion-test
   - asset-preload-test
+  - gltf-concurrency-test
 --- !u!1 &1651315071
 GameObject:
   m_ObjectHideFlags: 0

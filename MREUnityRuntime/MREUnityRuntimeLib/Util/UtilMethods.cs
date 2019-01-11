@@ -104,5 +104,21 @@ namespace MixedRealityExtension.Util
 
             filename = uri.Segments[uri.Segments.Length - 1];
         }
+
+        internal static string FormatException(string message, Exception ex)
+        {
+            UnityEngine.Debug.LogException(ex);
+
+            // Unrecognized error types should send a usable stack trace back up to the app,
+            // so the user can report it and we can fix it. But Tasks add a ton of noise to stack
+            // traces. This code filters out everything but the actionable data.
+            var lines = ex?.ToString().Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
+            var error = lines[0];
+            var trace = string.Join("\n", lines.Where(l =>
+                l.Contains("MixedRealityExtension") ||
+                l.Contains("UnityGLTF") ||
+                l.Contains("Rethrow")));
+            return $"{message} The trace is below:\n{error}\n{trace}";
+        }
     }
 }
