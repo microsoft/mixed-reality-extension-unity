@@ -828,6 +828,7 @@ namespace MixedRealityExtension.App
         {
             try
             {
+<<<<<<< HEAD
                 var actor = _actorManager.FindActor(payload.ActorId);
                 if (actor != null)
                 {
@@ -856,6 +857,24 @@ namespace MixedRealityExtension.App
                         Message = $"Actor {payload.ActorId} not found"
                     }, payload.MessageId);
                 }
+=======
+                actor.GetOrCreateActorComponent<AnimationComponent>()
+                    .CreateAnimation(
+                        payload.AnimationName,
+                        payload.Keyframes,
+                        payload.Events,
+                        payload.WrapMode,
+                        payload.InitialState,
+                        isInternal: false,
+                        onCreatedCallback: () =>
+                        {
+                            Protocol.Send(new OperationResult()
+                            {
+                                ResultCode = OperationResultCode.Success
+                            }, payload.MessageId);
+                        },
+                        onCompleteCallback: null);
+>>>>>>> - Simplified the animation API. Client remains backward compatible with the older API (except for root motion, see below), so I think we're fine to leave the protocol version where it is.
             }
             catch (Exception e)
             {
@@ -870,9 +889,15 @@ namespace MixedRealityExtension.App
         [CommandHandler(typeof(DEPRECATED_StartAnimation))]
         private void OnStartAnimation(DEPRECATED_StartAnimation payload)
         {
+<<<<<<< HEAD
             bool paused = payload.Paused.HasValue && payload.Paused.Value;
             _actorManager.FindActor(payload.ActorId)?.GetOrCreateActorComponent<AnimationComponent>()
                 .SetAnimationState(payload.AnimationName, payload.AnimationTime, speed: null, !paused);
+=======
+            bool enabled = payload.Paused.HasValue && payload.Paused.Value;
+            _actorManager.FindActor(payload.ActorId)?.GetOrCreateActorComponent<AnimationComponent>()
+                .SetAnimationState(payload.AnimationName, payload.AnimationTime, speed: null, enabled);
+>>>>>>> - Simplified the animation API. Client remains backward compatible with the older API (except for root motion, see below), so I think we're fine to leave the protocol version where it is.
         }
 
         [CommandHandler(typeof(DEPRECATED_StopAnimation))]
@@ -894,6 +919,7 @@ namespace MixedRealityExtension.App
         {
             _actorManager.FindActor(payload.ActorId)?.GetOrCreateActorComponent<AnimationComponent>()
                 .SetAnimationState(payload.AnimationName, time: null, speed: null, true);
+<<<<<<< HEAD
         }
 
         [CommandHandler(typeof(DEPRECATED_ResetAnimation))]
@@ -901,6 +927,8 @@ namespace MixedRealityExtension.App
         {
             _actorManager.FindActor(payload.ActorId)?.GetOrCreateActorComponent<AnimationComponent>()
                 .SetAnimationState(payload.AnimationName, time: 0, speed: null, null);
+=======
+>>>>>>> - Simplified the animation API. Client remains backward compatible with the older API (except for root motion, see below), so I think we're fine to leave the protocol version where it is.
         }
 
         [CommandHandler(typeof(DEPRECATED_ResetAnimation))]
@@ -965,6 +993,7 @@ namespace MixedRealityExtension.App
         [CommandHandler(typeof(InterpolateActor))]
         private void OnInterpolateActor(InterpolateActor payload)
         {
+<<<<<<< HEAD
             try
             {
                 var actor = _actorManager.FindActor(payload.ActorId);
@@ -995,11 +1024,36 @@ namespace MixedRealityExtension.App
                 }
             }
             catch (Exception e)
+=======
+            var actor = _actorManager.FindActor(payload.ActorId);
+            if (actor != null)
+            {
+                actor.GetOrCreateActorComponent<AnimationComponent>()
+                    .Interpolate(
+                        payload.Value,
+                        payload.AnimationName,
+                        payload.Duration,
+                        payload.Curve,
+                        payload.Enabled,
+                        onCompleteCallback: () =>
+                    {
+                        Protocol.Send(new OperationResult()
+                        {
+                            ResultCode = OperationResultCode.Success
+                        }, payload.MessageId);
+                    });
+            }
+            else
+>>>>>>> - Simplified the animation API. Client remains backward compatible with the older API (except for root motion, see below), so I think we're fine to leave the protocol version where it is.
             {
                 Protocol.Send(new OperationResult()
                 {
                     ResultCode = OperationResultCode.Error,
+<<<<<<< HEAD
                     Message = e.Message
+=======
+                    Message = $"Actor {payload.ActorId} not found"
+>>>>>>> - Simplified the animation API. Client remains backward compatible with the older API (except for root motion, see below), so I think we're fine to leave the protocol version where it is.
                 }, payload.MessageId);
             }
         }

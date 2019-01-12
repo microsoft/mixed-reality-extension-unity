@@ -154,7 +154,11 @@ namespace MixedRealityExtension.Core.Components
                 void AddTransformPatch(float time, TransformPatch value)
                 {
                     // Work around a Unity bug/feature where all position components must be specified
+<<<<<<< HEAD
                     // in the keyframe or the missing fields get set to zero.
+=======
+                    // in the keyframe or the missing ones get set to zero.
+>>>>>>> - Simplified the animation API. Client remains backward compatible with the older API (except for root motion, see below), so I think we're fine to leave the protocol version where it is.
                     Vector3Patch position = value?.Position;
                     if (position != null && position.IsPatched())
                     {
@@ -162,6 +166,7 @@ namespace MixedRealityExtension.Core.Components
                         if (!position.Y.HasValue) { position.Y = transform.localPosition.y; }
                         if (!position.Z.HasValue) { position.Z = transform.localPosition.z; }
                     }
+<<<<<<< HEAD
                     // Work around a Unity bug/feature where all scale components must be specified
                     // in the keyframe or the missing fields get set to one.
                     Vector3Patch scale = value?.Scale;
@@ -171,6 +176,8 @@ namespace MixedRealityExtension.Core.Components
                         if (!scale.Y.HasValue) { scale.Y = transform.localScale.y; }
                         if (!scale.Z.HasValue) { scale.Z = transform.localScale.z; }
                     }
+=======
+>>>>>>> - Simplified the animation API. Client remains backward compatible with the older API (except for root motion, see below), so I think we're fine to leave the protocol version where it is.
                     AddVector3Patch(typeof(Transform), "m_LocalPosition", time, value?.Position);
                     AddQuaternionPatch(typeof(Transform), "m_LocalRotation", time, value?.Rotation);
                     AddVector3Patch(typeof(Transform), "m_LocalScale", time, value?.Scale);
@@ -197,6 +204,7 @@ namespace MixedRealityExtension.Core.Components
                 }
 
                 _animationData[animationName] = new AnimationData()
+<<<<<<< HEAD
                 {
                     IsInternal = isInternal,
                     OnCompleteCallback = onCompleteCallback
@@ -208,6 +216,19 @@ namespace MixedRealityExtension.Core.Components
 
                 if (initialState != null)
                 {
+=======
+                {
+                    IsInternal = isInternal,
+                    OnCompleteCallback = onCompleteCallback
+                };
+
+                float initialTime = 0f;
+                float initialSpeed = 1f;
+                bool initialEnabled = false;
+
+                if (initialState != null)
+                {
+>>>>>>> - Simplified the animation API. Client remains backward compatible with the older API (except for root motion, see below), so I think we're fine to leave the protocol version where it is.
                     initialTime = initialState.Time ?? initialTime;
                     initialSpeed = initialState.Speed ?? initialSpeed;
                     initialEnabled = initialState.Enabled ?? initialEnabled;
@@ -235,9 +256,12 @@ namespace MixedRealityExtension.Core.Components
             // Ensure duration is in range [0...n].
             duration = Math.Max(0, duration);
 
+<<<<<<< HEAD
             const int FPS = 10;
             float timeStep = duration / FPS;
 
+=======
+>>>>>>> - Simplified the animation API. Client remains backward compatible with the older API (except for root motion, see below), so I think we're fine to leave the protocol version where it is.
             // If the curve is malformed, fallback to linear.
             if (curve.Length != 4)
             {
@@ -254,6 +278,7 @@ namespace MixedRealityExtension.Core.Components
             bool animateScale = animateTransform && finalTransform.Scale != null && finalTransform.Scale.IsPatched();
 
             // Ensure we have a well-formed rotation quaternion.
+<<<<<<< HEAD
             for (; animateRotation;)
             {
                 var rotation = finalTransform.Rotation;
@@ -281,6 +306,20 @@ namespace MixedRealityExtension.Core.Components
                     // If the quaternion is length zero, fallback to the identity.
                     finalTransform.Rotation = new QuaternionPatch(Quaternion.identity);
                     break;
+=======
+            if (animateRotation)
+            {
+                bool wellFormed =
+                    finalTransform.Rotation.X.HasValue &&
+                    finalTransform.Rotation.Y.HasValue &&
+                    finalTransform.Rotation.Z.HasValue &&
+                    finalTransform.Rotation.W.HasValue;
+
+                // If quaternion is malformed, fallback to the identity.
+                if (!wellFormed)
+                {
+                    finalTransform.Rotation = new QuaternionPatch(Quaternion.identity);
+>>>>>>> - Simplified the animation API. Client remains backward compatible with the older API (except for root motion, see below), so I think we're fine to leave the protocol version where it is.
                 }
                 else if (lengthSquared != 1.0f)
                 {
@@ -297,6 +336,7 @@ namespace MixedRealityExtension.Core.Components
             // Create the sampler to calculate ease curve values.
             var sampler = new CubicBezier(curve[0], curve[1], curve[2], curve[3]);
 
+<<<<<<< HEAD
             var keyframes = new List<MWAnimationKeyframe>();
 
             // Generate keyframes
@@ -330,6 +370,10 @@ namespace MixedRealityExtension.Core.Components
 
             bool LerpFloat(out float dest, float start, float? end, float t)
             {
+=======
+            bool LerpFloat(out float dest, float start, float? end, float t)
+            {
+>>>>>>> - Simplified the animation API. Client remains backward compatible with the older API (except for root motion, see below), so I think we're fine to leave the protocol version where it is.
                 if (end.HasValue)
                 {
                     dest = Mathf.LerpUnclamped(start, end.Value, t);
@@ -353,6 +397,7 @@ namespace MixedRealityExtension.Core.Components
             void BuildKeyframePosition(MWAnimationKeyframe keyframe, float t)
             {
                 float value;
+<<<<<<< HEAD
                 if (LerpFloat(out value, transform.localPosition.x, finalTransform.Position.X, t))
                 {
                     keyframe.Value.Transform.Position.X = value;
@@ -389,7 +434,6 @@ namespace MixedRealityExtension.Core.Components
                 Quaternion value;
                 if (SlerpQuaternion(out value, transform.localRotation, finalTransform.Rotation, t))
                 {
-<<<<<<< HEAD
                     keyframe.Value.Transform.Rotation = new QuaternionPatch(value);
                 }
             }
@@ -416,6 +460,49 @@ namespace MixedRealityExtension.Core.Components
             {
                 var keyframe = new MWAnimationKeyframe
                 {
+=======
+                if (LerpFloat(out value, transform.localPosition.x, finalTransform.Position.X, t)) { keyframe.Value.Transform.Position.X = value; }
+                if (LerpFloat(out value, transform.localPosition.y, finalTransform.Position.Y, t)) { keyframe.Value.Transform.Position.Y = value; }
+                if (LerpFloat(out value, transform.localPosition.z, finalTransform.Position.Z, t)) { keyframe.Value.Transform.Position.Z = value; }
+            }
+
+            void BuildKeyframeScale(MWAnimationKeyframe keyframe, float t)
+            {
+                float value;
+                if (LerpFloat(out value, transform.localScale.x, finalTransform.Scale.X, t)) { keyframe.Value.Transform.Scale.X = value; }
+                if (LerpFloat(out value, transform.localScale.y, finalTransform.Scale.Y, t)) { keyframe.Value.Transform.Scale.Y = value; }
+                if (LerpFloat(out value, transform.localScale.z, finalTransform.Scale.Z, t)) { keyframe.Value.Transform.Scale.Z = value; }
+            }
+
+            void BuildKeyframeRotation(MWAnimationKeyframe keyframe, float t)
+            {
+                Quaternion value;
+                if (SlerpQuaternion(out value, transform.localRotation, finalTransform.Rotation, t)) { keyframe.Value.Transform.Rotation = new QuaternionPatch(value); }
+            }
+
+            void BuildKeyframe(MWAnimationKeyframe keyframe, float unitTime)
+            {
+                float curveTime = sampler.Sample(unitTime);
+
+                if (animatePosition)
+                {
+                    BuildKeyframePosition(keyframe, curveTime);
+                }
+                if (animateRotation)
+                {
+                    BuildKeyframeRotation(keyframe, curveTime);
+                }
+                if (animateScale)
+                {
+                    BuildKeyframeScale(keyframe, curveTime);
+                }
+            }
+
+            MWAnimationKeyframe NewKeyframe(float time)
+            {
+                var keyframe = new MWAnimationKeyframe
+                {
+>>>>>>> - Simplified the animation API. Client remains backward compatible with the older API (except for root motion, see below), so I think we're fine to leave the protocol version where it is.
                     Time = time,
                     Value = new ActorPatch()
                 };
@@ -423,21 +510,19 @@ namespace MixedRealityExtension.Core.Components
                 if (animateTransform)
                 {
                     keyframe.Value.Transform = new TransformPatch();
+<<<<<<< HEAD
                 }
                 if (animatePosition)
                 {
                     keyframe.Value.Transform.Position = new Vector3Patch();
-=======
-                    if (animation[animationName].speed != 0)
-                    {
-                        if (_hasRootMotion.TryGetValue(animationName, out bool dictionaryValue) && dictionaryValue)
-                        {
-                            ApplyRootMotion(animation[animationName].clip, animation[animationName].time, 0f);
-                        }
-                    }
-                    animation[animationName].time = 0;
->>>>>>> Address PR feedback
                 }
+=======
+                }
+                if (animatePosition)
+                {
+                    keyframe.Value.Transform.Position = new Vector3Patch();
+                }
+>>>>>>> - Simplified the animation API. Client remains backward compatible with the older API (except for root motion, see below), so I think we're fine to leave the protocol version where it is.
                 if (animateRotation)
                 {
                     keyframe.Value.Transform.Rotation = new QuaternionPatch();
@@ -447,7 +532,44 @@ namespace MixedRealityExtension.Core.Components
                     keyframe.Value.Transform.Scale = new Vector3Patch();
                 }
                 return keyframe;
+<<<<<<< HEAD
+=======
             }
+
+            const int FPS = 10;
+            float timeStep = duration / FPS;
+
+            var keyframes = new List<MWAnimationKeyframe>();
+
+            // Generate keyframes
+            float currTime = 0;
+            while (currTime <= duration)
+            {
+                var keyframe = NewKeyframe(currTime);
+                BuildKeyframe(keyframe, currTime / duration);
+                keyframes.Add(keyframe);
+                currTime += timeStep;
+            }
+
+            // Final frame (if needed)
+            if (currTime - duration > 0)
+            {
+                var keyframe = NewKeyframe(duration);
+                BuildKeyframe(keyframe, 1);
+                keyframes.Add(keyframe);
+>>>>>>> - Simplified the animation API. Client remains backward compatible with the older API (except for root motion, see below), so I think we're fine to leave the protocol version where it is.
+            }
+
+            // Create and optionally start the animation.
+            CreateAnimation(
+                animationName,
+                keyframes,
+                events: null,
+                wrapMode: MWAnimationWrapMode.Once,
+                initialState: new MWSetAnimationStateOptions { Enabled = enabled },
+                isInternal: true,
+                onCreatedCallback: null,
+                onCompleteCallback);
         }
 
         internal void SetAnimationState(string animationName, float? time, float? speed, bool? enabled)
