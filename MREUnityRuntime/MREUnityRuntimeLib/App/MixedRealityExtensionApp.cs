@@ -859,9 +859,9 @@ namespace MixedRealityExtension.App
         [CommandHandler(typeof(DEPRECATED_StartAnimation))]
         private void OnStartAnimation(DEPRECATED_StartAnimation payload)
         {
-            bool enabled = payload.Paused.HasValue && payload.Paused.Value;
+            bool paused = payload.Paused.HasValue && payload.Paused.Value;
             _actorManager.FindActor(payload.ActorId)?.GetOrCreateActorComponent<AnimationComponent>()
-                .SetAnimationState(payload.AnimationName, payload.AnimationTime, speed: null, enabled);
+                .SetAnimationState(payload.AnimationName, payload.AnimationTime, speed: null, !paused);
         }
 
         [CommandHandler(typeof(DEPRECATED_StopAnimation))]
