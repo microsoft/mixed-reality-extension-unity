@@ -11,7 +11,7 @@ namespace MixedRealityExtension.Animation
     /// <summary>
     /// Class that represents the state of an animation.
     /// </summary>
-    public class MWAnimationState
+    public class MWActorAnimationState
     {
         /// <summary>
         /// The id of the actor of the animation.
@@ -24,18 +24,8 @@ namespace MixedRealityExtension.Animation
         public string AnimationName;
 
         /// <summary>
-        /// The current time offset of the animation (in seconds).
+        /// All the state options.
         /// </summary>
-        public float AnimationTime;
-
-        /// <summary>
-        /// Whether or not the animation is paused.
-        /// </summary>
-        public bool Paused;
-
-        /// <summary>
-        /// Whether or not to the animation should apply root motion when stopped/restarted.
-        /// </summary>
-        public bool HasRootMotion;
+        public MWSetAnimationStateOptions State;
     }
 }

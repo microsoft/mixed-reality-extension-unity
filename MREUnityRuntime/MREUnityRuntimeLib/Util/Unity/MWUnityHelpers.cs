@@ -107,6 +107,9 @@ namespace MixedRealityExtension.Util.Unity
                 case MWAnimationWrapMode.Loop:
                     return WrapMode.Loop;
 
+                case MWAnimationWrapMode.PingPong:
+                    return WrapMode.PingPong;
+
                 case MWAnimationWrapMode.Once:
                     return WrapMode.Once;
 
@@ -121,6 +124,9 @@ namespace MixedRealityExtension.Util.Unity
             {
                 case WrapMode.Loop:
                     return MWAnimationWrapMode.Loop;
+
+                case WrapMode.PingPong:
+                    return MWAnimationWrapMode.PingPong;
 
                 case WrapMode.Once:
                     return MWAnimationWrapMode.Once;

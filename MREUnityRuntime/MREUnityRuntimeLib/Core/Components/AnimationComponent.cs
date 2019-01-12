@@ -5,8 +5,8 @@ using System.Collections.Generic;
 
 using MixedRealityExtension.Animation;
 using MixedRealityExtension.Messaging.Events.Types;
-using MixedRealityExtension.Messaging.Payloads;
 using MixedRealityExtension.Patching.Types;
+using MixedRealityExtension.Util;
 using MixedRealityExtension.Util.Unity;
 
 using UnityEngine;
@@ -18,7 +18,17 @@ namespace MixedRealityExtension.Core.Components
     internal class AnimationComponent : ActorComponentBase
     {
         private UnityAnimation _animation;
-        private Dictionary<string, bool> _hasRootMotion = new Dictionary<string, bool>();
+
+        private class AnimationData
+        {
+            public bool Enabled;
+            public bool IsInternal;
+            public Action OnCompleteCallback;
+        }
+
+        private Dictionary<string, AnimationData> _animationData = new Dictionary<string, AnimationData>();
+
+        private bool GetAnimationData(string animationName, out AnimationData animationData) => _animationData.TryGetValue(animationName, out animationData);
 
         internal bool Animating
         {
@@ -37,12 +47,58 @@ namespace MixedRealityExtension.Core.Components
             }
         }
 
+        private void Update()
+        {
+            // Check for changes to an animation's enabled state and notify the server when a change is detected.
+            var animation = GetUnityAnimationComponent();
+            if (animation)
+            {
+                foreach (var item in animation)
+                {
+                    if (item is AnimationState)
+                    {
+                        var animationState = item as AnimationState;
+                        if (GetAnimationData(animationState.name, out AnimationData animationData))
+                        {
+                            if (animationData.Enabled != animationState.enabled)
+                            {
+                                animationData.Enabled = animationState.enabled;
+
+                                // Let the app know this animation (or interpolation) changed state.
+                                NotifySetAnimationStateEvent(
+                                    animationState.name,
+                                    animationTime: null,
+                                    animationSpeed: null,
+                                    animationEnabled: animationData.Enabled);
+
+                                // If this animation was disabled and we have an OnCompleteCallback set, call it now.
+                                if (!animationData.Enabled && animationData.OnCompleteCallback != null)
+                                {
+                                    animationData.OnCompleteCallback();
+                                }
+
+                                // If this was an internal one-shot animation (aka an interpolation), remove it.
+                                if (!animationData.Enabled && animationData.IsInternal)
+                                {
+                                    _animationData.Remove(animationState.name);
+                                    animation.RemoveClip(animationState.clip);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         internal void CreateAnimation(
             string animationName,
             IEnumerable<MWAnimationKeyframe> keyframes,
             IEnumerable<MWAnimationEvent> events,
             MWAnimationWrapMode wrapMode,
-            Action callback)
+            MWSetAnimationStateOptions initialState,
+            bool isInternal,
+            Action onCreatedCallback,
+            Action onCompleteCallback)
         {
             var continuation = new MWContinuation(AttachedActor, null, (result) =>
             {
@@ -97,6 +153,15 @@ namespace MixedRealityExtension.Core.Components
 
                 void AddTransformPatch(float time, TransformPatch value)
                 {
+                    // Work around a Unity bug/feature where all position components must be specified
+                    // in the keyframe or the missing ones get set to zero.
+                    Vector3Patch position = value?.Position;
+                    if (position != null && position.IsPatched())
+                    {
+                        if (!position.X.HasValue) { position.X = transform.localPosition.x; }
+                        if (!position.Y.HasValue) { position.Y = transform.localPosition.y; }
+                        if (!position.Z.HasValue) { position.Z = transform.localPosition.z; }
+                    }
                     AddVector3Patch(typeof(Transform), "m_LocalPosition", time, value?.Position);
                     AddQuaternionPatch(typeof(Transform), "m_LocalRotation", time, value?.Rotation);
                     AddVector3Patch(typeof(Transform), "m_LocalScale", time, value?.Scale);
@@ -122,132 +187,267 @@ namespace MixedRealityExtension.Core.Components
                     clip.SetCurve("", kv.Value.Type, kv.Key, kv.Value.Curve);
                 }
 
-                clip.AddEvent(new AnimationEvent()
+                _animationData[animationName] = new AnimationData()
                 {
-                    functionName = "AnimationEndedEvent",
-                    time = clip.length
-                });
+                    IsInternal = isInternal,
+                    OnCompleteCallback = onCompleteCallback
+                };
+
+                float initialTime = 0f;
+                float initialSpeed = 1f;
+                bool initialEnabled = false;
+
+                if (initialState != null)
+                {
+                    initialTime = initialState.Time ?? initialTime;
+                    initialSpeed = initialState.Speed ?? initialSpeed;
+                    initialEnabled = initialState.Enabled ?? initialEnabled;
+                }
 
                 var animation = GetOrCreateUnityAnimationComponent();
                 animation.AddClip(clip, animationName);
-                animation[animationName].speed = 0f;
-                animation[animationName].weight = 0f;
-                // Animations are always enabled. Playing vs. not playing is controlled by the speed and weight properties.
-                animation[animationName].enabled = true;
 
-                callback?.Invoke();
+                SetAnimationState(animationName, initialTime, initialSpeed, initialEnabled);
+
+                onCreatedCallback?.Invoke();
             });
 
             continuation.Start();
         }
 
-        internal void StartAnimation(string animationName, float? animationTime, bool? paused, bool? hasRootMotion)
+        internal void Interpolate(
+            ActorPatch finalFrame,
+            string animationName,
+            float duration,
+            float[] curve,
+            bool enabled,
+            Action onCompleteCallback)
         {
-            var animation = GetOrLookUpUnityAnimationComponent();
-            if (animation != null)
+            // Ensure duration is in range [0...n].
+            duration = Math.Max(0, duration);
+
+            // If the curve is malformed, fallback to linear.
+            if (curve.Length != 4)
             {
-                if (animation[animationName] != null)
+                curve = new float[] { 0, 0, 1, 1 };
+            }
+
+            // Are we patching the transform?
+            bool animateTransform = finalFrame.Transform != null && finalFrame.Transform.IsPatched();
+            var finalTransform = finalFrame.Transform;
+
+            // What parts of the transform are we animating?
+            bool animatePosition = animateTransform && finalTransform.Position != null && finalTransform.Position.IsPatched();
+            bool animateRotation = animateTransform && finalTransform.Rotation != null && finalTransform.Rotation.IsPatched();
+            bool animateScale = animateTransform && finalTransform.Scale != null && finalTransform.Scale.IsPatched();
+
+            // Ensure we have a well-formed rotation quaternion.
+            if (animateRotation)
+            {
+                bool wellFormed =
+                    finalTransform.Rotation.X.HasValue &&
+                    finalTransform.Rotation.Y.HasValue &&
+                    finalTransform.Rotation.Z.HasValue &&
+                    finalTransform.Rotation.W.HasValue;
+
+                // If quaternion is malformed, fallback to the identity.
+                if (!wellFormed)
                 {
-                    _hasRootMotion[animationName] = hasRootMotion.HasValue && hasRootMotion.Value;
-                    int scalar = paused.HasValue ? paused.Value ? 0 : 1 : 1;
-                    float time = animationTime ?? 0;
-                    animation[animationName].speed = 1f * scalar;
-                    animation[animationName].weight = 1f * scalar;
-                    animation[animationName].time = time;
+                    finalTransform.Rotation = new QuaternionPatch(Quaternion.identity);
                 }
             }
+
+            // Create the sampler to calculate ease curve values.
+            var sampler = new CubicBezier(curve[0], curve[1], curve[2], curve[3]);
+
+            bool LerpFloat(out float dest, float start, float? end, float t)
+            {
+                if (end.HasValue)
+                {
+                    dest = Mathf.LerpUnclamped(start, end.Value, t);
+                    return true;
+                }
+                dest = 0;
+                return false;
+            }
+
+            bool SlerpQuaternion(out Quaternion dest, Quaternion start, QuaternionPatch end, float t)
+            {
+                if (end != null)
+                {
+                    dest = Quaternion.SlerpUnclamped(start, new Quaternion(end.X.Value, end.Y.Value, end.Z.Value, end.W.Value), t);
+                    return true;
+                }
+                dest = Quaternion.identity;
+                return false;
+            }
+
+            void BuildKeyframePosition(MWAnimationKeyframe keyframe, float t)
+            {
+                float value;
+                if (LerpFloat(out value, transform.localPosition.x, finalTransform.Position.X, t)) { keyframe.Value.Transform.Position.X = value; }
+                if (LerpFloat(out value, transform.localPosition.y, finalTransform.Position.Y, t)) { keyframe.Value.Transform.Position.Y = value; }
+                if (LerpFloat(out value, transform.localPosition.z, finalTransform.Position.Z, t)) { keyframe.Value.Transform.Position.Z = value; }
+            }
+
+            void BuildKeyframeScale(MWAnimationKeyframe keyframe, float t)
+            {
+                float value;
+                if (LerpFloat(out value, transform.localScale.x, finalTransform.Scale.X, t)) { keyframe.Value.Transform.Scale.X = value; }
+                if (LerpFloat(out value, transform.localScale.y, finalTransform.Scale.Y, t)) { keyframe.Value.Transform.Scale.Y = value; }
+                if (LerpFloat(out value, transform.localScale.z, finalTransform.Scale.Z, t)) { keyframe.Value.Transform.Scale.Z = value; }
+            }
+
+            void BuildKeyframeRotation(MWAnimationKeyframe keyframe, float t)
+            {
+                Quaternion value;
+                if (SlerpQuaternion(out value, transform.localRotation, finalTransform.Rotation, t)) { keyframe.Value.Transform.Rotation = new QuaternionPatch(value); }
+            }
+
+            void BuildKeyframe(MWAnimationKeyframe keyframe, float unitTime)
+            {
+                float curveTime = sampler.Sample(unitTime);
+
+                if (animatePosition)
+                {
+                    BuildKeyframePosition(keyframe, curveTime);
+                }
+                if (animateRotation)
+                {
+                    BuildKeyframeRotation(keyframe, curveTime);
+                }
+                if (animateScale)
+                {
+                    BuildKeyframeScale(keyframe, curveTime);
+                }
+            }
+
+            MWAnimationKeyframe NewKeyframe(float time)
+            {
+                var keyframe = new MWAnimationKeyframe
+                {
+                    Time = time,
+                    Value = new ActorPatch()
+                };
+
+                if (animateTransform)
+                {
+                    keyframe.Value.Transform = new TransformPatch();
+                }
+                if (animatePosition)
+                {
+                    keyframe.Value.Transform.Position = new Vector3Patch();
+                }
+                if (animateRotation)
+                {
+                    keyframe.Value.Transform.Rotation = new QuaternionPatch();
+                }
+                if (animateScale)
+                {
+                    keyframe.Value.Transform.Scale = new Vector3Patch();
+                }
+                return keyframe;
+            }
+
+            const int FPS = 10;
+            float timeStep = duration / FPS;
+
+            var keyframes = new List<MWAnimationKeyframe>();
+
+            // Generate keyframes
+            float currTime = 0;
+            while (currTime <= duration)
+            {
+                var keyframe = NewKeyframe(currTime);
+                BuildKeyframe(keyframe, currTime / duration);
+                keyframes.Add(keyframe);
+                currTime += timeStep;
+            }
+
+            // Final frame (if needed)
+            if (currTime - duration > 0)
+            {
+                var keyframe = NewKeyframe(duration);
+                BuildKeyframe(keyframe, 1);
+                keyframes.Add(keyframe);
+            }
+
+            // Create and optionally start the animation.
+            CreateAnimation(
+                animationName,
+                keyframes,
+                events: null,
+                wrapMode: MWAnimationWrapMode.Once,
+                initialState: new MWSetAnimationStateOptions { Enabled = enabled },
+                isInternal: true,
+                onCreatedCallback: null,
+                onCompleteCallback);
         }
 
-        internal void StopAnimation(string animationName, float? animationTime)
+        internal void SetAnimationState(string animationName, float? time, float? speed, bool? enabled)
         {
-            var animation = GetUnityAnimationComponent();
+            var animation = GetOrCreateUnityAnimationComponent();
             if (animation)
             {
                 if (animation[animationName] != null)
                 {
-                    if (_hasRootMotion.TryGetValue(animationName, out bool dictionaryValue) && dictionaryValue)
+                    // Create the animationData if it doesn't already exist. This is the case for gltf animations.
+                    if (!GetAnimationData(animationName, out AnimationData animationData))
                     {
-                        ApplyRootMotion(animation[animationName].clip, animation[animationName].time, animationTime ?? 0f);
+                        _animationData[animationName] = animationData = new AnimationData();
                     }
 
-                    if (animationTime.HasValue)
+                    if (speed.HasValue)
                     {
-                        animation[animationName].time = animationTime.Value;
+                        animation[animationName].speed = speed.Value;
                     }
-                    animation[animationName].speed = 0f;
-
-                    AnimationStopped(animationName, animation[animationName].time);
+                    if (time.HasValue)
+                    {
+                        SetAnimationTime(animation[animationName], time.Value);
+                    }
+                    if (enabled.HasValue)
+                    {
+                        EnableAnimation(animationName, enabled.Value);
+                    }
                 }
             }
         }
 
-        internal void ResetAnimation(string animationName)
+        private void EnableAnimation(string animationName, bool? enabled)
         {
-            var animation = GetUnityAnimationComponent();
-            if (animation)
+            if (enabled.HasValue)
             {
-                if (animation[animationName] != null)
+                var animation = GetUnityAnimationComponent();
+                if (animation)
                 {
-                    if (animation[animationName].speed != 0)
+                    if (animation[animationName] != null)
                     {
-                        if (_hasRootMotion.TryGetValue(animationName, out bool dictionaryValue) && dictionaryValue)
+                        var animState = animation[animationName];
+                        var wasEnabled = animState.enabled;
+                        if (wasEnabled != enabled.Value)
                         {
-                            ApplyRootMotion(animation[animationName].clip, animation[animationName].time, 0f);
+                            animation[animationName].enabled = enabled.Value;
+                            // NOTE: animationData.Enabled will be set in the next call to Update()
                         }
+                        animation[animationName].weight = enabled.Value ? 1.0f : 0.0f;
                     }
-                    animation[animationName].time = 0;
                 }
             }
         }
 
-        internal void PauseAnimation(string animationName)
-        {
-            var animation = GetUnityAnimationComponent();
-            if (animation != null)
-            {
-                if (animation[animationName] != null)
-                {
-                    animation[animationName].speed = 0f;
-                    animation[animationName].weight = 0f;
-                    AnimationStopped(animationName, animation[animationName].time);
-                }
-            }
-        }
-
-        internal void ResumeAnimation(string animationName)
-        {
-            var animation = GetUnityAnimationComponent();
-            if (animation != null)
-            {
-                if (animation[animationName] != null)
-                {
-                    animation[animationName].speed = 1f;
-                    animation[animationName].weight = 1f;
-                }
-            }
-        }
-
-        internal IList<MWAnimationState> GetAnimationStates()
+        internal IList<MWActorAnimationState> GetAnimationStates()
         {
             var animation = GetUnityAnimationComponent();
             if (animation)
             {
-                var animationStates = new List<MWAnimationState>();
+                var animationStates = new List<MWActorAnimationState>();
                 foreach (var item in animation)
                 {
                     if (item is AnimationState)
                     {
                         var animationState = item as AnimationState;
-                        _hasRootMotion.TryGetValue(animationState.clip.name, out bool hasRootMotion );
 
-                        animationStates.Add(new MWAnimationState()
-                        {
-                            ActorId = this.AttachedActor.Id,
-                            AnimationName = animationState.name,
-                            AnimationTime = animationState.time,
-                            Paused = animationState.speed == 0,
-                            HasRootMotion = hasRootMotion
-                        });
+                        animationStates.Add(GetAnimationState(animationState));
                     }
                 }
 
@@ -257,64 +457,39 @@ namespace MixedRealityExtension.Core.Components
             return null;
         }
 
-        internal void ApplyAnimationState(MWAnimationState animationState)
+        MWActorAnimationState GetAnimationState(AnimationState animationState)
         {
-            this.StartAnimation(animationState.AnimationName, animationState.AnimationTime, animationState.Paused, animationState.HasRootMotion);
+            return new MWActorAnimationState()
+            {
+                ActorId = this.AttachedActor.Id,
+                AnimationName = animationState.name,
+                State = new MWSetAnimationStateOptions
+                {
+                    Time = animationState.time,
+                    Speed = animationState.speed,
+                    Enabled = animationState.enabled
+                }
+            };
         }
 
-        internal void AnimationStopped(string animationName, float animationTime)
+        internal void ApplyAnimationState(MWActorAnimationState animationState)
         {
-            if (AttachedActor.App.OperatingModel == OperatingModel.PeerAuthoritative && AttachedActor.App.IsAuthoritativePeer)
-            {
-                AttachedActor.App.EventManager.QueueEvent(new AnimationStoppedEvent(AttachedActor.Id, animationName, animationTime));
-            }
+            SetAnimationState(animationState.AnimationName, animationState.State.Time, animationState.State.Speed, animationState.State.Enabled);
         }
 
-        internal void ApplyRootMotion(AnimationClip clip, float beforeFrame, float afterFrame)
+        private void NotifySetAnimationStateEvent(string animationName, float? animationTime, float? animationSpeed, bool? animationEnabled)
         {
-            GameObject tempGameObject = new GameObject();
-
-            clip.SampleAnimation(tempGameObject, beforeFrame);
-            Vector3 positionAtBeforeFrame = tempGameObject.transform.localPosition;
-            Quaternion orientationAtBeforeFrame = tempGameObject.transform.localRotation;
-            float scaleAtBeforeFrame = tempGameObject.transform.localScale.y;
-            scaleAtBeforeFrame = scaleAtBeforeFrame > 0.0f ? scaleAtBeforeFrame : 1.0f;
-
-            clip.SampleAnimation(tempGameObject, afterFrame);
-            Vector3 positionAtAfterFrame = tempGameObject.transform.localPosition;
-            Quaternion orientationAtAfterFrame = tempGameObject.transform.localRotation;
-            float scaleAtAfterFrame = tempGameObject.transform.localScale.y;
-            scaleAtAfterFrame = scaleAtAfterFrame > 0.0f ? scaleAtAfterFrame : 1.0f;
-
-            Destroy(tempGameObject);
-
-            //Transform local space changes into root node's space 
-            Vector3 tempPosition = transform.position;
-            Quaternion tempRotation = transform.rotation;
-
-            Quaternion orientationChange = orientationAtBeforeFrame * Quaternion.Inverse(orientationAtAfterFrame);
-            float scaleChange = scaleAtBeforeFrame / scaleAtAfterFrame;
-
-            transform.parent.position = transform.parent.TransformPoint(positionAtBeforeFrame - positionAtAfterFrame);
-            transform.parent.rotation = orientationChange * transform.parent.rotation;
-            transform.parent.localScale *= scaleChange;
-
-            transform.position = tempPosition;
-            transform.rotation = tempRotation;
-            transform.localScale /= scaleChange;
+            AttachedActor.App.EventManager.QueueEvent(new SetAnimationStateEvent(AttachedActor.Id, animationName, animationTime, animationSpeed, animationEnabled));
         }
-        internal void AnimationEndedEvent(AnimationEvent animationEvent)
+
+        private void SetAnimationTime(AnimationState animState, float animationTime)
         {
-            if (_hasRootMotion.TryGetValue(animationEvent.animationState.name, out bool dictionaryValue) && dictionaryValue)
+            if (animationTime < 0)
             {
-                ApplyRootMotion(animationEvent.animationState.clip, animationEvent.animationState.clip.length, 0f);
+                animationTime = animState.length;
             }
 
-            if (!animationEvent.animationState.wrapMode.FromUnityWrapMode().IsLooping())
-            {
-                AnimationStopped(animationEvent.animationState.name, animationEvent.animationState.time);
-                animationEvent.animationState.speed = 0f;
-            }
+            animState.time = animationTime;
         }
 
         private UnityAnimation GetOrCreateUnityAnimationComponent()

@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using MixedRealityExtension.Core.Types;
 using Newtonsoft.Json.Linq;
 using MixedRealityExtension.Controllers;
+using Newtonsoft.Json;
 
 namespace MixedRealityExtension.Messaging.Payloads
 {
@@ -198,21 +199,21 @@ namespace MixedRealityExtension.Messaging.Payloads
         public LightPatch Light { get; set; }
     }
 
-	/// <summary>
-	/// App => Engine
-	/// Payload for when the app wants to set text on an actor
-	/// </summary>
-	public class EnableText : NetworkCommandPayload
-	{
-		/// <summary>
-		/// The id of the actor to add text to
-		/// </summary>
-		public Guid ActorId { get; set; }
+    /// <summary>
+    /// App => Engine
+    /// Payload for when the app wants to set text on an actor
+    /// </summary>
+    public class EnableText : NetworkCommandPayload
+    {
+        /// <summary>
+        /// The id of the actor to add text to
+        /// </summary>
+        public Guid ActorId { get; set; }
 
-		/// <summary>
-		/// The initial text patch
-		/// </summary>
-		public TextPatch Text { get; set; }
+        /// <summary>
+        /// The initial text patch
+        /// </summary>
+        public TextPatch Text { get; set; }
     }
 
     /// <summary>
@@ -353,26 +354,33 @@ namespace MixedRealityExtension.Messaging.Payloads
         public string AnimationName { get; set; }
 
         /// <summary>
-        /// The enumeration of animation key frames to set to the animation.
+        /// The enumeration of animation key frames to set to the animation. See <see cref="MWAnimationKeyframe"/>.
         /// </summary>
         public IEnumerable<MWAnimationKeyframe> Keyframes { get; set; }
 
         /// <summary>
-        /// The enumeration of animation events to set to the animation.
+        /// The enumeration of animation events to set to the animation. See <see cref="MWAnimationEvent"/>.
         /// </summary>
         public IEnumerable<MWAnimationEvent> Events { get; set; }
 
         /// <summary>
         /// The wrap mode of the animation. See <see cref="MWAnimationWrapMode"/>.
         /// </summary>
+        [JsonConverter(typeof(Converters.DashFormattedEnumConverter))]
         public MWAnimationWrapMode WrapMode { get; set; }
+
+        /// <summary>
+        /// (Optional) The initial time, speed, and enable state of the animation (all values also optional). See <see cref="MWSetAnimationStateOptions"/>.
+        /// </summary>
+        public MWSetAnimationStateOptions InitialState { get; set; }
     }
 
     /// <summary>
+    /// DEPRECATED
     /// App => Engine
     /// Payload for when the app wants to start an animation.
     /// </summary>
-    public class StartAnimation : NetworkCommandPayload
+    public class DEPRECATED_StartAnimation : NetworkCommandPayload
     {
         /// <summary>
         /// The id of the actor to start the animation on.
@@ -393,18 +401,14 @@ namespace MixedRealityExtension.Messaging.Payloads
         /// (Optional) Whether or not to start the animation in the paused state.
         /// </summary>
         public bool? Paused { get; set; }
-
-        /// <summary>
-        /// (Optional) Whether or not to the animation should apply root motion when stopped/restarted.
-        /// </summary>
-        public bool? HasRootMotion { get; set; }
     }
 
     /// <summary>
+    /// DEPRECATED
     /// App => Engine
     /// Payload for when the app wants to stop an animation.
     /// </summary>
-    public class StopAnimation : NetworkCommandPayload
+    public class DEPRECATED_StopAnimation : NetworkCommandPayload
     {
         /// <summary>
         /// The id of the actor to stop the animation on.
@@ -423,10 +427,11 @@ namespace MixedRealityExtension.Messaging.Payloads
     }
 
     /// <summary>
+    /// DEPRECATED
     /// App => Engine
     /// Payload for when the app wants to reset an animation.
     /// </summary>
-    public class ResetAnimation : NetworkCommandPayload
+    public class DEPRECATED_ResetAnimation : NetworkCommandPayload
     {
         /// <summary>
         /// The id of the actor to reset the animation on.
@@ -440,10 +445,11 @@ namespace MixedRealityExtension.Messaging.Payloads
     }
 
     /// <summary>
+    /// DEPRECATED
     /// App => Engine
     /// Payload for when the app wants to reset an animation.
     /// </summary>
-    public class PauseAnimation : NetworkCommandPayload
+    public class DEPRECATED_PauseAnimation : NetworkCommandPayload
     {
         /// <summary>
         /// The id of the actor to reset the animation on.
@@ -457,10 +463,11 @@ namespace MixedRealityExtension.Messaging.Payloads
     }
 
     /// <summary>
+    /// DEPRECATED
     /// App => Engine
     /// Payload for when the app wants to reset an animation.
     /// </summary>
-    public class ResumeAnimation : NetworkCommandPayload
+    public class DEPRECATED_ResumeAnimation : NetworkCommandPayload
     {
         /// <summary>
         /// The id of the actor to reset the animation on.
@@ -479,7 +486,61 @@ namespace MixedRealityExtension.Messaging.Payloads
     /// </summary>
     public class SyncAnimations : NetworkCommandPayload
     {
-        public IEnumerable<MWAnimationState> AnimationStates { get; set; }
+        public IEnumerable<MWActorAnimationState> AnimationStates { get; set; }
+    }
+
+    /// <summary>
+    /// App => Engine
+    /// Payload for when the app wants to set animation state.
+    /// </summary>
+    public class SetAnimationState : NetworkCommandPayload
+    {
+        /// <summary>
+        /// The id of the actor to reset the animation on.
+        /// </summary>
+        public Guid ActorId { get; set; }
+
+        /// <summary>
+        /// The name of the animation to reset.
+        /// </summary>
+        public string AnimationName { get; set; }
+
+        /// <summary>
+        /// The animation state to set. All fields are optional.
+        /// </summary>
+        public MWSetAnimationStateOptions State { get; set; }
+    }
+
+    /// <summary>
+    /// App => Engine
+    /// Payload for when the app wants to interpolate actor properties (position, rotation, scale. Other fields in the future).
+    /// </summary>
+    public class InterpolateActor : NetworkCommandPayload
+    {
+        /// <summary>
+        /// The id of the actor.
+        /// </summary>
+        public Guid ActorId { get; set; }
+        /// <summary>
+        /// The name given to the animation representing this interpolation.
+        /// </summary>
+        public string AnimationName { get; set; }
+        /// <summary>
+        /// The desired state to interpolate to.
+        /// </summary>
+        public ActorPatch Value { get; set; }
+        /// <summary>
+        /// The ease cubic-bezier curve parameters this interpolation will follow.
+        /// </summary>
+        public float[] Curve { get; set; }
+        /// <summary>
+        /// The duration of this interpolation (in seconds).
+        /// </summary>
+        public float Duration { get; set; }
+        /// <summary>
+        /// Whether or not to start the interpolation immediately.
+        /// </summary>
+        public bool Enabled { get; set; }
     }
 
     /// <summary>

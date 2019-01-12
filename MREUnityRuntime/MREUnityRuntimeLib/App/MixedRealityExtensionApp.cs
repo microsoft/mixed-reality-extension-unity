@@ -171,7 +171,7 @@ namespace MixedRealityExtension.App
             _conn.Open();
         }
 
-       /// <inheritdoc />
+        /// <inheritdoc />
         private void Disconnect()
         {
             try
@@ -830,13 +830,21 @@ namespace MixedRealityExtension.App
             if (actor != null)
             {
                 actor.GetOrCreateActorComponent<AnimationComponent>()
-                    .CreateAnimation(payload.AnimationName, payload.Keyframes, payload.Events, payload.WrapMode, () =>
-                    {
-                        Protocol.Send(new OperationResult()
+                    .CreateAnimation(
+                        payload.AnimationName,
+                        payload.Keyframes,
+                        payload.Events,
+                        payload.WrapMode,
+                        payload.InitialState,
+                        isInternal: false,
+                        onCreatedCallback: () =>
                         {
-                            ResultCode = OperationResultCode.Success
-                        }, payload.MessageId);
-                    });
+                            Protocol.Send(new OperationResult()
+                            {
+                                ResultCode = OperationResultCode.Success
+                            }, payload.MessageId);
+                        },
+                        onCompleteCallback: null);
             }
             else
             {
@@ -848,39 +856,40 @@ namespace MixedRealityExtension.App
             }
         }
 
-        [CommandHandler(typeof(StartAnimation))]
-        private void OnStartAnimation(StartAnimation payload)
+        [CommandHandler(typeof(DEPRECATED_StartAnimation))]
+        private void OnStartAnimation(DEPRECATED_StartAnimation payload)
         {
+            bool enabled = payload.Paused.HasValue && payload.Paused.Value;
             _actorManager.FindActor(payload.ActorId)?.GetOrCreateActorComponent<AnimationComponent>()
-                .StartAnimation(payload.AnimationName, payload.AnimationTime, payload.Paused, payload.HasRootMotion);
+                .SetAnimationState(payload.AnimationName, payload.AnimationTime, speed: null, enabled);
         }
 
-        [CommandHandler(typeof(StopAnimation))]
-        private void OnStopAnimation(StopAnimation payload)
+        [CommandHandler(typeof(DEPRECATED_StopAnimation))]
+        private void OnStopAnimation(DEPRECATED_StopAnimation payload)
         {
             _actorManager.FindActor(payload.ActorId)?.GetOrCreateActorComponent<AnimationComponent>()
-                .StopAnimation(payload.AnimationName, payload.AnimationTime);
+                .SetAnimationState(payload.AnimationName, payload.AnimationTime, speed: null, false);
         }
 
-        [CommandHandler(typeof(PauseAnimation))]
-        private void OnPauseAnimation(PauseAnimation payload)
+        [CommandHandler(typeof(DEPRECATED_PauseAnimation))]
+        private void OnPauseAnimation(DEPRECATED_PauseAnimation payload)
         {
             _actorManager.FindActor(payload.ActorId)?.GetOrCreateActorComponent<AnimationComponent>()
-                .PauseAnimation(payload.AnimationName);
+                .SetAnimationState(payload.AnimationName, time: null, speed: null, false);
         }
 
-        [CommandHandler(typeof(ResumeAnimation))]
-        private void OnResumeAnimation(ResumeAnimation payload)
+        [CommandHandler(typeof(DEPRECATED_ResumeAnimation))]
+        private void OnResumeAnimation(DEPRECATED_ResumeAnimation payload)
         {
             _actorManager.FindActor(payload.ActorId)?.GetOrCreateActorComponent<AnimationComponent>()
-                .ResumeAnimation(payload.AnimationName);
+                .SetAnimationState(payload.AnimationName, time: null, speed: null, true);
         }
 
-        [CommandHandler(typeof(ResetAnimation))]
-        private void OnResetAnimation(ResetAnimation payload)
+        [CommandHandler(typeof(DEPRECATED_ResetAnimation))]
+        private void OnResetAnimation(DEPRECATED_ResetAnimation payload)
         {
             _actorManager.FindActor(payload.ActorId)?.GetOrCreateActorComponent<AnimationComponent>()
-                .ResetAnimation(payload.AnimationName);
+                .SetAnimationState(payload.AnimationName, time: 0, speed: null, null);
         }
 
         [CommandHandler(typeof(SyncAnimations))]
@@ -891,7 +900,7 @@ namespace MixedRealityExtension.App
                 if (IsAuthoritativePeer)
                 {
                     // The authoritative peer gathers and sends the animation states of all actors.
-                    var animationStates = new List<MWAnimationState>();
+                    var animationStates = new List<MWActorAnimationState>();
                     foreach (var actor in _actorManager.Actors)
                     {
                         if (actor != null)
@@ -924,6 +933,44 @@ namespace MixedRealityExtension.App
                 {
                     ResultCode = OperationResultCode.Error,
                     Message = $"Received unexpected SyncAnimation payload"
+                }, payload.MessageId);
+            }
+        }
+
+        [CommandHandler(typeof(SetAnimationState))]
+        private void OnSetAnimationState(SetAnimationState payload)
+        {
+            _actorManager.FindActor(payload.ActorId)?.GetOrCreateActorComponent<AnimationComponent>()
+                .SetAnimationState(payload.AnimationName, payload.State.Time, payload.State.Speed, payload.State.Enabled);
+        }
+
+        [CommandHandler(typeof(InterpolateActor))]
+        private void OnInterpolateActor(InterpolateActor payload)
+        {
+            var actor = _actorManager.FindActor(payload.ActorId);
+            if (actor != null)
+            {
+                actor.GetOrCreateActorComponent<AnimationComponent>()
+                    .Interpolate(
+                        payload.Value,
+                        payload.AnimationName,
+                        payload.Duration,
+                        payload.Curve,
+                        payload.Enabled,
+                        onCompleteCallback: () =>
+                    {
+                        Protocol.Send(new OperationResult()
+                        {
+                            ResultCode = OperationResultCode.Success
+                        }, payload.MessageId);
+                    });
+            }
+            else
+            {
+                Protocol.Send(new OperationResult()
+                {
+                    ResultCode = OperationResultCode.Error,
+                    Message = $"Actor {payload.ActorId} not found"
                 }, payload.MessageId);
             }
         }

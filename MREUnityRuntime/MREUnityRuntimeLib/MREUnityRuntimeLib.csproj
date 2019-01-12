@@ -84,6 +84,7 @@
     <Compile Include="Animation\AnimationKeyframe.cs" />
     <Compile Include="Animation\AnimationState.cs" />
     <Compile Include="Animation\AnimationWrapMode.cs" />
+    <Compile Include="Animation\MWSetAnimationStateOptions.cs" />
     <Compile Include="Assets\AssetCache.cs" />
     <Compile Include="Assets\AssetGroup.cs" />
     <Compile Include="Assets\AssetSource.cs" />
@@ -158,7 +159,7 @@
     <Compile Include="Messaging\Events\MWEventManager.cs" />
     <Compile Include="Messaging\Events\Types\ActorChangedEvent.cs" />
     <Compile Include="Messaging\Events\Types\BehaviorEvent.cs" />
-    <Compile Include="Messaging\Events\Types\AnimationStoppedEvent.cs" />
+    <Compile Include="Messaging\Events\Types\SetAnimationStateEvent.cs" />
     <Compile Include="Messaging\Events\Types\UserEvent.cs" />
     <Compile Include="Messaging\Events\Types\ResponseEvent.cs" />
     <Compile Include="Messaging\Payloads\Converters\DashFormattedEnumConverter.cs" />
@@ -230,6 +231,7 @@
     <Compile Include="ProceduralToolkit\VectorE.cs" />
     <Compile Include="RPC\RPCInterface.cs" />
     <Compile Include="RPC\RPCHandler.cs" />
+    <Compile Include="Util\CubicBezier.cs" />
     <Compile Include="Util\DeterministicGuids.cs" />
     <Compile Include="Util\Logging\ConsoleLogger.cs" />
     <Compile Include="Util\Logging\UnityLogger.cs" />

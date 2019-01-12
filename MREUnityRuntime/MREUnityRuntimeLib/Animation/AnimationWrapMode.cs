@@ -14,14 +14,19 @@ namespace MixedRealityExtension.Animation
     public enum MWAnimationWrapMode
     {
         /// <summary>
-        /// At the end of the animation, stop
+        /// At the end of the animation, stop playing and reset time to zero.
         /// </summary>
         Once,
 
         /// <summary>
-        /// At the end of the animation, restart at the beginning
+        /// At the end of the animation, restart at the beginning.
         /// </summary>
         Loop,
+
+        /// <summary>
+        /// At the end of the animation, run the animation backward to the beginning, and vice versa.
+        /// </summary>
+        PingPong,
     }
 
     /// <summary>
@@ -36,7 +41,7 @@ namespace MixedRealityExtension.Animation
         /// <returns></returns>
         public static bool IsLooping(this MWAnimationWrapMode wrapMode)
         {
-            return (wrapMode == MWAnimationWrapMode.Loop);
+            return (wrapMode == MWAnimationWrapMode.Loop || wrapMode == MWAnimationWrapMode.PingPong);
         }
     }
 }
