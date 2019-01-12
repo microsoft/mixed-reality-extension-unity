@@ -38,7 +38,7 @@ namespace MixedRealityExtension.Util
             mX2 = x2;
             mY2 = y2;
 
-            // Precalculate some sample points to make more sample calculations more performant.
+            // Precalculate some sample points to make sample calculation more performant.
             if (mX1 != mY1 || mX2 != mY2)
             {
                 for (int i = 0; i < SPLINE_TABLE_SIZE; ++i)
