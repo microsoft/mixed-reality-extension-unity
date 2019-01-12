@@ -33,6 +33,13 @@ namespace MixedRealityExtension.PluginInterfaces
         UnityEngine.Object GetAsset(Guid id);
 
         /// <summary>
+        /// If an asset is in the cache, return its ID. Otherwise return null.
+        /// </summary>
+        /// <param name="asset">The asset whose ID should be returned</param>
+        /// <returns></returns>
+        Guid? GetId(UnityEngine.Object asset);
+
+        /// <summary>
         /// Cache an asset with the given lookup values.
         /// </summary>
         /// <param name="source">The origin container.</param>

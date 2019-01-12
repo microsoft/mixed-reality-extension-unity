@@ -271,8 +271,7 @@ namespace MixedRealityExtension.App
         public void UserLeave(GameObject userGO)
         {
             var user = userGO.GetComponents<User>()
-                .Where(_user => _user.AppInstanceId == this.InstanceId)
-                .FirstOrDefault();
+                .FirstOrDefault(_user => _user.AppInstanceId == this.InstanceId);
 
             if (user != null)
             {

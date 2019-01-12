@@ -66,6 +66,8 @@ namespace MixedRealityExtension.Core
 
         internal MWTransform LocalTransform => transform.ToMWTransform();
 
+        internal Guid? MaterialId { get; set; }
+
         internal bool Animating
         {
             get
@@ -200,6 +202,7 @@ namespace MixedRealityExtension.Core
                 RigidBody = rigidBody,
                 //Light = Light
                 // TODO: Generate patch from text
+                MaterialId = MaterialId
             };
 
             return (!actorPatch.IsPatched()) ? null : actorPatch;
@@ -409,6 +412,7 @@ namespace MixedRealityExtension.Core
             // Material
             if (patch.MaterialId != null)
             {
+                MaterialId = patch.MaterialId;
                 var sharedMat = MREAPI.AppsAPI.AssetCache.GetAsset(patch.MaterialId.Value) as Material;
                 if (sharedMat != null)
                 {
