@@ -40,12 +40,12 @@ namespace MixedRealityExtension.Factories
                         definition.Radius.GetValueOrDefault(0.5f),
                         definition.USegments.GetValueOrDefault(36),
                         definition.VSegments.GetValueOrDefault(36),
-                        false);
+                        true);
                     break;
 
                 case PrimitiveShape.Box:
                     dims = dims ?? new MWVector3(1, 1, 1);
-                    meshDraft = MeshDraft.Hexahedron(dims.X, dims.Z, dims.Y, false);
+                    meshDraft = MeshDraft.Hexahedron(dims.X, dims.Z, dims.Y, true);
                     break;
 
                 case PrimitiveShape.Capsule:
@@ -73,7 +73,7 @@ namespace MixedRealityExtension.Factories
                         definition.Radius.GetValueOrDefault(0.5f),
                         definition.USegments.GetValueOrDefault(36),
                         dims.LargestComponentValue(),
-                        false);
+                        true);
 
                     // default cylinder is Y-aligned; rotate if necessary
                     if (dims.LargestComponentIndex() == 0)

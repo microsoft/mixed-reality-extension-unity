@@ -417,7 +417,7 @@ namespace MixedRealityExtension.Core
                 if (sharedMat != null)
                 {
                     var renderer = GetComponent<Renderer>();
-                    renderer.sharedMaterial = sharedMat;
+                    renderer?.sharedMaterial = sharedMat;
                 }
             }
 
