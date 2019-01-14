@@ -154,13 +154,22 @@ namespace MixedRealityExtension.Core.Components
                 void AddTransformPatch(float time, TransformPatch value)
                 {
                     // Work around a Unity bug/feature where all position components must be specified
-                    // in the keyframe or the missing ones get set to zero.
+                    // in the keyframe or the missing fields get set to zero.
                     Vector3Patch position = value?.Position;
                     if (position != null && position.IsPatched())
                     {
                         if (!position.X.HasValue) { position.X = transform.localPosition.x; }
                         if (!position.Y.HasValue) { position.Y = transform.localPosition.y; }
                         if (!position.Z.HasValue) { position.Z = transform.localPosition.z; }
+                    }
+                    // Work around a Unity bug/feature where all scale components must be specified
+                    // in the keyframe or the missing fields get set to one.
+                    Vector3Patch scale = value?.Scale;
+                    if (scale != null && scale.IsPatched())
+                    {
+                        if (!scale.X.HasValue) { scale.X = transform.localScale.x; }
+                        if (!scale.Y.HasValue) { scale.Y = transform.localScale.y; }
+                        if (!scale.Z.HasValue) { scale.Z = transform.localScale.z; }
                     }
                     AddVector3Patch(typeof(Transform), "m_LocalPosition", time, value?.Position);
                     AddQuaternionPatch(typeof(Transform), "m_LocalRotation", time, value?.Rotation);
