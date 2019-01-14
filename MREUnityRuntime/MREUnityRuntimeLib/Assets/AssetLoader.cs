@@ -4,6 +4,7 @@ using MixedRealityExtension.API;
 using MixedRealityExtension.App;
 using MixedRealityExtension.Core;
 using MixedRealityExtension.Core.Types;
+using MixedRealityExtension.Factories;
 using MixedRealityExtension.Messaging;
 using MixedRealityExtension.Messaging.Commands;
 using MixedRealityExtension.Messaging.Payloads;
@@ -20,6 +21,7 @@ using MWMaterial = MixedRealityExtension.Assets.Material;
 
 namespace MixedRealityExtension.Assets
 {
+    using Collider = Core.Collider;
     using LoaderFunction = Func<AssetSource, Task<IList<Asset>>>;
 
     internal class AssetLoader : ICommandHandlerContext
@@ -102,7 +104,7 @@ namespace MixedRealityExtension.Assets
             return actors;
         }
 
-        internal IList<Actor> CreateFromPrefab(Guid prefabId, Guid? parentId)
+        internal IList<Actor> CreateFromPrefab(Guid prefabId, Guid? parentId, ColliderType colliderType)
         {
             GameObject prefab = MREAPI.AppsAPI.AssetCache.GetAsset(prefabId) as GameObject;
             if (prefab == null)
@@ -112,6 +114,37 @@ namespace MixedRealityExtension.Assets
 
             GameObject instance = UnityEngine.Object.Instantiate(
                 prefab, GetGameObjectFromParentId(parentId).transform, false);
+
+            if (colliderType != ColliderType.None && Collider.ColliderTypeToPrimitiveShape(colliderType, out PrimitiveShape primitiveShape))
+            {
+                var bounds = instance.GetComponentInChildren<Renderer>()?.bounds.size;
+                if (bounds.HasValue)
+                {
+                    switch (primitiveShape)
+                    {
+                        case PrimitiveShape.Box:
+                            {
+                                PrimitiveDefinition def = new PrimitiveDefinition()
+                                {
+                                    Shape = primitiveShape,
+                                    Dimensions = bounds.Value.ToMWVector3()
+                                };
+                                instance.AddColliderToPrimitive(def);
+                            }
+                            break;
+                        case PrimitiveShape.Sphere:
+                            {
+                                PrimitiveDefinition def = new PrimitiveDefinition()
+                                {
+                                    Shape = primitiveShape,
+                                    Radius = bounds.Value.magnitude * 0.5f
+                                };
+                                instance.AddColliderToPrimitive(def);
+                            }
+                            break;
+                    }
+                }
+            }
 
             var actorList = new List<Actor>();
             MWGOTreeWalker.VisitTree(instance, go =>

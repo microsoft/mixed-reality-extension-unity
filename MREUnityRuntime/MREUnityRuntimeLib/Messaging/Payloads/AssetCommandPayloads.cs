@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using MixedRealityExtension.Assets;
+using MixedRealityExtension.Core;
 
 namespace MixedRealityExtension.Messaging.Payloads
 {
@@ -44,8 +45,11 @@ namespace MixedRealityExtension.Messaging.Payloads
         /// <summary>
         /// The ID of an already-loaded asset
         /// </summary>
-        public Guid PrefabId;
+        public Guid PrefabId { get; set; }
+
+        /// <summary>
+        /// The type of collider to add to the actor upon creation.
+        /// </summary>
+        public ColliderType ColliderType { get; set; }
     }
-
-
 }

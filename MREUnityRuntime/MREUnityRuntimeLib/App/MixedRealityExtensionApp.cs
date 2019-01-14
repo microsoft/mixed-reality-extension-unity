@@ -686,7 +686,7 @@ namespace MixedRealityExtension.App
                 _actorManager.Reserve(payload.Actor?.Id);
                 try
                 {
-                    var createdActors = _assetLoader.CreateFromPrefab(payload.PrefabId, payload.Actor?.ParentId);
+                    var createdActors = _assetLoader.CreateFromPrefab(payload.PrefabId, payload.Actor?.ParentId, payload.ColliderType);
                     ProcessCreatedActors(payload, createdActors, createdActors?[0].gameObject);
                 }
                 catch (Exception e)
