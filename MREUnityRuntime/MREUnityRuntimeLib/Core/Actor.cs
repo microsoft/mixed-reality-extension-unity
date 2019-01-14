@@ -38,6 +38,9 @@ namespace MixedRealityExtension.Core
 
         public override Vector3 LookAtPosition => transform.position;
 
+        private new Renderer renderer = null;
+        private Renderer Renderer => renderer = renderer ?? GetComponent<Renderer>();
+
         #region IActor Properties - Public
 
         /// <inheritdoc />
@@ -65,6 +68,9 @@ namespace MixedRealityExtension.Core
         internal IText Text { get; private set; }
 
         internal MWTransform LocalTransform => transform.ToMWTransform();
+
+        internal Guid? MaterialId { get; set; }
+        private UnityEngine.Material originalMaterial;
 
         internal bool Animating
         {
@@ -200,6 +206,7 @@ namespace MixedRealityExtension.Core
                 RigidBody = rigidBody,
                 //Light = Light
                 // TODO: Generate patch from text
+                MaterialId = MaterialId
             };
 
             return (!actorPatch.IsPatched()) ? null : actorPatch;
@@ -404,6 +411,29 @@ namespace MixedRealityExtension.Core
             if (patch.Name != null)
             {
                 Name = patch.Name;
+            }
+
+            // Material
+            if (Renderer != null)
+            {
+                if (originalMaterial == null)
+                {
+                    originalMaterial = Renderer.sharedMaterial;
+                }
+
+                if (patch.MaterialId != null)
+                {
+                    MaterialId = patch.MaterialId;
+                    var sharedMat = MREAPI.AppsAPI.AssetCache.GetAsset(patch.MaterialId.Value) as Material;
+                    if (sharedMat != null)
+                    {
+                        Renderer.sharedMaterial = sharedMat;
+                    }
+                }
+                else
+                {
+                    Renderer.sharedMaterial = originalMaterial;
+                }
             }
 
             // Transform

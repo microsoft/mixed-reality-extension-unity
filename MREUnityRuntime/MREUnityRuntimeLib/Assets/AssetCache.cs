@@ -14,6 +14,7 @@ namespace MixedRealityExtension.Assets
     public class AssetCache : IAssetCache
     {
         private readonly Dictionary<Guid, Object> assets = new Dictionary<Guid, Object>(100);
+        private readonly Dictionary<Object, Guid> ids = new Dictionary<Object, Guid>(100);
         private readonly Dictionary<AssetSource, List<Guid>> assetsBySource = new Dictionary<AssetSource, List<Guid>>(10);
         private readonly GameObject cacheRoot;
         private readonly GameObject emptyTemplate;
@@ -53,6 +54,13 @@ namespace MixedRealityExtension.Assets
             return asset;
         }
 
+        /// <inheritdoc cref="GetId"/>
+        public Guid? GetId(Object asset)
+        {
+            ids.TryGetValue(asset, out var guid);
+            return guid;
+        }
+
         /// <inheritdoc cref="CacheAsset"/>
         public void CacheAsset(AssetSource source, Guid id, Object asset)
         {
@@ -63,6 +71,7 @@ namespace MixedRealityExtension.Assets
 
             assetsBySource[source].Add(id);
             assets[id] = asset;
+            ids[asset] = id;
         }
     }
 }

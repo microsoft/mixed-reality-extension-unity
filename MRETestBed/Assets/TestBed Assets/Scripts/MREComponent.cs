@@ -81,7 +81,7 @@ public class MREComponent : MonoBehaviour
     private Font SansSerifFont;
 
     [SerializeField]
-    private Material DefaultPrimMaterial;
+    private UnityEngine.Material DefaultPrimMaterial;
 
     void Start()
     {

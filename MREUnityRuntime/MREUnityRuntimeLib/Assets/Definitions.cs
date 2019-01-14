@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 using System;
+using MixedRealityExtension.Core.Types;
 using Newtonsoft.Json;
 
 namespace MixedRealityExtension.Assets
@@ -29,7 +30,12 @@ namespace MixedRealityExtension.Assets
         /// <summary>
         /// If this asset is a prefab, contains those properties
         /// </summary>
-        public Prefab Prefab;
+        public Prefab? Prefab;
+
+        /// <summary>
+        /// If this asset is a material, contains those properties
+        /// </summary>
+        public Material? Material;
     }
 
     /// <summary>
@@ -57,5 +63,16 @@ namespace MixedRealityExtension.Assets
         /// The number of actors described in this prefab.
         /// </summary>
         public int ActorCount;
+    }
+
+    /// <summary>
+    /// Contains material asset info
+    /// </summary>
+    public struct Material
+    {
+        /// <summary>
+        /// The main color of the material
+        /// </summary>
+        public MWColor Color;
     }
 }

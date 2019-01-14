@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 using System.IO;
 using GLTF.Schema;
+using MixedRealityExtension.Assets;
 using UnityGLTF;
 using UnityGLTF.Loader;
 

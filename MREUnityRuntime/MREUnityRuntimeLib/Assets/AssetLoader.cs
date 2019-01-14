@@ -16,6 +16,7 @@ using System.Threading.Tasks;
 using UnityEngine;
 using UnityGLTF;
 using UnityGLTF.Loader;
+using MWMaterial = MixedRealityExtension.Assets.Material;
 
 namespace MixedRealityExtension.Assets
 {
@@ -113,7 +114,17 @@ namespace MixedRealityExtension.Assets
                 prefab, GetGameObjectFromParentId(parentId).transform, false);
 
             var actorList = new List<Actor>();
-            MWGOTreeWalker.VisitTree(instance, go => actorList.Add(go.AddComponent<Actor>()));
+            MWGOTreeWalker.VisitTree(instance, go =>
+            {
+                var actor = go.AddComponent<Actor>();
+                actorList.Add(actor);
+
+                var renderer = go.GetComponent<Renderer>();
+                if (renderer != null)
+                {
+                    actor.MaterialId = MREAPI.AppsAPI.AssetCache.GetId(renderer.sharedMaterial);
+                }
+            });
 
             return actorList;
         }
@@ -176,28 +187,56 @@ namespace MixedRealityExtension.Assets
                 MREAPI.AppsAPI.GLTFImporterFactory.CreateImporter(gltfRoot, loader, _asyncHelper, loader.LoadedStream);
             importer.SceneParent = MREAPI.AppsAPI.AssetCache.CacheRootGO().transform;
 
-            await importer.LoadSceneAsync();
-
-            GameObject rootObject = importer.LastLoadedScene;
-            int actorCount = 0;
-            MWGOTreeWalker.VisitTree(rootObject, (go) =>
+            // load prefabs
+            if (gltfRoot.Scenes != null)
             {
-                go.layer = UnityConstants.ActorLayerIndex;
-                actorCount++;
-            });
-
-            Asset def = new Asset
-            {
-                Id = guidGenerator.Next(),
-                Name = gltfRoot.GetDefaultScene().Name,
-                Source = source,
-                Prefab = new Prefab
+                for (var i = 0; i < gltfRoot.Scenes.Count; i++)
                 {
-                    ActorCount = actorCount
+                    await importer.LoadSceneAsync(i);
+
+                    GameObject rootObject = importer.LastLoadedScene;
+                    int actorCount = 0;
+                    MWGOTreeWalker.VisitTree(rootObject, (go) =>
+                    {
+                        go.layer = UnityConstants.ActorLayerIndex;
+                        actorCount++;
+                    });
+
+                    Asset def = new Asset
+                    {
+                        Id = guidGenerator.Next(),
+                        Name = gltfRoot.Scenes[i].Name ?? $"scene:{i}",
+                        Source = source,
+                        Prefab = new Prefab
+                        {
+                            ActorCount = actorCount
+                        }
+                    };
+                    MREAPI.AppsAPI.AssetCache.CacheAsset(source, def.Id, rootObject);
+                    assets.Add(def);
                 }
-            };
-            MREAPI.AppsAPI.AssetCache.CacheAsset(source, def.Id, rootObject);
-            assets.Add(def);
+            }
+
+            // load materials
+            if (gltfRoot.Materials != null)
+            {
+                for (var i = 0; i < gltfRoot.Materials.Count; i++)
+                {
+                    var material = await importer.LoadMaterialAsync(i);
+                    var asset = new Asset()
+                    {
+                        Id = guidGenerator.Next(),
+                        Name = gltfRoot.Materials[i].Name ?? $"material:{i}",
+                        Source = source,
+                        Material = new MWMaterial()
+                        {
+                            Color = material.color.ToMWColor()
+                        }
+                    };
+                    MREAPI.AppsAPI.AssetCache.CacheAsset(source, asset.Id, material);
+                    assets.Add(asset);
+                }
+            }
 
             importer.Dispose();
 
