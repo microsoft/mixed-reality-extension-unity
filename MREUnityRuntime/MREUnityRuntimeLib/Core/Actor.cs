@@ -38,6 +38,9 @@ namespace MixedRealityExtension.Core
 
         public override Vector3 LookAtPosition => transform.position;
 
+        private new Renderer renderer = null;
+        private Renderer Renderer => renderer = renderer ?? GetComponent<Renderer>();
+
         #region IActor Properties - Public
 
         /// <inheritdoc />
@@ -67,6 +70,7 @@ namespace MixedRealityExtension.Core
         internal MWTransform LocalTransform => transform.ToMWTransform();
 
         internal Guid? MaterialId { get; set; }
+        private UnityEngine.Material originalMaterial;
 
         internal bool Animating
         {
@@ -410,14 +414,25 @@ namespace MixedRealityExtension.Core
             }
 
             // Material
-            if (patch.MaterialId != null)
+            if (Renderer != null)
             {
-                MaterialId = patch.MaterialId;
-                var sharedMat = MREAPI.AppsAPI.AssetCache.GetAsset(patch.MaterialId.Value) as Material;
-                if (sharedMat != null)
+                if (originalMaterial == null)
                 {
-                    var renderer = GetComponent<Renderer>();
-                    renderer?.sharedMaterial = sharedMat;
+                    originalMaterial = Renderer.sharedMaterial;
+                }
+
+                if (patch.MaterialId != null)
+                {
+                    MaterialId = patch.MaterialId;
+                    var sharedMat = MREAPI.AppsAPI.AssetCache.GetAsset(patch.MaterialId.Value) as Material;
+                    if (sharedMat != null)
+                    {
+                        Renderer.sharedMaterial = sharedMat;
+                    }
+                }
+                else
+                {
+                    Renderer.sharedMaterial = originalMaterial;
                 }
             }
 
