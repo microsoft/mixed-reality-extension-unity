@@ -251,23 +251,82 @@ namespace MixedRealityExtension.Core.Components
             bool animateScale = animateTransform && finalTransform.Scale != null && finalTransform.Scale.IsPatched();
 
             // Ensure we have a well-formed rotation quaternion.
-            if (animateRotation)
+            for (; animateRotation; )
             {
-                bool wellFormed =
-                    finalTransform.Rotation.X.HasValue &&
-                    finalTransform.Rotation.Y.HasValue &&
-                    finalTransform.Rotation.Z.HasValue &&
-                    finalTransform.Rotation.W.HasValue;
+                var rotation = finalTransform.Rotation;
+                bool hasAllComponents =
+                    rotation.X.HasValue &&
+                    rotation.Y.HasValue &&
+                    rotation.Z.HasValue &&
+                    rotation.W.HasValue;
 
-                // If quaternion is malformed, fallback to the identity.
-                if (!wellFormed)
+                // If quaternion is incomplete, fallback to the identity.
+                if (!hasAllComponents)
                 {
                     finalTransform.Rotation = new QuaternionPatch(Quaternion.identity);
+                    break;
                 }
+
+                // Ensure the quaternion is normalized.
+                var lengthSquared =
+                    (rotation.X.Value * rotation.X.Value) +
+                    (rotation.Y.Value * rotation.Y.Value) +
+                    (rotation.Z.Value * rotation.Z.Value) +
+                    (rotation.W.Value * rotation.W.Value);
+                if (lengthSquared == 0)
+                {
+                    // If the quaternion is length zero, fallback to the identity.
+                    finalTransform.Rotation = new QuaternionPatch(Quaternion.identity);
+                    break;
+                }
+                else if (lengthSquared != 1.0f)
+                {
+                    // If the quaternion length is not 1, normalize it.
+                    var inverseLength = 1.0f / Mathf.Sqrt(lengthSquared);
+                    rotation.X *= inverseLength;
+                    rotation.Y *= inverseLength;
+                    rotation.Z *= inverseLength;
+                    rotation.W *= inverseLength;
+                }
+                break;
             }
 
             // Create the sampler to calculate ease curve values.
             var sampler = new CubicBezier(curve[0], curve[1], curve[2], curve[3]);
+
+            const int FPS = 10;
+            float timeStep = duration / FPS;
+
+            var keyframes = new List<MWAnimationKeyframe>();
+
+            // Generate keyframes
+            float currTime = 0;
+            while (currTime <= duration)
+            {
+                var keyframe = NewKeyframe(currTime);
+                BuildKeyframe(keyframe, currTime / duration);
+                keyframes.Add(keyframe);
+                currTime += timeStep;
+            }
+
+            // Final frame (if needed)
+            if (currTime - duration > 0)
+            {
+                var keyframe = NewKeyframe(duration);
+                BuildKeyframe(keyframe, 1);
+                keyframes.Add(keyframe);
+            }
+
+            // Create and optionally start the animation.
+            CreateAnimation(
+                animationName,
+                keyframes,
+                events: null,
+                wrapMode: MWAnimationWrapMode.Once,
+                initialState: new MWSetAnimationStateOptions { Enabled = enabled },
+                isInternal: true,
+                onCreatedCallback: null,
+                onCompleteCallback);
 
             bool LerpFloat(out float dest, float start, float? end, float t)
             {
@@ -357,40 +416,6 @@ namespace MixedRealityExtension.Core.Components
                 }
                 return keyframe;
             }
-
-            const int FPS = 10;
-            float timeStep = duration / FPS;
-
-            var keyframes = new List<MWAnimationKeyframe>();
-
-            // Generate keyframes
-            float currTime = 0;
-            while (currTime <= duration)
-            {
-                var keyframe = NewKeyframe(currTime);
-                BuildKeyframe(keyframe, currTime / duration);
-                keyframes.Add(keyframe);
-                currTime += timeStep;
-            }
-
-            // Final frame (if needed)
-            if (currTime - duration > 0)
-            {
-                var keyframe = NewKeyframe(duration);
-                BuildKeyframe(keyframe, 1);
-                keyframes.Add(keyframe);
-            }
-
-            // Create and optionally start the animation.
-            CreateAnimation(
-                animationName,
-                keyframes,
-                events: null,
-                wrapMode: MWAnimationWrapMode.Once,
-                initialState: new MWSetAnimationStateOptions { Enabled = enabled },
-                isInternal: true,
-                onCreatedCallback: null,
-                onCompleteCallback);
         }
 
         internal void SetAnimationState(string animationName, float? time, float? speed, bool? enabled)
