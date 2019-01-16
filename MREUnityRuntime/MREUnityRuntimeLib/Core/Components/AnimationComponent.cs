@@ -235,6 +235,9 @@ namespace MixedRealityExtension.Core.Components
             // Ensure duration is in range [0...n].
             duration = Math.Max(0, duration);
 
+            const int FPS = 10;
+            float timeStep = duration / FPS;
+
             // If the curve is malformed, fallback to linear.
             if (curve.Length != 4)
             {
@@ -293,9 +296,6 @@ namespace MixedRealityExtension.Core.Components
 
             // Create the sampler to calculate ease curve values.
             var sampler = new CubicBezier(curve[0], curve[1], curve[2], curve[3]);
-
-            const int FPS = 10;
-            float timeStep = duration / FPS;
 
             var keyframes = new List<MWAnimationKeyframe>();
 
