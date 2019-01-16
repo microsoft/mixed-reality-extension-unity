@@ -251,7 +251,7 @@ namespace MixedRealityExtension.Core.Components
             bool animateScale = animateTransform && finalTransform.Scale != null && finalTransform.Scale.IsPatched();
 
             // Ensure we have a well-formed rotation quaternion.
-            for (; animateRotation; )
+            for (; animateRotation;)
             {
                 var rotation = finalTransform.Rotation;
                 bool hasAllComponents =
@@ -353,23 +353,44 @@ namespace MixedRealityExtension.Core.Components
             void BuildKeyframePosition(MWAnimationKeyframe keyframe, float t)
             {
                 float value;
-                if (LerpFloat(out value, transform.localPosition.x, finalTransform.Position.X, t)) { keyframe.Value.Transform.Position.X = value; }
-                if (LerpFloat(out value, transform.localPosition.y, finalTransform.Position.Y, t)) { keyframe.Value.Transform.Position.Y = value; }
-                if (LerpFloat(out value, transform.localPosition.z, finalTransform.Position.Z, t)) { keyframe.Value.Transform.Position.Z = value; }
+                if (LerpFloat(out value, transform.localPosition.x, finalTransform.Position.X, t))
+                {
+                    keyframe.Value.Transform.Position.X = value;
+                }
+                if (LerpFloat(out value, transform.localPosition.y, finalTransform.Position.Y, t))
+                {
+                    keyframe.Value.Transform.Position.Y = value;
+                }
+                if (LerpFloat(out value, transform.localPosition.z, finalTransform.Position.Z, t))
+                {
+                    keyframe.Value.Transform.Position.Z = value;
+                }
             }
 
             void BuildKeyframeScale(MWAnimationKeyframe keyframe, float t)
             {
                 float value;
-                if (LerpFloat(out value, transform.localScale.x, finalTransform.Scale.X, t)) { keyframe.Value.Transform.Scale.X = value; }
-                if (LerpFloat(out value, transform.localScale.y, finalTransform.Scale.Y, t)) { keyframe.Value.Transform.Scale.Y = value; }
-                if (LerpFloat(out value, transform.localScale.z, finalTransform.Scale.Z, t)) { keyframe.Value.Transform.Scale.Z = value; }
+                if (LerpFloat(out value, transform.localScale.x, finalTransform.Scale.X, t))
+                {
+                    keyframe.Value.Transform.Scale.X = value;
+                }
+                if (LerpFloat(out value, transform.localScale.y, finalTransform.Scale.Y, t))
+                {
+                    keyframe.Value.Transform.Scale.Y = value;
+                }
+                if (LerpFloat(out value, transform.localScale.z, finalTransform.Scale.Z, t))
+                {
+                    keyframe.Value.Transform.Scale.Z = value;
+                }
             }
 
             void BuildKeyframeRotation(MWAnimationKeyframe keyframe, float t)
             {
                 Quaternion value;
-                if (SlerpQuaternion(out value, transform.localRotation, finalTransform.Rotation, t)) { keyframe.Value.Transform.Rotation = new QuaternionPatch(value); }
+                if (SlerpQuaternion(out value, transform.localRotation, finalTransform.Rotation, t))
+                {
+                    keyframe.Value.Transform.Rotation = new QuaternionPatch(value);
+                }
             }
 
             void BuildKeyframe(MWAnimationKeyframe keyframe, float unitTime)
