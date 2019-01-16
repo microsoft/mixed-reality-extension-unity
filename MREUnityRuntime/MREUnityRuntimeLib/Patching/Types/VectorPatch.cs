@@ -36,6 +36,16 @@ namespace MixedRealityExtension.Patching.Types
             Z = vector3.z;
         }
 
+        public Vector3Patch(Vector3Patch other)
+        {
+            if (other != null)
+            {
+                X = other.X;
+                Y = other.Y;
+                Z = other.Z;
+            }
+        }
+
         public bool Equals(Vector3Patch other)
         {
             if (other == null)

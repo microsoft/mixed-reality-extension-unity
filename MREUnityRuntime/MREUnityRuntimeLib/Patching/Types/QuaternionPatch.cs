@@ -41,6 +41,17 @@ namespace MixedRealityExtension.Patching.Types
             W = quaternion.w;
         }
 
+        internal QuaternionPatch(QuaternionPatch other)
+        {
+            if (other != null)
+            {
+                X = other.X;
+                Y = other.Y;
+                Z = other.Z;
+                W = other.W;
+            }
+        }
+
         //public QuaternionPatch ToQuaternion()
         //{
         //    return new Quaternion()

@@ -551,10 +551,10 @@ namespace MixedRealityExtension.Core
                 return false;
             }
 
-            // Sync all updates to the app if we're operating in a peer-authoritative model and we're the authoritative peer, unless the actor is currently animating.
+            // Sync all updates to the app if we're operating in a peer-authoritative model and we're the authoritative peer.
             if (App.OperatingModel == OperatingModel.PeerAuthoritative && App.IsAuthoritativePeer)
             {
-                return !Animating;
+                return true;
             }
 
             // Sync this update to the app if we're operating in a server-authoritative model and the app has registered interest in this setting.
