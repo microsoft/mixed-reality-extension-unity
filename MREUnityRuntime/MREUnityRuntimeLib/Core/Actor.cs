@@ -59,7 +59,7 @@ namespace MixedRealityExtension.Core
 
         #region Properties - Internal
 
-        internal Guid ParentId { get; private set; }
+        internal Guid? ParentId { get; private set; }
 
         internal RigidBody RigidBody { get; private set; }
 
@@ -155,7 +155,7 @@ namespace MixedRealityExtension.Core
 
         internal void ApplyPatch(ActorPatch actorPatch)
         {
-            var parent = App.FindActor(ParentId);
+            var parent = ParentId != null ? App.FindActor(ParentId.Value) : Parent;
             ApplyPatchInternal(actorPatch, parent);
         }
 
@@ -180,6 +180,11 @@ namespace MixedRealityExtension.Core
 
         internal ActorPatch GeneratePatch(SubscriptionType? interests = null)
         {
+            if (ParentId == null)
+            {
+                ParentId = Parent?.Id ?? Guid.Empty;
+            }
+
             SubscriptionType subs = interests ?? _subscriptions;
 
             var transform = ((subs & SubscriptionType.Transform) != SubscriptionType.None) ?
@@ -280,7 +285,7 @@ namespace MixedRealityExtension.Core
 
         internal IActor GetParent()
         {
-            return App.FindActor(ParentId);
+            return ParentId != null ? App.FindActor(ParentId.Value) : Parent;
         }
 
         internal void AddSubscriptions(IEnumerable<SubscriptionType> adds)
