@@ -738,7 +738,7 @@ namespace MixedRealityExtension.App
                 },
 
                 Traces = new List<Trace>() { trace },
-                Actors = (actors?.Select((actor) => actor.GeneratePatch(SubscriptionType.All)) ?? new ActorPatch[] { }).ToList()
+                Actors = actors?.Select((actor) => actor.GeneratePatch(SubscriptionType.All)) ?? new ActorPatch[] { }
             },
                 originalMessage.MessageId);
         }
