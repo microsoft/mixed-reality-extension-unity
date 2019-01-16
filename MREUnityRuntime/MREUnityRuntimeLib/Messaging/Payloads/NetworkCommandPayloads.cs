@@ -26,7 +26,7 @@ namespace MixedRealityExtension.Messaging.Payloads
         /// <summary>
         /// The arguments to the remote procedure call.
         /// </summary>
-        public JArray Args { get; set; }
+        public JArray Args { get; set; } = new JArray();
     }
 
     /// <summary>
