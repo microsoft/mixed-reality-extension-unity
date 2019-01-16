@@ -826,32 +826,43 @@ namespace MixedRealityExtension.App
         [CommandHandler(typeof(CreateAnimation))]
         private void OnCreateAnimation(CreateAnimation payload)
         {
-            var actor = _actorManager.FindActor(payload.ActorId);
-            if (actor != null)
+            try
             {
-                actor.GetOrCreateActorComponent<AnimationComponent>()
-                    .CreateAnimation(
-                        payload.AnimationName,
-                        payload.Keyframes,
-                        payload.Events,
-                        payload.WrapMode,
-                        payload.InitialState,
-                        isInternal: false,
-                        onCreatedCallback: () =>
-                        {
-                            Protocol.Send(new OperationResult()
+                var actor = _actorManager.FindActor(payload.ActorId);
+                if (actor != null)
+                {
+                    actor.GetOrCreateActorComponent<AnimationComponent>()
+                        .CreateAnimation(
+                            payload.AnimationName,
+                            payload.Keyframes,
+                            payload.Events,
+                            payload.WrapMode,
+                            payload.InitialState,
+                            isInternal: false,
+                            onCreatedCallback: () =>
                             {
-                                ResultCode = OperationResultCode.Success
-                            }, payload.MessageId);
-                        },
-                        onCompleteCallback: null);
+                                Protocol.Send(new OperationResult()
+                                {
+                                    ResultCode = OperationResultCode.Success
+                                }, payload.MessageId);
+                            },
+                            onCompleteCallback: null);
+                }
+                else
+                {
+                    Protocol.Send(new OperationResult()
+                    {
+                        ResultCode = OperationResultCode.Error,
+                        Message = $"Actor {payload.ActorId} not found"
+                    }, payload.MessageId);
+                }
             }
-            else
+            catch (Exception e)
             {
                 Protocol.Send(new OperationResult()
                 {
                     ResultCode = OperationResultCode.Error,
-                    Message = $"Actor {payload.ActorId} not found"
+                    Message = e.Message
                 }, payload.MessageId);
             }
         }
@@ -947,30 +958,41 @@ namespace MixedRealityExtension.App
         [CommandHandler(typeof(InterpolateActor))]
         private void OnInterpolateActor(InterpolateActor payload)
         {
-            var actor = _actorManager.FindActor(payload.ActorId);
-            if (actor != null)
+            try
             {
-                actor.GetOrCreateActorComponent<AnimationComponent>()
-                    .Interpolate(
-                        payload.Value,
-                        payload.AnimationName,
-                        payload.Duration,
-                        payload.Curve,
-                        payload.Enabled,
-                        onCompleteCallback: () =>
-                    {
-                        Protocol.Send(new OperationResult()
+                var actor = _actorManager.FindActor(payload.ActorId);
+                if (actor != null)
+                {
+                    actor.GetOrCreateActorComponent<AnimationComponent>()
+                        .Interpolate(
+                            payload.Value,
+                            payload.AnimationName,
+                            payload.Duration,
+                            payload.Curve,
+                            payload.Enabled,
+                            onCompleteCallback: () =>
                         {
-                            ResultCode = OperationResultCode.Success
-                        }, payload.MessageId);
-                    });
+                            Protocol.Send(new OperationResult()
+                            {
+                                ResultCode = OperationResultCode.Success
+                            }, payload.MessageId);
+                        });
+                }
+                else
+                {
+                    Protocol.Send(new OperationResult()
+                    {
+                        ResultCode = OperationResultCode.Error,
+                        Message = $"Actor {payload.ActorId} not found"
+                    }, payload.MessageId);
+                }
             }
-            else
+            catch (Exception e)
             {
                 Protocol.Send(new OperationResult()
                 {
                     ResultCode = OperationResultCode.Error,
-                    Message = $"Actor {payload.ActorId} not found"
+                    Message = e.Message
                 }, payload.MessageId);
             }
         }
