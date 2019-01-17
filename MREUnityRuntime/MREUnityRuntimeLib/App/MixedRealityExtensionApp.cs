@@ -903,13 +903,6 @@ namespace MixedRealityExtension.App
                 .SetAnimationState(payload.AnimationName, time: 0, speed: null, null);
         }
 
-        [CommandHandler(typeof(DEPRECATED_ResetAnimation))]
-        private void OnResetAnimation(DEPRECATED_ResetAnimation payload)
-        {
-            _actorManager.FindActor(payload.ActorId)?.GetOrCreateActorComponent<AnimationComponent>()
-                .SetAnimationState(payload.AnimationName, time: 0, speed: null, null);
-        }
-
         [CommandHandler(typeof(SyncAnimations))]
         private void OnSyncAnimations(SyncAnimations payload)
         {
