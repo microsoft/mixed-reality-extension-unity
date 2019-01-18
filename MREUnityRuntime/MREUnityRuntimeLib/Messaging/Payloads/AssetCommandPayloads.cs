@@ -37,6 +37,18 @@ namespace MixedRealityExtension.Messaging.Payloads
 
     /// <summary>
     /// App => Engine
+    /// An asset has updated.
+    /// </summary>
+    public class AssetUpdate : NetworkCommandPayload
+    {
+        /// <summary>
+        /// The asset that was updated
+        /// </summary>
+        public Asset Asset;
+    }
+
+    /// <summary>
+    /// App => Engine
     /// Instructs the engine to instantiate the prefab with the given ID.
     /// </summary>
     public class CreateFromPrefab : CreateActor

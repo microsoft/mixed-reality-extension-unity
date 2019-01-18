@@ -242,5 +242,20 @@ namespace MixedRealityExtension.Assets
 
             return assets;
         }
+
+        public void OnAssetUpdate(Asset def)
+        {
+            var asset = MREAPI.AppsAPI.AssetCache.GetAsset(def.Id);
+
+            var mat = asset as UnityEngine.Material;
+            if(def.Material != null && mat != null)
+            {
+                mat.color = def.Material.Value.Color.ToColor();
+            }
+            else
+            {
+                MREAPI.Logger.LogError($"Asset {def.Id} is not patchable, or not of the right type!");
+            }
+        }
     }
 }
