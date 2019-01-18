@@ -4,7 +4,6 @@ using MixedRealityExtension.API;
 using MixedRealityExtension.App;
 using MixedRealityExtension.Core;
 using MixedRealityExtension.Core.Types;
-using MixedRealityExtension.Factories;
 using MixedRealityExtension.Messaging;
 using MixedRealityExtension.Messaging.Commands;
 using MixedRealityExtension.Messaging.Payloads;
@@ -21,7 +20,6 @@ using MWMaterial = MixedRealityExtension.Assets.Material;
 
 namespace MixedRealityExtension.Assets
 {
-    using Collider = Core.Collider;
     using LoaderFunction = Func<AssetSource, ColliderType, Task<IList<Asset>>>;
 
     internal class AssetLoader : ICommandHandlerContext
