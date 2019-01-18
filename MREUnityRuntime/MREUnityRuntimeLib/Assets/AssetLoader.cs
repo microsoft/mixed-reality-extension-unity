@@ -22,7 +22,7 @@ using MWMaterial = MixedRealityExtension.Assets.Material;
 namespace MixedRealityExtension.Assets
 {
     using Collider = Core.Collider;
-    using LoaderFunction = Func<AssetSource, Task<IList<Asset>>>;
+    using LoaderFunction = Func<AssetSource, ColliderType, Task<IList<Asset>>>;
 
     internal class AssetLoader : ICommandHandlerContext
     {
@@ -104,7 +104,7 @@ namespace MixedRealityExtension.Assets
             return actors;
         }
 
-        internal IList<Actor> CreateFromPrefab(Guid prefabId, Guid? parentId, ColliderType colliderType)
+        internal IList<Actor> CreateFromPrefab(Guid prefabId, Guid? parentId, bool enableColliders)
         {
             GameObject prefab = MREAPI.AppsAPI.AssetCache.GetAsset(prefabId) as GameObject;
             if (prefab == null)
@@ -115,35 +115,10 @@ namespace MixedRealityExtension.Assets
             GameObject instance = UnityEngine.Object.Instantiate(
                 prefab, GetGameObjectFromParentId(parentId).transform, false);
 
-            if (colliderType != ColliderType.None && Collider.ColliderTypeToPrimitiveShape(colliderType, out PrimitiveShape primitiveShape))
+            var colliders = instance.GetComponentsInChildren<UnityEngine.Collider>();
+            foreach (var collider in colliders)
             {
-                var bounds = instance.GetComponentInChildren<Renderer>()?.bounds.size;
-                if (bounds.HasValue)
-                {
-                    switch (primitiveShape)
-                    {
-                        case PrimitiveShape.Box:
-                            {
-                                PrimitiveDefinition def = new PrimitiveDefinition()
-                                {
-                                    Shape = primitiveShape,
-                                    Dimensions = bounds.Value.ToMWVector3()
-                                };
-                                instance.AddColliderToPrimitive(def);
-                            }
-                            break;
-                        case PrimitiveShape.Sphere:
-                            {
-                                PrimitiveDefinition def = new PrimitiveDefinition()
-                                {
-                                    Shape = primitiveShape,
-                                    Radius = bounds.Value.magnitude * 0.5f
-                                };
-                                instance.AddColliderToPrimitive(def);
-                            }
-                            break;
-                    }
-                }
+                collider.enabled = enableColliders;
             }
 
             var actorList = new List<Actor>();
@@ -181,7 +156,7 @@ namespace MixedRealityExtension.Assets
             string failureMessage = null;
             try
             {
-                assets = await loader(payload.Source);
+                assets = await loader(payload.Source, payload.ColliderType);
             }
             catch (Exception e)
             {
@@ -202,7 +177,7 @@ namespace MixedRealityExtension.Assets
             }
         }
 
-        private async Task<IList<Asset>> LoadAssetsFromGLTF(AssetSource source)
+        private async Task<IList<Asset>> LoadAssetsFromGLTF(AssetSource source, ColliderType colliderType)
         {
             IList<Asset> assets = new List<Asset>();
             DeterministicGuids guidGenerator = new DeterministicGuids(UtilMethods.StringToGuid(source.Uri.AbsoluteUri));
@@ -219,6 +194,7 @@ namespace MixedRealityExtension.Assets
             GLTFSceneImporter importer =
                 MREAPI.AppsAPI.GLTFImporterFactory.CreateImporter(gltfRoot, loader, _asyncHelper, loader.LoadedStream);
             importer.SceneParent = MREAPI.AppsAPI.AssetCache.CacheRootGO().transform;
+            importer.Collider = colliderType.ToGLTFColliderType();
 
             // load prefabs
             if (gltfRoot.Scenes != null)

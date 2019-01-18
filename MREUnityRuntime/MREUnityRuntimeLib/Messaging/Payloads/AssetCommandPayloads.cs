@@ -17,6 +17,11 @@ namespace MixedRealityExtension.Messaging.Payloads
         /// The asset container to load.
         /// </summary>
         public AssetSource Source;
+
+        /// <summary>
+        /// The type of collider to add to the actor upon creation.
+        /// </summary>
+        public ColliderType ColliderType;
     }
 
     /// <summary>
@@ -48,8 +53,8 @@ namespace MixedRealityExtension.Messaging.Payloads
         public Guid PrefabId { get; set; }
 
         /// <summary>
-        /// The type of collider to add to the actor upon creation.
+        /// Whether or not to enable colliders on this prefab. Prefab must have been given a collider type when loaded.
         /// </summary>
-        public ColliderType ColliderType { get; set; }
+        public bool EnableColliders { get; set; }
     }
 }
