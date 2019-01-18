@@ -20,7 +20,7 @@ using MWMaterial = MixedRealityExtension.Assets.Material;
 
 namespace MixedRealityExtension.Assets
 {
-    using LoaderFunction = Func<AssetSource, Task<IList<Asset>>>;
+    using LoaderFunction = Func<AssetSource, ColliderType, Task<IList<Asset>>>;
 
     internal class AssetLoader : ICommandHandlerContext
     {
@@ -102,7 +102,7 @@ namespace MixedRealityExtension.Assets
             return actors;
         }
 
-        internal IList<Actor> CreateFromPrefab(Guid prefabId, Guid? parentId)
+        internal IList<Actor> CreateFromPrefab(Guid prefabId, Guid? parentId, bool enableColliders)
         {
             GameObject prefab = MREAPI.AppsAPI.AssetCache.GetAsset(prefabId) as GameObject;
             if (prefab == null)
@@ -112,6 +112,12 @@ namespace MixedRealityExtension.Assets
 
             GameObject instance = UnityEngine.Object.Instantiate(
                 prefab, GetGameObjectFromParentId(parentId).transform, false);
+
+            var colliders = instance.GetComponentsInChildren<UnityEngine.Collider>();
+            foreach (var collider in colliders)
+            {
+                collider.enabled = enableColliders;
+            }
 
             var actorList = new List<Actor>();
             MWGOTreeWalker.VisitTree(instance, go =>
@@ -148,7 +154,7 @@ namespace MixedRealityExtension.Assets
             string failureMessage = null;
             try
             {
-                assets = await loader(payload.Source);
+                assets = await loader(payload.Source, payload.ColliderType);
             }
             catch (Exception e)
             {
@@ -169,7 +175,7 @@ namespace MixedRealityExtension.Assets
             }
         }
 
-        private async Task<IList<Asset>> LoadAssetsFromGLTF(AssetSource source)
+        private async Task<IList<Asset>> LoadAssetsFromGLTF(AssetSource source, ColliderType colliderType)
         {
             IList<Asset> assets = new List<Asset>();
             DeterministicGuids guidGenerator = new DeterministicGuids(UtilMethods.StringToGuid(source.Uri.AbsoluteUri));
@@ -186,6 +192,7 @@ namespace MixedRealityExtension.Assets
             GLTFSceneImporter importer =
                 MREAPI.AppsAPI.GLTFImporterFactory.CreateImporter(gltfRoot, loader, _asyncHelper, loader.LoadedStream);
             importer.SceneParent = MREAPI.AppsAPI.AssetCache.CacheRootGO().transform;
+            importer.Collider = colliderType.ToGLTFColliderType();
 
             // load prefabs
             if (gltfRoot.Scenes != null)
