@@ -337,7 +337,7 @@ namespace MixedRealityExtension.App
             if (message.Payload is LoadAssets loadAssets)
             {
                 loadAssets.MessageId = message.Id;
-                ExecuteCommandPayload(this._assetLoader, loadAssets);
+                ExecuteCommandPayload(_assetLoader, loadAssets);
             }
             else if (message.Payload is NetworkCommandPayload commandPayload)
             {
@@ -755,7 +755,18 @@ namespace MixedRealityExtension.App
         {
             foreach (var updatePayload in payload.Payloads)
             {
-                OnActorUpdate((ActorUpdate)updatePayload);
+                if(updatePayload is ActorUpdate actorUpdate)
+                {
+                    OnActorUpdate(actorUpdate);
+                }
+                else if(updatePayload is AssetUpdate assetUpdate)
+                {
+                    _assetLoader.OnAssetUpdate(assetUpdate.Asset);
+                }
+                else
+                {
+                    MREAPI.Logger.LogError($"Unexpected payload in state update: {updatePayload.Type}");
+                }
             }
         }
 
