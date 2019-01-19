@@ -102,7 +102,7 @@ namespace MixedRealityExtension.Assets
             return actors;
         }
 
-        internal IList<Actor> CreateFromPrefab(Guid prefabId, Guid? parentId, bool enableColliders)
+        internal IList<Actor> CreateFromPrefab(Guid prefabId, Guid? parentId)
         {
             GameObject prefab = MREAPI.AppsAPI.AssetCache.GetAsset(prefabId) as GameObject;
             if (prefab == null)
@@ -112,12 +112,6 @@ namespace MixedRealityExtension.Assets
 
             GameObject instance = UnityEngine.Object.Instantiate(
                 prefab, GetGameObjectFromParentId(parentId).transform, false);
-
-            var colliders = instance.GetComponentsInChildren<UnityEngine.Collider>();
-            foreach (var collider in colliders)
-            {
-                collider.enabled = enableColliders;
-            }
 
             var actorList = new List<Actor>();
             MWGOTreeWalker.VisitTree(instance, go =>

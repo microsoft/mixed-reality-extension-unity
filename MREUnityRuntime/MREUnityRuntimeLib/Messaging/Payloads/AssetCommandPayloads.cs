@@ -63,10 +63,5 @@ namespace MixedRealityExtension.Messaging.Payloads
         /// The ID of an already-loaded asset
         /// </summary>
         public Guid PrefabId;
-
-        /// <summary>
-        /// Whether or not to enable colliders on this prefab. Prefab must have been given a collider type when loaded.
-        /// </summary>
-        public bool EnableColliders;
     }
 }
