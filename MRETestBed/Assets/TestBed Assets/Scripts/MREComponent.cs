@@ -104,8 +104,6 @@ public class MREComponent : MonoBehaviour
             SceneRoot = transform;
         }
 
-        
-
         MREApp.SceneRoot = SceneRoot.gameObject;
 
         MREApp.OnConnecting += MREApp_OnConnecting;

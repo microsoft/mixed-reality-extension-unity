@@ -851,16 +851,20 @@ MonoBehaviour:
     type: 2}
   MREURL: ws://localhost:3901
   testNames:
-  - look-at-test
-  - gltf-animation-test
-  - rigid-body-test
-  - clock-sync-test
-  - text-test
-  - input-test
-  - primitives-test
   - asset-preload-test
+  - clock-sync-test
+  - gltf-animation-test
   - gltf-concurrency-test
+  - gltf-gen-test
+  - input-test
   - interpolation-test
+  - library-test
+  - look-at-test
+  - mutable-asset-test
+  - primitives-test
+  - rigid-body-test
+  - text-test
+  - user-test
 --- !u!1 &1651315071
 GameObject:
   m_ObjectHideFlags: 0
