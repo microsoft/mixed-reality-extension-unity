@@ -635,6 +635,12 @@
             </summary>
             <value><c>true</c> if the written enum text will be camel case; otherwise, <c>false</c>.</value>
         </member>
+        <member name="P:Newtonsoft.Json.Converters.StringEnumConverter.NamingStrategy">
+            <summary>
+            Gets or sets the naming strategy used to resolve how enum text is written.
+            </summary>
+            <value>The naming strategy used to resolve how enum text is written.</value>
+        </member>
         <member name="P:Newtonsoft.Json.Converters.StringEnumConverter.AllowIntegerValues">
             <summary>
             Gets or sets a value indicating whether integer values are allowed when serializing and deserializing.
@@ -653,11 +659,42 @@
             </summary>
             <param name="camelCaseText"><c>true</c> if the written enum text will be camel case; otherwise, <c>false</c>.</param>
         </member>
-        <member name="M:Newtonsoft.Json.Converters.StringEnumConverter.#ctor(System.Boolean,System.Boolean)">
+        <member name="M:Newtonsoft.Json.Converters.StringEnumConverter.#ctor(Newtonsoft.Json.Serialization.NamingStrategy,System.Boolean)">
             <summary>
             Initializes a new instance of the <see cref="T:Newtonsoft.Json.Converters.StringEnumConverter"/> class.
             </summary>
-            <param name="camelCaseText"><c>true</c> if the written enum text will be camel case; otherwise, <c>false</c>.</param>
+            <param name="namingStrategy">The naming strategy used to resolve how enum text is written.</param>
+            <param name="allowIntegerValues"><c>true</c> if integers are allowed when serializing and deserializing; otherwise, <c>false</c>.</param>
+        </member>
+        <member name="M:Newtonsoft.Json.Converters.StringEnumConverter.#ctor(System.Type)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Newtonsoft.Json.Converters.StringEnumConverter"/> class.
+            </summary>
+            <param name="namingStrategyType">The <see cref="T:System.Type"/> of the <see cref="T:Newtonsoft.Json.Serialization.NamingStrategy"/> used to write enum text.</param>
+        </member>
+        <member name="M:Newtonsoft.Json.Converters.StringEnumConverter.#ctor(System.Type,System.Object[])">
+            <summary>
+            Initializes a new instance of the <see cref="T:Newtonsoft.Json.Converters.StringEnumConverter"/> class.
+            </summary>
+            <param name="namingStrategyType">The <see cref="T:System.Type"/> of the <see cref="T:Newtonsoft.Json.Serialization.NamingStrategy"/> used to write enum text.</param>
+            <param name="namingStrategyParameters">
+            The parameter list to use when constructing the <see cref="T:Newtonsoft.Json.Serialization.NamingStrategy"/> described by <paramref name="namingStrategyType"/>.
+            If <c>null</c>, the default constructor is used.
+            When non-<c>null</c>, there must be a constructor defined in the <see cref="T:Newtonsoft.Json.Serialization.NamingStrategy"/> that exactly matches the number,
+            order, and type of these parameters.
+            </param>
+        </member>
+        <member name="M:Newtonsoft.Json.Converters.StringEnumConverter.#ctor(System.Type,System.Object[],System.Boolean)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Newtonsoft.Json.Converters.StringEnumConverter"/> class.
+            </summary>
+            <param name="namingStrategyType">The <see cref="T:System.Type"/> of the <see cref="T:Newtonsoft.Json.Serialization.NamingStrategy"/> used to write enum text.</param>
+            <param name="namingStrategyParameters">
+            The parameter list to use when constructing the <see cref="T:Newtonsoft.Json.Serialization.NamingStrategy"/> described by <paramref name="namingStrategyType"/>.
+            If <c>null</c>, the default constructor is used.
+            When non-<c>null</c>, there must be a constructor defined in the <see cref="T:Newtonsoft.Json.Serialization.NamingStrategy"/> that exactly matches the number,
+            order, and type of these parameters.
+            </param>
             <param name="allowIntegerValues"><c>true</c> if integers are allowed when serializing and deserializing; otherwise, <c>false</c>.</param>
         </member>
         <member name="M:Newtonsoft.Json.Converters.StringEnumConverter.WriteJson(Newtonsoft.Json.JsonWriter,System.Object,Newtonsoft.Json.JsonSerializer)">
@@ -815,11 +852,12 @@
         </member>
         <member name="M:Newtonsoft.Json.DefaultJsonNameTable.Get(System.Char[],System.Int32,System.Int32)">
             <summary>
-            Gets the string containing the same characters as the specified range of characters in the given array.
+            Gets a string containing the same characters as the specified range of characters in the given array.
             </summary>
             <param name="key">The character array containing the name to find.</param>
             <param name="start">The zero-based index into the array specifying the first character of the name.</param>
             <param name="length">The number of characters in the name.</param>
+            <returns>A string containing the same characters as the specified range of characters in the given array.</returns>
         </member>
         <member name="M:Newtonsoft.Json.DefaultJsonNameTable.Add(System.String)">
             <summary>
@@ -827,6 +865,7 @@
             </summary>
             <param name="key">The string to add.</param>
             <remarks>This method is not thread-safe.</remarks>
+            <returns>The resolved string.</returns>
         </member>
         <member name="T:Newtonsoft.Json.DefaultValueHandling">
             <summary>
@@ -1750,11 +1789,12 @@
         </member>
         <member name="M:Newtonsoft.Json.JsonNameTable.Get(System.Char[],System.Int32,System.Int32)">
             <summary>
-            Gets the string containing the same characters as the specified range of characters in the given array.
+            Gets a string containing the same characters as the specified range of characters in the given array.
             </summary>
             <param name="key">The character array containing the name to find.</param>
             <param name="start">The zero-based index into the array specifying the first character of the name.</param>
             <param name="length">The number of characters in the name.</param>
+            <returns>A string containing the same characters as the specified range of characters in the given array.</returns>
         </member>
         <member name="T:Newtonsoft.Json.JsonObjectAttribute">
             <summary>
@@ -1805,9 +1845,9 @@
         </member>
         <member name="P:Newtonsoft.Json.JsonPropertyAttribute.ItemConverterType">
             <summary>
-            Gets or sets the <see cref="T:Newtonsoft.Json.JsonConverter"/> used when serializing the property's collection items.
+            Gets or sets the <see cref="T:Newtonsoft.Json.JsonConverter"/> type used when serializing the property's collection items.
             </summary>
-            <value>The collection's items <see cref="T:Newtonsoft.Json.JsonConverter"/>.</value>
+            <value>The collection's items <see cref="T:Newtonsoft.Json.JsonConverter"/> type.</value>
         </member>
         <member name="P:Newtonsoft.Json.JsonPropertyAttribute.ItemConverterParameters">
             <summary>
@@ -3999,6 +4039,26 @@
             Load comments as a <see cref="T:Newtonsoft.Json.Linq.JValue"/> with type <see cref="F:Newtonsoft.Json.Linq.JTokenType.Comment"/>.
             </summary>
         </member>
+        <member name="T:Newtonsoft.Json.Linq.DuplicatePropertyNameHandling">
+            <summary>
+            Specifies how duplicate property names are handled when loading JSON.
+            </summary>
+        </member>
+        <member name="F:Newtonsoft.Json.Linq.DuplicatePropertyNameHandling.Replace">
+            <summary>
+            Replace the existing value when there is a duplicate property. The value of the last property in the JSON object will be used.
+            </summary>
+        </member>
+        <member name="F:Newtonsoft.Json.Linq.DuplicatePropertyNameHandling.Ignore">
+            <summary>
+            Ignore the new value when there is a duplicate property. The value of the first property in the JSON object will be used.
+            </summary>
+        </member>
+        <member name="F:Newtonsoft.Json.Linq.DuplicatePropertyNameHandling.Error">
+            <summary>
+            Throw a <see cref="T:Newtonsoft.Json.JsonReaderException"/> when a duplicate property is encountered.
+            </summary>
+        </member>
         <member name="T:Newtonsoft.Json.Linq.Extensions">
             <summary>
             Contains the LINQ to JSON extension methods.
@@ -4922,14 +4982,23 @@
         <member name="P:Newtonsoft.Json.Linq.JsonLoadSettings.CommentHandling">
             <summary>
             Gets or sets how JSON comments are handled when loading JSON.
+            The default value is <see cref="F:Newtonsoft.Json.Linq.CommentHandling.Ignore" />.
             </summary>
             <value>The JSON comment handling.</value>
         </member>
         <member name="P:Newtonsoft.Json.Linq.JsonLoadSettings.LineInfoHandling">
             <summary>
             Gets or sets how JSON line info is handled when loading JSON.
+            The default value is <see cref="F:Newtonsoft.Json.Linq.LineInfoHandling.Load" />.
             </summary>
             <value>The JSON line info handling.</value>
+        </member>
+        <member name="P:Newtonsoft.Json.Linq.JsonLoadSettings.DuplicatePropertyNameHandling">
+            <summary>
+            Gets or sets how duplicate property names in JSON objects are handled when loading JSON.
+            The default value is <see cref="F:Newtonsoft.Json.Linq.DuplicatePropertyNameHandling.Replace" />.
+            </summary>
+            <value>The JSON duplicate property name handling.</value>
         </member>
         <member name="T:Newtonsoft.Json.Linq.JsonMergeSettings">
             <summary>
@@ -8321,7 +8390,7 @@
             Lookup and create an instance of the <see cref="T:Newtonsoft.Json.JsonConverter"/> type described by the argument.
             </summary>
             <param name="converterType">The <see cref="T:Newtonsoft.Json.JsonConverter"/> type to create.</param>
-            <param name="converterArgs">Optional arguments to pass to an initializing constructor of the JsonConverter.
+            <param name="args">Optional arguments to pass to an initializing constructor of the JsonConverter.
             If <c>null</c>, the default constructor is used.</param>
         </member>
         <member name="T:Newtonsoft.Json.Serialization.MemoryTraceWriter">
@@ -8678,15 +8747,6 @@
             </summary>
             <param name="member">The member.</param>
             <returns>The underlying type of the member.</returns>
-        </member>
-        <member name="M:Newtonsoft.Json.Utilities.ReflectionUtils.IsIndexedProperty(System.Reflection.MemberInfo)">
-            <summary>
-            Determines whether the member is an indexed property.
-            </summary>
-            <param name="member">The member.</param>
-            <returns>
-            	<c>true</c> if the member is an indexed property; otherwise, <c>false</c>.
-            </returns>
         </member>
         <member name="M:Newtonsoft.Json.Utilities.ReflectionUtils.IsIndexedProperty(System.Reflection.PropertyInfo)">
             <summary>
