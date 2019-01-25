@@ -172,10 +172,10 @@ namespace MixedRealityExtension.Assets
         private async Task<IList<Asset>> LoadAssetsFromGLTF(AssetSource source, ColliderType colliderType)
         {
             IList<Asset> assets = new List<Asset>();
-            DeterministicGuids guidGenerator = new DeterministicGuids(UtilMethods.StringToGuid(source.Uri.AbsoluteUri));
+            DeterministicGuids guidGenerator = new DeterministicGuids(UtilMethods.StringToGuid(source.ParsedUri.AbsoluteUri));
 
             // download file
-            UtilMethods.GetUrlParts(source.Uri.AbsoluteUri, out string rootUrl, out string filename);
+            UtilMethods.GetUrlParts(source.ParsedUri.AbsoluteUri, out string rootUrl, out string filename);
             var loader = new WebRequestLoader(rootUrl);
             await loader.LoadStream(filename);
 
