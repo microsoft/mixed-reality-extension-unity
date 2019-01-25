@@ -207,7 +207,7 @@ namespace MixedRealityExtension.Assets
                     {
                         Id = guidGenerator.Next(),
                         Name = gltfRoot.Scenes[i].Name ?? $"scene:{i}",
-                        Source = source,
+                        Source = new AssetSource(source.ContainerType, source.Uri, $"scene:{i}"),
                         Prefab = new Prefab
                         {
                             ActorCount = actorCount
@@ -228,7 +228,7 @@ namespace MixedRealityExtension.Assets
                     {
                         Id = guidGenerator.Next(),
                         Name = gltfRoot.Materials[i].Name ?? $"material:{i}",
-                        Source = source,
+                        Source = new AssetSource(source.ContainerType, source.Uri, $"material:{i}"),
                         Material = new MWMaterial()
                         {
                             Color = material.color.ToMWColor()
