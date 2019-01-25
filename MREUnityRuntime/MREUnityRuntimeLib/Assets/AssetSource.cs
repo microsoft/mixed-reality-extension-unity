@@ -24,6 +24,7 @@ namespace MixedRealityExtension.Assets
         /// <summary>
         /// The parsed URI of the asset's container.
         /// </summary>
+        [Newtonsoft.Json.JsonIgnore]
         public Uri ParsedUri => parsedUri = parsedUri ?? new Uri(Uri);
 
         /// <summary>
