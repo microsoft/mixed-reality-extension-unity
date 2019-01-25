@@ -5,26 +5,36 @@ using System;
 namespace MixedRealityExtension.Assets
 {
     /// <summary>
-    /// Documents the origin of an asset
+    /// Documents the origin of an asset.
+    /// NOTE: The InternalId is not used for equality testing.
     /// </summary>
-    public struct AssetSource
+    public class AssetSource
     {
         /// <summary>
         /// The type of container the asset came from.
         /// </summary>
-        public AssetContainerType ContainerType { get; }
+        public AssetContainerType ContainerType { get; set; }
 
         /// <summary>
         /// The URL of the asset's container.
         /// </summary>
-        public Uri Uri { get; }
+        public string Uri { get; set; }
+
+        private Uri parsedUri;
+        /// <summary>
+        /// The parsed URI of the asset's container.
+        /// </summary>
+        [Newtonsoft.Json.JsonIgnore]
+        public Uri ParsedUri => parsedUri = parsedUri ?? new Uri(Uri);
 
         /// <summary>
         /// The location of the asset within the container. Type-dependent.
         /// </summary>
-        public string InternalId { get; }
+        public string InternalId { get; set; }
 
-        public AssetSource(AssetContainerType containerType, Uri uri, string internalId)
+        public AssetSource() { }
+
+        public AssetSource(AssetContainerType containerType = AssetContainerType.GLTF, string uri = null, string internalId = null)
         {
             ContainerType = containerType;
             Uri = uri;
@@ -33,26 +43,26 @@ namespace MixedRealityExtension.Assets
 
         public override bool Equals(object other)
         {
-            return other is AssetSource otherSource && this == otherSource;
+            return other is AssetSource otherSource &&
+                this.ContainerType == otherSource.ContainerType &&
+                this.Uri.Equals(otherSource.Uri);
         }
 
         public override int GetHashCode()
         {
-            int hash = 313;
-            hash ^= 317 * ContainerType.GetHashCode();
-            hash ^= 317 * Uri.GetHashCode();
-            hash ^= 317 * (InternalId != null ? InternalId.GetHashCode() : 0);
-            return hash;
+            return 313
+                ^ 317 * ContainerType.GetHashCode()
+                ^ 317 * Uri.GetHashCode();
         }
 
         public static bool operator ==(AssetSource a, AssetSource b)
         {
-            return a.ContainerType == b.ContainerType && a.Uri == b.Uri && a.InternalId == b.InternalId;
+            return a.Equals(b);
         }
 
         public static bool operator !=(AssetSource a, AssetSource b)
         {
-            return !(a == b);
+            return !a.Equals(b);
         }
     }
 }
