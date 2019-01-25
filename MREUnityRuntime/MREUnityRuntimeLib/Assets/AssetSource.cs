@@ -13,17 +13,19 @@ namespace MixedRealityExtension.Assets
         /// <summary>
         /// The type of container the asset came from.
         /// </summary>
-        public AssetContainerType ContainerType;
+        public AssetContainerType ContainerType { get; set; }
 
         /// <summary>
         /// The URL of the asset's container.
         /// </summary>
-        public Uri Uri;
+        public Uri Uri { get; set; }
 
         /// <summary>
         /// The location of the asset within the container. Type-dependent.
         /// </summary>
-        public string InternalId;
+        public string InternalId { get; set; }
+
+        public AssetSource() { }
 
         public AssetSource(AssetContainerType containerType = AssetContainerType.GLTF, Uri uri = null, string internalId = null)
         {
