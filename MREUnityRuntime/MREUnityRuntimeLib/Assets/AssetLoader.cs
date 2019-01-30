@@ -17,6 +17,7 @@ using UnityEngine;
 using UnityGLTF;
 using UnityGLTF.Loader;
 using MWMaterial = MixedRealityExtension.Assets.Material;
+using MWTexture = MixedRealityExtension.Assets.Texture;
 
 namespace MixedRealityExtension.Assets
 {
@@ -218,6 +219,30 @@ namespace MixedRealityExtension.Assets
                 }
             }
 
+            // load textures
+            if (gltfRoot.Textures != null)
+            {
+                for (var i = 0; i < gltfRoot.Textures.Count; i++)
+                {
+                    await importer.LoadTextureAsync(gltfRoot.Textures[i], i, true);
+                    var texture = importer.GetTexture(i);
+                    var asset = new Asset()
+                    {
+                        Id = guidGenerator.Next(),
+                        Name = gltfRoot.Textures[i].Name ?? $"texture:{i}",
+                        Source = new AssetSource(source.ContainerType, source.Uri, $"texture:{i}"),
+                        Texture = new MWTexture()
+                        {
+                            Resolution = new MWVector2(texture.width, texture.height),
+                            WrapModeU = texture.wrapModeU,
+                            WrapModeV = texture.wrapModeV
+                        }
+                    };
+                    MREAPI.AppsAPI.AssetCache.CacheAsset(source, asset.Id, texture);
+                    assets.Add(asset);
+                }
+            }
+
             // load materials
             if (gltfRoot.Materials != null)
             {
@@ -231,7 +256,10 @@ namespace MixedRealityExtension.Assets
                         Source = new AssetSource(source.ContainerType, source.Uri, $"material:{i}"),
                         Material = new MWMaterial()
                         {
-                            Color = material.color.ToMWColor()
+                            Color = material.color.ToMWColor(),
+                            MainTextureId = MREAPI.AppsAPI.AssetCache.GetId(material.mainTexture),
+                            MainTextureOffset = material.mainTextureOffset.ToMWVector2(),
+                            MainTextureScale = material.mainTextureScale.ToMWVector2()
                         }
                     };
                     MREAPI.AppsAPI.AssetCache.CacheAsset(source, asset.Id, material);

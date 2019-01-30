@@ -57,6 +57,11 @@ namespace MixedRealityExtension.Assets
         /// <inheritdoc cref="GetId"/>
         public Guid? GetId(Object asset)
         {
+            if(asset == null)
+            {
+                return null;
+            }
+
             ids.TryGetValue(asset, out var guid);
             return guid;
         }

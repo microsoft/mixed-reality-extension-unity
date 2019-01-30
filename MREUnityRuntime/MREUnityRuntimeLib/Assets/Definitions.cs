@@ -36,6 +36,11 @@ namespace MixedRealityExtension.Assets
         /// If this asset is a material, contains those properties
         /// </summary>
         public Material? Material;
+
+        /// <summary>
+        /// If this asset is a texture, contains those properties
+        /// </summary>
+        public Texture? Texture;
     }
 
     /// <summary>
@@ -74,5 +79,41 @@ namespace MixedRealityExtension.Assets
         /// The main color of the material
         /// </summary>
         public MWColor Color;
+
+        /// <summary>
+        /// The ID of the main texture asset
+        /// </summary>
+        public Guid? MainTextureId;
+
+        /// <summary>
+        /// Offset the texture by this amount as a fraction of the resolution
+        /// </summary>
+        public MWVector2 MainTextureOffset;
+
+        /// <summary>
+        /// Scale the texture by this amount in each axis
+        /// </summary>
+        public MWVector2 MainTextureScale;
+    }
+
+    /// <summary>
+    /// Contains a basic texture description
+    /// </summary>
+    public struct Texture
+    {
+        /// <summary>
+        /// The resolution of the texture
+        /// </summary>
+        public MWVector2 Resolution;
+
+        /// <summary>
+        /// How out-of-range U coordinates should be handled
+        /// </summary>
+        public UnityEngine.TextureWrapMode WrapModeU;
+
+        /// <summary>
+        /// How out-of-range V coordinates should be handled
+        /// </summary>
+        public UnityEngine.TextureWrapMode WrapModeV;
     }
 }
