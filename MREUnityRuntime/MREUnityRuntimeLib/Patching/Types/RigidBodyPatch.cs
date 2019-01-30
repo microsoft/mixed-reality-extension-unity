@@ -35,12 +35,6 @@ namespace MixedRealityExtension.Patching.Types
         public bool? UseGravity { get; set; }
 
         [PatchProperty]
-        public Vector3Patch Position { get; set; }
-
-        [PatchProperty]
-        public QuaternionPatch Rotation { get; set; }
-
-        [PatchProperty]
         public MRERigidBodyConstraints[] Constraints
         {
             get
@@ -111,8 +105,6 @@ namespace MixedRealityExtension.Patching.Types
             DetectCollisions = rigidbody.detectCollisions;
             CollisionDetectionMode = (MRECollisionDetectionMode)Enum.Parse(typeof(MRECollisionDetectionMode), rigidbody.collisionDetectionMode.ToString());
             UseGravity = rigidbody.useGravity;
-            Position = new Vector3Patch(sceneRoot.InverseTransformPoint(rigidbody.position));
-            Rotation = new QuaternionPatch(Quaternion.Inverse(sceneRoot.rotation) * rigidbody.rotation);
             ConstraintFlags = (MRERigidBodyConstraints)Enum.Parse(typeof(MRERigidBodyConstraints), rigidbody.constraints.ToString());
         }
 
