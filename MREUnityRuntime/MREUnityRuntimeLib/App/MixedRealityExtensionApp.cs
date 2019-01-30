@@ -418,7 +418,7 @@ namespace MixedRealityExtension.App
 
             void EndCreateFromGLTF(IList<Actor> actors = null, string failureMessage = null)
             {
-                OperationResultCode resultCode = (actors != null) ? OperationResultCode.Success: OperationResultCode.Error;
+                OperationResultCode resultCode = (actors != null) ? OperationResultCode.Success : OperationResultCode.Error;
                 Trace trace = new Trace()
                 {
                     Severity = (resultCode == OperationResultCode.Success) ? TraceSeverity.Info : TraceSeverity.Error,
@@ -428,15 +428,15 @@ namespace MixedRealityExtension.App
                 };
 
                 Protocol.Send(new ObjectSpawned()
+                {
+                    Result = new OperationResult()
                     {
-                        Result = new OperationResult()
-                        {
-                            ResultCode = resultCode,
-                            Message = trace.Message
-                        },
-                        Traces = new List<Trace>() {trace},
-                        Actors = actors?.Select((actor) => actor.GeneratePatch(SubscriptionType.All)).ToList() ?? new List<ActorPatch>()
+                        ResultCode = resultCode,
+                        Message = trace.Message
                     },
+                    Traces = new List<Trace>() { trace },
+                    Actors = actors?.Select((actor) => actor.GeneratePatch(SubscriptionType.All)).ToList() ?? new List<ActorPatch>()
+                },
                     payload.MessageId);
             }
         }
@@ -755,11 +755,11 @@ namespace MixedRealityExtension.App
         {
             foreach (var updatePayload in payload.Payloads)
             {
-                if(updatePayload is ActorUpdate actorUpdate)
+                if (updatePayload is ActorUpdate actorUpdate)
                 {
                     OnActorUpdate(actorUpdate);
                 }
-                else if(updatePayload is AssetUpdate assetUpdate)
+                else if (updatePayload is AssetUpdate assetUpdate)
                 {
                     _assetLoader.OnAssetUpdate(assetUpdate.Asset);
                 }
@@ -917,46 +917,23 @@ namespace MixedRealityExtension.App
         [CommandHandler(typeof(SyncAnimations))]
         private void OnSyncAnimations(SyncAnimations payload)
         {
-            if (OperatingModel == OperatingModel.PeerAuthoritative)
+            // The authoritative peer gathers and sends the animation states of all actors.
+            var animationStates = new List<MWActorAnimationState>();
+            foreach (var actor in _actorManager.Actors)
             {
-                if (IsAuthoritativePeer)
+                if (actor != null)
                 {
-                    // The authoritative peer gathers and sends the animation states of all actors.
-                    var animationStates = new List<MWActorAnimationState>();
-                    foreach (var actor in _actorManager.Actors)
+                    var actorAnimationStates = actor.GetOrCreateActorComponent<AnimationComponent>().GetAnimationStates();
+                    if (actorAnimationStates != null)
                     {
-                        if (actor != null)
-                        {
-                            var actorAnimationStates = actor.GetOrCreateActorComponent<AnimationComponent>().GetAnimationStates();
-                            if (actorAnimationStates != null)
-                            {
-                                animationStates.AddRange(actorAnimationStates);
-                            }
-                        }
-                    }
-                    Protocol.Send(new SyncAnimations()
-                    {
-                        AnimationStates = animationStates.ToList()
-                    }, payload.MessageId);
-                }
-                else
-                {
-                    // The non-authoritative peer updates the animation states of all actors.
-                    foreach (var animationState in payload.AnimationStates)
-                    {
-                        _actorManager.FindActor(animationState.ActorId)?.GetOrCreateActorComponent<AnimationComponent>()
-                            .ApplyAnimationState(animationState);
+                        animationStates.AddRange(actorAnimationStates);
                     }
                 }
             }
-            else
+            Protocol.Send(new SyncAnimations()
             {
-                Protocol.Send(new OperationResult()
-                {
-                    ResultCode = OperationResultCode.Error,
-                    Message = $"Received unexpected SyncAnimation payload"
-                }, payload.MessageId);
-            }
+                AnimationStates = animationStates.ToList()
+            }, payload.MessageId);
         }
 
         [CommandHandler(typeof(SetAnimationState))]
