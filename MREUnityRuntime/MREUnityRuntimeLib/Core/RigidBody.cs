@@ -41,12 +41,6 @@ namespace MixedRealityExtension.Core
         public bool UseGravity { get; set; }
 
         /// <inheritdoc />
-        public MWVector3 Position { get; set; }
-
-        /// <inheritdoc />
-        public MWQuaternion Rotation { get; set; }
-
-        /// <inheritdoc />
         public MRERigidBodyConstraints ConstraintFlags { get; set; }
 
         internal RigidBody(Rigidbody rigidbody, Transform sceneRoot)
@@ -145,8 +139,6 @@ namespace MixedRealityExtension.Core
             DetectCollisions = rigidbody.detectCollisions;
             CollisionDetectionMode = (MRECollisionDetectionMode)Enum.Parse(typeof(MRECollisionDetectionMode), rigidbody.collisionDetectionMode.ToString());
             UseGravity = rigidbody.useGravity;
-            Position = _sceneRoot.InverseTransformPoint(rigidbody.position).ToMWVector3();
-            Rotation = (Quaternion.Inverse(_sceneRoot.rotation) * rigidbody.rotation).ToMWQuaternion();
             ConstraintFlags = (MRERigidBodyConstraints)Enum.Parse(typeof(MRERigidBodyConstraints), rigidbody.constraints.ToString());
         }
 
@@ -159,8 +151,6 @@ namespace MixedRealityExtension.Core
             _rigidbody.detectCollisions = _rigidbody.detectCollisions.GetPatchApplied(DetectCollisions.ApplyPatch(patch.DetectCollisions));
             _rigidbody.collisionDetectionMode = _rigidbody.collisionDetectionMode.GetPatchApplied(CollisionDetectionMode.ApplyPatch(patch.CollisionDetectionMode));
             _rigidbody.useGravity = _rigidbody.useGravity.GetPatchApplied(UseGravity.ApplyPatch(patch.UseGravity));
-            _rigidbody.position = _rigidbody.position.GetPatchApplied(_sceneRoot.TransformPoint(Position.ApplyPatch(patch.Position).ToVector3()));
-            _rigidbody.rotation = _sceneRoot.rotation * _rigidbody.rotation.GetPatchApplied(Rotation.ApplyPatch(patch.Rotation));
             _rigidbody.constraints = (RigidbodyConstraints)((int)_rigidbody.constraints).GetPatchApplied((int)ConstraintFlags.ApplyPatch(patch.ConstraintFlags));
         }
 

@@ -122,16 +122,6 @@ namespace MixedRealityExtension.Core.Interfaces
         bool UseGravity { get; }
 
         /// <summary>
-        /// Gets the position of the rigid body.
-        /// </summary>
-        MWVector3 Position { get; }
-
-        /// <summary>
-        /// Gets the rotation of the rigid body.
-        /// </summary>
-        MWQuaternion Rotation { get; }
-
-        /// <summary>
         /// Gets the constraint flags applied to the rigid body.
         /// </summary>
         MRERigidBodyConstraints ConstraintFlags { get; }

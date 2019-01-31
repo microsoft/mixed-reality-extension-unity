@@ -148,8 +148,6 @@ namespace MixedRealityExtension.Patching
                 DetectCollisions = GeneratePatch(_old.DetectCollisions, _new.detectCollisions),
                 Mass = GeneratePatch(_old.Mass, _new.mass),
                 UseGravity = GeneratePatch(_old.UseGravity, _new.useGravity),
-                Position = GeneratePatch(_old.Position, sceneRoot.InverseTransformPoint(_new.position)),
-                Rotation = GeneratePatch(_old.Rotation, Quaternion.Inverse(sceneRoot.rotation) * _new.rotation),
             };
         }
 
