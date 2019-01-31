@@ -277,9 +277,26 @@ namespace MixedRealityExtension.Assets
             var asset = MREAPI.AppsAPI.AssetCache.GetAsset(def.Id);
 
             var mat = asset as UnityEngine.Material;
-            if(def.Material != null && mat != null)
+            var tex = asset as UnityEngine.Texture;
+            if (def.Material != null && mat != null)
             {
-                mat.color = def.Material.Value.Color.ToColor();
+                var matdef = def.Material.Value;
+                if (matdef.Color != null)
+                    mat.color = matdef.Color.ToColor();
+                if (matdef.MainTextureId != null)
+                    mat.mainTexture = MREAPI.AppsAPI.AssetCache.GetAsset(matdef.MainTextureId) as UnityEngine.Texture;
+                if (matdef.MainTextureOffset != null)
+                    mat.mainTextureOffset = matdef.MainTextureOffset.ToVector2();
+                if (matdef.MainTextureScale != null)
+                    mat.mainTextureScale = matdef.MainTextureScale.ToVector2();
+            }
+            else if(def.Texture != null && tex != null)
+            {
+                var texdef = def.Texture.Value;
+                if (texdef.WrapModeU != null)
+                    tex.wrapModeU = texdef.WrapModeU.Value;
+                if (texdef.WrapModeV != null)
+                    tex.wrapModeV = texdef.WrapModeV.Value;
             }
             else
             {

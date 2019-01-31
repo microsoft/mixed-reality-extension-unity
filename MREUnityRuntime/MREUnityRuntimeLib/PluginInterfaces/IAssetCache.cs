@@ -30,7 +30,7 @@ namespace MixedRealityExtension.PluginInterfaces
         /// </summary>
         /// <param name="id">The ID of a loaded asset.</param>
         /// <returns>A native Unity asset</returns>
-        UnityEngine.Object GetAsset(Guid id);
+        UnityEngine.Object GetAsset(Guid? id);
 
         /// <summary>
         /// If an asset is in the cache, return its ID. Otherwise return null.

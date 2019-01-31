@@ -109,11 +109,11 @@ namespace MixedRealityExtension.Assets
         /// <summary>
         /// How out-of-range U coordinates should be handled
         /// </summary>
-        public UnityEngine.TextureWrapMode WrapModeU;
+        public UnityEngine.TextureWrapMode? WrapModeU;
 
         /// <summary>
         /// How out-of-range V coordinates should be handled
         /// </summary>
-        public UnityEngine.TextureWrapMode WrapModeV;
+        public UnityEngine.TextureWrapMode? WrapModeV;
     }
 }
