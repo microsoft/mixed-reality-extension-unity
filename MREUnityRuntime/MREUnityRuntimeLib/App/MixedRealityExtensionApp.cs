@@ -160,6 +160,7 @@ namespace MixedRealityExtension.App
                 connection.Url = url;
                 connection.Headers.Add(Constants.SessionHeader, sessionId);
                 connection.Headers.Add(Constants.PlatformHeader, platformId);
+                connection.Headers.Add(Constants.LegacyProtocolVersionHeader, $"{Constants.LegacyProtocolVersion}");
                 connection.Headers.Add(Constants.CurrentClientVersionHeader, Constants.CurrentClientVersion);
                 connection.Headers.Add(Constants.MinimumSupportedSDKVersionHeader, Constants.MinimumSupportedSDKVersion);
                 connection.OnConnecting += Conn_OnConnecting;

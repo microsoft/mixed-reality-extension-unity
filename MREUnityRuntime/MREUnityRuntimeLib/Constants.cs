@@ -28,8 +28,16 @@ namespace MixedRealityExtension
          */
         internal const string SessionHeader = "x-ms-mixed-reality-extension-sessionid";
         internal const string PlatformHeader = "x-ms-mixed-reality-extension-platformid";
+        internal const string LegacyProtocolVersionHeader = "x-ms-mixed-reality-extension-protocol-version";
         internal const string CurrentClientVersionHeader = "x-ms-mixed-reality-extension-client-version";
         internal const string MinimumSupportedSDKVersionHeader = "x-ms-mixed-reality-extension-min-sdk-version";
+
+        /*
+         * Legacy Protocol Version - Left over from the old protocol versioning scheme.
+         * Keeping in for now to allow a smoother transition to the new system.
+         * TODO: Remove after a few releases.
+         */
+        internal const int LegacyProtocolVersion = 1;
 
         /*
          * Current Client Version
