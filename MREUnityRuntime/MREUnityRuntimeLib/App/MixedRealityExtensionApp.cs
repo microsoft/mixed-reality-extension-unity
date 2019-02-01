@@ -336,10 +336,11 @@ namespace MixedRealityExtension.App
 
         internal void OnReceive(Message message)
         {
-            if (message.Payload is LoadAssets loadAssets)
+            if (message.Payload is LoadAssets || message.Payload is AssetUpdate)
             {
-                loadAssets.MessageId = message.Id;
-                ExecuteCommandPayload(_assetLoader, loadAssets);
+                var ncp = message.Payload as NetworkCommandPayload;
+                ncp.MessageId = message.Id;
+                ExecuteCommandPayload(_assetLoader, ncp);
             }
             else if (message.Payload is NetworkCommandPayload commandPayload)
             {
@@ -761,9 +762,9 @@ namespace MixedRealityExtension.App
                 {
                     OnActorUpdate(actorUpdate);
                 }
-                else if (updatePayload is AssetUpdate assetUpdate)
+                else if(updatePayload is AssetUpdate assetUpdate)
                 {
-                    _assetLoader.OnAssetUpdate(assetUpdate.Asset);
+                    _assetLoader.OnAssetUpdate(assetUpdate);
                 }
                 else
                 {

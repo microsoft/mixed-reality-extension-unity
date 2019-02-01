@@ -36,6 +36,15 @@ namespace MixedRealityExtension.Util.Unity
             return _this;
         }
 
+        public static MWVector2 ToMWVector2(this Vector2 _this)
+        {
+            return new MWVector2()
+            {
+                X = _this.x,
+                Y = _this.y
+            };
+        }
+
         public static MWVector3 ToMWVector3(this Vector3 _this)
         {
             return new MWVector3()
@@ -70,11 +79,6 @@ namespace MixedRealityExtension.Util.Unity
         public static MWColor ToMWColor(this Color color)
         {
             return new MWColor(color.r, color.g, color.b, color.a);
-        }
-
-        public static MWVector2 ToMWVector2(this Vector2 _this)
-        {
-            return new MWVector2(_this.x, _this.y);
         }
 
         public static Vector2 ToVector2(this MWVector2 _this)

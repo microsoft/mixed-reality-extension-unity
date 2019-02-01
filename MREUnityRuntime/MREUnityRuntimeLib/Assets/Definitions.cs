@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 using System;
 using MixedRealityExtension.Core.Types;
+using MixedRealityExtension.Patching.Types;
 using Newtonsoft.Json;
 
 namespace MixedRealityExtension.Assets
@@ -78,7 +79,7 @@ namespace MixedRealityExtension.Assets
         /// <summary>
         /// The main color of the material
         /// </summary>
-        public MWColor Color;
+        public ColorPatch Color;
 
         /// <summary>
         /// The ID of the main texture asset
@@ -88,12 +89,12 @@ namespace MixedRealityExtension.Assets
         /// <summary>
         /// Offset the texture by this amount as a fraction of the resolution
         /// </summary>
-        public MWVector2 MainTextureOffset;
+        public Vector2Patch MainTextureOffset;
 
         /// <summary>
         /// Scale the texture by this amount in each axis
         /// </summary>
-        public MWVector2 MainTextureScale;
+        public Vector2Patch MainTextureScale;
     }
 
     /// <summary>
@@ -104,7 +105,7 @@ namespace MixedRealityExtension.Assets
         /// <summary>
         /// The resolution of the texture
         /// </summary>
-        public MWVector2 Resolution;
+        public Vector2Patch Resolution;
 
         /// <summary>
         /// How out-of-range U coordinates should be handled

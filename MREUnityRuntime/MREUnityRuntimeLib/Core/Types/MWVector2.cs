@@ -32,7 +32,7 @@ namespace MixedRealityExtension.Core.Types
         /// Initializes a new instance of the <see cref="MWVector2"/> class.
         /// </summary>
         /// <param name="vector">The other <see cref="MWVector2"/> to use for the initial value of the components for the new instance.</param>
-        public MWVector2(MWVector3 vector)
+        public MWVector2(MWVector2 vector)
         {
             X = vector.X;
             Y = vector.Y;

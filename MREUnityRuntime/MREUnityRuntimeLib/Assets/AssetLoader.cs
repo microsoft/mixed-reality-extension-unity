@@ -7,6 +7,8 @@ using MixedRealityExtension.Core.Types;
 using MixedRealityExtension.Messaging;
 using MixedRealityExtension.Messaging.Commands;
 using MixedRealityExtension.Messaging.Payloads;
+using MixedRealityExtension.Patching;
+using MixedRealityExtension.Patching.Types;
 using MixedRealityExtension.Util;
 using MixedRealityExtension.Util.Unity;
 using System;
@@ -233,7 +235,11 @@ namespace MixedRealityExtension.Assets
                         Source = new AssetSource(source.ContainerType, source.Uri, $"texture:{i}"),
                         Texture = new MWTexture()
                         {
-                            Resolution = new MWVector2(texture.width, texture.height),
+                            Resolution = new Vector2Patch()
+                            {
+                                X = texture.width,
+                                Y = texture.height
+                            },
                             WrapModeU = texture.wrapModeU,
                             WrapModeV = texture.wrapModeV
                         }
@@ -256,10 +262,10 @@ namespace MixedRealityExtension.Assets
                         Source = new AssetSource(source.ContainerType, source.Uri, $"material:{i}"),
                         Material = new MWMaterial()
                         {
-                            Color = material.color.ToMWColor(),
+                            Color = new ColorPatch(material.color),
                             MainTextureId = MREAPI.AppsAPI.AssetCache.GetId(material.mainTexture),
-                            MainTextureOffset = material.mainTextureOffset.ToMWVector2(),
-                            MainTextureScale = material.mainTextureScale.ToMWVector2()
+                            MainTextureOffset = new Vector2Patch(material.mainTextureOffset),
+                            MainTextureScale = new Vector2Patch(material.mainTextureScale)
                         }
                     };
                     MREAPI.AppsAPI.AssetCache.CacheAsset(source, asset.Id, material);
@@ -272,8 +278,10 @@ namespace MixedRealityExtension.Assets
             return assets;
         }
 
-        public void OnAssetUpdate(Asset def)
+        [CommandHandler(typeof(AssetUpdate))]
+        internal void OnAssetUpdate(AssetUpdate payload)
         {
+            var def = payload.Asset;
             var asset = MREAPI.AppsAPI.AssetCache.GetAsset(def.Id);
 
             var mat = asset as UnityEngine.Material;
@@ -282,13 +290,17 @@ namespace MixedRealityExtension.Assets
             {
                 var matdef = def.Material.Value;
                 if (matdef.Color != null)
-                    mat.color = matdef.Color.ToColor();
-                if (matdef.MainTextureId != null)
+                    mat.color = mat.color.ToMWColor().ApplyPatch(matdef.Color).ToColor();
+
+                if (matdef.MainTextureId == Guid.Empty)
+                    mat.mainTexture = null;
+                else if (matdef.MainTextureId != null)
                     mat.mainTexture = MREAPI.AppsAPI.AssetCache.GetAsset(matdef.MainTextureId) as UnityEngine.Texture;
+
                 if (matdef.MainTextureOffset != null)
-                    mat.mainTextureOffset = matdef.MainTextureOffset.ToVector2();
+                    mat.mainTextureOffset = mat.mainTextureOffset.ToMWVector2().ApplyPatch(matdef.MainTextureOffset).ToVector2();
                 if (matdef.MainTextureScale != null)
-                    mat.mainTextureScale = matdef.MainTextureScale.ToVector2();
+                    mat.mainTextureScale = mat.mainTextureScale.ToMWVector2().ApplyPatch(matdef.MainTextureScale).ToVector2();
             }
             else if(def.Texture != null && tex != null)
             {
