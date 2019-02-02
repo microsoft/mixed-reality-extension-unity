@@ -423,21 +423,25 @@ namespace MixedRealityExtension.Core
             {
                 if (originalMaterial == null)
                 {
-                    originalMaterial = Renderer.sharedMaterial;
+                    originalMaterial = Instantiate(Renderer.sharedMaterial);
                 }
 
-                if (patch.MaterialId != null)
+                if (patch.MaterialId == Guid.Empty)
                 {
-                    MaterialId = patch.MaterialId;
-                    var sharedMat = MREAPI.AppsAPI.AssetCache.GetAsset(patch.MaterialId.Value) as Material;
+                    Renderer.sharedMaterial = originalMaterial;
+                }
+                else if (patch.MaterialId != null)
+                {
+                    MaterialId = patch.MaterialId.Value;
+                    var sharedMat = MREAPI.AppsAPI.AssetCache.GetAsset(MaterialId) as Material;
                     if (sharedMat != null)
                     {
                         Renderer.sharedMaterial = sharedMat;
                     }
-                }
-                else
-                {
-                    Renderer.sharedMaterial = originalMaterial;
+                    else
+                    {
+                        MREAPI.Logger.LogWarning($"Material {MaterialId} not found, cannot assign to actor {Id}");
+                    }
                 }
             }
 

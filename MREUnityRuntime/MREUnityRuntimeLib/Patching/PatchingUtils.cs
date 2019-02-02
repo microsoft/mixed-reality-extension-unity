@@ -196,6 +196,26 @@ namespace MixedRealityExtension.Patching
             return _this;
         }
 
+        public static MWVector2 ApplyPatch(this MWVector2 _this, Vector2Patch vector)
+        {
+            if (vector == null)
+            {
+                return _this;
+            }
+
+            if (vector.X != null)
+            {
+                _this.X = vector.X.Value;
+            }
+
+            if (vector.Y != null)
+            {
+                _this.Y = vector.Y.Value;
+            }
+
+            return _this;
+        }
+
         public static MWVector3 ApplyPatch(this MWVector3 _this, Vector3Patch vector)
         {
             if (vector == null)

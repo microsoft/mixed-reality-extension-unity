@@ -89,8 +89,10 @@
     <Compile Include="Assets\AssetGroup.cs" />
     <Compile Include="Assets\AssetSource.cs" />
     <Compile Include="Core\Interfaces\IUserInfo.cs" />
+    <Compile Include="Core\Types\MWVector2.cs" />
     <Compile Include="Core\UserManager.cs" />
     <Compile Include="Messaging\Payloads\AssetCommandPayloads.cs" />
+    <Compile Include="Patching\Types\Vector2Patch.cs" />
     <Compile Include="PluginInterfaces\IAssetCache.cs" />
     <Compile Include="Assets\Definitions.cs" />
     <Compile Include="Assets\AssetLoader.cs" />
@@ -188,7 +190,7 @@
     <Compile Include="Patching\Types\TextPatch.cs" />
     <Compile Include="Patching\Types\TransformPatch.cs" />
     <Compile Include="Patching\Types\UserPatch.cs" />
-    <Compile Include="Patching\Types\VectorPatch.cs" />
+    <Compile Include="Patching\Types\Vector3Patch.cs" />
     <Compile Include="ProceduralToolkit\ArrayE.cs" />
     <Compile Include="ProceduralToolkit\CompoundMeshDraft.cs" />
     <Compile Include="ProceduralToolkit\Directions.cs" />
