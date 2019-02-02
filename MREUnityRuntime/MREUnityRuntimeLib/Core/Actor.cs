@@ -155,7 +155,8 @@ namespace MixedRealityExtension.Core
 
         internal void ApplyPatch(ActorPatch actorPatch)
         {
-            var parent = ParentId != null ? App.FindActor(ParentId.Value) : Parent;
+            var parentId = actorPatch.ParentId ?? ParentId;
+            var parent = parentId != null ? App.FindActor(parentId.Value) : Parent;
             ApplyPatchInternal(actorPatch, parent);
         }
 
@@ -405,7 +406,7 @@ namespace MixedRealityExtension.Core
             // Parent
             if (parent != null && (Parent == null || (Parent.Id != parent.Id)))
             {
-                transform.parent = ((Actor)parent).transform;
+                transform.SetParent(((Actor)parent).transform, false);
             }
             else if (parent == null && Parent != null)
             {
