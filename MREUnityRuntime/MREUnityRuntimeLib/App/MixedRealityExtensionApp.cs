@@ -746,15 +746,15 @@ namespace MixedRealityExtension.App
                 originalMessage.MessageId);
         }
 
-        [CommandHandler(typeof(EnableRigidBody))]
-        private void OnEnableRigidBody(EnableRigidBody payload)
+        [CommandHandler(typeof(DEPRECATED_EnableRigidBody))]
+        private void OnEnableRigidBody(DEPRECATED_EnableRigidBody payload)
         {
             var result = EnableRigidBody(payload.ActorId, payload.RigidBody);
             EventManager.QueueLateEvent(new ResponseEvent(payload.ActorId, payload.MessageId, result));
         }
 
-        [CommandHandler(typeof(StateUpdate))]
-        private void OnStateUpdate(StateUpdate payload)
+        [CommandHandler(typeof(DEPRECATED_StateUpdate))]
+        private void OnStateUpdate(DEPRECATED_StateUpdate payload)
         {
             foreach (var updatePayload in payload.Payloads)
             {
@@ -800,15 +800,15 @@ namespace MixedRealityExtension.App
             _actorManager.DestroyActors(payload.ActorIds, payload.Traces);
         }
 
-        [CommandHandler(typeof(EnableLight))]
-        private void OnEnableLight(EnableLight payload)
+        [CommandHandler(typeof(DEPRECATED_EnableLight))]
+        private void OnEnableLight(DEPRECATED_EnableLight payload)
         {
             OperationResult result = EnableLight(payload.ActorId, payload.Light);
             Protocol.Send(result, payload.MessageId);
         }
 
-        [CommandHandler(typeof(EnableText))]
-        private void OnEnableText(EnableText payload)
+        [CommandHandler(typeof(DEPRECATED_EnableText))]
+        private void OnEnableText(DEPRECATED_EnableText payload)
         {
             OperationResult result = EnableText(payload.ActorId, payload.Text);
             Protocol.Send(result, payload.MessageId);

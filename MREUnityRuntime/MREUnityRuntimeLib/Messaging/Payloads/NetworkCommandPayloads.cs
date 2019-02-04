@@ -109,8 +109,9 @@ namespace MixedRealityExtension.Messaging.Payloads
     /// <summary>
     /// App => Engine
     /// Payload for when the app wants to enable a rigid body on an actor.
+    /// Deprecated in 0.7.0. Remove after Min SDK version is 0.8.0.
     /// </summary>
-    public class EnableRigidBody : NetworkCommandPayload
+    public class DEPRECATED_EnableRigidBody : NetworkCommandPayload
     {
         /// <summary>
         /// The id of the actor to enable the rigid body on.
@@ -162,8 +163,9 @@ namespace MixedRealityExtension.Messaging.Payloads
     /// <summary>
     /// App => Engine
     /// Payload for when the app wants to update state through an enumeration of payloads to execute on.
+    /// Deprecated in 0.6.0. Remove after Min SDK version is 0.7.0.
     /// </summary>
-    public class StateUpdate : NetworkCommandPayload
+    public class DEPRECATED_StateUpdate : NetworkCommandPayload
     {
         /// <summary>
         /// The enumeration of payloads to executed on.
@@ -185,8 +187,9 @@ namespace MixedRealityExtension.Messaging.Payloads
     /// <summary>
     /// App => Engine
     /// Payload for when the app wants to enable a light on an actor.
+    /// Deprecated in 0.7.0. Remove after Min SDK version is 0.8.0.
     /// </summary>
-    public class EnableLight : NetworkCommandPayload
+    public class DEPRECATED_EnableLight : NetworkCommandPayload
     {
         /// <summary>
         /// The id of the actor to enable a light on.
@@ -202,8 +205,9 @@ namespace MixedRealityExtension.Messaging.Payloads
     /// <summary>
     /// App => Engine
     /// Payload for when the app wants to set text on an actor
+    /// Deprecated in 0.7.0. Remove after Min SDK version is 0.8.0.
     /// </summary>
-    public class EnableText : NetworkCommandPayload
+    public class DEPRECATED_EnableText : NetworkCommandPayload
     {
         /// <summary>
         /// The id of the actor to add text to
@@ -376,9 +380,9 @@ namespace MixedRealityExtension.Messaging.Payloads
     }
 
     /// <summary>
-    /// DEPRECATED
     /// App => Engine
     /// Payload for when the app wants to start an animation.
+    /// Deprecated in 0.4.0. Remove after min SDK version is 0.5.0.
     /// </summary>
     public class DEPRECATED_StartAnimation : NetworkCommandPayload
     {
@@ -404,9 +408,9 @@ namespace MixedRealityExtension.Messaging.Payloads
     }
 
     /// <summary>
-    /// DEPRECATED
     /// App => Engine
     /// Payload for when the app wants to stop an animation.
+    /// Deprecated in 0.4.0. Remove after min SDK version is 0.5.0.
     /// </summary>
     public class DEPRECATED_StopAnimation : NetworkCommandPayload
     {
@@ -427,9 +431,9 @@ namespace MixedRealityExtension.Messaging.Payloads
     }
 
     /// <summary>
-    /// DEPRECATED
     /// App => Engine
     /// Payload for when the app wants to reset an animation.
+    /// Deprecated in 0.4.0. Remove after min SDK version is 0.5.0.
     /// </summary>
     public class DEPRECATED_ResetAnimation : NetworkCommandPayload
     {
@@ -445,9 +449,9 @@ namespace MixedRealityExtension.Messaging.Payloads
     }
 
     /// <summary>
-    /// DEPRECATED
     /// App => Engine
     /// Payload for when the app wants to reset an animation.
+    /// Deprecated in 0.4.0. Remove after min SDK version is 0.5.0.
     /// </summary>
     public class DEPRECATED_PauseAnimation : NetworkCommandPayload
     {
@@ -463,9 +467,9 @@ namespace MixedRealityExtension.Messaging.Payloads
     }
 
     /// <summary>
-    /// DEPRECATED
     /// App => Engine
     /// Payload for when the app wants to reset an animation.
+    /// Deprecated in 0.4.0. Remove after min SDK version is 0.5.0.
     /// </summary>
     public class DEPRECATED_ResumeAnimation : NetworkCommandPayload
     {
