@@ -83,7 +83,7 @@ namespace MixedRealityExtension.Factories
                         dims.Z,
                         definition.USegments.GetValueOrDefault(1),
                         definition.VSegments.GetValueOrDefault(1),
-                        false);
+                        true);
                     meshDraft.Move(new Vector3(-dims.X / 2, 0, -dims.Z / 2));
                     break;
 
@@ -92,7 +92,7 @@ namespace MixedRealityExtension.Factories
                         definition.Radius.GetValueOrDefault(0.5f),
                         definition.USegments.GetValueOrDefault(36),
                         definition.VSegments.GetValueOrDefault(36),
-                        false);
+                        true);
                     meshDraft.FlipFaces();
                     break;
 
