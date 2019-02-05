@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 using System;
 using UnityEngine;
+using MixedRealityExtension.API;
 using MixedRealityExtension.Core.Types;
 using MixedRealityExtension.ProceduralToolkit;
 using MixedRealityExtension.Util.Unity;
@@ -13,17 +14,6 @@ namespace MixedRealityExtension.Factories
 {
     public class MWPrimitiveFactory : IPrimitiveFactory
     {
-        private readonly Material primitiveMaterial;
-
-        /// <summary>
-        /// Create a primitive factory that uses the built-in primitive generator
-        /// </summary>
-        /// <param name="defaultMaterial">The material to apply to new primitives</param>
-        public MWPrimitiveFactory(Material defaultMaterial)
-        {
-            primitiveMaterial = defaultMaterial;
-        }
-
         /// <inheritdoc />
         public GameObject CreatePrimitive(PrimitiveDefinition definition, GameObject parent, bool addCollider)
         {
@@ -112,7 +102,7 @@ namespace MixedRealityExtension.Factories
 
             spawnedPrimitive.AddComponent<MeshFilter>().mesh = meshDraft.ToMesh();
             var renderer = spawnedPrimitive.AddComponent<MeshRenderer>();
-            renderer.sharedMaterial = primitiveMaterial;
+            renderer.sharedMaterial = MREAPI.AppsAPI.DefaultMaterial;
 
             if (addCollider)
             {

@@ -64,4 +64,16 @@ namespace MixedRealityExtension.Messaging.Payloads
         /// </summary>
         public Guid PrefabId;
     }
+
+    /// <summary>
+    /// App => Engine
+    /// Generate a new native asset with the included properties
+    /// </summary>
+    public class CreateAsset : NetworkCommandPayload
+    {
+        /// <summary>
+        /// Initial properties of the newly created asset
+        /// </summary>
+        public Asset Definition;
+    }
 }

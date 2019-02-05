@@ -13,7 +13,6 @@ using MixedRealityExtension.Util;
 using MixedRealityExtension.Util.Unity;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityGLTF;
@@ -156,7 +155,7 @@ namespace MixedRealityExtension.Assets
             catch (Exception e)
             {
                 failureMessage = UtilMethods.FormatException(
-                    $"An unexpected error occurred while loading the asset [{payload.Source}].", e);
+                    $"An unexpected error occurred while loading the asset [{payload.Source.Uri}].", e);
             }
             finally
             {
@@ -235,6 +234,7 @@ namespace MixedRealityExtension.Assets
                         Source = new AssetSource(source.ContainerType, source.Uri, $"texture:{i}"),
                         Texture = new MWTexture()
                         {
+                            Uri = gltfRoot.Textures[i].Source?.Value.Uri ?? null,
                             Resolution = new Vector2Patch()
                             {
                                 X = texture.width,
@@ -314,6 +314,78 @@ namespace MixedRealityExtension.Assets
             {
                 MREAPI.Logger.LogError($"Asset {def.Id} is not patchable, or not of the right type!");
             }
+        }
+
+        [CommandHandler(typeof(CreateAsset))]
+        internal async void OnCreateAsset(CreateAsset payload)
+        {
+            var def = payload.Definition;
+            var response = new AssetsLoaded();
+
+            if(def.Material != null)
+            {
+                var mat = UnityEngine.Object.Instantiate(MREAPI.AppsAPI.DefaultMaterial);
+                MREAPI.AppsAPI.AssetCache.CacheAsset(null, def.Id, mat);
+
+                OnAssetUpdate(new AssetUpdate() {
+                    Asset = def
+                });
+
+                response.Assets = new Asset[]{ new Asset()
+                {
+                    Id = def.Id,
+                    Material = new MWMaterial()
+                    {
+                        Color = new ColorPatch(mat.color),
+                        MainTextureId = MREAPI.AppsAPI.AssetCache.GetId(mat.mainTexture),
+                        MainTextureOffset = new Vector2Patch(mat.mainTextureOffset),
+                        MainTextureScale = new Vector2Patch(mat.mainTextureScale)
+                    }
+                }};
+            }
+            else if(def.Texture != null)
+            {
+                var result = await TextureFetcher.LoadTextureTask(_owner, new Uri(def.Texture.Value.Uri));
+                if(result.FailureMessage != null)
+                {
+                    response.FailureMessage = result.FailureMessage;
+                }
+                else
+                {
+                    var tex = result.Texture;
+                    MREAPI.AppsAPI.AssetCache.CacheAsset(null, def.Id, tex);
+
+                    OnAssetUpdate(new AssetUpdate() {
+                        Asset = def
+                    });
+
+                    response.Assets = new Asset[] { new Asset()
+                    {
+                        Id = def.Id,
+                        Texture = new MWTexture()
+                        {
+                            Resolution = new Vector2Patch()
+                            {
+                                X = tex.width,
+                                Y = tex.height
+                            },
+                            WrapModeU = tex.wrapModeU,
+                            WrapModeV = tex.wrapModeV
+                        }
+                    } };
+                }
+            }
+            else
+            {
+                response.FailureMessage = $"Not implemented: CreateAsset of type {(def.Prefab != null ? "Prefab" : "Mesh")}";
+                MREAPI.Logger.LogError(response.FailureMessage);
+            }
+
+            _app.Protocol.Send(new Message()
+            {
+                ReplyToId = payload.MessageId,
+                Payload = response
+            });
         }
     }
 }
