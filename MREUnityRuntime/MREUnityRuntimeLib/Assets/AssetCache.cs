@@ -51,7 +51,17 @@ namespace MixedRealityExtension.Assets
         /// <inheritdoc cref="GetAssetIdsInSource"/>
         public IEnumerable<Guid> GetAssetIdsInSource(AssetSource source = null)
         {
-            assetsBySource.TryGetValue(source, out var guids);
+            List<Guid> guids;
+
+            if (source != null)
+            {
+                assetsBySource.TryGetValue(source, out guids);
+            }
+            else
+            {
+                guids = manualAssets;
+            }
+
             return guids;
         }
 
