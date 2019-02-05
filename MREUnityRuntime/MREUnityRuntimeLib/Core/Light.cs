@@ -36,7 +36,7 @@ namespace MixedRealityExtension.Core
         public float Intensity => _light.intensity;
 
         /// <inheritdoc />
-        public float SpotAngle => _light.spotAngle;
+        public float SpotAngle => _light.spotAngle * Mathf.Deg2Rad;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Light"/> class.
