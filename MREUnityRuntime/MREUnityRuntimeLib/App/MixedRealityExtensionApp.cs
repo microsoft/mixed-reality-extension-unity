@@ -336,7 +336,7 @@ namespace MixedRealityExtension.App
 
         internal void OnReceive(Message message)
         {
-            if (message.Payload is LoadAssets || message.Payload is AssetUpdate)
+            if (message.Payload is LoadAssets || message.Payload is CreateAsset || message.Payload is AssetUpdate)
             {
                 var ncp = message.Payload as NetworkCommandPayload;
                 ncp.MessageId = message.Id;

@@ -23,7 +23,7 @@ namespace MixedRealityExtension.PluginInterfaces
         /// </summary>
         /// <param name="source">The asset source</param>
         /// <returns>A list of IDs, or null if the given source is not loaded.</returns>
-        IEnumerable<Guid> GetAssetIdsInSource(AssetSource source);
+        IEnumerable<Guid> GetAssetIdsInSource(AssetSource source = null);
 
         /// <summary>
         /// Retrieve an asset from the cache by ID, or null if an asset with that ID is not loaded.
@@ -42,10 +42,9 @@ namespace MixedRealityExtension.PluginInterfaces
         /// <summary>
         /// Cache an asset with the given lookup values.
         /// </summary>
-        /// <param name="source">The origin container.</param>
-        /// <param name="id">The ID of the asset.</param>
         /// <param name="asset">The native Unity asset</param>
-        void CacheAsset(AssetSource source, Guid id, UnityEngine.Object asset);
-
+        /// <param name="id">The ID of the asset.</param>
+        /// <param name="source">The origin container.</param>
+        void CacheAsset(UnityEngine.Object asset, Guid id, AssetSource source = null);
     }
 }

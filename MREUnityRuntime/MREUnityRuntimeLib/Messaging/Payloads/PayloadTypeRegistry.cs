@@ -60,6 +60,7 @@ namespace MixedRealityExtension.Messaging.Payloads
     [PayloadType(typeof(AssetsLoaded), "assets-loaded")]
     [PayloadType(typeof(LookAt), "look-at")]
     [PayloadType(typeof(AssetUpdate), "asset-update")]
+    [PayloadType(typeof(CreateAsset), "create-asset")]
     internal static class PayloadTypeRegistry
     {
         private static Dictionary<string, Type> _stringToPayloadMap;

@@ -103,6 +103,11 @@ namespace MixedRealityExtension.Assets
     public struct Texture
     {
         /// <summary>
+        /// The URI of the source data for this texture
+        /// </summary>
+        public string Uri;
+
+        /// <summary>
         /// The resolution of the texture
         /// </summary>
         public Vector2Patch Resolution;

@@ -22,6 +22,7 @@ namespace MixedRealityExtension.API
         /// <summary>
         /// Initializes the Mixed Reality Extension SDK API.
         /// </summary>
+        /// <param name="defaultMaterial">The material template used for all SDK-spawned meshes.</param>
         /// <param name="behaviorFactory">The behavior factory to use within the runtime.</param>
         /// <param name="textFactory">The text factory to use within the runtime.</param>
         /// <param name="primitiveFactory">The primitive factory to use within the runtime.</param>
@@ -30,6 +31,7 @@ namespace MixedRealityExtension.API
         /// <param name="gltfImporterFactory">The glTF loader factory. Uses default GLTFSceneImporter if omitted.</param>
         /// <param name="logger">The logger to be used by the MRE SDK.</param>
         public static void InitializeAPI(
+            UnityEngine.Material defaultMaterial,
             IBehaviorFactory behaviorFactory = null,
             ITextFactory textFactory = null,
             IPrimitiveFactory primitiveFactory = null,
@@ -38,9 +40,10 @@ namespace MixedRealityExtension.API
             IGLTFImporterFactory gltfImporterFactory = null,
             IMRELogger logger = null)
         {
+            AppsAPI.DefaultMaterial = defaultMaterial;
             AppsAPI.BehaviorFactory = behaviorFactory;
             AppsAPI.TextFactory = textFactory ?? throw new ArgumentException($"{nameof(textFactory)} cannot be null");
-            AppsAPI.PrimitiveFactory = primitiveFactory;
+            AppsAPI.PrimitiveFactory = primitiveFactory ?? new MWPrimitiveFactory();
             AppsAPI.LibraryResourceFactory = libraryFactory;
             AppsAPI.AssetCache = assetCache ?? new AssetCache();
             AppsAPI.GLTFImporterFactory = gltfImporterFactory ?? new GLTFImporterFactory();
@@ -72,6 +75,11 @@ namespace MixedRealityExtension.API
     public class MREAppsAPI
     {
         private AppManager _apps = new AppManager();
+
+        /// <summary>
+        /// The material template used for all SDK-spawned materials.
+        /// </summary>
+        public UnityEngine.Material DefaultMaterial { get; internal set; }
 
         internal IAssetCache AssetCache { get; set; }
 
