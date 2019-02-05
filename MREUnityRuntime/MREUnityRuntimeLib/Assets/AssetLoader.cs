@@ -215,7 +215,7 @@ namespace MixedRealityExtension.Assets
                             ActorCount = actorCount
                         }
                     };
-                    MREAPI.AppsAPI.AssetCache.CacheAsset(source, def.Id, rootObject);
+                    MREAPI.AppsAPI.AssetCache.CacheAsset(rootObject, def.Id, source);
                     assets.Add(def);
                 }
             }
@@ -244,7 +244,7 @@ namespace MixedRealityExtension.Assets
                             WrapModeV = texture.wrapModeV
                         }
                     };
-                    MREAPI.AppsAPI.AssetCache.CacheAsset(source, asset.Id, texture);
+                    MREAPI.AppsAPI.AssetCache.CacheAsset(texture, asset.Id, source);
                     assets.Add(asset);
                 }
             }
@@ -268,7 +268,7 @@ namespace MixedRealityExtension.Assets
                             MainTextureScale = new Vector2Patch(material.mainTextureScale)
                         }
                     };
-                    MREAPI.AppsAPI.AssetCache.CacheAsset(source, asset.Id, material);
+                    MREAPI.AppsAPI.AssetCache.CacheAsset(material, asset.Id, source);
                     assets.Add(asset);
                 }
             }
@@ -295,7 +295,7 @@ namespace MixedRealityExtension.Assets
                 if (matdef.MainTextureId == Guid.Empty)
                     mat.mainTexture = null;
                 else if (matdef.MainTextureId != null)
-                    mat.mainTexture = MREAPI.AppsAPI.AssetCache.GetAsset(matdef.MainTextureId) as UnityEngine.Texture;
+                    assignOrQueueTexture(def.Id, matdef.MainTextureId.Value);
 
                 if (matdef.MainTextureOffset != null)
                     mat.mainTextureOffset = mat.mainTextureOffset.ToMWVector2().ApplyPatch(matdef.MainTextureOffset).ToVector2();
@@ -325,7 +325,7 @@ namespace MixedRealityExtension.Assets
             if(def.Material != null)
             {
                 var mat = UnityEngine.Object.Instantiate(MREAPI.AppsAPI.DefaultMaterial);
-                MREAPI.AppsAPI.AssetCache.CacheAsset(null, def.Id, mat);
+                MREAPI.AppsAPI.AssetCache.CacheAsset(mat, def.Id);
 
                 OnAssetUpdate(new AssetUpdate() {
                     Asset = def
@@ -353,11 +353,12 @@ namespace MixedRealityExtension.Assets
                 else
                 {
                     var tex = result.Texture;
-                    MREAPI.AppsAPI.AssetCache.CacheAsset(null, def.Id, tex);
+                    MREAPI.AppsAPI.AssetCache.CacheAsset(tex, def.Id);
 
                     OnAssetUpdate(new AssetUpdate() {
                         Asset = def
                     });
+                    assignTextureToQueuedMaterials(def.Id);
 
                     response.Assets = new Asset[] { new Asset()
                     {
@@ -387,5 +388,78 @@ namespace MixedRealityExtension.Assets
                 Payload = response
             });
         }
+
+        #region Async texture management
+
+        /// <summary>
+        /// Maps texture IDs to the list of material IDs assigned to that texture
+        /// </summary>
+        private readonly Dictionary<Guid, List<Guid>> materialsWaitingForTexture = new Dictionary<Guid, List<Guid>>(5);
+
+        /// <summary>
+        /// Maps material IDs to the texture IDs assigned to them
+        /// </summary>
+        private readonly Dictionary<Guid, Guid> textureOnMaterial = new Dictionary<Guid, Guid>(5);
+
+        /// <summary>
+        /// Mark a material to receive a texture once it's loaded
+        /// </summary>
+        /// <param name="materialId"></param>
+        /// <param name="textureId"></param>
+        private void assignOrQueueTexture(Guid materialId, Guid textureId)
+        {
+            // if the material already has a texture on it
+            if (textureOnMaterial.TryGetValue(materialId, out var oldTexId)
+                // and that texture is also pending
+                && materialsWaitingForTexture.ContainsKey(oldTexId)
+                && materialsWaitingForTexture[oldTexId].Contains(materialId))
+            {
+                // dequeue the material from the old tex's update queue
+                materialsWaitingForTexture[oldTexId].Remove(materialId);
+
+                // and clean up old tex queue if it's now empty
+                if(materialsWaitingForTexture[oldTexId].Count == 0)
+                    materialsWaitingForTexture.Remove(oldTexId);
+            }
+
+            // assign the texture to the material
+            textureOnMaterial[materialId] = textureId;
+
+            var tex = MREAPI.AppsAPI.AssetCache.GetAsset(textureId) as UnityEngine.Texture;
+            if (tex == null)
+            {
+                // new texture isn't loaded yet, queue the material to receive it when it's done
+                var waiting = materialsWaitingForTexture.GetOrCreate(textureId, () => new List<Guid>(3));
+                waiting.Add(materialId);
+            }
+            else
+            {
+                // assign immediately
+                var mat = MREAPI.AppsAPI.AssetCache.GetAsset(materialId) as UnityEngine.Material;
+                mat.mainTexture = tex;
+            }
+        }
+
+        /// <summary>
+        /// Assign the loaded texture to materials waiting for it
+        /// </summary>
+        /// <param name="textureId"></param>
+        private void assignTextureToQueuedMaterials(Guid textureId)
+        {
+            // skip if no waiting materials
+            if (!materialsWaitingForTexture.ContainsKey(textureId))
+                return;
+
+            var tex = MREAPI.AppsAPI.AssetCache.GetAsset(textureId) as UnityEngine.Texture;
+            foreach (var matId in materialsWaitingForTexture[textureId])
+            {
+                var mat = MREAPI.AppsAPI.AssetCache.GetAsset(matId) as UnityEngine.Material;
+                mat.mainTexture = tex;
+            }
+
+            materialsWaitingForTexture.Remove(textureId);
+        }
+
+        #endregion
     }
 }

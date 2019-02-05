@@ -43,9 +43,10 @@ namespace MixedRealityExtension.Assets
 
         public override bool Equals(object other)
         {
-            return other is AssetSource otherSource &&
+            return other != null &&
+                other is AssetSource otherSource &&
                 this.ContainerType == otherSource.ContainerType &&
-                this.Uri.Equals(otherSource.Uri);
+                this.Uri == otherSource.Uri;
         }
 
         public override int GetHashCode()
@@ -53,16 +54,6 @@ namespace MixedRealityExtension.Assets
             return 313
                 ^ 317 * ContainerType.GetHashCode()
                 ^ 317 * Uri.GetHashCode();
-        }
-
-        public static bool operator ==(AssetSource a, AssetSource b)
-        {
-            return a.Equals(b);
-        }
-
-        public static bool operator !=(AssetSource a, AssetSource b)
-        {
-            return !a.Equals(b);
         }
     }
 }

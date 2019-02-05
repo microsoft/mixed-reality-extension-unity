@@ -43,7 +43,7 @@ namespace MixedRealityExtension.API
             AppsAPI.DefaultMaterial = defaultMaterial;
             AppsAPI.BehaviorFactory = behaviorFactory;
             AppsAPI.TextFactory = textFactory ?? throw new ArgumentException($"{nameof(textFactory)} cannot be null");
-            AppsAPI.PrimitiveFactory = primitiveFactory;
+            AppsAPI.PrimitiveFactory = primitiveFactory ?? new MWPrimitiveFactory();
             AppsAPI.LibraryResourceFactory = libraryFactory;
             AppsAPI.AssetCache = assetCache ?? new AssetCache();
             AppsAPI.GLTFImporterFactory = gltfImporterFactory ?? new GLTFImporterFactory();

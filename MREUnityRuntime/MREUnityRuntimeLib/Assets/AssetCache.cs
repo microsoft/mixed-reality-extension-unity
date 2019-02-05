@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using MixedRealityExtension.PluginInterfaces;
+using MixedRealityExtension.Util;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -13,9 +14,16 @@ namespace MixedRealityExtension.Assets
     /// </summary>
     public class AssetCache : IAssetCache
     {
-        private readonly Dictionary<Guid, Object> assets = new Dictionary<Guid, Object>(100);
-        private readonly Dictionary<Object, Guid> ids = new Dictionary<Object, Guid>(100);
-        private readonly Dictionary<AssetSource, List<Guid>> assetsBySource = new Dictionary<AssetSource, List<Guid>>(10);
+        private const int ASSET_DEFAULT_COUNT = 10;
+        private const int ASSET_SOURCES_DEFAULT_COUNT = 5;
+
+        private readonly Dictionary<Guid, Object> assets
+            = new Dictionary<Guid, Object>(ASSET_SOURCES_DEFAULT_COUNT * ASSET_DEFAULT_COUNT);
+        private readonly Dictionary<Object, Guid> ids
+            = new Dictionary<Object, Guid>(ASSET_SOURCES_DEFAULT_COUNT * ASSET_DEFAULT_COUNT);
+        private readonly Dictionary<AssetSource, List<Guid>> assetsBySource
+            = new Dictionary<AssetSource, List<Guid>>(ASSET_SOURCES_DEFAULT_COUNT);
+        private readonly List<Guid> manualAssets = new List<Guid>(ASSET_DEFAULT_COUNT);
         private readonly GameObject cacheRoot;
         private readonly GameObject emptyTemplate;
 
@@ -41,7 +49,7 @@ namespace MixedRealityExtension.Assets
         }
 
         /// <inheritdoc cref="GetAssetIdsInSource"/>
-        public IEnumerable<Guid> GetAssetIdsInSource(AssetSource source)
+        public IEnumerable<Guid> GetAssetIdsInSource(AssetSource source = null)
         {
             assetsBySource.TryGetValue(source, out var guids);
             return guids;
@@ -70,14 +78,19 @@ namespace MixedRealityExtension.Assets
         }
 
         /// <inheritdoc cref="CacheAsset"/>
-        public void CacheAsset(AssetSource source, Guid id, Object asset)
+        public void CacheAsset(Object asset, Guid id, AssetSource source = null)
         {
-            if (!assetsBySource.ContainsKey(source))
+            List<Guid> assetList;
+            if(source != null)
             {
-                assetsBySource[source] = new List<Guid>(10);
+                assetList = assetsBySource.GetOrCreate(source, () => new List<Guid>(ASSET_DEFAULT_COUNT));
+            }
+            else
+            {
+                assetList = manualAssets;
             }
 
-            assetsBySource[source].Add(id);
+            assetList.Add(id);
             assets[id] = asset;
             ids[asset] = id;
         }

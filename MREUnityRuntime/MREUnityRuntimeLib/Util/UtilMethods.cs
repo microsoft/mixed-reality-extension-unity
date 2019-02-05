@@ -120,5 +120,24 @@ namespace MixedRealityExtension.Util
                 l.Contains("Rethrow")));
             return $"{message} The trace is below:\n{error}\n{trace}";
         }
+
+        /// <summary>
+        /// A useful utility to transprently insert default values into a dictionary
+        /// </summary>
+        /// <typeparam name="K">The dictionary key type</typeparam>
+        /// <typeparam name="V">The dictionary value type</typeparam>
+        /// <param name="_this">The dictionary</param>
+        /// <param name="key">The key whose value you want to get or create</param>
+        /// <param name="creator">A function that returns a default value for insertion</param>
+        /// <returns></returns>
+        internal static V GetOrCreate<K,V>(this Dictionary<K,V> _this, K key, Func<V> creator)
+        {
+            if (!_this.ContainsKey(key))
+            {
+                _this[key] = creator();
+            }
+
+            return _this[key];
+        }
     }
 }

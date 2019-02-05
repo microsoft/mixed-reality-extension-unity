@@ -88,9 +88,9 @@ public class MREComponent : MonoBehaviour
         if (!_apiInitialized)
         {
             MREAPI.InitializeAPI(
+                DefaultPrimMaterial,
                 behaviorFactory: new BehaviorFactory(),
                 textFactory: new MWTextFactory(SerifFont, SansSerifFont),
-                primitiveFactory: new MWPrimitiveFactory(DefaultPrimMaterial),
                 libraryFactory: new ResourceFactory(),
                 assetCache: new AssetCache(new GameObject("MRE Asset Cache")),
                 logger: new MRELogger());
