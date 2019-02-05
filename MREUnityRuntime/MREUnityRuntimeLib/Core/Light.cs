@@ -7,7 +7,7 @@ using MixedRealityExtension.Core.Types;
 using MixedRealityExtension.Patching;
 using MixedRealityExtension.Patching.Types;
 using MixedRealityExtension.Util.Unity;
-
+using UnityEngine;
 using MRELightType = MixedRealityExtension.Core.Interfaces.LightType;
 using UnityLight = UnityEngine.Light;
 
@@ -36,7 +36,7 @@ namespace MixedRealityExtension.Core
         public float Intensity => _light.intensity;
 
         /// <inheritdoc />
-        public float SpotAngle => _light.spotAngle;
+        public float SpotAngle => _light.spotAngle * Mathf.Deg2Rad;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Light"/> class.
@@ -55,7 +55,10 @@ namespace MixedRealityExtension.Core
             _light.color = _light.color.GetPatchApplied(Color.ApplyPatch(patch.Color));
             _light.range = _light.range.GetPatchApplied(Range.ApplyPatch(patch.Range));
             _light.intensity = _light.intensity.GetPatchApplied(Intensity.ApplyPatch(patch.Intensity));
-            _light.spotAngle = _light.spotAngle.GetPatchApplied(SpotAngle.ApplyPatch(patch.SpotAngle));
+            if (patch.SpotAngle.HasValue)
+            {
+                _light.spotAngle = Mathf.Rad2Deg * patch.SpotAngle.Value;
+            }
         }
 
         /// <inheritdoc />
