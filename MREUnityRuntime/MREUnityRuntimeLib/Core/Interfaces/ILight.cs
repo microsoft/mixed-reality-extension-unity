@@ -19,13 +19,10 @@ namespace MixedRealityExtension.Core.Interfaces
         /// </summary>
         Point,
 
-        /*
-        Disabling Directional lights, for now.
         /// <summary>
         /// Directional light.
         /// </summary>
         Directional
-        */
     }
 
     /// <summary>
