@@ -920,23 +920,35 @@ namespace MixedRealityExtension.App
         [CommandHandler(typeof(SyncAnimations))]
         private void OnSyncAnimations(SyncAnimations payload)
         {
-            // The authoritative peer gathers and sends the animation states of all actors.
-            var animationStates = new List<MWActorAnimationState>();
-            foreach (var actor in _actorManager.Actors)
+            if (payload.AnimationStates == null)
             {
-                if (actor != null)
+                // Gather and send the animation states of all actors.
+                var animationStates = new List<MWActorAnimationState>();
+                foreach (var actor in _actorManager.Actors)
                 {
-                    var actorAnimationStates = actor.GetOrCreateActorComponent<AnimationComponent>().GetAnimationStates();
-                    if (actorAnimationStates != null)
+                    if (actor != null)
                     {
-                        animationStates.AddRange(actorAnimationStates);
+                        var actorAnimationStates = actor.GetOrCreateActorComponent<AnimationComponent>().GetAnimationStates();
+                        if (actorAnimationStates != null)
+                        {
+                            animationStates.AddRange(actorAnimationStates);
+                        }
                     }
                 }
+                Protocol.Send(new SyncAnimations()
+                {
+                    AnimationStates = animationStates.ToList()
+                }, payload.MessageId);
             }
-            Protocol.Send(new SyncAnimations()
+            else
             {
-                AnimationStates = animationStates.ToList()
-            }, payload.MessageId);
+                // Apply animation states to the actors.
+                foreach (var animationState in payload.AnimationStates)
+                {
+                    _actorManager.FindActor(animationState.ActorId)?.GetOrCreateActorComponent<AnimationComponent>()
+                        .ApplyAnimationState(animationState);
+                }
+            }
         }
 
         [CommandHandler(typeof(SetAnimationState))]
