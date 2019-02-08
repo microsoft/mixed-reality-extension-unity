@@ -289,18 +289,13 @@ namespace MixedRealityExtension.Assets
             if (def.Material != null && mat != null)
             {
                 var matdef = def.Material.Value;
-                if (matdef.Color != null)
-                    mat.color = mat.color.ToMWColor().ApplyPatch(matdef.Color).ToColor();
-
-                if (matdef.MainTextureId == Guid.Empty)
-                    mat.mainTexture = null;
-                else if (matdef.MainTextureId != null)
+                if (matdef.MainTextureId != null && matdef.MainTextureId != Guid.Empty)
+                {
                     assignOrQueueTexture(def.Id, matdef.MainTextureId.Value);
+                    matdef.MainTextureId = null;
+                }
 
-                if (matdef.MainTextureOffset != null)
-                    mat.mainTextureOffset = mat.mainTextureOffset.ToMWVector2().ApplyPatch(matdef.MainTextureOffset).ToVector2();
-                if (matdef.MainTextureScale != null)
-                    mat.mainTextureScale = mat.mainTextureScale.ToMWVector2().ApplyPatch(matdef.MainTextureScale).ToVector2();
+                MREAPI.AppsAPI.MaterialPatcher.ApplyMaterialPatch(mat, matdef);
             }
             else if(def.Texture != null && tex != null)
             {
@@ -334,13 +329,7 @@ namespace MixedRealityExtension.Assets
                 response.Assets = new Asset[]{ new Asset()
                 {
                     Id = def.Id,
-                    Material = new MWMaterial()
-                    {
-                        Color = new ColorPatch(mat.color),
-                        MainTextureId = MREAPI.AppsAPI.AssetCache.GetId(mat.mainTexture),
-                        MainTextureOffset = new Vector2Patch(mat.mainTextureOffset),
-                        MainTextureScale = new Vector2Patch(mat.mainTextureScale)
-                    }
+                    Material = MREAPI.AppsAPI.MaterialPatcher.GeneratePatch(mat)
                 }};
             }
             else if(def.Texture != null)
@@ -436,7 +425,9 @@ namespace MixedRealityExtension.Assets
             {
                 // assign immediately
                 var mat = MREAPI.AppsAPI.AssetCache.GetAsset(materialId) as UnityEngine.Material;
-                mat.mainTexture = tex;
+                MREAPI.AppsAPI.MaterialPatcher.ApplyMaterialPatch(mat, new MWMaterial() {
+                    MainTextureId = textureId
+                });
             }
         }
 
@@ -454,7 +445,9 @@ namespace MixedRealityExtension.Assets
             foreach (var matId in materialsWaitingForTexture[textureId])
             {
                 var mat = MREAPI.AppsAPI.AssetCache.GetAsset(matId) as UnityEngine.Material;
-                mat.mainTexture = tex;
+                MREAPI.AppsAPI.MaterialPatcher.ApplyMaterialPatch(mat, new MWMaterial() {
+                    MainTextureId = textureId
+                });
             }
 
             materialsWaitingForTexture.Remove(textureId);

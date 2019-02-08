@@ -29,6 +29,7 @@ namespace MixedRealityExtension.API
         /// <param name="libraryFactory">The library resource factory to use within the runtime.</param>
         /// <param name="assetCache">The place for this MRE to cache its meshes, etc.</param>
         /// <param name="gltfImporterFactory">The glTF loader factory. Uses default GLTFSceneImporter if omitted.</param>
+        /// <param name="materialPatcher">Overrides default material property map (color and mainTexture only).</param>
         /// <param name="logger">The logger to be used by the MRE SDK.</param>
         public static void InitializeAPI(
             UnityEngine.Material defaultMaterial,
@@ -38,6 +39,7 @@ namespace MixedRealityExtension.API
             ILibraryResourceFactory libraryFactory = null,
             IAssetCache assetCache = null,
             IGLTFImporterFactory gltfImporterFactory = null,
+            IMaterialPatcher materialPatcher = null,
             IMRELogger logger = null)
         {
             AppsAPI.DefaultMaterial = defaultMaterial;
@@ -47,6 +49,7 @@ namespace MixedRealityExtension.API
             AppsAPI.LibraryResourceFactory = libraryFactory;
             AppsAPI.AssetCache = assetCache ?? new AssetCache();
             AppsAPI.GLTFImporterFactory = gltfImporterFactory ?? new GLTFImporterFactory();
+            AppsAPI.MaterialPatcher = materialPatcher ?? new DefaultMaterialPatcher();
 
 #if ANDROID_DEBUG
             Logger = logger ?? new UnityLogger();
@@ -81,7 +84,10 @@ namespace MixedRealityExtension.API
         /// </summary>
         public UnityEngine.Material DefaultMaterial { get; internal set; }
 
-        internal IAssetCache AssetCache { get; set; }
+        /// <summary>
+        /// The pool of assets available to MREs
+        /// </summary>
+        public IAssetCache AssetCache { get; internal set; }
 
         internal IBehaviorFactory BehaviorFactory { get; set; }
 
@@ -92,6 +98,8 @@ namespace MixedRealityExtension.API
         internal ILibraryResourceFactory LibraryResourceFactory { get; set; }
 
         internal IGLTFImporterFactory GLTFImporterFactory { get; set; }
+
+        internal IMaterialPatcher MaterialPatcher { get; set; }
 
         /// <summary>
         /// Creates a new mixed reality extension app and adds it to the MRE runtime.

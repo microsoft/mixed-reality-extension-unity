@@ -91,6 +91,7 @@
     <Compile Include="Core\Interfaces\IUserInfo.cs" />
     <Compile Include="Core\Types\MWVector2.cs" />
     <Compile Include="Core\UserManager.cs" />
+    <Compile Include="Factories\DefaultMaterialApplicator.cs" />
     <Compile Include="Messaging\Payloads\AssetCommandPayloads.cs" />
     <Compile Include="Patching\Types\Vector2Patch.cs" />
     <Compile Include="PluginInterfaces\IAssetCache.cs" />
@@ -103,6 +104,7 @@
     <Compile Include="Messaging\Protocols\Idle.cs" />
     <Compile Include="PluginInterfaces\IGltfImporterFactory.cs" />
     <Compile Include="PluginInterfaces\ILibraryResourceFactory.cs" />
+    <Compile Include="PluginInterfaces\IMaterialPatcher.cs" />
     <Compile Include="PluginInterfaces\IMRELogger.cs" />
     <Compile Include="PluginInterfaces\ITextFactory.cs" />
     <Compile Include="Behaviors\Actions\Action.cs" />
