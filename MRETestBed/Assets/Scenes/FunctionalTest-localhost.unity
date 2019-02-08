@@ -852,6 +852,7 @@ MonoBehaviour:
   MREURL: ws://localhost:3901
   testNames:
   - asset-early-assignment-test
+  - asset-mutability-test
   - asset-preload-test
   - clock-sync-test
   - gltf-animation-test
@@ -861,7 +862,6 @@ MonoBehaviour:
   - interpolation-test
   - library-test
   - look-at-test
-  - mutable-asset-test
   - primitives-test
   - reparent-test
   - rigid-body-test
