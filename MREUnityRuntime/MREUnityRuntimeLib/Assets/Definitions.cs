@@ -72,6 +72,27 @@ namespace MixedRealityExtension.Assets
     }
 
     /// <summary>
+    /// How a material's alpha channel should be used
+    /// </summary>
+    public enum AlphaMode
+    {
+        /// <summary>
+        /// Draw opaque regardless of alpha
+        /// </summary>
+        Opaque = 0,
+
+        /// <summary>
+        /// Draw opaque, unless alpha drops below the specified cutoff
+        /// </summary>
+        TransparentCutout,
+
+        /// <summary>
+        /// Blend with the background by the factor of alpha
+        /// </summary>
+        Transparent
+    }
+
+    /// <summary>
     /// Contains material asset info
     /// </summary>
     public struct Material
@@ -95,6 +116,16 @@ namespace MixedRealityExtension.Assets
         /// Scale the texture by this amount in each axis
         /// </summary>
         public Vector2Patch MainTextureScale;
+
+        /// <summary>
+        /// How this material should treat the color/texture alpha channel
+        /// </summary>
+        public AlphaMode? AlphaMode;
+
+        /// <summary>
+        /// If AlphaMode is TransparentCutout, this is the transparency threshold
+        /// </summary>
+        public float? AlphaCutoff;
     }
 
     /// <summary>
