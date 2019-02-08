@@ -84,12 +84,12 @@ namespace MixedRealityExtension.Assets
         /// <summary>
         /// Draw opaque, unless alpha drops below the specified cutoff
         /// </summary>
-        TransparentCutout,
+        Mask,
 
         /// <summary>
         /// Blend with the background by the factor of alpha
         /// </summary>
-        Transparent
+        Blend
     }
 
     /// <summary>
