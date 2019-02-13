@@ -559,6 +559,7 @@ namespace MixedRealityExtension.Core
             if (RigidBody != null)
             {
                 subscriptions |= SubscriptionType.Transform;
+                subscriptions |= SubscriptionType.Rigidbody;
             }
 
             if ((subscriptions & flag) != SubscriptionType.None)
