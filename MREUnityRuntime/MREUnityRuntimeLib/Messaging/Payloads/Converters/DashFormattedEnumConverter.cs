@@ -1,23 +1,21 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
+using MixedRealityExtension.Util;
 using Newtonsoft.Json;
 
 namespace MixedRealityExtension.Messaging.Payloads.Converters
 {
     /// <summary>
-    /// Json converter for the OperatingModel enum.
+    /// Json converter for dash-formatted enumerations.
     /// </summary>
     public class DashFormattedEnumConverter : JsonConverter
     {
         /// <inheritdoc />
         public override bool CanConvert(Type objectType)
         {
-            return objectType.IsEnum;
+            return UtilMethods.GetActualType(objectType).IsEnum;
         }
 
         /// <inheritdoc />
@@ -25,13 +23,13 @@ namespace MixedRealityExtension.Messaging.Payloads.Converters
         {
             var value = (string)reader.Value;
             value = value.Replace("-", "");
-            return Enum.Parse(objectType, value, true);
+            return Enum.Parse(UtilMethods.GetActualType(objectType), value, true);
         }
 
         /// <inheritdoc />
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
-            var name = Enum.GetName(value.GetType(), value);
+            var name = Enum.GetName(UtilMethods.GetActualType(value.GetType()), value);
 
             var sb = new StringBuilder();
 

@@ -74,6 +74,26 @@ namespace MixedRealityExtension.Util
         }
 
         /// <summary>
+        /// Returns true if the value is a Nullable type.
+        /// </summary>
+        internal static bool IsNullableType(Type type)
+        {
+            return (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>));
+        }
+
+        /// <summary>
+        /// If the given type is Nullable, return the underlying type. Otherwise return the original type.
+        /// </summary>
+        internal static Type GetActualType(Type objectType)
+        {
+            if (IsNullableType(objectType))
+            {
+                return Nullable.GetUnderlyingType(objectType);
+            }
+            return objectType;
+        }
+
+        /// <summary>
         /// Generates a GUID from the provided string. Note the result is not a valid GUID (not compliant with RFC 4122), only shaped like a GUID (a reasonably unique 16-byte value).
         /// </summary>
         /// <param name="str"></param>

@@ -4,8 +4,9 @@ using System;
 using MixedRealityExtension.API;
 using MixedRealityExtension.App;
 using MixedRealityExtension.IPC;
+using MixedRealityExtension.Messaging.Payloads;
 using Newtonsoft.Json;
-using UnityEngine;
+using Newtonsoft.Json.Linq;
 
 namespace MixedRealityExtension.Messaging.Protocols
 {
@@ -72,7 +73,21 @@ namespace MixedRealityExtension.Messaging.Protocols
             }
             catch (Exception ex)
             {
-                MREAPI.Logger.LogDebug($"Failed to deserialize message.  Exception {ex.Message}\nStackTrace: {ex.StackTrace}");
+                var message = $"Failed to process message. Exception {ex.Message}\nStackTrace: {ex.StackTrace}";
+                MREAPI.Logger.LogDebug(message);
+                try
+                {
+                    // In case of failure: make a best effort to send a reply message, so promises don't hang and the app can know something about what went wrong.
+                    var jtoken = JToken.Parse(json);
+                    var replyToId = jtoken["id"].ToString();
+                    Send(new OperationResult()
+                    {
+                        Message = message,
+                        ResultCode = OperationResultCode.Error
+                    }, replyToId);
+                }
+                catch
+                { }
             }
         }
 

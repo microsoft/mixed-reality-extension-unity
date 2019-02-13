@@ -72,25 +72,6 @@ namespace MixedRealityExtension.Core
         internal Guid? MaterialId { get; set; }
         private UnityEngine.Material originalMaterial;
 
-        internal bool Animating
-        {
-            get
-            {
-                var animationComponent = GetActorComponent<AnimationComponent>();
-                if (animationComponent != null)
-                {
-                    return animationComponent.Animating;
-                }
-
-                if (Parent != null)
-                {
-                    return ((Actor)Parent).Animating;
-                }
-
-                return false;
-            }
-        }
-
         #endregion
 
         #region Methods - Internal
@@ -155,9 +136,13 @@ namespace MixedRealityExtension.Core
 
         internal void ApplyPatch(ActorPatch actorPatch)
         {
-            var parentId = actorPatch.ParentId ?? ParentId;
-            var parent = parentId != null ? App.FindActor(parentId.Value) : Parent;
-            ApplyPatchInternal(actorPatch, parent);
+            PatchParent(actorPatch.ParentId);
+            PatchName(actorPatch.Name);
+            PatchMaterial(actorPatch.MaterialId);
+            PatchTransform(actorPatch.Transform);
+            PatchLight(actorPatch.Light);
+            PatchRigidBody(actorPatch.RigidBody);
+            PatchText(actorPatch.Text);
         }
 
         internal void SynchronizeEngine(ActorPatch actorPatch)
@@ -200,7 +185,7 @@ namespace MixedRealityExtension.Core
                 PatchingUtilMethods.GeneratePatch(RigidBody, (Rigidbody)null, App.SceneRoot.transform) : null;
 
             /*
-            var Light = ((subs & SubscriptionType.light) != SubscriptionType.none) ?
+            var light = ((subs & SubscriptionType.light) != SubscriptionType.none) ?
                 UnityHelpers.ReadLight(_cachedLight) : null;
             */
 
@@ -210,8 +195,8 @@ namespace MixedRealityExtension.Core
                 Name = Name,
                 Transform = transform,
                 RigidBody = rigidBody,
-                //Light = Light
-                // TODO: Generate patch from text
+                // Light = light
+                // Text = text
                 MaterialId = MaterialId
             };
 
@@ -401,9 +386,10 @@ namespace MixedRealityExtension.Core
             return RigidBody;
         }
 
-        private void ApplyPatchInternal(ActorPatch patch, IActor parent)
+        private void PatchParent(Guid? parentIdOrNull)
         {
-            // Parent
+            var parentId = parentIdOrNull ?? ParentId;
+            var parent = parentId != null ? App.FindActor(parentId.Value) : Parent;
             if (parent != null && (Parent == null || (Parent.Id != parent.Id)))
             {
                 transform.SetParent(((Actor)parent).transform, false);
@@ -412,14 +398,18 @@ namespace MixedRealityExtension.Core
             {
                 // TODO: Unparent?
             }
+        }
 
-            // Name
-            if (patch.Name != null)
+        private void PatchName(string nameOrNull)
+        {
+            if (nameOrNull != null)
             {
-                Name = patch.Name;
+                Name = nameOrNull;
             }
+        }
 
-            // Material
+        private void PatchMaterial(Guid? materialIdOrNull)
+        {
             if (Renderer != null)
             {
                 if (originalMaterial == null)
@@ -427,13 +417,13 @@ namespace MixedRealityExtension.Core
                     originalMaterial = Instantiate(Renderer.sharedMaterial);
                 }
 
-                if (patch.MaterialId == Guid.Empty)
+                if (materialIdOrNull == Guid.Empty)
                 {
                     Renderer.sharedMaterial = originalMaterial;
                 }
-                else if (patch.MaterialId != null)
+                else if (materialIdOrNull != null)
                 {
-                    MaterialId = patch.MaterialId.Value;
+                    MaterialId = materialIdOrNull.Value;
                     var sharedMat = MREAPI.AppsAPI.AssetCache.GetAsset(MaterialId) as Material;
                     if (sharedMat != null)
                     {
@@ -445,68 +435,77 @@ namespace MixedRealityExtension.Core
                     }
                 }
             }
+        }
 
-            // Transform
-            var transformPatch = patch.Transform;
+        private void PatchTransform(TransformPatch transformPatch)
+        {
             if (transformPatch != null)
-            {
-                transform.localPosition = transform.localPosition.GetPatchApplied(LocalTransform.Position.ApplyPatch(transformPatch.Position));
-                transform.localRotation = transform.localRotation.GetPatchApplied(LocalTransform.Rotation.ApplyPatch(transformPatch.Rotation));
-                transform.localScale = transform.localScale.GetPatchApplied(LocalTransform.Scale.ApplyPatch(transformPatch.Scale));
-            }
-
-            // Light
-            if (patch.Light != null)
-            {
-                if (Light == null)
-                {
-                    AddLight();
-                }
-                Light.SynchronizeEngine(patch.Light);
-            }
-
-            // Rigidbody
-            if (patch.RigidBody != null)
             {
                 if (RigidBody == null)
                 {
-                    AddRigidBody();
-                    RigidBody.ApplyPatch(patch.RigidBody);
+                    transform.localPosition = transform.localPosition.GetPatchApplied(LocalTransform.Position.ApplyPatch(transformPatch.Position));
+                    transform.localRotation = transform.localRotation.GetPatchApplied(LocalTransform.Rotation.ApplyPatch(transformPatch.Rotation));
+                    transform.localScale = transform.localScale.GetPatchApplied(LocalTransform.Scale.ApplyPatch(transformPatch.Scale));
                 }
                 else
                 {
+                    // In case of rigid body:
+                    // - Apply scale directly.
+                    transform.localScale = transform.localScale.GetPatchApplied(LocalTransform.Scale.ApplyPatch(transformPatch.Scale));
+                    // - Apply position and rotation via rigid body.
+                    var position = transform.localPosition.GetPatchApplied(LocalTransform.Position.ApplyPatch(transformPatch.Position));
+                    var rotation = transform.localRotation.GetPatchApplied(LocalTransform.Rotation.ApplyPatch(transformPatch.Rotation));
+                    RigidBodyPatch rigidBodyPatch = new RigidBodyPatch()
+                    {
+                        Position = new Vector3Patch(position),
+                        Rotation = new QuaternionPatch(rotation)
+                    };
                     // Queue update to happen in the fixed update
-                    RigidBody.SynchronizeEngine(patch.RigidBody);
+                    RigidBody.SynchronizeEngine(rigidBodyPatch);
                 }
-            }
-
-            // Text
-            if (patch.Text != null)
-            {
-                if (Text == null)
-                {
-                    AddText();
-                }
-                Text.SynchronizeEngine(patch.Text);
             }
         }
 
         private void PatchLight(LightPatch lightPatch)
         {
-            var light = Light ?? AddLight();
-            light.SynchronizeEngine(lightPatch);
-        }
-
-        private void PatchText(TextPatch textPatch)
-        {
-            var text = Text ?? AddText();
-            text.SynchronizeEngine(textPatch);
+            if (lightPatch != null)
+            {
+                if (Light == null)
+                {
+                    AddLight();
+                }
+                Light.SynchronizeEngine(lightPatch);
+            }
         }
 
         private void PatchRigidBody(RigidBodyPatch rigidBodyPatch)
         {
-            var rigidBody = RigidBody ?? AddRigidBody();
-            rigidBody.SynchronizeEngine(rigidBodyPatch);
+            if (rigidBodyPatch != null)
+            {
+                if (RigidBody == null)
+                {
+                    AddRigidBody();
+                    RigidBody.ApplyPatch(rigidBodyPatch);
+                }
+                else
+                {
+                    // Queue update to happen in the fixed update
+                    RigidBody.SynchronizeEngine(rigidBodyPatch);
+                }
+            }
+
+        }
+
+        private void PatchText(TextPatch textPatch)
+        {
+            if (textPatch != null)
+            {
+                if (Text == null)
+                {
+                    AddText();
+                }
+                Text.SynchronizeEngine(textPatch);
+            }
         }
 
         private void GenerateRigidBodyPatch(ActorPatch actorPatch)
@@ -556,14 +555,20 @@ namespace MixedRealityExtension.Core
                 return false;
             }
 
-            // Sync all updates to the app if we're operating in a peer-authoritative model and we're the authoritative peer.
-            if (App.OperatingModel == OperatingModel.PeerAuthoritative && App.IsAuthoritativePeer)
+            // If we have a rigid body then sync the transform.
+            if (RigidBody != null)
             {
-                return true;
+                subscriptions |= SubscriptionType.Transform;
             }
 
-            // Sync this update to the app if we're operating in a server-authoritative model and the app has registered interest in this setting.
-            return (App.OperatingModel == OperatingModel.ServerAuthoritative && (subscriptions & flag) != SubscriptionType.None);
+            if ((subscriptions & flag) != SubscriptionType.None)
+            {
+                return
+                    (App.OperatingModel == OperatingModel.ServerAuthoritative) ||
+                    (App.OperatingModel == OperatingModel.PeerAuthoritative && App.IsAuthoritativePeer);
+            }
+
+            return false;
         }
 
         private bool CanSync()
