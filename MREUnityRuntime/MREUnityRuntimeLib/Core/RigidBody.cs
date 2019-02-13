@@ -133,6 +133,7 @@ namespace MixedRealityExtension.Core
 
         internal void Update(Rigidbody rigidbody)
         {
+            // No need to read Position or Rotation. They're write-only from the patch to the component.
             Velocity = _sceneRoot.InverseTransformDirection(rigidbody.velocity).ToMWVector3();
             AngularVelocity = _sceneRoot.InverseTransformDirection(rigidbody.angularVelocity).ToMWVector3();
             Mass = rigidbody.mass;
@@ -145,12 +146,40 @@ namespace MixedRealityExtension.Core
         internal void ApplyPatch(RigidBodyPatch patch)
         {
             // Apply any changes made to the state of the mixed reality extension runtime version of the rigid body.
-            _rigidbody.velocity = _rigidbody.velocity.GetPatchApplied(_sceneRoot.TransformDirection(Velocity.ApplyPatch(patch.Velocity).ToVector3()));
-            _rigidbody.angularVelocity = _rigidbody.angularVelocity.GetPatchApplied(_sceneRoot.TransformDirection(AngularVelocity.ApplyPatch(patch.AngularVelocity).ToVector3()));
-            _rigidbody.mass = _rigidbody.mass.GetPatchApplied(Mass.ApplyPatch(patch.Mass));
-            _rigidbody.detectCollisions = _rigidbody.detectCollisions.GetPatchApplied(DetectCollisions.ApplyPatch(patch.DetectCollisions));
-            _rigidbody.collisionDetectionMode = _rigidbody.collisionDetectionMode.GetPatchApplied(CollisionDetectionMode.ApplyPatch(patch.CollisionDetectionMode));
-            _rigidbody.useGravity = _rigidbody.useGravity.GetPatchApplied(UseGravity.ApplyPatch(patch.UseGravity));
+            if (patch.Position != null && patch.Position.IsPatched())
+            {
+                var localPosition = _sceneRoot.InverseTransformPoint(_rigidbody.position).ToMWVector3();
+                _rigidbody.position = _rigidbody.position.GetPatchApplied(_sceneRoot.TransformPoint(localPosition.ApplyPatch(patch.Position).ToVector3()));
+            }
+            if (patch.Rotation != null && patch.Rotation.IsPatched())
+            {
+                var localRotation = (_rigidbody.rotation * _sceneRoot.rotation).ToMWQuaternion();
+                _rigidbody.rotation = _sceneRoot.rotation * _rigidbody.rotation.GetPatchApplied(localRotation.ApplyPatch(patch.Rotation));
+            }
+            if (patch.Velocity != null && patch.Velocity.IsPatched())
+            {
+                _rigidbody.velocity = _rigidbody.velocity.GetPatchApplied(_sceneRoot.TransformDirection(Velocity.ApplyPatch(patch.Velocity).ToVector3()));
+            }
+            if (patch.AngularVelocity != null && patch.AngularVelocity.IsPatched())
+            {
+                _rigidbody.angularVelocity = _rigidbody.angularVelocity.GetPatchApplied(_sceneRoot.TransformDirection(AngularVelocity.ApplyPatch(patch.AngularVelocity).ToVector3()));
+            }
+            if (patch.Mass.HasValue)
+            {
+                _rigidbody.mass = _rigidbody.mass.GetPatchApplied(Mass.ApplyPatch(patch.Mass));
+            }
+            if (patch.DetectCollisions.HasValue)
+            {
+                _rigidbody.detectCollisions = _rigidbody.detectCollisions.GetPatchApplied(DetectCollisions.ApplyPatch(patch.DetectCollisions));
+            }
+            if (patch.CollisionDetectionMode.HasValue)
+            {
+                _rigidbody.collisionDetectionMode = _rigidbody.collisionDetectionMode.GetPatchApplied(CollisionDetectionMode.ApplyPatch(patch.CollisionDetectionMode));
+            }
+            if (patch.UseGravity.HasValue)
+            {
+                _rigidbody.useGravity = _rigidbody.useGravity.GetPatchApplied(UseGravity.ApplyPatch(patch.UseGravity));
+            }
             _rigidbody.constraints = (RigidbodyConstraints)((int)_rigidbody.constraints).GetPatchApplied((int)ConstraintFlags.ApplyPatch(patch.ConstraintFlags));
         }
 

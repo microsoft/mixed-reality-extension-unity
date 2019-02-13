@@ -40,6 +40,26 @@ namespace MixedRealityExtension.Patching
             }
         }
 
+        public static string GeneratePatch(string _old, string _new)
+        {
+            if (_old == null && _new != null)
+            {
+                return _new;
+            }
+            else if (_new == null)
+            {
+                return null;
+            }
+            if (_old != _new)
+            {
+                return _new;
+            }
+            else
+            {
+                return null;
+            }
+        }
+
         public static Vector3Patch GeneratePatch(MWVector3 _old, Vector3 _new)
         {
             if (_old == null && _new != null)
@@ -51,12 +71,21 @@ namespace MixedRealityExtension.Patching
                 return null;
             }
 
-            return new Vector3Patch()
+            var patch = new Vector3Patch()
             {
                 X = _old.X != _new.x ? (float?)_new.x : null,
                 Y = _old.Y != _new.y ? (float?)_new.y : null,
                 Z = _old.Z != _new.z ? (float?)_new.z : null
             };
+
+            if (patch.IsPatched())
+            {
+                return patch;
+            }
+            else
+            {
+                return null;
+            }
         }
 
         public static QuaternionPatch GeneratePatch(MWQuaternion _old, Quaternion _new)
@@ -70,13 +99,22 @@ namespace MixedRealityExtension.Patching
                 return null;
             }
 
-            return new QuaternionPatch()
+            var patch = new QuaternionPatch()
             {
                 X = _old.X != _new.x ? (float?)_new.x : null,
                 Y = _old.Y != _new.y ? (float?)_new.y : null,
                 Z = _old.Z != _new.z ? (float?)_new.z : null,
                 W = _old.W != _new.w ? (float?)_new.w : null
             };
+
+            if (patch.IsPatched())
+            {
+                return patch;
+            }
+            else
+            {
+                return null;
+            }
         }
 
         public static TransformPatch GeneratePatch(MWTransform _old, Transform _new)
@@ -115,13 +153,22 @@ namespace MixedRealityExtension.Patching
                 return null;
             }
 
-            return new ColorPatch()
+            var patch = new ColorPatch()
             {
                 R = _old.R != _new.r ? (float?)_new.r : null,
                 G = _old.G != _new.g ? (float?)_new.g : null,
                 B = _old.B != _new.b ? (float?)_new.b : null,
                 A = _old.A != _new.a ? (float?)_new.a : null
             };
+
+            if (patch.IsPatched())
+            {
+                return patch;
+            }
+            else
+            {
+                return null;
+            }
         }
 
         public static RigidBodyPatch GeneratePatch(RigidBody _old, Rigidbody _new, Transform sceneRoot)
@@ -135,8 +182,9 @@ namespace MixedRealityExtension.Patching
                 return null;
             }
 
-            return new RigidBodyPatch()
+            var patch = new RigidBodyPatch()
             {
+                // Do not include Position or Rotation in the patch.
                 Velocity = GeneratePatch(_old.Velocity, sceneRoot.InverseTransformDirection(_new.velocity)),
                 AngularVelocity = GeneratePatch(_old.AngularVelocity, sceneRoot.InverseTransformDirection(_new.angularVelocity)),
                 CollisionDetectionMode = GeneratePatch(
@@ -149,6 +197,15 @@ namespace MixedRealityExtension.Patching
                 Mass = GeneratePatch(_old.Mass, _new.mass),
                 UseGravity = GeneratePatch(_old.UseGravity, _new.useGravity),
             };
+
+            if (patch.IsPatched())
+            {
+                return patch;
+            }
+            else
+            {
+                return null;
+            }
         }
 
         public static LightPatch GeneratePatch(MRELight _old, UnityLight _new)
@@ -162,7 +219,7 @@ namespace MixedRealityExtension.Patching
                 return null;
             }
 
-            return new LightPatch()
+            var patch = new LightPatch()
             {
                 Enabled = _new.enabled,
                 Type = UtilMethods.ConvertEnum<Core.Interfaces.LightType, UnityEngine.LightType>(_new.type),
@@ -171,6 +228,15 @@ namespace MixedRealityExtension.Patching
                 Intensity = _new.intensity,
                 SpotAngle = _new.spotAngle
             };
+
+            if (patch.IsPatched())
+            {
+                return patch;
+            }
+            else
+            {
+                return null;
+            }
         }
     }
 

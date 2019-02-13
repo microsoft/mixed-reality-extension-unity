@@ -16,6 +16,14 @@ namespace MixedRealityExtension.Patching.Types
         private MRERigidBodyConstraints? _constraintFlags;
         private MRERigidBodyConstraints[] _constraints;
 
+        // Local only. Not synchronized.
+        [PatchProperty]
+        public Vector3Patch Position { get; set; }
+
+        // Local only. Not synchronized.
+        [PatchProperty]
+        public QuaternionPatch Rotation { get; set; }
+
         [PatchProperty]
         public Vector3Patch Velocity { get; set; }
 
@@ -99,6 +107,7 @@ namespace MixedRealityExtension.Patching.Types
 
         internal RigidBodyPatch(Rigidbody rigidbody, Transform sceneRoot)
         {
+            // Do not include Position or Rotation in the patch.
             Velocity = new Vector3Patch(sceneRoot.InverseTransformDirection(rigidbody.velocity));
             AngularVelocity = new Vector3Patch(sceneRoot.InverseTransformDirection(rigidbody.angularVelocity));
             Mass = rigidbody.mass;
