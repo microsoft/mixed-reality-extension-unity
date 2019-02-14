@@ -1,5 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
+using MixedRealityExtension.Patching.Types;
 using System;
 
 namespace MixedRealityExtension.Core.Types
@@ -69,6 +70,16 @@ namespace MixedRealityExtension.Core.Types
                 Position.Equals(other.Position) &&
                 Rotation.Equals(other.Rotation) &&
                 Scale.Equals(other.Scale);
+        }
+
+        internal TransformPatch AsPatch()
+        {
+            return new TransformPatch()
+            {
+                Position = new Vector3Patch(Position),
+                Rotation = new QuaternionPatch(Rotation),
+                Scale = new Vector3Patch(Scale)
+            };
         }
     }
 }

@@ -296,6 +296,26 @@ namespace MixedRealityExtension.Core
             }
         }
 
+        internal void SendActorUpdate(SubscriptionType flags)
+        {
+            ActorPatch actorPatch = new ActorPatch(Id);
+
+            if ((flags & SubscriptionType.Transform) != SubscriptionType.None)
+            {
+                actorPatch.Transform = transform.ToMWTransform().AsPatch();
+            }
+
+            //if ((flags & SubscriptionType.Rigidbody) != SubscriptionType.None)
+            //{
+            //    actorPatch.Transform = this.RigidBody.AsPatch();
+            //}
+
+            if (actorPatch.IsPatched())
+            {
+                App.EventManager.QueueEvent(new ActorChangedEvent(Id, actorPatch));
+            }
+        }
+
         #endregion
 
         #region MonoBehaviour Virtual Methods
