@@ -5,6 +5,7 @@ using System.Collections.Generic;
 
 using MixedRealityExtension.Animation;
 using MixedRealityExtension.Messaging.Events.Types;
+using MixedRealityExtension.Messaging.Payloads;
 using MixedRealityExtension.Patching.Types;
 using MixedRealityExtension.Util;
 using MixedRealityExtension.Util.Unity;
@@ -483,6 +484,13 @@ namespace MixedRealityExtension.Core.Components
                         {
                             animation[animationName].enabled = enabled.Value;
                             // NOTE: animationData.Enabled will be set in the next call to Update()
+
+                            // When stopping an animation, send an update to the app letting it know the final animation state.
+                            if (!enabled.Value && (AttachedActor.App.IsAuthoritativePeer || AttachedActor.App.OperatingModel == OperatingModel.ServerAuthoritative))
+                            {
+                                // FUTURE: Add additional animatable properties as support for them is added (light color, etc).
+                                AttachedActor.SendActorUpdate(SubscriptionType.Transform);
+                            }
                         }
                         animation[animationName].weight = enabled.Value ? 1.0f : 0.0f;
                     }
