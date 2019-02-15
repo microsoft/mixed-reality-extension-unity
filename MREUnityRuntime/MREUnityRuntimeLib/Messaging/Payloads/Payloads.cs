@@ -59,22 +59,6 @@ namespace MixedRealityExtension.Messaging.Payloads
     }
 
     /// <summary>
-    /// The type of subscription owner.
-    /// </summary>
-    public enum SubscriptionOwnerType
-    {
-        /// <summary>
-        /// An actor subscription owner.
-        /// </summary>
-        Actor,
-
-        /// <summary>
-        /// A user subscription owner.
-        /// </summary>
-        User
-    }
-
-    /// <summary>
     /// The kind of connection we've made with the app. This setting provides a hint to the client about how and when it should send updates to the app.
     /// </summary>
     public enum OperatingModel
