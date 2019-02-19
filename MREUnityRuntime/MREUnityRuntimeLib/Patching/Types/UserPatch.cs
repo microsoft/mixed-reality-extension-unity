@@ -6,24 +6,31 @@ using System;
 
 namespace MixedRealityExtension.Patching.Types
 {
-    public class UserPatch : MixedRealityExtensionObjectPatch
+    public class UserPatch : IPatchable
     {
+        public Guid Id { get; set; }
+
+        [PatchProperty]
+        public string Name { get; set; }
+
         public UserPatch()
         {
-
         }
 
         internal UserPatch(Guid id)
-            : base(id)
         {
-
+            Id = id;
         }
 
         internal UserPatch(User user)
-            : base(user.Id)
+            : this(user.Id)
         {
             Name = user.Name;
-            Transform = PatchingUtilMethods.GeneratePatch((MWTransform)null, user.transform);
+        }
+
+        public bool IsPatched()
+        {
+            return false;
         }
     }
 }

@@ -232,11 +232,6 @@ namespace MixedRealityExtension.Messaging.Payloads
         public Guid Id { get; set; }
 
         /// <summary>
-        /// The subscription owner type. See <see cref="SubscriptionOwnerType"/>.
-        /// </summary>
-        public SubscriptionOwnerType OwnerType { get; set; }
-
-        /// <summary>
         /// The subscription types to add to the object. See <see cref="SubscriptionType"/>.
         /// </summary>
         public IEnumerable<SubscriptionType> Adds { get; set; }

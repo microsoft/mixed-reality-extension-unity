@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 using MixedRealityExtension.App;
 using MixedRealityExtension.Core.Interfaces;
-using MixedRealityExtension.Messaging.Payloads;
 using MixedRealityExtension.Patching.Types;
 using System;
 using System.Collections.Generic;
@@ -13,7 +12,6 @@ namespace MixedRealityExtension.Core
     internal class User : MixedRealityExtensionObject, IUser
     {
         private IList<MixedRealityExtensionApp> _joinedApps = new List<MixedRealityExtensionApp>();
-        private IDictionary<Guid, SubscriptionType> _subscriptions = new Dictionary<Guid, SubscriptionType>();
 
         public override string Name => UserInfo.Name;
 
@@ -30,13 +28,11 @@ namespace MixedRealityExtension.Core
         internal void JoinApp(MixedRealityExtensionApp app)
         {
             _joinedApps.Add(app);
-            _subscriptions[app.InstanceId] = SubscriptionType.None;
         }
 
         internal void LeaveApp(MixedRealityExtensionApp app)
         {
             _joinedApps.Remove(app);
-            _subscriptions.Remove(app.InstanceId);
         }
 
         internal void SynchronizeApps()
@@ -47,14 +43,12 @@ namespace MixedRealityExtension.Core
             {
                 var userPatch = new UserPatch(Id);
 
-                SubscriptionType subscriptions;
-                if (_subscriptions.TryGetValue(mreApp.InstanceId, out subscriptions) 
-                    && subscriptions.HasFlag(SubscriptionType.Transform))
-                {
-                    userPatch.Transform = transformPatch;
-                }
+                // TODO: Write user changes to the patch.
 
-                mreApp.SynchronizeUser(userPatch);
+                if (userPatch.IsPatched())
+                {
+                    mreApp.SynchronizeUser(userPatch);
+                }
             }
         }
 
@@ -71,30 +65,6 @@ namespace MixedRealityExtension.Core
         public bool Equals(IUser other)
         {
             return other != null && Id == other.Id;
-        }
-
-        internal void AddSubscriptions(Guid appInstanceId, IEnumerable<SubscriptionType> adds)
-        {
-            SubscriptionType subs;
-            if (adds != null && _subscriptions.TryGetValue(appInstanceId, out subs))
-            {
-                foreach (var subscription in adds)
-                {
-                    subs |= subscription;
-                }
-            }
-        }
-
-        internal void RemoveSubscriptions(Guid appInstanceId, IEnumerable<SubscriptionType> removes)
-        {
-            SubscriptionType subs;
-            if (removes != null && _subscriptions.TryGetValue(appInstanceId, out subs))
-            {
-                foreach (var subscription in removes)
-                {
-                    subs &= ~subscription;
-                }
-            }
         }
 
         protected override void InternalUpdate()

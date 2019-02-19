@@ -588,16 +588,6 @@ namespace MixedRealityExtension.App
             }
         }
 
-        private void UpdateUserSubsciptions(UpdateSubscriptions payload)
-        {
-            var user = _userManager.FindUser(payload.Id);
-            if (user != null)
-            {
-                user.RemoveSubscriptions(this.InstanceId, payload.Removes);
-                user.AddSubscriptions(this.InstanceId, payload.Adds);
-            }
-        }
-
         #endregion
 
         #region Command Handlers
@@ -817,18 +807,7 @@ namespace MixedRealityExtension.App
         [CommandHandler(typeof(UpdateSubscriptions))]
         private void OnUpdateSubscriptions(UpdateSubscriptions payload)
         {
-            switch (payload.OwnerType)
-            {
-                case SubscriptionOwnerType.Actor:
-                    UpdateActorSubsciptions(payload);
-                    break;
-                case SubscriptionOwnerType.User:
-                    UpdateUserSubsciptions(payload);
-                    break;
-                default:
-                    MREAPI.Logger.LogError($"Invalid subscription owner type: {payload.OwnerType}");
-                    break;
-            }
+            UpdateActorSubsciptions(payload);
         }
 
         [CommandHandler(typeof(RigidBodyCommands))]
