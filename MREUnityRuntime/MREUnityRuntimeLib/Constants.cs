@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 using MixedRealityExtension.Messaging.Payloads;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
 
 namespace MixedRealityExtension
 {
@@ -19,7 +18,7 @@ namespace MixedRealityExtension
                 NullValueHandling = NullValueHandling.Ignore,
             };
 
-            SerializerSettings.Converters.Add(new StringEnumConverter() { CamelCaseText = true });
+            SerializerSettings.Converters.Add(new Messaging.Payloads.Converters.DashFormattedEnumConverter());
             SerializerSettings.Converters.Add(new PayloadConverter());
         }
 

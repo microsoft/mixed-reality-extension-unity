@@ -3,10 +3,8 @@
 using MixedRealityExtension.Behaviors;
 using MixedRealityExtension.Behaviors.Actions;
 using MixedRealityExtension.Patching.Types;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
-using MixedRealityExtension.Core.Types;
 
 namespace MixedRealityExtension.Messaging.Payloads
 {
@@ -101,7 +99,6 @@ namespace MixedRealityExtension.Messaging.Payloads
         /// <summary>
         /// The kind of connection this is. <see cref="OperatingModel"/>
         /// </summary>
-        [JsonConverter(typeof(Converters.DashFormattedEnumConverter))]
         public OperatingModel OperatingModel;
     }
 

@@ -9,7 +9,6 @@ using System.Collections.Generic;
 using MixedRealityExtension.Core.Types;
 using Newtonsoft.Json.Linq;
 using MixedRealityExtension.Controllers;
-using Newtonsoft.Json;
 
 namespace MixedRealityExtension.Messaging.Payloads
 {
@@ -365,7 +364,6 @@ namespace MixedRealityExtension.Messaging.Payloads
         /// <summary>
         /// The wrap mode of the animation. See <see cref="MWAnimationWrapMode"/>.
         /// </summary>
-        [JsonConverter(typeof(Converters.DashFormattedEnumConverter))]
         public MWAnimationWrapMode WrapMode { get; set; }
 
         /// <summary>
