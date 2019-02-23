@@ -54,6 +54,11 @@ namespace MixedRealityExtension.App
         string GlobalAppId { get; }
 
         /// <summary>
+        /// Gets the session id of the mixed reality extension app.
+        /// </summary>
+        string SessionId { get; }
+
+        /// <summary>
         /// Gets the local user
         /// </summary>
         IUser LocalUser { get; }

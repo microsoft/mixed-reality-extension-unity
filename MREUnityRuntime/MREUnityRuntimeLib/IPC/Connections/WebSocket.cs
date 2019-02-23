@@ -387,10 +387,13 @@ namespace MixedRealityExtension.IPC.Connections
 
         private void DisposeWebSocket()
         {
-            // Best effort with no exceptions.
-            try { _ws.Dispose(); } catch { }
-
-            _ws = null;
+            if (_ws != null)
+            {
+                var ws = _ws;
+                _ws = null;
+                // Best effort with no exceptions.
+                try { ws.Dispose(); } catch { }
+            }
         }
 
         private async Task DisposeInternal()

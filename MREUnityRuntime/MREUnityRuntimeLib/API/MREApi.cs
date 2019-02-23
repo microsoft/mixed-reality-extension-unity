@@ -40,6 +40,7 @@ namespace MixedRealityExtension.API
             IAssetCache assetCache = null,
             IGLTFImporterFactory gltfImporterFactory = null,
             IMaterialPatcher materialPatcher = null,
+            IUserInfoProvider userInfoProvider = null,
             IMRELogger logger = null)
         {
             AppsAPI.DefaultMaterial = defaultMaterial;
@@ -50,6 +51,7 @@ namespace MixedRealityExtension.API
             AppsAPI.AssetCache = assetCache ?? new AssetCache();
             AppsAPI.GLTFImporterFactory = gltfImporterFactory ?? new GLTFImporterFactory();
             AppsAPI.MaterialPatcher = materialPatcher ?? new DefaultMaterialPatcher();
+            AppsAPI.UserInfoProvider = userInfoProvider ?? new NullUserInfoProvider();
 
 #if ANDROID_DEBUG
             Logger = logger ?? new UnityLogger();
@@ -100,6 +102,11 @@ namespace MixedRealityExtension.API
         internal IGLTFImporterFactory GLTFImporterFactory { get; set; }
 
         internal IMaterialPatcher MaterialPatcher { get; set; }
+
+        /// <summary>
+        /// Provider of app/session scoped IUserInfo interfaces.
+        /// </summary>
+        public IUserInfoProvider UserInfoProvider { get; set; }
 
         /// <summary>
         /// Creates a new mixed reality extension app and adds it to the MRE runtime.

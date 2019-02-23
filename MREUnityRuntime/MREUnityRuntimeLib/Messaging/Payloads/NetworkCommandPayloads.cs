@@ -43,7 +43,7 @@ namespace MixedRealityExtension.Messaging.Payloads
         /// <summary>
         /// The subscriptions to register for on the actor.
         /// </summary>
-        public List<SubscriptionType> Subscriptions { get; set; }
+        public List<ActorComponentType> Subscriptions { get; set; }
     }
 
     /// <summary>
@@ -231,14 +231,14 @@ namespace MixedRealityExtension.Messaging.Payloads
         public Guid Id { get; set; }
 
         /// <summary>
-        /// The subscription types to add to the object. See <see cref="SubscriptionType"/>.
+        /// The subscription types to add to the object. See <see cref="ActorComponentType"/>.
         /// </summary>
-        public IEnumerable<SubscriptionType> Adds { get; set; }
+        public IEnumerable<ActorComponentType> Adds { get; set; }
 
         /// <summary>
-        /// The subscription types to remove from the object. See <see cref="SubscriptionType"/>.
+        /// The subscription types to remove from the object. See <see cref="ActorComponentType"/>.
         /// </summary>
-        public IEnumerable<SubscriptionType> Removes { get; set; }
+        public IEnumerable<ActorComponentType> Removes { get; set; }
     }
 
     /// <summary>

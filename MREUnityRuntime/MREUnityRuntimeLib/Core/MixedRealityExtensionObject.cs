@@ -29,7 +29,7 @@ namespace MixedRealityExtension.Core
         public GameObject GameObject => this.gameObject;
 
         /// <inheritdoc />
-        public abstract Vector3 LookAtPosition { get; }
+        public abstract Vector3? LookAtPosition { get; }
 
         internal MixedRealityExtensionApp App { get; private set; }
 
