@@ -56,7 +56,11 @@ namespace MixedRealityExtension.Core
                 {
                     var actor = _actorMapping[id];
                     _actorMapping.Remove(id);
-                    actor.Destroy();
+                    try
+                    {
+                        actor.Destroy();
+                    }
+                    catch { }
                     // Is there any other cleanup?  Do it here.
                 }
             }

@@ -34,9 +34,9 @@ namespace MixedRealityExtension.Core
 
         private Queue<Action<Actor>> _updateActions = new Queue<Action<Actor>>();
 
-        private SubscriptionType _subscriptions = SubscriptionType.None;
+        private ActorComponentType _subscriptions = ActorComponentType.None;
 
-        public override Vector3 LookAtPosition => transform.position;
+        public override Vector3? LookAtPosition => transform.position;
 
         private new Renderer renderer = null;
         private Renderer Renderer => renderer = renderer ?? GetComponent<Renderer>();
@@ -67,11 +67,13 @@ namespace MixedRealityExtension.Core
 
         internal IText Text { get; private set; }
 
+        internal Attachment Attachment { get; } = new Attachment();
+        private Attachment _cachedAttachment = new Attachment();
+
         internal MWTransform LocalTransform => transform.ToMWTransform();
 
         internal Guid? MaterialId { get; set; }
         private UnityEngine.Material originalMaterial;
-
         #endregion
 
         #region Methods - Internal
@@ -117,14 +119,19 @@ namespace MixedRealityExtension.Core
                     actorPatch.ParentId = ParentId;
                 }
 
-                if (ShouldSync(_subscriptions, SubscriptionType.Transform))
+                if (ShouldSync(_subscriptions, ActorComponentType.Transform))
                 {
-                    actorPatch.Transform = SynchronizeTransform(gameObject.transform);
+                    GenerateTransformPatch(actorPatch);
                 }
 
-                if (ShouldSync(_subscriptions, SubscriptionType.Rigidbody))
+                if (ShouldSync(_subscriptions, ActorComponentType.Rigidbody))
                 {
                     GenerateRigidBodyPatch(actorPatch);
+                }
+
+                if (ShouldSync(ActorComponentType.Attachment, ActorComponentType.Attachment))
+                {
+                    GenerateAttachmentPatch(actorPatch);
                 }
 
                 if (actorPatch.IsPatched())
@@ -143,6 +150,7 @@ namespace MixedRealityExtension.Core
             PatchLight(actorPatch.Light);
             PatchRigidBody(actorPatch.RigidBody);
             PatchText(actorPatch.Text);
+            PatchAttachment(actorPatch.Attachment);
         }
 
         internal void SynchronizeEngine(ActorPatch actorPatch)
@@ -164,16 +172,16 @@ namespace MixedRealityExtension.Core
             Destroy(gameObject);
         }
 
-        internal ActorPatch GeneratePatch(SubscriptionType? interests = null)
+        internal ActorPatch GeneratePatch(ActorComponentType? interests = null)
         {
             if (ParentId == null)
             {
                 ParentId = Parent?.Id ?? Guid.Empty;
             }
 
-            SubscriptionType subs = interests ?? _subscriptions;
+            ActorComponentType subs = interests ?? _subscriptions;
 
-            var transform = ((subs & SubscriptionType.Transform) != SubscriptionType.None) ?
+            var transform = ((subs & ActorComponentType.Transform) != ActorComponentType.None) ?
                 new TransformPatch()
                 {
                     Position = new Vector3Patch(Transform.Position),
@@ -181,13 +189,8 @@ namespace MixedRealityExtension.Core
                     Scale = new Vector3Patch(Transform.Scale)
                 } : null;
 
-            var rigidBody = ((subs & SubscriptionType.Rigidbody) != SubscriptionType.None) ?
+            var rigidBody = ((subs & ActorComponentType.Rigidbody) != ActorComponentType.None) ?
                 PatchingUtilMethods.GeneratePatch(RigidBody, (Rigidbody)null, App.SceneRoot.transform) : null;
-
-            /*
-            var light = ((subs & SubscriptionType.light) != SubscriptionType.none) ?
-                UnityHelpers.ReadLight(_cachedLight) : null;
-            */
 
             var actorPatch = new ActorPatch(Id)
             {
@@ -195,8 +198,6 @@ namespace MixedRealityExtension.Core
                 Name = Name,
                 Transform = transform,
                 RigidBody = rigidBody,
-                // Light = light
-                // Text = text
                 MaterialId = MaterialId
             };
 
@@ -274,7 +275,7 @@ namespace MixedRealityExtension.Core
             return ParentId != null ? App.FindActor(ParentId.Value) : Parent;
         }
 
-        internal void AddSubscriptions(IEnumerable<SubscriptionType> adds)
+        internal void AddSubscriptions(IEnumerable<ActorComponentType> adds)
         {
             if (adds != null)
             {
@@ -285,7 +286,7 @@ namespace MixedRealityExtension.Core
             }
         }
 
-        internal void RemoveSubscriptions(IEnumerable<SubscriptionType> removes)
+        internal void RemoveSubscriptions(IEnumerable<ActorComponentType> removes)
         {
             if (removes != null)
             {
@@ -296,11 +297,11 @@ namespace MixedRealityExtension.Core
             }
         }
 
-        internal void SendActorUpdate(SubscriptionType flags)
+        internal void SendActorUpdate(ActorComponentType flags)
         {
             ActorPatch actorPatch = new ActorPatch(Id);
 
-            if ((flags & SubscriptionType.Transform) != SubscriptionType.None)
+            if ((flags & ActorComponentType.Transform) != ActorComponentType.None)
             {
                 actorPatch.Transform = transform.ToMWTransform().AsPatch();
             }
@@ -332,6 +333,12 @@ namespace MixedRealityExtension.Core
             // memory leak if the engine deletes game objects, and we don't do proper cleanup here.
             //CleanUp();
             //App.OnActorDestroyed(this.Id);
+
+            IUserInfo userInfo = MREAPI.AppsAPI.UserInfoProvider.GetUserInfo(App, Attachment.UserId);
+            if (userInfo != null)
+            {
+                userInfo.BeforeAvatarDestroyed -= UserInfo_BeforeAvatarDestroyed;
+            }
         }
 
         protected override void InternalUpdate()
@@ -379,6 +386,115 @@ namespace MixedRealityExtension.Core
         #endregion
 
         #region Methods - Private
+
+        private Attachment FindAttachmentInHierarchy()
+        {
+            Attachment FindAttachmentRecursive(Actor actor)
+            {
+                if (actor == null)
+                {
+                    return null;
+                }
+                if (actor.Attachment.AttachPoint != null && actor.Attachment.UserId != Guid.Empty)
+                {
+                    return actor.Attachment;
+                }
+                return FindAttachmentRecursive(actor.Parent as Actor);
+            };
+            return FindAttachmentRecursive(this);
+        }
+
+        private void DetachFromAttachPointParent()
+        {
+            try
+            {
+                if (transform != null)
+                {
+                    var attachmentComponent = transform.parent.GetComponents<MREAttachmentComponent>()
+                        .FirstOrDefault(component =>
+                            component.Actor != null &&
+                            component.Actor.Id == Id &&
+                            component.Actor.AppInstanceId == AppInstanceId &&
+                            component.UserId == _cachedAttachment.UserId);
+
+                    if (attachmentComponent != null)
+                    {
+                        attachmentComponent.Actor = null;
+                        Destroy(attachmentComponent);
+                    }
+
+                    transform.SetParent(App.SceneRoot.transform, true);
+                }
+            }
+            catch (Exception e)
+            {
+                MREAPI.Logger.LogError($"Exception: {e.Message}\nStackTrace: {e.StackTrace}");
+            }
+        }
+
+        private bool PerformAttach()
+        {
+            // Assumption: Attachment state has changed and we need to (potentially) detach and (potentially) reattach.
+            try
+            {
+                DetachFromAttachPointParent();
+
+                IUserInfo userInfo = MREAPI.AppsAPI.UserInfoProvider.GetUserInfo(App, Attachment.UserId);
+                if (userInfo != null)
+                {
+                    userInfo.BeforeAvatarDestroyed -= UserInfo_BeforeAvatarDestroyed;
+
+                    Transform attachPoint = userInfo.GetAttachPoint(Attachment.AttachPoint);
+                    if (attachPoint != null)
+                    {
+                        var attachmentComponent = attachPoint.gameObject.AddComponent<MREAttachmentComponent>();
+                        attachmentComponent.Actor = this;
+                        attachmentComponent.UserId = Attachment.UserId;
+                        transform.SetParent(attachPoint, false);
+                        userInfo.BeforeAvatarDestroyed += UserInfo_BeforeAvatarDestroyed;
+                        return true;
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                MREAPI.Logger.LogError($"Exception: {e.Message}\nStackTrace: {e.StackTrace}");
+            }
+
+            return false;
+        }
+
+        private void UserInfo_BeforeAvatarDestroyed()
+        {
+            // Remember the original local transform.
+            MWTransform cachedTransform = LocalTransform;
+
+            // Detach from parent. This will preserve the world transform (changing the local tansform).
+            // This is desired so that the actor doesn't change position, but we must restore the local
+            // transform when reattaching.
+            DetachFromAttachPointParent();
+
+            IUserInfo userInfo = MREAPI.AppsAPI.UserInfoProvider.GetUserInfo(App, Attachment.UserId);
+            if (userInfo != null)
+            {
+                void Reattach()
+                {
+                    // Restore the local transform and reattach.
+                    userInfo.AfterAvatarCreated -= Reattach;
+                    // In the interim time this actor might have been destroyed.
+                    if (transform != null)
+                    {
+                        transform.localPosition = cachedTransform.Position.ToVector3();
+                        transform.localRotation = cachedTransform.Rotation.ToQuaternion();
+                        transform.localScale = cachedTransform.Scale.ToVector3();
+                        PerformAttach();
+                    }
+                }
+
+                // Register for a callback once the avatar is recreated.
+                userInfo.AfterAvatarCreated += Reattach;
+            }
+        }
 
         private IText AddText()
         {
@@ -528,6 +644,24 @@ namespace MixedRealityExtension.Core
             }
         }
 
+        private void PatchAttachment(AttachmentPatch attachmentPatch)
+        {
+            if (attachmentPatch != null && attachmentPatch.IsPatched() && !attachmentPatch.Equals(Attachment))
+            {
+                Attachment.ApplyPatch(attachmentPatch);
+                if (!PerformAttach())
+                {
+                    Attachment.Clear();
+                }
+            }
+        }
+
+        private void GenerateTransformPatch(ActorPatch actorPatch)
+        {
+            actorPatch.Transform = PatchingUtilMethods.GeneratePatch(Transform, gameObject.transform);
+            Transform = gameObject.transform.ToMWTransform();
+        }
+
         private void GenerateRigidBodyPatch(ActorPatch actorPatch)
         {
             if (_rigidbody != null && RigidBody != null)
@@ -543,6 +677,15 @@ namespace MixedRealityExtension.Core
             }
         }
 
+        private void GenerateAttachmentPatch(ActorPatch actorPatch)
+        {
+            actorPatch.Attachment = Attachment.GeneratePatch(_cachedAttachment);
+            if (actorPatch.Attachment != null)
+            {
+                _cachedAttachment.CopyFrom(Attachment);
+            }
+        }
+
         private void CleanUp()
         {
             foreach (var component in _components.Values)
@@ -551,21 +694,7 @@ namespace MixedRealityExtension.Core
             }
         }
 
-        /*
-        private void GenerateLightPatch(ActorPatch actorPatch)
-        {
-            var lightPatch = PatchingUtilMethods.GeneratePatch(_light, EngineActor.Light);
-            if (lightPatch != null && lightPatch.IsPatched())
-            {
-                actorPatch.Light = lightPatch;
-            }
-
-            _light = _light ?? new Light();
-            _light.Update(EngineActor.Light);
-        }
-        */
-
-        private bool ShouldSync(SubscriptionType subscriptions, SubscriptionType flag)
+        private bool ShouldSync(ActorComponentType subscriptions, ActorComponentType flag)
         {
             // We do not want to send actor updates until we're fully joined to the app.
             // TODO: We shouldn't need to do this check. The engine shouldn't try to send
@@ -575,18 +704,29 @@ namespace MixedRealityExtension.Core
                 return false;
             }
 
-            // If we have a rigid body then sync the transform.
+            // If the actor has a rigid body then always sync the transform and the rigid body.
             if (RigidBody != null)
             {
-                subscriptions |= SubscriptionType.Transform;
-                subscriptions |= SubscriptionType.Rigidbody;
+                subscriptions |= ActorComponentType.Transform;
+                subscriptions |= ActorComponentType.Rigidbody;
             }
 
-            if ((subscriptions & flag) != SubscriptionType.None)
+            Attachment attachmentInHierarchy = FindAttachmentInHierarchy();
+            bool inAttachmentHeirarchy = (attachmentInHierarchy != null);
+            bool inOwnedAttachmentHierarchy = (inAttachmentHeirarchy && attachmentInHierarchy.UserId == LocalUser.Id);
+
+            // Don't sync anything if the actor is in an attachment hierarchy on a remote avatar.
+            if (inAttachmentHeirarchy && !inOwnedAttachmentHierarchy)
+            {
+                subscriptions = ActorComponentType.None;
+            }
+
+            if ((subscriptions & flag) != ActorComponentType.None)
             {
                 return
                     (App.OperatingModel == OperatingModel.ServerAuthoritative) ||
-                    (App.OperatingModel == OperatingModel.PeerAuthoritative && App.IsAuthoritativePeer);
+                    App.IsAuthoritativePeer ||
+                    inOwnedAttachmentHierarchy;
             }
 
             return false;
@@ -602,12 +742,16 @@ namespace MixedRealityExtension.Core
                 return false;
             }
 
+            Attachment attachmentInHierarchy = FindAttachmentInHierarchy();
+            bool inAttachmentHeirarchy = (attachmentInHierarchy != null);
+            bool inOwnedAttachmentHierarchy = (inAttachmentHeirarchy && attachmentInHierarchy.UserId == LocalUser.Id);
+
             // We can send actor updates to the app if we're operating in a server-authoritative model,
             // or if we're in a peer-authoritative model and we've been designated the authoritative peer.
-            // Note: This is just a hint to the system to reduce the amount of overall network traffic sent
-            // to theapp, since the app only needs to receive updates from one of the connected peers. The
-            // app checks in
-            if (App.OperatingModel == OperatingModel.ServerAuthoritative || App.IsAuthoritativePeer)
+            // Override the previous rules if this actor is in an attachment hierarchy owned by the local player.
+            if (App.OperatingModel == OperatingModel.ServerAuthoritative ||
+                App.IsAuthoritativePeer ||
+                inOwnedAttachmentHierarchy)
             {
                 return true;
             }

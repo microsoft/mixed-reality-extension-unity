@@ -39,6 +39,6 @@ namespace MixedRealityExtension.Core.Interfaces
         /// <summary>
         /// The world-space position to be the look-at target by other objects.
         /// </summary>
-        Vector3 LookAtPosition { get; }
+        Vector3? LookAtPosition { get; }
     }
 }

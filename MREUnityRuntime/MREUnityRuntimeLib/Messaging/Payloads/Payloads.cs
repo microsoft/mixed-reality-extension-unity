@@ -30,10 +30,10 @@ namespace MixedRealityExtension.Messaging.Payloads
     }
 
     /// <summary>
-    /// The flags that are subscription types for message patching notifications.
+    /// The types of components that can be added to an actor.
     /// </summary>
     [Flags]
-    public enum SubscriptionType
+    public enum ActorComponentType : uint
     {
         /// <summary>
         /// No subscriptions
@@ -41,19 +41,39 @@ namespace MixedRealityExtension.Messaging.Payloads
         None = 0,
 
         /// <summary>
-        /// The transform subscription flag.
+        /// The transform component flag.
+        /// The app can subscribe to this component.
         /// </summary>
-        Transform = 1,
+        Transform = 1 << 0,
 
         /// <summary>
-        /// The rigid body subscription flag.
+        /// The rigid body component flag.
+        /// The app can subscribe to this component.
         /// </summary>
-        Rigidbody = 2,
+        Rigidbody = 1 << 1,
 
         /// <summary>
-        /// All subscription flags.
+        /// The light component flag.
+        /// The app cannot subscribe to this component.
         /// </summary>
-        All = Transform | Rigidbody
+        Light = 1 << 2,
+
+        /// <summary>
+        /// The attachment component flag.
+        /// The app cannot subscribe to this component.
+        /// reall
+        /// </summary>
+        Attachment = 1 << 3,
+
+        /// <summary>
+        /// All subscribable component flags.
+        /// </summary>
+        AllSubscriptions = Transform | Rigidbody,
+
+        /// <summary>
+        /// All possible component flags.
+        /// </summary>
+        All = 0xffffffff
     }
 
     /// <summary>

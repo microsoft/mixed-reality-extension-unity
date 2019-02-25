@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 using System;
-using MixedRealityExtension.Controllers;
 
 namespace MixedRealityExtension.Patching.Types
 {
@@ -22,9 +21,11 @@ namespace MixedRealityExtension.Patching.Types
         [PatchProperty]
         public TextPatch Text { get; set; }
 
+        [PatchProperty]
+        public AttachmentPatch Attachment { get; set; }
+
         public ActorPatch()
         {
-
         }
 
         internal ActorPatch(Guid id)

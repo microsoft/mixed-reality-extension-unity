@@ -28,32 +28,41 @@ namespace MixedRealityExtension.Controllers
         {
             if (_trackedObject != null)
             {
-                transform.rotation = CalcRotation();
+                var rotation = CalcRotation();
+                if (rotation.HasValue)
+                {
+                    transform.rotation = rotation.Value;
+                }
             }
         }
 
-        private Quaternion CalcRotation()
+        private Quaternion? CalcRotation()
         {
-            Vector3 delta = _trackedObject.LookAtPosition - transform.position;
-
-            if (delta == Vector3.zero)
+            if (_trackedObject.LookAtPosition.HasValue)
             {
-                return Quaternion.identity;
+                Vector3 pos = _trackedObject.LookAtPosition.Value;
+                Vector3 delta = pos - transform.position;
+
+                if (delta == Vector3.zero)
+                {
+                    return Quaternion.identity;
+                }
+
+                Quaternion look = Quaternion.LookRotation(delta, Vector3.up);
+
+                switch (_lookAtMode)
+                {
+                    case LookAtMode.TargetXY:
+                        return look;
+
+                    case LookAtMode.TargetY:
+                        return Quaternion.Euler(0, look.eulerAngles.y, look.eulerAngles.z);
+
+                    default:
+                        throw new ArgumentException(nameof(LookAtMode));
+                }
             }
-
-            Quaternion look = Quaternion.LookRotation(delta, Vector3.up);
-
-            switch (_lookAtMode)
-            {
-                case LookAtMode.TargetXY:
-                    return look;
-
-                case LookAtMode.TargetY:
-                    return Quaternion.Euler(0, look.eulerAngles.y, look.eulerAngles.z);
-
-                default:
-                    throw new ArgumentException(nameof(LookAtMode));
-            }
+            return null;
         }
     }
 }

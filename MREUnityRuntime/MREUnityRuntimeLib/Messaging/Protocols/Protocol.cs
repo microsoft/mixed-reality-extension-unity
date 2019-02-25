@@ -73,7 +73,7 @@ namespace MixedRealityExtension.Messaging.Protocols
             }
             catch (Exception ex)
             {
-                var message = $"Failed to process message. Exception {ex.Message}\nStackTrace: {ex.StackTrace}";
+                var message = $"Failed to process message: {json}\nError: {ex.Message}\nStackTrace: {ex.StackTrace}";
                 MREAPI.Logger.LogDebug(message);
                 try
                 {

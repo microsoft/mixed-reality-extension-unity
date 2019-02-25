@@ -1,10 +1,12 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 using System;
+using System.Collections.Generic;
 using Assets.Scripts.Behaviors;
 using MixedRealityExtension.API;
 using MixedRealityExtension.App;
 using MixedRealityExtension.Assets;
+using MixedRealityExtension.Core.Interfaces;
 using MixedRealityExtension.Factories;
 using MixedRealityExtension.PluginInterfaces;
 using MixedRealityExtension.RPC;
@@ -83,6 +85,18 @@ public class MREComponent : MonoBehaviour
     [SerializeField]
     private UnityEngine.Material DefaultPrimMaterial;
 
+    private static Dictionary<Guid, UserInfo> joinedUsers = new Dictionary<Guid, UserInfo>();
+
+    internal static UserInfo GetUserInfo(Guid userId)
+    {
+        UserInfo result;
+        if (joinedUsers.TryGetValue(userId, out result))
+        {
+            return result;
+        }
+        return null;
+    }
+
     void Start()
     {
         if (!_apiInitialized)
@@ -93,6 +107,7 @@ public class MREComponent : MonoBehaviour
                 textFactory: new MWTextFactory(SerifFont, SansSerifFont),
                 libraryFactory: new ResourceFactory(),
                 assetCache: new AssetCache(new GameObject("MRE Asset Cache")),
+                userInfoProvider: new UserInfoProvider(),
                 logger: new MRELogger());
             _apiInitialized = true;
         }
@@ -266,13 +281,12 @@ public class MREComponent : MonoBehaviour
 
     public void UserJoin()
     {
-        string userIdSource = $"{UserId}-{AppID}-{gameObject.GetInstanceID()}";
-        Guid userId = UtilMethods.StringToGuid(userIdSource);
-        UserInfo userInfo = new UserInfo()
+        string source = $"{UserId}-{AppID}-{SessionID}-{gameObject.GetInstanceID()}";
+        UserInfo userInfo = new UserInfo(UtilMethods.StringToGuid(source))
         {
-            UserId = userId,
             UserGO = UserGameObject
         };
+        joinedUsers[userInfo.Id] = userInfo;
         MREApp?.UserJoin(UserGameObject, userInfo);
     }
 

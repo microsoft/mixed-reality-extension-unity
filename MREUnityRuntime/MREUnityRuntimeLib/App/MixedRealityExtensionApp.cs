@@ -7,6 +7,7 @@ using MixedRealityExtension.Behaviors;
 using MixedRealityExtension.Core;
 using MixedRealityExtension.Core.Components;
 using MixedRealityExtension.Core.Interfaces;
+using MixedRealityExtension.Core.Types;
 using MixedRealityExtension.IPC;
 using MixedRealityExtension.IPC.Connections;
 using MixedRealityExtension.Messaging;
@@ -18,6 +19,7 @@ using MixedRealityExtension.Messaging.Protocols;
 using MixedRealityExtension.Patching.Types;
 using MixedRealityExtension.RPC;
 using MixedRealityExtension.Util;
+using MixedRealityExtension.Util.Unity;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -243,17 +245,20 @@ namespace MixedRealityExtension.App
             void PerformUserJoin()
             {
                 var user = userGO.GetComponents<User>()
-                    .Where(_user => _user.AppInstanceId == this.InstanceId)
-                    .FirstOrDefault()
-                    ??
-                    userGO.AddComponent<User>();
+                    .FirstOrDefault(_user => _user.AppInstanceId == this.InstanceId);
 
-                user.Initialize(userInfo, this);
-                var userPatch = new UserPatch(user);
+                if (user == null)
+                {
+                    user = userGO.AddComponent<User>();
+                    user.Initialize(userInfo, this);
+                }
 
-                Protocol.Send(new UserJoined() { User = userPatch });
+                Protocol.Send(new UserJoined()
+                {
+                    User = new UserPatch(user)
+                });
 
-                this.LocalUser = user;
+                LocalUser = user;
 
                 // TODO @tombu - Wait for the app to send back a success for join?
                 _userManager.AddUser(user);
@@ -277,15 +282,13 @@ namespace MixedRealityExtension.App
 
             if (user != null)
             {
-                var userPatch = new UserPatch(user);
-
                 // TODO @tombu - Wait for app to send success that the user has left the app?
                 _userManager.RemoveUser(user);
                 _interactingUserIds.Remove(user.Id);
 
                 if (Protocol is Execution)
                 {
-                    Protocol.Send(new UserLeft() { UserId = userPatch.Id });
+                    Protocol.Send(new UserLeft() { UserId = user.Id });
                 }
             }
         }
@@ -438,7 +441,7 @@ namespace MixedRealityExtension.App
                         Message = trace.Message
                     },
                     Traces = new List<Trace>() { trace },
-                    Actors = actors?.Select((actor) => actor.GeneratePatch(SubscriptionType.All)).ToList() ?? new List<ActorPatch>()
+                    Actors = actors?.Select((actor) => actor.GeneratePatch(ActorComponentType.All)).ToList() ?? new List<ActorPatch>()
                 },
                     payload.MessageId);
             }
@@ -731,7 +734,7 @@ namespace MixedRealityExtension.App
                 },
 
                 Traces = new List<Trace>() { trace },
-                Actors = actors?.Select((actor) => actor.GeneratePatch(SubscriptionType.All)) ?? new ActorPatch[] { }
+                Actors = actors?.Select((actor) => actor.GeneratePatch(ActorComponentType.All)) ?? new ActorPatch[] { }
             },
                 originalMessage.MessageId);
         }
@@ -752,7 +755,7 @@ namespace MixedRealityExtension.App
                 {
                     OnActorUpdate(actorUpdate);
                 }
-                else if(updatePayload is AssetUpdate assetUpdate)
+                else if (updatePayload is AssetUpdate assetUpdate)
                 {
                     _assetLoader.OnAssetUpdate(assetUpdate);
                 }

@@ -489,7 +489,7 @@ namespace MixedRealityExtension.Core.Components
                             if (!enabled.Value && (AttachedActor.App.IsAuthoritativePeer || AttachedActor.App.OperatingModel == OperatingModel.ServerAuthoritative))
                             {
                                 // FUTURE: Add additional animatable properties as support for them is added (light color, etc).
-                                AttachedActor.SendActorUpdate(SubscriptionType.Transform);
+                                AttachedActor.SendActorUpdate(ActorComponentType.Transform);
                             }
                         }
                         animation[animationName].weight = enabled.Value ? 1.0f : 0.0f;

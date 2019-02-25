@@ -88,11 +88,15 @@
     <Compile Include="Assets\AssetCache.cs" />
     <Compile Include="Assets\AssetGroup.cs" />
     <Compile Include="Assets\AssetSource.cs" />
+    <Compile Include="Core\Attachment.cs" />
+    <Compile Include="Core\Components\MREAttachmentComponent.cs" />
     <Compile Include="Core\Interfaces\IUserInfo.cs" />
     <Compile Include="Core\Types\MWVector2.cs" />
     <Compile Include="Core\UserManager.cs" />
     <Compile Include="Factories\DefaultMaterialApplicator.cs" />
+    <Compile Include="PluginInterfaces\IUserInfoProvider.cs" />
     <Compile Include="Messaging\Payloads\AssetCommandPayloads.cs" />
+    <Compile Include="Patching\Types\AttachmentPatch.cs" />
     <Compile Include="Patching\Types\Vector2Patch.cs" />
     <Compile Include="PluginInterfaces\IAssetCache.cs" />
     <Compile Include="Assets\Definitions.cs" />

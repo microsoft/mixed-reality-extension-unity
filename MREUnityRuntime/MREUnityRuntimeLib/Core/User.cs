@@ -15,7 +15,7 @@ namespace MixedRealityExtension.Core
 
         public override string Name => UserInfo.Name;
 
-        public override Vector3 LookAtPosition => UserInfo.LookAtPosition;
+        public override Vector3? LookAtPosition => UserInfo.LookAtPosition;
 
         public IUserInfo UserInfo { get; private set; }
 
