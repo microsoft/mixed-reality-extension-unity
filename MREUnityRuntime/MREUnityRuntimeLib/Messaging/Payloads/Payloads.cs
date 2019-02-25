@@ -30,7 +30,7 @@ namespace MixedRealityExtension.Messaging.Payloads
     }
 
     /// <summary>
-    /// The flags that are subscription types for message patching notifications.
+    /// The types of components that can be added to an actor.
     /// </summary>
     [Flags]
     public enum ActorComponentType : uint

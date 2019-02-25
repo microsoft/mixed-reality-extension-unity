@@ -4,7 +4,6 @@ using MixedRealityExtension.Core;
 using MixedRealityExtension.Core.Types;
 using MixedRealityExtension.Patching.Types;
 using MixedRealityExtension.Util;
-using MixedRealityExtension.Util.Unity;
 using UnityEngine;
 
 using MRECollisionDetectionMode = MixedRealityExtension.Core.Interfaces.CollisionDetectionMode;
@@ -63,16 +62,6 @@ namespace MixedRealityExtension.Patching
 
         public static Vector3Patch GeneratePatch(MWVector3 _old, Vector3 _new)
         {
-            MWVector3 _mwNew = null;
-            if (_new != null)
-            {
-                _mwNew = _new.ToMWVector3();
-            }
-            return GeneratePatch(_old, _mwNew);
-        }
-
-        public static Vector3Patch GeneratePatch(MWVector3 _old, MWVector3 _new)
-        {
             if (_old == null && _new != null)
             {
                 return new Vector3Patch(_new);
@@ -84,9 +73,9 @@ namespace MixedRealityExtension.Patching
 
             var patch = new Vector3Patch()
             {
-                X = _old.X != _new.X ? (float?)_new.X : null,
-                Y = _old.Y != _new.Y ? (float?)_new.Y : null,
-                Z = _old.Z != _new.Z ? (float?)_new.Z : null
+                X = _old.X != _new.x ? (float?)_new.x : null,
+                Y = _old.Y != _new.y ? (float?)_new.y : null,
+                Z = _old.Z != _new.z ? (float?)_new.z : null
             };
 
             if (patch.IsPatched())
@@ -101,16 +90,6 @@ namespace MixedRealityExtension.Patching
 
         public static QuaternionPatch GeneratePatch(MWQuaternion _old, Quaternion _new)
         {
-            MWQuaternion _mwNew = null;
-            if (_new != null)
-            {
-                _mwNew = _new.ToMWQuaternion();
-            }
-            return GeneratePatch(_old, _mwNew);
-        }
-
-        public static QuaternionPatch GeneratePatch(MWQuaternion _old, MWQuaternion _new)
-        {
             if (_old == null && _new != null)
             {
                 return new QuaternionPatch(_new);
@@ -122,10 +101,10 @@ namespace MixedRealityExtension.Patching
 
             var patch = new QuaternionPatch()
             {
-                X = _old.X != _new.X ? (float?)_new.X : null,
-                Y = _old.Y != _new.Y ? (float?)_new.Y : null,
-                Z = _old.Z != _new.Z ? (float?)_new.Z : null,
-                W = _old.W != _new.W ? (float?)_new.W : null
+                X = _old.X != _new.x ? (float?)_new.x : null,
+                Y = _old.Y != _new.y ? (float?)_new.y : null,
+                Z = _old.Z != _new.z ? (float?)_new.z : null,
+                W = _old.W != _new.w ? (float?)_new.w : null
             };
 
             if (patch.IsPatched())
@@ -140,22 +119,12 @@ namespace MixedRealityExtension.Patching
 
         public static TransformPatch GeneratePatch(MWTransform _old, Transform _new)
         {
-            MWTransform _mwNew = null;
-            if (_new != null)
-            {
-                _mwNew = _new.ToMWTransform();
-            }
-            return GeneratePatch(_old, _mwNew);
-        }
-
-        public static TransformPatch GeneratePatch(MWTransform _old, MWTransform _new)
-        {
             if (_old == null && _new != null)
             {
                 return new TransformPatch()
                 {
-                    Position = GeneratePatch(null, _new.Position),
-                    Rotation = GeneratePatch(null, _new.Rotation)
+                    Position = GeneratePatch(null, _new.localPosition),
+                    Rotation = GeneratePatch(null, _new.localRotation)
                 };
             }
             else if (_new == null)
@@ -165,9 +134,9 @@ namespace MixedRealityExtension.Patching
 
             TransformPatch transform = new TransformPatch()
             {
-                Position = GeneratePatch(_old.Position, _new.Position),
-                Rotation = GeneratePatch(_old.Rotation, _new.Rotation),
-                Scale = GeneratePatch(_old.Scale, _new.Scale)
+                Position = GeneratePatch(_old.Position, _new.localPosition),
+                Rotation = GeneratePatch(_old.Rotation, _new.localRotation),
+                Scale = GeneratePatch(_old.Scale, _new.localScale)
             };
 
             return transform.IsPatched() ? transform : null;

@@ -41,7 +41,7 @@ namespace MixedRealityExtension.Messaging.Payloads
         public ActorPatch Actor { get; set; }
 
         /// <summary>
-        /// The subscriptions to register for on the actor.
+        /// The actor components to subscribe to. App will receive updates when these components change (if supported by the component type).
         /// </summary>
         public List<ActorComponentType> Subscriptions { get; set; }
     }
@@ -231,12 +231,12 @@ namespace MixedRealityExtension.Messaging.Payloads
         public Guid Id { get; set; }
 
         /// <summary>
-        /// The subscription types to add to the object. See <see cref="ActorComponentType"/>.
+        /// The actor components to subscribe to on the actor. See <see cref="ActorComponentType"/>.
         /// </summary>
         public IEnumerable<ActorComponentType> Adds { get; set; }
 
         /// <summary>
-        /// The subscription types to remove from the object. See <see cref="ActorComponentType"/>.
+        /// The actor components to unsubscribe from on the actor. See <see cref="ActorComponentType"/>.
         /// </summary>
         public IEnumerable<ActorComponentType> Removes { get; set; }
     }

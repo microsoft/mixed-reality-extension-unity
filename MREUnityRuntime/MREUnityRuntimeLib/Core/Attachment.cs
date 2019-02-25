@@ -17,6 +17,12 @@ namespace MixedRealityExtension.Core
             return AttachPoint == other.AttachPoint && UserId == other.UserId;
         }
 
+        // This class is not suitable for use as a hash key or dictionary key.
+        public override int GetHashCode()
+        {
+            return base.GetHashCode();
+        }
+
         internal void ApplyPatch(AttachmentPatch patch)
         {
             if (patch != null)
