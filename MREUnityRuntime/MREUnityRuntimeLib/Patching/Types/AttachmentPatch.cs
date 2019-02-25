@@ -17,12 +17,18 @@ namespace MixedRealityExtension.Patching.Types
 
         public bool Equals(AttachmentPatch other)
         {
-            if (other == null)
-            {
-                return false;
-            }
+            return other != null && AttachPoint == other.AttachPoint && UserId == other.UserId;
+        }
 
-            return AttachPoint == other.AttachPoint && UserId == other.UserId;
+        public override bool Equals(object obj)
+        {
+            return Equals(obj as AttachmentPatch);
+        }
+
+        // This class is not suitable for use as a hash key or dictionary key.
+        public override int GetHashCode()
+        {
+            return base.GetHashCode();
         }
 
         public bool IsPatched()

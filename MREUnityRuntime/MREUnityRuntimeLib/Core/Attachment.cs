@@ -14,7 +14,12 @@ namespace MixedRealityExtension.Core
 
         public bool Equals(Attachment other)
         {
-            return AttachPoint == other.AttachPoint && UserId == other.UserId;
+            return other != null && AttachPoint == other.AttachPoint && UserId == other.UserId;
+        }
+
+        public override bool Equals(object obj)
+        {
+            return Equals(obj as Attachment);
         }
 
         // This class is not suitable for use as a hash key or dictionary key.
