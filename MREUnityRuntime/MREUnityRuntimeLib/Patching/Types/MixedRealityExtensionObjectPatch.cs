@@ -23,10 +23,5 @@ namespace MixedRealityExtension.Patching.Types
         {
             this.Id = id;
         }
-	
-		public bool IsPatched()
-        {
-            return PatchingUtils.IsPatched(this);
-        }
     }
 }

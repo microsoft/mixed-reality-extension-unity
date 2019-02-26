@@ -4,6 +4,6 @@ namespace MixedRealityExtension.Patching
 {
     public interface IPatchable
     {
-        bool IsPatched();
+
     }
 }

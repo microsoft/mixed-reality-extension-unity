@@ -27,10 +27,5 @@ namespace MixedRealityExtension.Patching.Types
         {
             Name = user.Name;
         }
-
-        public bool IsPatched()
-        {
-            return false;
-        }
     }
 }

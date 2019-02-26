@@ -1,5 +1,9 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
+using MixedRealityExtension.Core.Interfaces;
+using MixedRealityExtension.Patching;
+using MixedRealityExtension.Patching.Types;
+using MixedRealityExtension.Util.Unity;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -34,8 +38,32 @@ namespace MixedRealityExtension.Core
         Mesh = 3
     }
 
-    public class Collider
+    public class Collider : ICollider
     {
+        private readonly UnityEngine.Collider _collider;
 
+        public bool IsEnabled => _collider.enabled;
+
+        public bool IsTrigger => _collider.isTrigger;
+
+        //public CollisionLayer CollisionLayer { get; set; }
+
+        public ColliderType ColliderType { get; private set; }
+
+        internal Collider(UnityEngine.Collider unityCollider)
+        {
+            _collider = unityCollider;
+        }
+
+        internal void ApplyPatch(ColliderPatch patch)
+        {
+            _collider.enabled = _collider.enabled.GetPatchApplied(IsEnabled.ApplyPatch(patch.IsEnabled));
+            _collider.isTrigger = _collider.isTrigger.GetPatchApplied(IsTrigger.ApplyPatch(patch.IsTrigger));
+        }
+
+        internal void SynchronizeEngine(ColliderPatch patch)
+        {
+            ApplyPatch(patch);
+        }
     }
 }

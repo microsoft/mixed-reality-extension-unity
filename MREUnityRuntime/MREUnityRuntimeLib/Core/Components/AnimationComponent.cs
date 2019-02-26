@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using MixedRealityExtension.Animation;
 using MixedRealityExtension.Messaging.Events.Types;
 using MixedRealityExtension.Messaging.Payloads;
+using MixedRealityExtension.Patching;
 using MixedRealityExtension.Patching.Types;
 using MixedRealityExtension.Util;
 using MixedRealityExtension.Util.Unity;

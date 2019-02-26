@@ -90,6 +90,8 @@
     <Compile Include="Assets\AssetSource.cs" />
     <Compile Include="Core\Attachment.cs" />
     <Compile Include="Core\Components\MREAttachmentComponent.cs" />
+    <Compile Include="Core\ColliderGeometry.cs" />
+    <Compile Include="Core\Interfaces\ICollider.cs" />
     <Compile Include="Core\Interfaces\IUserInfo.cs" />
     <Compile Include="Core\Types\MWVector2.cs" />
     <Compile Include="Core\UserManager.cs" />
@@ -97,7 +99,9 @@
     <Compile Include="PluginInterfaces\IUserInfoProvider.cs" />
     <Compile Include="Messaging\Payloads\AssetCommandPayloads.cs" />
     <Compile Include="Patching\Types\AttachmentPatch.cs" />
+    <Compile Include="Messaging\Payloads\Converters\CollisionGeometryConverter.cs" />
     <Compile Include="Patching\Types\Vector2Patch.cs" />
+    <Compile Include="Patching\Types\ColliderPatch.cs" />
     <Compile Include="PluginInterfaces\IAssetCache.cs" />
     <Compile Include="Assets\Definitions.cs" />
     <Compile Include="Assets\AssetLoader.cs" />
@@ -106,6 +110,7 @@
     <Compile Include="Core\Components\ActorComponentBase.cs" />
     <Compile Include="Factories\GLTFImporterFactory.cs" />
     <Compile Include="Messaging\Protocols\Idle.cs" />
+    <Compile Include="PluginInterfaces\IEngineConstants.cs" />
     <Compile Include="PluginInterfaces\IGltfImporterFactory.cs" />
     <Compile Include="PluginInterfaces\ILibraryResourceFactory.cs" />
     <Compile Include="PluginInterfaces\IMaterialPatcher.cs" />

@@ -37,10 +37,5 @@ namespace MixedRealityExtension.Patching.Types
             Intensity = light.intensity;
             SpotAngle = light.spotAngle;
         }
-
-        public bool IsPatched()
-        {
-            return PatchingUtils.IsPatched(this);
-        }
     }
 }

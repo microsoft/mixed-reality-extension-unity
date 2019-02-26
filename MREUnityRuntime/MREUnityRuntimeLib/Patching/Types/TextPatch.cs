@@ -43,10 +43,5 @@ namespace MixedRealityExtension.Patching.Types
 			Font = text.Font;
 			Color = new ColorPatch(text.Color);
 		}
-
-		public bool IsPatched()
-		{
-			return PatchingUtils.IsPatched(this);
-		}
 	}
 }

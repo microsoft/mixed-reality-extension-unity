@@ -27,6 +27,7 @@ namespace MixedRealityExtension.Core
     {
         private Rigidbody _rigidbody;
         private UnityLight _light;
+        private UnityEngine.Collider _collider;
         private LookAtController _lookAtController;
         private float _nextUpdateTime;
 
@@ -66,6 +67,8 @@ namespace MixedRealityExtension.Core
         internal Light Light { get; private set; }
 
         internal IText Text { get; private set; }
+		
+		internal Collider Collider { get; private set; }
 
         internal Attachment Attachment { get; } = new Attachment();
         private Attachment _cachedAttachment = new Attachment();
@@ -469,7 +472,7 @@ namespace MixedRealityExtension.Core
             // Remember the original local transform.
             MWTransform cachedTransform = LocalTransform;
 
-            // Detach from parent. This will preserve the world transform (changing the local tansform).
+            // Detach from parent. This will preserve the world transform (changing the local transform).
             // This is desired so that the actor doesn't change position, but we must restore the local
             // transform when reattaching.
             DetachFromAttachPointParent();
@@ -520,6 +523,56 @@ namespace MixedRealityExtension.Core
                 RigidBody = new RigidBody(_rigidbody, App.SceneRoot.transform);
             }
             return RigidBody;
+        }
+
+        private Collider SetCollider(ColliderPatch colliderPatch)
+        {
+            if (colliderPatch == null || colliderPatch.ColliderGeometry == null)
+            {
+                return null;
+            }
+
+            var colliderGeometry = colliderPatch.ColliderGeometry;
+            var colliderType = colliderGeometry.ColliderType;
+
+            if (_collider != null)
+            {
+                if (Collider.ColliderType == colliderType)
+                {
+                    // We have a collider already of the same type as the desired new geometry.
+                    // Update its values instead of removing and adding a new one.
+                    colliderGeometry.Patch(_collider);
+                }
+                else
+                {
+                    Destroy(_collider);
+                    _collider = null;
+                    Collider = null;
+                }
+            }
+
+            UnityEngine.Collider unityCollider = null;
+
+            switch (colliderType)
+            {
+                case ColliderType.Box:
+                    var boxCollider = gameObject.AddComponent<BoxCollider>();
+                    colliderGeometry.Patch(boxCollider);
+                    unityCollider = boxCollider;
+                    break;
+                case ColliderType.Sphere:
+                    var sphereCollider = gameObject.AddComponent<SphereCollider>();
+                    colliderGeometry.Patch(sphereCollider);
+                    unityCollider = sphereCollider;
+                    break;
+                default:
+                    MREAPI.Logger.LogWarning("Cannot add the given collider type to the actor " +
+                        $"during runtime.  Collider Type: {colliderPatch.ColliderGeometry.ColliderType}");
+                    break;
+            }
+
+            Collider = (unityCollider != null) ? new Collider(_collider) : null;
+            return Collider;
         }
 
         private void PatchParent(Guid? parentIdOrNull)
@@ -629,7 +682,6 @@ namespace MixedRealityExtension.Core
                     RigidBody.SynchronizeEngine(rigidBodyPatch);
                 }
             }
-
         }
 
         private void PatchText(TextPatch textPatch)
@@ -641,6 +693,21 @@ namespace MixedRealityExtension.Core
                     AddText();
                 }
                 Text.SynchronizeEngine(textPatch);
+            }
+        }
+
+        private void PatchCollider(ColliderPatch colliderPatch)
+        {
+            if (colliderPatch != null)
+            {
+                // A collider patch that contains collider geometry signals that we need to update the
+                // collider to match the desired geometry.
+                if (colliderPatch.ColliderGeometry != null)
+                {
+                    SetCollider(colliderPatch);
+                }
+
+                Collider?.SynchronizeEngine(colliderPatch);
             }
         }
 

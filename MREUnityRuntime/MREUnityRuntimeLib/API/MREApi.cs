@@ -30,6 +30,7 @@ namespace MixedRealityExtension.API
         /// <param name="assetCache">The place for this MRE to cache its meshes, etc.</param>
         /// <param name="gltfImporterFactory">The glTF loader factory. Uses default GLTFSceneImporter if omitted.</param>
         /// <param name="materialPatcher">Overrides default material property map (color and mainTexture only).</param>
+		/// <param name="engineConstants">Engine constants supplied by the host app.</param>
         /// <param name="logger">The logger to be used by the MRE SDK.</param>
         public static void InitializeAPI(
             UnityEngine.Material defaultMaterial,
@@ -41,6 +42,7 @@ namespace MixedRealityExtension.API
             IGLTFImporterFactory gltfImporterFactory = null,
             IMaterialPatcher materialPatcher = null,
             IUserInfoProvider userInfoProvider = null,
+			IEngineConstants engineConstants = null,
             IMRELogger logger = null)
         {
             AppsAPI.DefaultMaterial = defaultMaterial;
@@ -52,6 +54,7 @@ namespace MixedRealityExtension.API
             AppsAPI.GLTFImporterFactory = gltfImporterFactory ?? new GLTFImporterFactory();
             AppsAPI.MaterialPatcher = materialPatcher ?? new DefaultMaterialPatcher();
             AppsAPI.UserInfoProvider = userInfoProvider ?? new NullUserInfoProvider();
+			AppsAPI.EngineConstants = engineConstants;
 
 #if ANDROID_DEBUG
             Logger = logger ?? new UnityLogger();
@@ -102,6 +105,8 @@ namespace MixedRealityExtension.API
         internal IGLTFImporterFactory GLTFImporterFactory { get; set; }
 
         internal IMaterialPatcher MaterialPatcher { get; set; }
+		
+		internal IEngineConstants EngineConstants { get; set; }
 
         /// <summary>
         /// Provider of app/session scoped IUserInfo interfaces.

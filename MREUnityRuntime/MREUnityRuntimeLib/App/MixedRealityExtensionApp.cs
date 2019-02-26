@@ -16,6 +16,7 @@ using MixedRealityExtension.Messaging.Events;
 using MixedRealityExtension.Messaging.Events.Types;
 using MixedRealityExtension.Messaging.Payloads;
 using MixedRealityExtension.Messaging.Protocols;
+using MixedRealityExtension.Patching;
 using MixedRealityExtension.Patching.Types;
 using MixedRealityExtension.RPC;
 using MixedRealityExtension.Util;
@@ -455,7 +456,7 @@ namespace MixedRealityExtension.App
                 return new OperationResult()
                 {
                     ResultCode = OperationResultCode.Error,
-                    Message = string.Format("Could not find an actor with id {0} to enable a rigidbody on.", actorId)
+                    Message = $"Could not find an actor with id {actorId} to enable a rigidbody on."
                 };
             }
             else
@@ -472,7 +473,7 @@ namespace MixedRealityExtension.App
             {
                 return new OperationResult()
                 {
-                    Message = String.Format("PatchLight: Actor {0} not found", actorId),
+                    Message = $"PatchLight: Actor {actorId} not found",
                     ResultCode = OperationResultCode.Error
                 };
             }
