@@ -237,6 +237,7 @@ namespace MixedRealityExtension.App
             {
                 _conn.Update();
             }
+            SoundUpdate();
         }
 
         /// <inheritdoc />
@@ -938,6 +939,111 @@ namespace MixedRealityExtension.App
         {
             _actorManager.FindActor(payload.ActorId)?.GetOrCreateActorComponent<AnimationComponent>()
                 .SetAnimationState(payload.AnimationName, payload.State.Time, payload.State.Speed, payload.State.Enabled);
+        }
+
+
+
+
+        private void ApplySoundStateOptions(AudioSource soundInstance, SoundStateOptions options)
+        {
+            if (options != null)
+            {
+                float test = soundInstance.clip.length;
+                if (options.Volume != null)
+                {
+                    soundInstance.volume = options.Volume.Value;
+                }
+                if (options.Pitch != null)
+                {
+                    //convert from halftone offset (-12/0/12/24/36) to pitch multiplier (0.5/1/2/4/8).
+                    soundInstance.pitch = Mathf.Pow(2.0f, (options.Pitch.Value / 12.0f));
+                }
+                if (options.Looping != null)
+                {
+                    soundInstance.loop = options.Looping.Value;
+                }
+            }
+        }
+
+
+        public static Dictionary<Guid, AudioSource> _soundInstances = new Dictionary<Guid, AudioSource>();
+        public static List<Guid> _soundInstanceList = new List<Guid>();
+        int soundStoppedCheckIndex= 0;
+
+        private void SoundUpdate()
+        {
+            //garbage collect expired sounds, one per frame
+            if (soundStoppedCheckIndex >= _soundInstanceList.Count)
+            {
+                soundStoppedCheckIndex = 0;
+            }
+            else
+            {
+                var id = _soundInstanceList[soundStoppedCheckIndex];
+                var soundInstance = _soundInstances[id];
+                if (!soundInstance.isPlaying)
+                {
+                    DestroySoundInstance(soundInstance, id);
+                }
+                else
+                {
+                    soundStoppedCheckIndex++;
+                }
+            }
+        }
+
+        private void DestroySoundInstance(AudioSource soundInstance, Guid id)
+        {
+            Component.Destroy(soundInstance);
+            _soundInstances.Remove(id);
+            _soundInstanceList.Remove(id);
+        }
+        [CommandHandler(typeof(SetSoundState))]
+        private void OnSetSoundState(SetSoundState payload)
+        {
+            var actor = _actorManager.FindActor(payload.ActorId);
+            if (actor != null)
+            {
+                if (payload.SoundCommand == SoundCommand.Start)
+                {
+                    var obj = MREAPI.AppsAPI.AssetCache.GetAsset(payload.SoundAssetId);
+                    var audioClip = MREAPI.AppsAPI.AssetCache.GetAsset(payload.SoundAssetId) as AudioClip;
+                    if (audioClip != null)
+                    {
+                        var soundInstance = actor.gameObject.AddComponent<AudioSource>();
+                        soundInstance.clip = audioClip;
+                        soundInstance.time = payload.StartTimeOffset;
+                        ApplySoundStateOptions(soundInstance, payload.Options);
+                        soundInstance.Play();
+                        _soundInstances.Add(payload.Id, soundInstance);
+                        _soundInstanceList.Add(payload.Id);
+                    }
+                }
+                else
+                {
+                    var soundInstance = _soundInstances[payload.Id];
+                    if (soundInstance)
+                    {
+                        switch (payload.SoundCommand)
+                        {
+                            case SoundCommand.Pause:
+                                soundInstance.Pause();
+                                ApplySoundStateOptions(soundInstance, payload.Options);
+                                break;
+                            case SoundCommand.Resume:
+                                ApplySoundStateOptions(soundInstance, payload.Options);
+                                soundInstance.UnPause();
+                                break;
+                            case SoundCommand.Stop:
+                                DestroySoundInstance(soundInstance, payload.Id);
+                                break;
+                            default:
+                                ApplySoundStateOptions(soundInstance, payload.Options);
+                                break;
+                        }
+                    }
+                }
+            }
         }
 
         [CommandHandler(typeof(InterpolateActor))]

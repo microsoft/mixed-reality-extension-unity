@@ -19,6 +19,7 @@ using UnityGLTF;
 using UnityGLTF.Loader;
 using MWMaterial = MixedRealityExtension.Assets.Material;
 using MWTexture = MixedRealityExtension.Assets.Texture;
+using MWSound = MixedRealityExtension.Assets.Sound;
 
 namespace MixedRealityExtension.Assets
 {
@@ -361,6 +362,28 @@ namespace MixedRealityExtension.Assets
                             },
                             WrapModeU = tex.wrapModeU,
                             WrapModeV = tex.wrapModeV
+                        }
+                    } };
+                }
+            }
+            else if(def.Sound != null)
+            {
+                var result = await SoundFetcher.LoadSoundTask(_owner, new Uri(def.Sound.Value.Uri));
+                if (result.FailureMessage != null)
+                {
+                    response.FailureMessage = result.FailureMessage;
+                }
+                else
+                {
+                    var sound = result.Sound;
+                    MREAPI.AppsAPI.AssetCache.CacheAsset(sound, def.Id);
+
+                    response.Assets = new Asset[] { new Asset()
+                    {
+                        Id = def.Id,
+                        Sound = new MWSound()
+                        {
+                            Duration = sound.length
                         }
                     } };
                 }
