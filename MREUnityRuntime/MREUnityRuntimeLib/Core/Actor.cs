@@ -550,6 +550,7 @@ namespace MixedRealityExtension.Core
                     // We have a collider already of the same type as the desired new geometry.
                     // Update its values instead of removing and adding a new one.
                     colliderGeometry.Patch(_collider);
+                    return Collider;
                 }
                 else
                 {
