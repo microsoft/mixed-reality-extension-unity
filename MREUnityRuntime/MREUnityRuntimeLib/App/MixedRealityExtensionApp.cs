@@ -1,5 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
+
 using MixedRealityExtension.Animation;
 using MixedRealityExtension.API;
 using MixedRealityExtension.Assets;
@@ -7,7 +8,6 @@ using MixedRealityExtension.Behaviors;
 using MixedRealityExtension.Core;
 using MixedRealityExtension.Core.Components;
 using MixedRealityExtension.Core.Interfaces;
-using MixedRealityExtension.Core.Types;
 using MixedRealityExtension.IPC;
 using MixedRealityExtension.IPC.Connections;
 using MixedRealityExtension.Messaging;
@@ -20,7 +20,6 @@ using MixedRealityExtension.Patching;
 using MixedRealityExtension.Patching.Types;
 using MixedRealityExtension.RPC;
 using MixedRealityExtension.Util;
-using MixedRealityExtension.Util.Unity;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -435,15 +434,15 @@ namespace MixedRealityExtension.App
                 };
 
                 Protocol.Send(new ObjectSpawned()
-                {
-                    Result = new OperationResult()
                     {
-                        ResultCode = resultCode,
-                        Message = trace.Message
+                        Result = new OperationResult()
+                        {
+                            ResultCode = resultCode,
+                            Message = trace.Message
+                        },
+                        Traces = new List<Trace>() { trace },
+                        Actors = actors?.Select((actor) => actor.GenerateInitialPatch()).ToList() ?? new List<ActorPatch>()
                     },
-                    Traces = new List<Trace>() { trace },
-                    Actors = actors?.Select((actor) => actor.GeneratePatch(ActorComponentType.All)).ToList() ?? new List<ActorPatch>()
-                },
                     payload.MessageId);
             }
         }
@@ -727,16 +726,16 @@ namespace MixedRealityExtension.App
             };
 
             Protocol.Send(new ObjectSpawned()
-            {
-                Result = new OperationResult()
                 {
-                    ResultCode = (actors != null) ? OperationResultCode.Success : OperationResultCode.Error,
-                    Message = trace.Message
-                },
+                    Result = new OperationResult()
+                    {
+                        ResultCode = (actors != null) ? OperationResultCode.Success : OperationResultCode.Error,
+                        Message = trace.Message
+                    },
 
-                Traces = new List<Trace>() { trace },
-                Actors = actors?.Select((actor) => actor.GeneratePatch(ActorComponentType.All)) ?? new ActorPatch[] { }
-            },
+                    Traces = new List<Trace>() { trace },
+                    Actors = actors?.Select((actor) => actor.GenerateInitialPatch()) ?? new ActorPatch[] { }
+                },
                 originalMessage.MessageId);
         }
 

@@ -1,5 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
+
 using MixedRealityExtension.API;
 using MixedRealityExtension.Controllers;
 using MixedRealityExtension.Core.Components;
@@ -17,6 +18,7 @@ using System.Linq;
 using UnityEngine;
 
 using UnityLight = UnityEngine.Light;
+using UnityCollider = UnityEngine.Collider;
 
 namespace MixedRealityExtension.Core
 {
@@ -27,7 +29,7 @@ namespace MixedRealityExtension.Core
     {
         private Rigidbody _rigidbody;
         private UnityLight _light;
-        private UnityEngine.Collider _collider;
+        private UnityCollider _collider;
         private LookAtController _lookAtController;
         private float _nextUpdateTime;
 
@@ -152,6 +154,7 @@ namespace MixedRealityExtension.Core
             PatchTransform(actorPatch.Transform);
             PatchLight(actorPatch.Light);
             PatchRigidBody(actorPatch.RigidBody);
+            PatchCollider(actorPatch.Collider);
             PatchText(actorPatch.Text);
             PatchAttachment(actorPatch.Attachment);
         }
@@ -175,25 +178,29 @@ namespace MixedRealityExtension.Core
             Destroy(gameObject);
         }
 
-        internal ActorPatch GeneratePatch(ActorComponentType? interests = null)
+        internal ActorPatch GenerateInitialPatch()
         {
             if (ParentId == null)
             {
                 ParentId = Parent?.Id ?? Guid.Empty;
             }
 
-            ActorComponentType subs = interests ?? _subscriptions;
+            var transform = new TransformPatch()
+            {
+                Position = new Vector3Patch(Transform.Position),
+                Rotation = new QuaternionPatch(Transform.Rotation),
+                Scale = new Vector3Patch(Transform.Scale)
+            };
 
-            var transform = ((subs & ActorComponentType.Transform) != ActorComponentType.None) ?
-                new TransformPatch()
-                {
-                    Position = new Vector3Patch(Transform.Position),
-                    Rotation = new QuaternionPatch(Transform.Rotation),
-                    Scale = new Vector3Patch(Transform.Scale)
-                } : null;
+            var rigidBody = PatchingUtilMethods.GeneratePatch(RigidBody, (Rigidbody)null, App.SceneRoot.transform);
 
-            var rigidBody = ((subs & ActorComponentType.Rigidbody) != ActorComponentType.None) ?
-                PatchingUtilMethods.GeneratePatch(RigidBody, (Rigidbody)null, App.SceneRoot.transform) : null;
+            ColliderPatch collider = null;
+            _collider = gameObject.GetComponent<UnityCollider>();
+            if (_collider != null)
+            {
+                Collider = new Collider(_collider);
+                collider = Collider.GenerateInitialPatch();
+            }
 
             var actorPatch = new ActorPatch(Id)
             {
@@ -201,7 +208,8 @@ namespace MixedRealityExtension.Core
                 Name = Name,
                 Transform = transform,
                 RigidBody = rigidBody,
-                MaterialId = MaterialId
+                MaterialId = MaterialId,
+                Collider = collider
             };
 
             return (!actorPatch.IsPatched()) ? null : actorPatch;
@@ -551,7 +559,7 @@ namespace MixedRealityExtension.Core
                 }
             }
 
-            UnityEngine.Collider unityCollider = null;
+            UnityCollider unityCollider = null;
 
             switch (colliderType)
             {

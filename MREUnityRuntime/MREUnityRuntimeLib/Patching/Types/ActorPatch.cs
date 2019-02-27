@@ -16,6 +16,9 @@ namespace MixedRealityExtension.Patching.Types
         public RigidBodyPatch RigidBody { get; set; }
 
         [PatchProperty]
+        public ColliderPatch Collider { get; set; }
+
+        [PatchProperty]
         public LightPatch Light { get; set; }
 
         [PatchProperty]

@@ -1,10 +1,7 @@
-﻿using MixedRealityExtension.Core;
-using MixedRealityExtension.Core.Interfaces;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+using MixedRealityExtension.Core;
 
 namespace MixedRealityExtension.Patching.Types
 {

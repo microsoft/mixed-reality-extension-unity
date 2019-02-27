@@ -1,4 +1,7 @@
-﻿using MixedRealityExtension.API;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+using MixedRealityExtension.API;
 using MixedRealityExtension.Core;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -7,7 +10,7 @@ using System;
 namespace MixedRealityExtension.Messaging.Payloads.Converters
 {
     /// <summary>
-    /// Json converter for collision geometry serialized data.
+    /// Json converter for collision geometry serialization data.
     /// </summary>
     public class CollisionGeometryConverter : JsonConverter
     {
