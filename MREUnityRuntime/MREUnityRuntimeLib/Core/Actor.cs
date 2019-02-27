@@ -1,5 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
+
 using MixedRealityExtension.API;
 using MixedRealityExtension.Controllers;
 using MixedRealityExtension.Core.Components;
@@ -17,6 +18,7 @@ using System.Linq;
 using UnityEngine;
 
 using UnityLight = UnityEngine.Light;
+using UnityCollider = UnityEngine.Collider;
 
 namespace MixedRealityExtension.Core
 {
@@ -27,6 +29,7 @@ namespace MixedRealityExtension.Core
     {
         private Rigidbody _rigidbody;
         private UnityLight _light;
+        private UnityCollider _collider;
         private LookAtController _lookAtController;
         private float _nextUpdateTime;
 
@@ -66,6 +69,8 @@ namespace MixedRealityExtension.Core
         internal Light Light { get; private set; }
 
         internal IText Text { get; private set; }
+		
+		internal Collider Collider { get; private set; }
 
         internal Attachment Attachment { get; } = new Attachment();
         private Attachment _cachedAttachment = new Attachment();
@@ -149,6 +154,7 @@ namespace MixedRealityExtension.Core
             PatchTransform(actorPatch.Transform);
             PatchLight(actorPatch.Light);
             PatchRigidBody(actorPatch.RigidBody);
+            PatchCollider(actorPatch.Collider);
             PatchText(actorPatch.Text);
             PatchAttachment(actorPatch.Attachment);
         }
@@ -172,25 +178,29 @@ namespace MixedRealityExtension.Core
             Destroy(gameObject);
         }
 
-        internal ActorPatch GeneratePatch(ActorComponentType? interests = null)
+        internal ActorPatch GenerateInitialPatch()
         {
             if (ParentId == null)
             {
                 ParentId = Parent?.Id ?? Guid.Empty;
             }
 
-            ActorComponentType subs = interests ?? _subscriptions;
+            var transform = new TransformPatch()
+            {
+                Position = new Vector3Patch(Transform.Position),
+                Rotation = new QuaternionPatch(Transform.Rotation),
+                Scale = new Vector3Patch(Transform.Scale)
+            };
 
-            var transform = ((subs & ActorComponentType.Transform) != ActorComponentType.None) ?
-                new TransformPatch()
-                {
-                    Position = new Vector3Patch(Transform.Position),
-                    Rotation = new QuaternionPatch(Transform.Rotation),
-                    Scale = new Vector3Patch(Transform.Scale)
-                } : null;
+            var rigidBody = PatchingUtilMethods.GeneratePatch(RigidBody, (Rigidbody)null, App.SceneRoot.transform);
 
-            var rigidBody = ((subs & ActorComponentType.Rigidbody) != ActorComponentType.None) ?
-                PatchingUtilMethods.GeneratePatch(RigidBody, (Rigidbody)null, App.SceneRoot.transform) : null;
+            ColliderPatch collider = null;
+            _collider = gameObject.GetComponent<UnityCollider>();
+            if (_collider != null)
+            {
+                Collider = new Collider(_collider);
+                collider = Collider.GenerateInitialPatch();
+            }
 
             var actorPatch = new ActorPatch(Id)
             {
@@ -198,7 +208,8 @@ namespace MixedRealityExtension.Core
                 Name = Name,
                 Transform = transform,
                 RigidBody = rigidBody,
-                MaterialId = MaterialId
+                MaterialId = MaterialId,
+                Collider = collider
             };
 
             return (!actorPatch.IsPatched()) ? null : actorPatch;
@@ -469,7 +480,7 @@ namespace MixedRealityExtension.Core
             // Remember the original local transform.
             MWTransform cachedTransform = LocalTransform;
 
-            // Detach from parent. This will preserve the world transform (changing the local tansform).
+            // Detach from parent. This will preserve the world transform (changing the local transform).
             // This is desired so that the actor doesn't change position, but we must restore the local
             // transform when reattaching.
             DetachFromAttachPointParent();
@@ -520,6 +531,57 @@ namespace MixedRealityExtension.Core
                 RigidBody = new RigidBody(_rigidbody, App.SceneRoot.transform);
             }
             return RigidBody;
+        }
+
+        private Collider SetCollider(ColliderPatch colliderPatch)
+        {
+            if (colliderPatch == null || colliderPatch.ColliderGeometry == null)
+            {
+                return null;
+            }
+
+            var colliderGeometry = colliderPatch.ColliderGeometry;
+            var colliderType = colliderGeometry.ColliderType;
+
+            if (_collider != null)
+            {
+                if (Collider.ColliderType == colliderType)
+                {
+                    // We have a collider already of the same type as the desired new geometry.
+                    // Update its values instead of removing and adding a new one.
+                    colliderGeometry.Patch(_collider);
+                    return Collider;
+                }
+                else
+                {
+                    Destroy(_collider);
+                    _collider = null;
+                    Collider = null;
+                }
+            }
+
+            UnityCollider unityCollider = null;
+
+            switch (colliderType)
+            {
+                case ColliderType.Box:
+                    var boxCollider = gameObject.AddComponent<BoxCollider>();
+                    colliderGeometry.Patch(boxCollider);
+                    unityCollider = boxCollider;
+                    break;
+                case ColliderType.Sphere:
+                    var sphereCollider = gameObject.AddComponent<SphereCollider>();
+                    colliderGeometry.Patch(sphereCollider);
+                    unityCollider = sphereCollider;
+                    break;
+                default:
+                    MREAPI.Logger.LogWarning("Cannot add the given collider type to the actor " +
+                        $"during runtime.  Collider Type: {colliderPatch.ColliderGeometry.ColliderType}");
+                    break;
+            }
+
+            Collider = (unityCollider != null) ? new Collider(_collider) : null;
+            return Collider;
         }
 
         private void PatchParent(Guid? parentIdOrNull)
@@ -629,7 +691,6 @@ namespace MixedRealityExtension.Core
                     RigidBody.SynchronizeEngine(rigidBodyPatch);
                 }
             }
-
         }
 
         private void PatchText(TextPatch textPatch)
@@ -641,6 +702,21 @@ namespace MixedRealityExtension.Core
                     AddText();
                 }
                 Text.SynchronizeEngine(textPatch);
+            }
+        }
+
+        private void PatchCollider(ColliderPatch colliderPatch)
+        {
+            if (colliderPatch != null)
+            {
+                // A collider patch that contains collider geometry signals that we need to update the
+                // collider to match the desired geometry.
+                if (colliderPatch.ColliderGeometry != null)
+                {
+                    SetCollider(colliderPatch);
+                }
+
+                Collider?.SynchronizeEngine(colliderPatch);
             }
         }
 

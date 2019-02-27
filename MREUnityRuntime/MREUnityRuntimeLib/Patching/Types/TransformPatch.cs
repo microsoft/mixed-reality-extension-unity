@@ -26,10 +26,5 @@ namespace MixedRealityExtension.Patching.Types
             this.Rotation = new QuaternionPatch(rotation);
             this.Scale = new Vector3Patch(scale);
         }
-
-        public bool IsPatched()
-        {
-            return PatchingUtils.IsPatched(this);
-        }
     }
 }

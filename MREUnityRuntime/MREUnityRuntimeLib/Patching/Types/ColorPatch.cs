@@ -53,10 +53,5 @@ namespace MixedRealityExtension.Patching.Types
                     A.Equals(other.A);
             }
         }
-
-        public bool IsPatched()
-        {
-            return PatchingUtils.IsPatched(this);
-        }
     }
 }

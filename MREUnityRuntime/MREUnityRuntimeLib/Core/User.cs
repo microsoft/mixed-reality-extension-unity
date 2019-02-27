@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 using MixedRealityExtension.App;
 using MixedRealityExtension.Core.Interfaces;
+using MixedRealityExtension.Patching;
 using MixedRealityExtension.Patching.Types;
 using System;
 using System.Collections.Generic;

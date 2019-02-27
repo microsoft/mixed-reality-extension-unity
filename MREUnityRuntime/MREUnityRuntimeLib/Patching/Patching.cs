@@ -8,8 +8,7 @@ namespace MixedRealityExtension.Patching
 {
     internal static class PatchingUtils
     {
-        // TODO @tombu - Look in to making this an extension method.
-        public static bool IsPatched<T>(T patch) where T : IPatchable
+        public static bool IsPatched<T>(this T patch) where T : IPatchable
         {
             var properties = patch.GetType().GetProperties();
             foreach (var property in properties)

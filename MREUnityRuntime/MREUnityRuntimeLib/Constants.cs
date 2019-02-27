@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 using MixedRealityExtension.Messaging.Payloads;
+using MixedRealityExtension.Messaging.Payloads.Converters;
 using Newtonsoft.Json;
 
 namespace MixedRealityExtension
@@ -20,6 +21,7 @@ namespace MixedRealityExtension
 
             SerializerSettings.Converters.Add(new Messaging.Payloads.Converters.DashFormattedEnumConverter());
             SerializerSettings.Converters.Add(new PayloadConverter());
+            SerializerSettings.Converters.Add(new CollisionGeometryConverter());
         }
 
         /*

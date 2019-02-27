@@ -116,10 +116,5 @@ namespace MixedRealityExtension.Patching.Types
             UseGravity = rigidbody.useGravity;
             ConstraintFlags = (MRERigidBodyConstraints)Enum.Parse(typeof(MRERigidBodyConstraints), rigidbody.constraints.ToString());
         }
-
-        public bool IsPatched()
-        {
-            return PatchingUtils.IsPatched(this);
-        }
     }
 }
