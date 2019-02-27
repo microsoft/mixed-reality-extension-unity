@@ -520,7 +520,7 @@ namespace MixedRealityExtension.Messaging.Payloads
         public Guid Id { get; set; }
 
         /// <summary>
-        /// The id of the actor to reset the animation on.
+        /// The id of the actor to play the sound on.
         /// </summary>
         public Guid ActorId { get; set; }
 
@@ -530,7 +530,7 @@ namespace MixedRealityExtension.Messaging.Payloads
         public Guid SoundAssetId { get; set; }
 
         /// <summary>
-        /// How to look at the target object.
+        /// Command to change the sound mode (start, pause, resume, or stop)
         /// </summary>
         public SoundCommand SoundCommand { get; set; }
 

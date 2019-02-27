@@ -335,14 +335,14 @@ namespace MixedRealityExtension.Assets
             }
             else if(def.Texture != null)
             {
-                var result = await TextureFetcher.LoadTextureTask(_owner, new Uri(def.Texture.Value.Uri));
+                var result = await AssetFetcher<UnityEngine.Texture>.LoadTask(_owner, new Uri(def.Texture.Value.Uri));
                 if(result.FailureMessage != null)
                 {
                     response.FailureMessage = result.FailureMessage;
                 }
                 else
                 {
-                    var tex = result.Texture;
+                    var tex = result.Asset;
                     MREAPI.AppsAPI.AssetCache.CacheAsset(tex, def.Id);
 
                     OnAssetUpdate(new AssetUpdate() {
@@ -368,14 +368,14 @@ namespace MixedRealityExtension.Assets
             }
             else if(def.Sound != null)
             {
-                var result = await SoundFetcher.LoadSoundTask(_owner, new Uri(def.Sound.Value.Uri));
+                var result = await AssetFetcher<UnityEngine.AudioClip>.LoadTask(_owner, new Uri(def.Sound.Value.Uri));
                 if (result.FailureMessage != null)
                 {
                     response.FailureMessage = result.FailureMessage;
                 }
                 else
                 {
-                    var sound = result.Sound;
+                    var sound = result.Asset;
                     MREAPI.AppsAPI.AssetCache.CacheAsset(sound, def.Id);
 
                     response.Assets = new Asset[] { new Asset()

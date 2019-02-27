@@ -962,32 +962,40 @@ namespace MixedRealityExtension.App
                 {
                     soundInstance.loop = options.Looping.Value;
                 }
+                if (options.Doppler != null)
+                {
+                    soundInstance.dopplerLevel = options.Doppler.Value;
+                }
+                if (options.MultiChannelSpread != null)
+                {
+                    soundInstance.spread = options.MultiChannelSpread.Value*180.0f;
+                }
             }
         }
 
 
-        public static Dictionary<Guid, AudioSource> _soundInstances = new Dictionary<Guid, AudioSource>();
-        public static List<Guid> _unpausedSoundInstances = new List<Guid>();
-        int soundStoppedCheckIndex= 0;
+        private static Dictionary<Guid, AudioSource> _soundInstances = new Dictionary<Guid, AudioSource>();
+        private static List<Guid> _unpausedSoundInstances = new List<Guid>();
+        private int _soundStoppedCheckIndex = 0;
 
         private void SoundUpdate()
         {
             //garbage collect expired sounds, one per frame
-            if (soundStoppedCheckIndex >= _unpausedSoundInstances.Count)
+            if (_soundStoppedCheckIndex >= _unpausedSoundInstances.Count)
             {
-                soundStoppedCheckIndex = 0;
+                _soundStoppedCheckIndex  = 0;
             }
             else
             {
-                var id = _unpausedSoundInstances[soundStoppedCheckIndex];
-                var soundInstance = _soundInstances[id];
-                if (!soundInstance.isPlaying)
+                var id = _unpausedSoundInstances[_soundStoppedCheckIndex];
+                AudioSource soundInstance;
+                if(_soundInstances.TryGetValue(id, out soundInstance) && !soundInstance.isPlaying)
                 {
                     DestroySoundInstance(soundInstance, id);
                 }
                 else
                 {
-                    soundStoppedCheckIndex++;
+                    _soundStoppedCheckIndex++;
                 }
             }
         }
@@ -1017,6 +1025,8 @@ namespace MixedRealityExtension.App
                         var soundInstance = actor.gameObject.AddComponent<AudioSource>();
                         soundInstance.clip = audioClip;
                         soundInstance.time = payload.StartTimeOffset;
+                        soundInstance.spatialBlend = 1.0f;
+                        soundInstance.spread = 90.0f;   //only affects multichannel sounds. Default to 50% spread, 50% stereo.
                         ApplySoundStateOptions(soundInstance, payload.Options);
                         soundInstance.Play();
                         _soundInstances.Add(payload.Id, soundInstance);
@@ -1025,8 +1035,8 @@ namespace MixedRealityExtension.App
                 }
                 else
                 {
-                    var soundInstance = _soundInstances[payload.Id];
-                    if (soundInstance)
+                    AudioSource soundInstance;
+                    if (_soundInstances.TryGetValue(payload.Id, out soundInstance))
                     {
                         switch (payload.SoundCommand)
                         {
