@@ -510,6 +510,44 @@ namespace MixedRealityExtension.Messaging.Payloads
 
     /// <summary>
     /// App => Engine
+    /// Payload for when the app wants to set animation state.
+    /// </summary>
+    public class SetSoundState : NetworkCommandPayload
+    {
+        /// <summary>
+        /// The id of the sound instance - used to manipulate the sound after instantiation
+        /// </summary>
+        public Guid Id { get; set; }
+
+        /// <summary>
+        /// The id of the actor to play the sound on.
+        /// </summary>
+        public Guid ActorId { get; set; }
+
+        /// <summary>
+        /// The GUID of the sound asset to start playing
+        /// </summary>
+        public Guid SoundAssetId { get; set; }
+
+        /// <summary>
+        /// Command to change the sound mode (start, pause, resume, or stop)
+        /// </summary>
+        public SoundCommand SoundCommand { get; set; }
+
+        /// <summary>
+        /// Time in seconds since sound was started
+        /// </summary>
+        public float StartTimeOffset{ get; set; }
+
+        /// <summary>
+        /// runtime configurable options.
+        /// </summary>
+        public SoundStateOptions Options{ get; set; }
+
+    }
+
+    /// <summary>
+    /// App => Engine
     /// Payload for when the app wants to interpolate actor properties (position, rotation, scale. Other fields in the future).
     /// </summary>
     public class InterpolateActor : NetworkCommandPayload

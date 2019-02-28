@@ -237,6 +237,7 @@ namespace MixedRealityExtension.App
             {
                 _conn.Update();
             }
+            SoundUpdate();
         }
 
         /// <inheritdoc />
@@ -938,6 +939,139 @@ namespace MixedRealityExtension.App
         {
             _actorManager.FindActor(payload.ActorId)?.GetOrCreateActorComponent<AnimationComponent>()
                 .SetAnimationState(payload.AnimationName, payload.State.Time, payload.State.Speed, payload.State.Enabled);
+        }
+
+
+
+
+        private void ApplySoundStateOptions(AudioSource soundInstance, SoundStateOptions options)
+        {
+            if (options != null)
+            {
+                float test = soundInstance.clip.length;
+                if (options.Volume != null)
+                {
+                    soundInstance.volume = options.Volume.Value;
+                }
+                if (options.Pitch != null)
+                {
+                    //convert from halftone offset (-12/0/12/24/36) to pitch multiplier (0.5/1/2/4/8).
+                    soundInstance.pitch = Mathf.Pow(2.0f, (options.Pitch.Value / 12.0f));
+                }
+                if (options.Looping != null)
+                {
+                    soundInstance.loop = options.Looping.Value;
+                }
+                if (options.Doppler != null)
+                {
+                    soundInstance.dopplerLevel = options.Doppler.Value;
+                }
+                if (options.MultiChannelSpread != null)
+                {
+                    soundInstance.spread = options.MultiChannelSpread.Value*180.0f;
+                }
+            }
+        }
+
+
+        private static Dictionary<Guid, AudioSource> _soundInstances = new Dictionary<Guid, AudioSource>();
+        private static List<Guid> _unpausedSoundInstances = new List<Guid>();
+        private int _soundStoppedCheckIndex = 0;
+
+        private void SoundUpdate()
+        {
+            //garbage collect expired sounds, one per frame
+            if (_soundStoppedCheckIndex >= _unpausedSoundInstances.Count)
+            {
+                _soundStoppedCheckIndex  = 0;
+            }
+            else
+            {
+                var id = _unpausedSoundInstances[_soundStoppedCheckIndex];
+                AudioSource soundInstance;
+                if(_soundInstances.TryGetValue(id, out soundInstance) && !soundInstance.isPlaying)
+                {
+                    DestroySoundInstance(soundInstance, id);
+                }
+                else
+                {
+                    _soundStoppedCheckIndex++;
+                }
+            }
+        }
+
+        private void DestroySoundInstance(AudioSource soundInstance, Guid id)
+        {
+            Component.Destroy(soundInstance);
+            _soundInstances.Remove(id);
+            var index = _unpausedSoundInstances.FindIndex(x => x == id);
+            if (index >= 0)
+            {
+                _unpausedSoundInstances.RemoveAt(index);
+            }
+        }
+        [CommandHandler(typeof(SetSoundState))]
+        private void OnSetSoundState(SetSoundState payload)
+        {
+            var actor = _actorManager.FindActor(payload.ActorId);
+            if (actor != null)
+            {
+                if (payload.SoundCommand == SoundCommand.Start)
+                {
+                    var obj = MREAPI.AppsAPI.AssetCache.GetAsset(payload.SoundAssetId);
+                    var audioClip = MREAPI.AppsAPI.AssetCache.GetAsset(payload.SoundAssetId) as AudioClip;
+                    if (audioClip != null)
+                    {
+                        var soundInstance = actor.gameObject.AddComponent<AudioSource>();
+                        soundInstance.clip = audioClip;
+                        soundInstance.time = payload.StartTimeOffset;
+                        soundInstance.spatialBlend = 1.0f;
+                        soundInstance.spread = 90.0f;   //only affects multichannel sounds. Default to 50% spread, 50% stereo.
+                        ApplySoundStateOptions(soundInstance, payload.Options);
+                        soundInstance.Play();
+                        _soundInstances.Add(payload.Id, soundInstance);
+                        _unpausedSoundInstances.Add(payload.Id);
+                    }
+                }
+                else
+                {
+                    AudioSource soundInstance;
+                    if (_soundInstances.TryGetValue(payload.Id, out soundInstance))
+                    {
+                        switch (payload.SoundCommand)
+                        {
+                            case SoundCommand.Pause:
+                                {
+                                    var index = _unpausedSoundInstances.FindIndex(x => x == payload.Id);
+                                    if (index >= 0)
+                                    {
+                                        _unpausedSoundInstances.RemoveAt(index);
+                                    }
+                                    soundInstance.Pause();
+                                    ApplySoundStateOptions(soundInstance, payload.Options);
+                                }
+                                break;
+                            case SoundCommand.Resume:
+                                {
+                                    ApplySoundStateOptions(soundInstance, payload.Options);
+                                    soundInstance.UnPause();
+                                    var index = _unpausedSoundInstances.FindIndex(x => x == payload.Id);
+                                    if (index < 0)
+                                    {
+                                        _unpausedSoundInstances.Add(payload.Id);
+                                    }
+                                }
+                                break;
+                            case SoundCommand.Stop:
+                                DestroySoundInstance(soundInstance, payload.Id);
+                                break;
+                            default:
+                                ApplySoundStateOptions(soundInstance, payload.Options);
+                                break;
+                        }
+                    }
+                }
+            }
         }
 
         [CommandHandler(typeof(InterpolateActor))]

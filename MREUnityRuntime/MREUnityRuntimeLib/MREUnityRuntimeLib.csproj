@@ -93,6 +93,8 @@
     <Compile Include="Core\ColliderGeometry.cs" />
     <Compile Include="Core\Interfaces\ICollider.cs" />
     <Compile Include="Core\Interfaces\IUserInfo.cs" />
+    <Compile Include="Core\SoundCommand.cs" />
+    <Compile Include="Core\SoundStateOptions.cs" />
     <Compile Include="Core\Types\MWVector2.cs" />
     <Compile Include="Core\UserManager.cs" />
     <Compile Include="Factories\DefaultMaterialApplicator.cs" />
@@ -254,7 +256,7 @@
     <Compile Include="Util\Unity\MWGOTreeWalker.cs" />
     <Compile Include="Util\Unity\MWUnityHelpers.cs" />
     <Compile Include="Util\Unity\MWUnityTypeExtensions.cs" />
-    <Compile Include="Util\Unity\TextureFetcher.cs" />
+    <Compile Include="Util\Unity\AssetFetcher.cs" />
     <Compile Include="Util\UtilMethods.cs" />
   </ItemGroup>
   <ItemGroup />

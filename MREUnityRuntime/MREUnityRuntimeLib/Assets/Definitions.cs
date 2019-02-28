@@ -42,6 +42,11 @@ namespace MixedRealityExtension.Assets
         /// If this asset is a texture, contains those properties
         /// </summary>
         public Texture? Texture;
+
+        /// <summary>
+        /// If this asset is a sound, contains those properties
+        /// </summary>
+        public Sound? Sound;
     }
 
     /// <summary>
@@ -152,5 +157,21 @@ namespace MixedRealityExtension.Assets
         /// How out-of-range V coordinates should be handled
         /// </summary>
         public UnityEngine.TextureWrapMode? WrapModeV;
+    }
+
+    /// <summary>
+    /// Contains a basic sound description
+    /// </summary>
+    public struct Sound
+    {
+        /// <summary>
+        /// The URI of the source data for this texture
+        /// </summary>
+        public string Uri;
+
+        /// <summary>
+        /// Duration in seconds.
+        /// </summary>
+        public float Duration;
     }
 }
