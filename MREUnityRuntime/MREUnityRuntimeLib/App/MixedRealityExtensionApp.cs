@@ -968,7 +968,12 @@ namespace MixedRealityExtension.App
                 }
                 if (options.MultiChannelSpread != null)
                 {
-                    soundInstance.spread = options.MultiChannelSpread.Value*180.0f;
+                    soundInstance.spread = options.MultiChannelSpread.Value * 180.0f;
+                }
+                if (options.RolloffStartDistance != null)
+                {
+                    soundInstance.minDistance = options.RolloffStartDistance.Value;
+                    soundInstance.maxDistance = options.RolloffStartDistance.Value * 1000000.0f;
                 }
             }
         }
@@ -1027,6 +1032,8 @@ namespace MixedRealityExtension.App
                         soundInstance.time = payload.StartTimeOffset;
                         soundInstance.spatialBlend = 1.0f;
                         soundInstance.spread = 90.0f;   //only affects multichannel sounds. Default to 50% spread, 50% stereo.
+                        soundInstance.minDistance = 1.0f;
+                        soundInstance.maxDistance = 1000000.0f;
                         ApplySoundStateOptions(soundInstance, payload.Options);
                         soundInstance.Play();
                         _soundInstances.Add(payload.Id, soundInstance);

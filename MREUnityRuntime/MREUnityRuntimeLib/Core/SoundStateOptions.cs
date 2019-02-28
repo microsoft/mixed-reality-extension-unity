@@ -33,5 +33,12 @@ namespace MixedRealityExtension
         /// Default to 0.5, to give some directional feel, but collapse all channels to sound like mono.
         /// </summary>
         public float? MultiChannelSpread;
+
+        /// <summary>
+        /// Sounds will play at full volume until user is this many meters away, and then volume will decrease logarithmically
+        /// Default to 1.0. For sound that needs to fill up a large space (like a concert), increase this number.
+        /// </summary>
+        public float? RolloffStartDistance;
+
     }
 }
