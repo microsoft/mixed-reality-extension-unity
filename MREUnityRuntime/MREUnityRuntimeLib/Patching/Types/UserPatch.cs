@@ -3,6 +3,7 @@
 using MixedRealityExtension.Core;
 using MixedRealityExtension.Core.Types;
 using System;
+using System.Collections.Generic;
 
 namespace MixedRealityExtension.Patching.Types
 {
@@ -12,6 +13,8 @@ namespace MixedRealityExtension.Patching.Types
 
         [PatchProperty]
         public string Name { get; set; }
+
+        public Dictionary<string, string> Properties { get; set; }
 
         public UserPatch()
         {
@@ -26,6 +29,7 @@ namespace MixedRealityExtension.Patching.Types
             : this(user.Id)
         {
             Name = user.Name;
+            Properties = user.UserInfo.Properties;
         }
     }
 }

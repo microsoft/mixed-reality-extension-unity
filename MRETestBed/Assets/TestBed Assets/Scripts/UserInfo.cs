@@ -1,6 +1,7 @@
 ﻿using MixedRealityExtension.Core.Interfaces;
 using MixedRealityExtension.IPC;
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 internal class UserInfo : IUserInfo
@@ -15,6 +16,12 @@ internal class UserInfo : IUserInfo
     public Guid Id { get; }
 
     public string Name => UserGO.name;
+
+    public Dictionary<string, string> Properties => new Dictionary<string, string>()
+    {
+        {"host", "MRETestBed" },
+        {"engine", "Unity 2018.1.9f2" }
+    };
 
     public Vector3? LookAtPosition => UserGO.transform.position;
 
