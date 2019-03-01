@@ -988,13 +988,13 @@ namespace MixedRealityExtension.App
             //garbage collect expired sounds, one per frame
             if (_soundStoppedCheckIndex >= _unpausedSoundInstances.Count)
             {
-                _soundStoppedCheckIndex  = 0;
+                _soundStoppedCheckIndex = 0;
             }
             else
             {
                 var id = _unpausedSoundInstances[_soundStoppedCheckIndex];
                 AudioSource soundInstance;
-                if(_soundInstances.TryGetValue(id, out soundInstance) && !soundInstance.isPlaying)
+                if (_soundInstances.TryGetValue(id, out soundInstance) && !soundInstance.isPlaying)
                 {
                     DestroySoundInstance(soundInstance, id);
                 }
@@ -1030,7 +1030,7 @@ namespace MixedRealityExtension.App
                         float offset = payload.StartTimeOffset;
                         if (payload.Options.Looping != null && payload.Options.Looping.Value)
                         {
-                            offset = payload.StartTimeOffset%audioClip.length;
+                            offset = payload.StartTimeOffset % audioClip.length;
                         }
                         if (offset < audioClip.length)
                         {
