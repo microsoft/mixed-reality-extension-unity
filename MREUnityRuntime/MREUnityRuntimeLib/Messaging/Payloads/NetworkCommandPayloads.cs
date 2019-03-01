@@ -8,7 +8,6 @@ using System;
 using System.Collections.Generic;
 using MixedRealityExtension.Core.Types;
 using Newtonsoft.Json.Linq;
-using MixedRealityExtension.Controllers;
 
 namespace MixedRealityExtension.Messaging.Payloads
 {
@@ -606,25 +605,5 @@ namespace MixedRealityExtension.Messaging.Payloads
         /// Whether or not this client is authoritative.
         /// </summary>
         public bool Authoritative { get; set; }
-    }
-
-    /// <summary>
-    /// App => Engine
-    /// Tells an actor to look at another actor or user.
-    /// </summary>
-    public class LookAt : NetworkCommandPayload
-    {
-        /// <summary>
-        /// The Id of the actor that will do the looking at.
-        /// </summary>
-        public Guid ActorId { get; set; }
-        /// <summary>
-        /// The target object to look at.
-        /// </summary>
-        public Guid? TargetId { get; set; }
-        /// <summary>
-        /// How to look at the target object.
-        /// </summary>
-        public LookAtMode LookAtMode { get; set; }
     }
 }

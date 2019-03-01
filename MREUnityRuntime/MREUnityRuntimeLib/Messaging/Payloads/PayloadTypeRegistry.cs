@@ -59,7 +59,6 @@ namespace MixedRealityExtension.Messaging.Payloads
     [PayloadType(typeof(LoadAssets), "load-assets")]
     [PayloadType(typeof(SetSoundState), "set-sound-state")]
     [PayloadType(typeof(AssetsLoaded), "assets-loaded")]
-    [PayloadType(typeof(LookAt), "look-at")]
     [PayloadType(typeof(AssetUpdate), "asset-update")]
     [PayloadType(typeof(CreateAsset), "create-asset")]
     internal static class PayloadTypeRegistry

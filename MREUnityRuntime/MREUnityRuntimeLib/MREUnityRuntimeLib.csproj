@@ -98,6 +98,7 @@
     <Compile Include="Core\Types\MWVector2.cs" />
     <Compile Include="Core\UserManager.cs" />
     <Compile Include="Factories\DefaultMaterialApplicator.cs" />
+    <Compile Include="Patching\Types\LookAtPatch.cs" />
     <Compile Include="PluginInterfaces\IUserInfoProvider.cs" />
     <Compile Include="Messaging\Payloads\AssetCommandPayloads.cs" />
     <Compile Include="Patching\Types\AttachmentPatch.cs" />
@@ -126,7 +127,7 @@
     <Compile Include="Behaviors\Handlers\TargetHandler.cs" />
     <Compile Include="Behaviors\IActionHandler.cs" />
     <Compile Include="Behaviors\IBehaviorHandler.cs" />
-    <Compile Include="Core\Contollers\LookAtController.cs" />
+    <Compile Include="Core\Components\LookAtComponent.cs" />
     <Compile Include="Core\Text.cs" />
     <Compile Include="Factories\MWTextFactory.cs" />
     <Compile Include="UnityConstants.cs" />
@@ -150,7 +151,7 @@
     <Compile Include="App\IMixedRealityExtensionApp.cs" />
     <Compile Include="App\MixedRealityExtensionApp.cs" />
     <Compile Include="Core\Interfaces\IText.cs" />
-    <Compile Include="Core\Contollers\LookAtMode.cs" />
+    <Compile Include="LookAtMode.cs" />
     <Compile Include="PluginInterfaces\IPrimitiveFactory.cs" />
     <Compile Include="Factories\MWPrimitiveFactory.cs" />
     <Compile Include="Messaging\Commands\Command.cs" />

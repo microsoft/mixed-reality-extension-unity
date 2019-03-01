@@ -29,12 +29,6 @@ namespace MixedRealityExtension.Core.Interfaces
         Dictionary<string, string> Properties { get; }
 
         /// <summary>
-        /// TODO: Remove this in the next LookAt overhaul.
-        /// The world-space position to be the look-at target by other objects. Null if user not found.
-        /// </summary>
-        Vector3? LookAtPosition { get; }
-
-        /// <summary>
         /// Gets the transform of the specified attach point.
         /// </summary>
         /// <param name="attachPointName">The name of the attach point to retrieve.</param>
