@@ -529,7 +529,7 @@ namespace MixedRealityExtension.Messaging.Payloads
         public Guid SoundAssetId { get; set; }
 
         /// <summary>
-        /// Command to change the sound mode (start, pause, resume, or stop)
+        /// Command type (start, update, or stop)
         /// </summary>
         public SoundCommand SoundCommand { get; set; }
 

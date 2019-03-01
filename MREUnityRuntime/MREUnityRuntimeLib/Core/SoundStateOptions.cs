@@ -18,9 +18,14 @@ namespace MixedRealityExtension
         public float? Volume;
 
         /// <summary>
-        /// repeat the sound when ended, or turn it off after playing once. Default to off
+        /// repeat the sound when ended, or turn it off after playing once. Default to false
         /// </summary>
         public bool? Looping;
+
+        /// <summary>
+        /// pause or unpause the sound. Default to false
+        /// </summary>
+        public bool? paused;
 
         /// <summary>
         /// the amount that sound pitch is modified when moving towards/away from sound source.
