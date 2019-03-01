@@ -8,28 +8,18 @@ namespace MixedRealityExtension
     public enum SoundCommand
     {
         /// <summary>
-        /// No command to apply
-        /// </summary>
-        None,
-
-        /// <summary>
         /// Start a new sound instance
         /// </summary>
         Start,
 
         /// <summary>
-        /// Destroy a sound instance
+        /// Modify an active sound instance
         /// </summary>
-        Stop,
+        Update,
 
         /// <summary>
-        /// Pause a sound instance
+        /// Destroy an active sound instance
         /// </summary>
-        Pause,
-
-        /// <summary>
-        /// Resume a paused sound instance
-        /// </summary>
-        Resume,
+        Stop
     }
 }

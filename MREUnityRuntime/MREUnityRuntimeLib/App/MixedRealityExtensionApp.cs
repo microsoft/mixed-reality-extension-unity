@@ -943,12 +943,25 @@ namespace MixedRealityExtension.App
 
 
 
+        private static Dictionary<Guid, AudioSource> _soundInstances = new Dictionary<Guid, AudioSource>();
+        private static List<Guid> _unpausedSoundInstances = new List<Guid>();
+        private int _soundStoppedCheckIndex = 0;
 
-        private void ApplySoundStateOptions(AudioSource soundInstance, SoundStateOptions options)
+        private void ApplySoundStateOptions(AudioSource soundInstance, SoundStateOptions options, Guid id)
         {
             if (options != null)
             {
-                float test = soundInstance.clip.length;
+                //pause must happen before other sound state changes
+                if (options.paused != null && options.paused.Value == true)
+                {
+                    var index = _unpausedSoundInstances.FindIndex(x => x == id);
+                    if (index >= 0)
+                    {
+                        _unpausedSoundInstances.RemoveAt(index);
+                        soundInstance.Pause();
+                    }
+                }
+
                 if (options.Volume != null)
                 {
                     soundInstance.volume = options.Volume.Value;
@@ -975,13 +988,23 @@ namespace MixedRealityExtension.App
                     soundInstance.minDistance = options.RolloffStartDistance.Value;
                     soundInstance.maxDistance = options.RolloffStartDistance.Value * 1000000.0f;
                 }
+
+                //unpause must happen after other sound state changes
+                if (options.paused != null && options.paused.Value == false)
+                { 
+                    var index = _unpausedSoundInstances.FindIndex(x => x == id);
+                    if (index < 0)
+                    {
+                        soundInstance.UnPause();
+                        _unpausedSoundInstances.Add(id);
+                    }
+                }
+
+
             }
         }
 
 
-        private static Dictionary<Guid, AudioSource> _soundInstances = new Dictionary<Guid, AudioSource>();
-        private static List<Guid> _unpausedSoundInstances = new List<Guid>();
-        private int _soundStoppedCheckIndex = 0;
 
         private void SoundUpdate()
         {
@@ -1041,10 +1064,14 @@ namespace MixedRealityExtension.App
                             soundInstance.spread = 90.0f;   //only affects multichannel sounds. Default to 50% spread, 50% stereo.
                             soundInstance.minDistance = 1.0f;
                             soundInstance.maxDistance = 1000000.0f;
-                            ApplySoundStateOptions(soundInstance, payload.Options);
-                            soundInstance.Play();
-                            _soundInstances.Add(payload.Id, soundInstance);
                             _unpausedSoundInstances.Add(payload.Id);
+                            ApplySoundStateOptions(soundInstance, payload.Options, payload.Id);
+                            if (payload.Options.paused == null || payload.Options.paused.Value == false)
+                            {
+                                soundInstance.Play();
+                            }
+                            
+                            _soundInstances.Add(payload.Id, soundInstance);
                         }
                     }
                 }
@@ -1055,33 +1082,11 @@ namespace MixedRealityExtension.App
                     {
                         switch (payload.SoundCommand)
                         {
-                            case SoundCommand.Pause:
-                                {
-                                    var index = _unpausedSoundInstances.FindIndex(x => x == payload.Id);
-                                    if (index >= 0)
-                                    {
-                                        _unpausedSoundInstances.RemoveAt(index);
-                                    }
-                                    soundInstance.Pause();
-                                    ApplySoundStateOptions(soundInstance, payload.Options);
-                                }
-                                break;
-                            case SoundCommand.Resume:
-                                {
-                                    ApplySoundStateOptions(soundInstance, payload.Options);
-                                    soundInstance.UnPause();
-                                    var index = _unpausedSoundInstances.FindIndex(x => x == payload.Id);
-                                    if (index < 0)
-                                    {
-                                        _unpausedSoundInstances.Add(payload.Id);
-                                    }
-                                }
-                                break;
                             case SoundCommand.Stop:
                                 DestroySoundInstance(soundInstance, payload.Id);
                                 break;
-                            default:
-                                ApplySoundStateOptions(soundInstance, payload.Options);
+                            case SoundCommand.Update:
+                                ApplySoundStateOptions(soundInstance, payload.Options, payload.Id);
                                 break;
                         }
                     }
