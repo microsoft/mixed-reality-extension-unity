@@ -988,13 +988,13 @@ namespace MixedRealityExtension.App
             //garbage collect expired sounds, one per frame
             if (_soundStoppedCheckIndex >= _unpausedSoundInstances.Count)
             {
-                _soundStoppedCheckIndex  = 0;
+                _soundStoppedCheckIndex = 0;
             }
             else
             {
                 var id = _unpausedSoundInstances[_soundStoppedCheckIndex];
                 AudioSource soundInstance;
-                if(_soundInstances.TryGetValue(id, out soundInstance) && !soundInstance.isPlaying)
+                if (_soundInstances.TryGetValue(id, out soundInstance) && !soundInstance.isPlaying)
                 {
                     DestroySoundInstance(soundInstance, id);
                 }
@@ -1027,17 +1027,25 @@ namespace MixedRealityExtension.App
                     var audioClip = MREAPI.AppsAPI.AssetCache.GetAsset(payload.SoundAssetId) as AudioClip;
                     if (audioClip != null)
                     {
-                        var soundInstance = actor.gameObject.AddComponent<AudioSource>();
-                        soundInstance.clip = audioClip;
-                        soundInstance.time = payload.StartTimeOffset;
-                        soundInstance.spatialBlend = 1.0f;
-                        soundInstance.spread = 90.0f;   //only affects multichannel sounds. Default to 50% spread, 50% stereo.
-                        soundInstance.minDistance = 1.0f;
-                        soundInstance.maxDistance = 1000000.0f;
-                        ApplySoundStateOptions(soundInstance, payload.Options);
-                        soundInstance.Play();
-                        _soundInstances.Add(payload.Id, soundInstance);
-                        _unpausedSoundInstances.Add(payload.Id);
+                        float offset = payload.StartTimeOffset;
+                        if (payload.Options.Looping != null && payload.Options.Looping.Value)
+                        {
+                            offset = payload.StartTimeOffset % audioClip.length;
+                        }
+                        if (offset < audioClip.length)
+                        {
+                            var soundInstance = actor.gameObject.AddComponent<AudioSource>();
+                            soundInstance.clip = audioClip;
+                            soundInstance.time = offset;
+                            soundInstance.spatialBlend = 1.0f;
+                            soundInstance.spread = 90.0f;   //only affects multichannel sounds. Default to 50% spread, 50% stereo.
+                            soundInstance.minDistance = 1.0f;
+                            soundInstance.maxDistance = 1000000.0f;
+                            ApplySoundStateOptions(soundInstance, payload.Options);
+                            soundInstance.Play();
+                            _soundInstances.Add(payload.Id, soundInstance);
+                            _unpausedSoundInstances.Add(payload.Id);
+                        }
                     }
                 }
                 else
