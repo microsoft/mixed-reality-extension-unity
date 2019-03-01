@@ -30,6 +30,7 @@ namespace MixedRealityExtension.API
         /// <param name="assetCache">The place for this MRE to cache its meshes, etc.</param>
         /// <param name="gltfImporterFactory">The glTF loader factory. Uses default GLTFSceneImporter if omitted.</param>
         /// <param name="materialPatcher">Overrides default material property map (color and mainTexture only).</param>
+        /// <param name="userInfoProvider">Provides appId/sessionId scoped IUserInfo instances.</param>
         /// <param name="engineConstants">Engine constants supplied by the host app.</param>
         /// <param name="logger">The logger to be used by the MRE SDK.</param>
         public static void InitializeAPI(

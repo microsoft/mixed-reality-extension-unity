@@ -35,10 +35,5 @@ namespace MixedRealityExtension.Core.Interfaces
         /// The unity game object that the actor is associated with.
         /// </summary>
         GameObject GameObject { get; }
-
-        /// <summary>
-        /// The world-space position to be the look-at target by other objects.
-        /// </summary>
-        Vector3? LookAtPosition { get; }
     }
 }

@@ -8,9 +8,9 @@ namespace MixedRealityExtension.Util.Unity
 
     public static class AssetFetcher<T> where T : class
     {
-        public struct FetchResult<T>
+        public struct FetchResult<TT> where TT : T
         {
-            public T Asset;
+            public TT Asset;
             public string FailureMessage;
             public bool IsPopulated => Asset != null || FailureMessage != null;
         }

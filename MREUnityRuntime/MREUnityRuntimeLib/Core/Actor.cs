@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 using MixedRealityExtension.API;
-using MixedRealityExtension.Controllers;
 using MixedRealityExtension.Core.Components;
 using MixedRealityExtension.Core.Interfaces;
 using MixedRealityExtension.Core.Types;
@@ -30,7 +29,7 @@ namespace MixedRealityExtension.Core
         private Rigidbody _rigidbody;
         private UnityLight _light;
         private UnityCollider _collider;
-        private LookAtController _lookAtController;
+        private LookAtComponent _lookAt;
         private float _nextUpdateTime;
 
         private Dictionary<Type, ActorComponentBase> _components = new Dictionary<Type, ActorComponentBase>();
@@ -38,8 +37,6 @@ namespace MixedRealityExtension.Core
         private Queue<Action<Actor>> _updateActions = new Queue<Action<Actor>>();
 
         private ActorComponentType _subscriptions = ActorComponentType.None;
-
-        public override Vector3? LookAtPosition => transform.position;
 
         private new Renderer renderer = null;
         private Renderer Renderer => renderer = renderer ?? GetComponent<Renderer>();
@@ -157,6 +154,7 @@ namespace MixedRealityExtension.Core
             PatchCollider(actorPatch.Collider);
             PatchText(actorPatch.Text);
             PatchAttachment(actorPatch.Attachment);
+            PatchLookAt(actorPatch.LookAt);
         }
 
         internal void SynchronizeEngine(ActorPatch actorPatch)
@@ -732,6 +730,18 @@ namespace MixedRealityExtension.Core
             }
         }
 
+        private void PatchLookAt(LookAtPatch lookAtPatch)
+        {
+            if (lookAtPatch != null)
+            {
+                if (_lookAt == null)
+                {
+                    _lookAt = GetOrCreateActorComponent<LookAtComponent>();
+                }
+                _lookAt.ApplyPatch(lookAtPatch);
+            }
+        }
+
         private void GenerateTransformPatch(ActorPatch actorPatch)
         {
             actorPatch.Transform = PatchingUtilMethods.GeneratePatch(Transform, gameObject.transform);
@@ -833,33 +843,6 @@ namespace MixedRealityExtension.Core
             }
 
             return false;
-        }
-
-        internal void LookAt(Guid targetId, LookAtMode lookAtMode)
-        {
-            IMixedRealityExtensionObject targetObject = null;
-
-            if (lookAtMode != LookAtMode.None)
-            {
-                if (targetObject == null)
-                {
-                    targetObject = App.FindUser(targetId);
-                }
-                if (targetObject == null)
-                {
-                    targetObject = App.FindActor(targetId);
-                }
-
-                if (_lookAtController == null)
-                {
-                    _lookAtController = gameObject.AddComponent<LookAtController>();
-                }
-            }
-
-            if (_lookAtController != null)
-            {
-                _lookAtController.Configure(targetObject, lookAtMode);
-            }
         }
 
         #endregion

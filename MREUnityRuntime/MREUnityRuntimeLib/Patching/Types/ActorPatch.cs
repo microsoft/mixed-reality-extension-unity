@@ -27,6 +27,9 @@ namespace MixedRealityExtension.Patching.Types
         [PatchProperty]
         public AttachmentPatch Attachment { get; set; }
 
+        [PatchProperty]
+        public LookAtPatch LookAt { get; set; }
+
         public ActorPatch()
         {
         }

@@ -28,9 +28,6 @@ namespace MixedRealityExtension.Core
         /// <inheritdoc />
         public GameObject GameObject => this.gameObject;
 
-        /// <inheritdoc />
-        public abstract Vector3? LookAtPosition { get; }
-
         internal MixedRealityExtensionApp App { get; private set; }
 
         public IUser LocalUser => App.LocalUser;

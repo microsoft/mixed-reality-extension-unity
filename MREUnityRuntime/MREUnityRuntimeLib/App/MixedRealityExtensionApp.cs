@@ -1149,16 +1149,6 @@ namespace MixedRealityExtension.App
             IsAuthoritativePeer = payload.Authoritative;
         }
 
-        [CommandHandler(typeof(LookAt))]
-        private void OnLookAt(LookAt payload)
-        {
-            var actor = _actorManager.FindActor(payload.ActorId);
-            if (actor != null)
-            {
-                actor.LookAt(payload.TargetId ?? Guid.Empty, payload.LookAtMode);
-            }
-        }
-
         #endregion
     }
 }
