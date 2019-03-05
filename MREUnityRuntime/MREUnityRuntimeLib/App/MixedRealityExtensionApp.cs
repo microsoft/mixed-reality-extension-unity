@@ -943,8 +943,8 @@ namespace MixedRealityExtension.App
 
 
 
-        private static Dictionary<Guid, AudioSource> _soundInstances = new Dictionary<Guid, AudioSource>();
-        private static List<Guid> _unpausedSoundInstances = new List<Guid>();
+        private Dictionary<Guid, AudioSource> _soundInstances = new Dictionary<Guid, AudioSource>();
+        private List<Guid> _unpausedSoundInstances = new List<Guid>();
         private int _soundStoppedCheckIndex = 0;
 
         private void ApplySoundStateOptions(AudioSource soundInstance, SoundStateOptions options, Guid id)
@@ -1061,7 +1061,7 @@ namespace MixedRealityExtension.App
                             soundInstance.clip = audioClip;
                             soundInstance.time = offset;
                             soundInstance.spatialBlend = 1.0f;
-                            soundInstance.spread = 90.0f;   //only affects multichannel sounds. Default to 50% spread, 50% stereo.
+                            soundInstance.spread = 0.0f;   //only needs to be set for multichannel sounds. Default to 0% spread (=100% directional, 0% stereo)
                             soundInstance.minDistance = 1.0f;
                             soundInstance.maxDistance = 1000000.0f;
                             _unpausedSoundInstances.Add(payload.Id);
