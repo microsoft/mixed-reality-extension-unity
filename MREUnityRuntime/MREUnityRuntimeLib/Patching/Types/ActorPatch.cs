@@ -10,7 +10,7 @@ namespace MixedRealityExtension.Patching.Types
         public Guid? ParentId { get; set; }
 
         [PatchProperty]
-        public Guid? MaterialId { get; set; }
+        public AppearancePatch Appearance { get; set; }
 
         [PatchProperty]
         public RigidBodyPatch RigidBody { get; set; }

@@ -41,7 +41,7 @@ namespace MixedRealityExtension.Core
         private ActorComponentType _subscriptions = ActorComponentType.None;
 
         private new Renderer renderer = null;
-        private Renderer Renderer => renderer = renderer ?? GetComponent<Renderer>();
+        internal Renderer Renderer => renderer = renderer ?? GetComponent<Renderer>();
 
         #region IActor Properties - Public
 
@@ -78,6 +78,9 @@ namespace MixedRealityExtension.Core
 
         internal Guid? MaterialId { get; set; }
         private UnityEngine.Material originalMaterial;
+
+        private bool AppearanceEnabled = true;
+
         #endregion
 
         #region Methods - Internal
@@ -149,7 +152,7 @@ namespace MixedRealityExtension.Core
         {
             PatchParent(actorPatch.ParentId);
             PatchName(actorPatch.Name);
-            PatchMaterial(actorPatch.MaterialId);
+            PatchAppearance(actorPatch.Appearance);
             PatchTransform(actorPatch.Transform);
             PatchLight(actorPatch.Light);
             PatchRigidBody(actorPatch.RigidBody);
@@ -213,8 +216,12 @@ namespace MixedRealityExtension.Core
                 Name = Name,
                 Transform = transform,
                 RigidBody = rigidBody,
-                MaterialId = MaterialId,
-                Collider = collider
+                Collider = collider,
+                Appearance = new AppearancePatch()
+                {
+                    Enabled = AppearanceEnabled,
+                    MaterialId = MaterialId
+                }
             };
 
             return (!actorPatch.IsPatched()) ? null : actorPatch;
@@ -611,31 +618,36 @@ namespace MixedRealityExtension.Core
             }
         }
 
-        private void PatchMaterial(Guid? materialIdOrNull)
+        private void PatchAppearance(AppearancePatch appearance)
         {
-            if (Renderer != null)
-            {
-                if (originalMaterial == null)
-                {
-                    originalMaterial = Instantiate(Renderer.sharedMaterial);
-                }
+            if (appearance == null || Renderer == null) return;
 
-                if (materialIdOrNull == Guid.Empty)
+            if(appearance.Enabled != null)
+            {
+                AppearanceEnabled = appearance.Enabled.Value;
+                Renderer.enabled = AppearanceEnabled;
+            }
+
+            if (originalMaterial == null)
+            {
+                originalMaterial = Instantiate(Renderer.sharedMaterial);
+            }
+
+            if (appearance.MaterialId != null && appearance.MaterialId == Guid.Empty)
+            {
+                Renderer.sharedMaterial = originalMaterial;
+            }
+            else if (appearance.MaterialId != null)
+            {
+                MaterialId = appearance.MaterialId.Value;
+                var sharedMat = MREAPI.AppsAPI.AssetCache.GetAsset(MaterialId) as Material;
+                if (sharedMat != null)
                 {
-                    Renderer.sharedMaterial = originalMaterial;
+                    Renderer.sharedMaterial = sharedMat;
                 }
-                else if (materialIdOrNull != null)
+                else
                 {
-                    MaterialId = materialIdOrNull.Value;
-                    var sharedMat = MREAPI.AppsAPI.AssetCache.GetAsset(MaterialId) as Material;
-                    if (sharedMat != null)
-                    {
-                        Renderer.sharedMaterial = sharedMat;
-                    }
-                    else
-                    {
-                        MREAPI.Logger.LogWarning($"Material {MaterialId} not found, cannot assign to actor {Id}");
-                    }
+                    MREAPI.Logger.LogWarning($"Material {MaterialId} not found, cannot assign to actor {Id}");
                 }
             }
         }
