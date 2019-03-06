@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 using System;
 using System.Collections.Generic;
-
 using MixedRealityExtension.Animation;
 using MixedRealityExtension.Messaging.Events.Types;
 using MixedRealityExtension.Messaging.Payloads;
@@ -25,7 +24,6 @@ namespace MixedRealityExtension.Core.Components
         {
             public bool Enabled;
             public bool IsInternal;
-            public Action OnCompleteCallback;
         }
 
         private Dictionary<string, AnimationData> _animationData = new Dictionary<string, AnimationData>();
@@ -73,12 +71,6 @@ namespace MixedRealityExtension.Core.Components
                                     animationSpeed: null,
                                     animationEnabled: animationData.Enabled);
 
-                                // If this animation was disabled and we have an OnCompleteCallback set, call it now.
-                                if (!animationData.Enabled && animationData.OnCompleteCallback != null)
-                                {
-                                    animationData.OnCompleteCallback();
-                                }
-
                                 // If this was an internal one-shot animation (aka an interpolation), remove it.
                                 if (!animationData.Enabled && animationData.IsInternal)
                                 {
@@ -99,8 +91,7 @@ namespace MixedRealityExtension.Core.Components
             MWAnimationWrapMode wrapMode,
             MWSetAnimationStateOptions initialState,
             bool isInternal,
-            Action onCreatedCallback,
-            Action onCompleteCallback)
+            Action onCreatedCallback)
         {
             var continuation = new MWContinuation(AttachedActor, null, (result) =>
             {
@@ -200,8 +191,7 @@ namespace MixedRealityExtension.Core.Components
 
                 _animationData[animationName] = new AnimationData()
                 {
-                    IsInternal = isInternal,
-                    OnCompleteCallback = onCompleteCallback
+                    IsInternal = isInternal
                 };
 
                 float initialTime = 0f;
@@ -231,8 +221,7 @@ namespace MixedRealityExtension.Core.Components
             string animationName,
             float duration,
             float[] curve,
-            bool enabled,
-            Action onCompleteCallback)
+            bool enabled)
         {
             // Ensure duration is in range [0...n].
             duration = Math.Max(0, duration);
@@ -327,8 +316,7 @@ namespace MixedRealityExtension.Core.Components
                 wrapMode: MWAnimationWrapMode.Once,
                 initialState: new MWSetAnimationStateOptions { Enabled = enabled },
                 isInternal: true,
-                onCreatedCallback: null,
-                onCompleteCallback);
+                onCreatedCallback: null);
 
             bool LerpFloat(out float dest, float start, float? end, float t)
             {

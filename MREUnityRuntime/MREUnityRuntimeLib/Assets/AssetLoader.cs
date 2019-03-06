@@ -133,7 +133,7 @@ namespace MixedRealityExtension.Assets
         }
 
         [CommandHandler(typeof(LoadAssets))]
-        private async Task LoadAssets(LoadAssets payload)
+        private async Task LoadAssets(LoadAssets payload, Action onCompleteCallback)
         {
             LoaderFunction loader;
 
@@ -169,6 +169,7 @@ namespace MixedRealityExtension.Assets
                         Assets = assets ?? new Asset[] { }
                     }
                 });
+                onCompleteCallback?.Invoke();
             }
         }
 
@@ -280,7 +281,7 @@ namespace MixedRealityExtension.Assets
         }
 
         [CommandHandler(typeof(AssetUpdate))]
-        internal void OnAssetUpdate(AssetUpdate payload)
+        internal void OnAssetUpdate(AssetUpdate payload, Action onCompleteCallback)
         {
             var def = payload.Asset;
             var asset = MREAPI.AppsAPI.AssetCache.GetAsset(def.Id);
@@ -310,10 +311,11 @@ namespace MixedRealityExtension.Assets
             {
                 MREAPI.Logger.LogError($"Asset {def.Id} is not patchable, or not of the right type!");
             }
+            onCompleteCallback?.Invoke();
         }
 
         [CommandHandler(typeof(CreateAsset))]
-        internal async void OnCreateAsset(CreateAsset payload)
+        internal async void OnCreateAsset(CreateAsset payload, Action onCompleteCallback)
         {
             var def = payload.Definition;
             var response = new AssetsLoaded();
@@ -325,7 +327,7 @@ namespace MixedRealityExtension.Assets
 
                 OnAssetUpdate(new AssetUpdate() {
                     Asset = def
-                });
+                }, null);
 
                 response.Assets = new Asset[]{ new Asset()
                 {
@@ -347,7 +349,7 @@ namespace MixedRealityExtension.Assets
 
                     OnAssetUpdate(new AssetUpdate() {
                         Asset = def
-                    });
+                    }, null);
                     assignTextureToQueuedMaterials(def.Id);
 
                     response.Assets = new Asset[] { new Asset()
@@ -399,6 +401,8 @@ namespace MixedRealityExtension.Assets
                 ReplyToId = payload.MessageId,
                 Payload = response
             });
+
+            onCompleteCallback?.Invoke();
         }
 
         #region Async texture management

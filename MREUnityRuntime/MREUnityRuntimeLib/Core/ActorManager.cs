@@ -2,19 +2,23 @@
 // Licensed under the MIT License.
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using MixedRealityExtension.API;
 using MixedRealityExtension.App;
 using MixedRealityExtension.Core.Interfaces;
 using MixedRealityExtension.IPC;
 using MixedRealityExtension.Messaging;
+using MixedRealityExtension.Messaging.Commands;
+using MixedRealityExtension.Messaging.Payloads;
 
 namespace MixedRealityExtension.Core
 {
-    internal class ActorManager
+    internal class ActorManager : ICommandHandlerContext
     {
         private MixedRealityExtensionApp _app;
         private Dictionary<Guid, Actor> _actorMapping = new Dictionary<Guid, Actor>();
-        private HashSet<Guid> _reservations = new HashSet<Guid>();
+        private Dictionary<Guid, ActorCommandQueue> _actorCommandQueues = new Dictionary<Guid, ActorCommandQueue>();
+        private List<Action> _uponStable = new List<Action>();
 
         internal event MWEventHandler<IActor> OnActorCreated;
 
@@ -29,7 +33,6 @@ namespace MixedRealityExtension.Core
         {
             actor.Initialize(id, _app);
             _actorMapping[id] = actor;
-            _reservations.Remove(id);
             OnActorCreated?.Invoke(actor);
             return actor;
         }
@@ -88,28 +91,170 @@ namespace MixedRealityExtension.Core
             return id.HasValue && _actorMapping.ContainsKey(id.Value);
         }
 
-        internal bool IsActorReserved(Guid? id)
+        internal void ProcessActorCommand(Guid actorId, NetworkCommandPayload payload, Action onCompleteCallback)
         {
-            return id.HasValue && _reservations.Contains(id.Value);
+            if (!_actorCommandQueues.TryGetValue(actorId, out ActorCommandQueue queue))
+            {
+                queue = new ActorCommandQueue(actorId, _app);
+                _actorCommandQueues.Add(actorId, queue);
+            }
+            queue.Enqueue(payload, onCompleteCallback);
         }
 
-        internal void Reserve(Guid? id)
+        internal void Update()
         {
-            if (id.HasValue)
+            int totalPendingCount = 0;
+            foreach (var queue in _actorCommandQueues.Values)
             {
-                _reservations.Add(id.Value);
+                queue.Update();
+                totalPendingCount += queue.Count;
             }
+
+            if (totalPendingCount == 0 && _uponStable.Count > 0)
+            {
+                var uponStable = new List<Action>(_uponStable);
+                _uponStable.Clear();
+                foreach (var callback in uponStable)
+                {
+                    callback?.Invoke();
+                }
+            }
+        }
+
+        internal void UponStable(Action callback)
+        {
+            _uponStable.Add(callback);
         }
 
         internal bool OnActorDestroy(Guid id)
         {
+            bool removed = false;
             if (_actorMapping.ContainsKey(id))
             {
                 _actorMapping.Remove(id);
-                return true;
+                removed = true;
             }
 
-            return false;
+            if (_actorCommandQueues.ContainsKey(id))
+            {
+                _actorCommandQueues.Remove(id);
+            }
+
+            return removed;
         }
+
+        #region Command Handlers
+
+        [CommandHandler(typeof(ActorCorrection))]
+        private Task OnActorCorrection(ActorCorrection payload, Action onCompleteCallback)
+        {
+            ProcessActorCommand(payload.Actor.Id, payload, onCompleteCallback);
+            return Task.CompletedTask;
+        }
+
+        [CommandHandler(typeof(ActorUpdate))]
+        private void OnActorUpdate(ActorUpdate payload, Action onCompleteCallback)
+        {
+            ProcessActorCommand(payload.Actor.Id, payload, onCompleteCallback);
+        }
+
+        [CommandHandler(typeof(DestroyActors))]
+        private void OnDestroyActors(DestroyActors payload, Action onCompleteCallback)
+        {
+            DestroyActors(payload.ActorIds, payload.Traces);
+            onCompleteCallback?.Invoke();
+        }
+
+        [CommandHandler(typeof(DEPRECATED_EnableRigidBody))]
+        private void OnEnableRigidBody(DEPRECATED_EnableRigidBody payload, Action onCompleteCallback)
+        {
+            ProcessActorCommand(payload.ActorId, payload, onCompleteCallback);
+        }
+
+        [CommandHandler(typeof(DEPRECATED_EnableLight))]
+        private void OnEnableLight(DEPRECATED_EnableLight payload, Action onCompleteCallback)
+        {
+            ProcessActorCommand(payload.ActorId, payload, onCompleteCallback);
+        }
+
+        [CommandHandler(typeof(DEPRECATED_EnableText))]
+        private void OnEnableText(DEPRECATED_EnableText payload, Action onCompleteCallback)
+        {
+            ProcessActorCommand(payload.ActorId, payload, onCompleteCallback);
+        }
+
+        [CommandHandler(typeof(UpdateSubscriptions))]
+        private void OnUpdateSubscriptions(UpdateSubscriptions payload, Action onCompleteCallback)
+        {
+            ProcessActorCommand(payload.Id, payload, onCompleteCallback);
+        }
+
+        [CommandHandler(typeof(RigidBodyCommands))]
+        private void OnRigidBodyCommands(RigidBodyCommands payload, Action onCompleteCallback)
+        {
+            ProcessActorCommand(payload.ActorId, payload, onCompleteCallback);
+        }
+
+        [CommandHandler(typeof(CreateAnimation))]
+        private void OnCreateAnimation(CreateAnimation payload, Action onCompleteCallback)
+        {
+            ProcessActorCommand(payload.ActorId, payload, onCompleteCallback);
+        }
+
+        [CommandHandler(typeof(DEPRECATED_StartAnimation))]
+        private void OnStartAnimation(DEPRECATED_StartAnimation payload, Action onCompleteCallback)
+        {
+            ProcessActorCommand(payload.ActorId, payload, onCompleteCallback);
+        }
+
+        [CommandHandler(typeof(DEPRECATED_StopAnimation))]
+        private void OnStopAnimation(DEPRECATED_StopAnimation payload, Action onCompleteCallback)
+        {
+            ProcessActorCommand(payload.ActorId, payload, onCompleteCallback);
+        }
+
+        [CommandHandler(typeof(DEPRECATED_PauseAnimation))]
+        private void OnPauseAnimation(DEPRECATED_PauseAnimation payload, Action onCompleteCallback)
+        {
+            ProcessActorCommand(payload.ActorId, payload, onCompleteCallback);
+        }
+
+        [CommandHandler(typeof(DEPRECATED_ResumeAnimation))]
+        private void OnResumeAnimation(DEPRECATED_ResumeAnimation payload, Action onCompleteCallback)
+        {
+            ProcessActorCommand(payload.ActorId, payload, onCompleteCallback);
+        }
+
+        [CommandHandler(typeof(DEPRECATED_ResetAnimation))]
+        private void OnResetAnimation(DEPRECATED_ResetAnimation payload, Action onCompleteCallback)
+        {
+            ProcessActorCommand(payload.ActorId, payload, onCompleteCallback);
+        }
+
+        [CommandHandler(typeof(SetAnimationState))]
+        private void OnSetAnimationState(SetAnimationState payload, Action onCompleteCallback)
+        {
+            ProcessActorCommand(payload.ActorId, payload, onCompleteCallback);
+        }
+
+        [CommandHandler(typeof(SetSoundState))]
+        private void OnSetSoundState(SetSoundState payload, Action onCompleteCallback)
+        {
+            ProcessActorCommand(payload.ActorId, payload, onCompleteCallback);
+        }
+
+        [CommandHandler(typeof(InterpolateActor))]
+        private void OnInterpolateActor(InterpolateActor payload, Action onCompleteCallback)
+        {
+            ProcessActorCommand(payload.ActorId, payload, onCompleteCallback);
+        }
+
+        [CommandHandler(typeof(SetBehavior))]
+        private void OnSetBehavior(SetBehavior payload, Action onCompleteCallback)
+        {
+            ProcessActorCommand(payload.ActorId, payload, onCompleteCallback);
+        }
+
+        #endregion
     }
 }

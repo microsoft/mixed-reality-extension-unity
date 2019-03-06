@@ -88,12 +88,14 @@
     <Compile Include="Assets\AssetCache.cs" />
     <Compile Include="Assets\AssetGroup.cs" />
     <Compile Include="Assets\AssetSource.cs" />
+    <Compile Include="Core\ActorCommandQueue.cs" />
     <Compile Include="Core\Attachment.cs" />
     <Compile Include="Core\Components\MREAttachmentComponent.cs" />
     <Compile Include="Core\ColliderGeometry.cs" />
     <Compile Include="Core\Interfaces\ICollider.cs" />
     <Compile Include="Core\Interfaces\IUserInfo.cs" />
     <Compile Include="Core\SoundCommand.cs" />
+    <Compile Include="Core\SoundManager.cs" />
     <Compile Include="Core\SoundStateOptions.cs" />
     <Compile Include="Core\Types\MWVector2.cs" />
     <Compile Include="Core\UserManager.cs" />

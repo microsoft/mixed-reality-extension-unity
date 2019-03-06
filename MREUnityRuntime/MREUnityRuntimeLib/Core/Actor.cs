@@ -2,6 +2,8 @@
 // Licensed under the MIT License.
 
 using MixedRealityExtension.API;
+using MixedRealityExtension.App;
+using MixedRealityExtension.Behaviors;
 using MixedRealityExtension.Core.Components;
 using MixedRealityExtension.Core.Interfaces;
 using MixedRealityExtension.Core.Types;
@@ -66,8 +68,8 @@ namespace MixedRealityExtension.Core
         internal Light Light { get; private set; }
 
         internal IText Text { get; private set; }
-		
-		internal Collider Collider { get; private set; }
+
+        internal Collider Collider { get; private set; }
 
         internal Attachment Attachment { get; } = new Attachment();
         private Attachment _cachedAttachment = new Attachment();
@@ -162,11 +164,18 @@ namespace MixedRealityExtension.Core
             _updateActions.Enqueue((actor) => ApplyPatch(actorPatch));
         }
 
-        internal void ExecuteRigidBodyCommands(RigidBodyCommands commandPayload)
+        internal void ExecuteRigidBodyCommands(RigidBodyCommands commandPayload, Action onCompleteCallback)
         {
-            foreach (var command in commandPayload.CommandPayloads.OfType<ICommandPayload>())
+            try
             {
-                App.ExecuteCommandPayload(this, command);
+                foreach (var command in commandPayload.CommandPayloads.OfType<ICommandPayload>())
+                {
+                    App.ExecuteCommandPayload(this, command, null);
+                }
+            }
+            finally
+            {
+                onCompleteCallback?.Invoke();
             }
         }
 
@@ -847,44 +856,378 @@ namespace MixedRealityExtension.Core
 
         #endregion
 
+        #region Command Handlers
+
+        [CommandHandler(typeof(ActorCorrection))]
+        private void OnActorCorrection(ActorCorrection payload, Action onCompleteCallback)
+        {
+            try
+            {
+                // TODO: Interpolate this change onto the actor.
+                SynchronizeEngine(payload.Actor);
+            }
+            finally
+            {
+                onCompleteCallback?.Invoke();
+            }
+        }
+
+        [CommandHandler(typeof(ActorUpdate))]
+        private void OnActorUpdate(ActorUpdate payload, Action onCompleteCallback)
+        {
+            try
+            {
+                SynchronizeEngine(payload.Actor);
+            }
+            finally
+            {
+                onCompleteCallback?.Invoke();
+            }
+        }
+
+        [CommandHandler(typeof(UpdateSubscriptions))]
+        private void OnUpdateSubscriptions(UpdateSubscriptions payload, Action onCompleteCallback)
+        {
+            try
+            {
+                RemoveSubscriptions(payload.Removes);
+                AddSubscriptions(payload.Adds);
+            }
+            finally
+            {
+                onCompleteCallback?.Invoke();
+            }
+        }
+
+        [CommandHandler(typeof(RigidBodyCommands))]
+        private void OnRigidBodyCommands(RigidBodyCommands payload, Action onCompleteCallback)
+        {
+            ExecuteRigidBodyCommands(payload, onCompleteCallback);
+        }
+
+        [CommandHandler(typeof(CreateAnimation))]
+        private void OnCreateAnimation(CreateAnimation payload, Action onCompleteCallback)
+        {
+            GetOrCreateActorComponent<AnimationComponent>()
+                .CreateAnimation(
+                    payload.AnimationName,
+                    payload.Keyframes,
+                    payload.Events,
+                    payload.WrapMode,
+                    payload.InitialState,
+                    isInternal: false,
+                    onCreatedCallback: () => onCompleteCallback?.Invoke());
+        }
+
+        [CommandHandler(typeof(DEPRECATED_StartAnimation))]
+        private void OnStartAnimation(DEPRECATED_StartAnimation payload, Action onCompleteCallback)
+        {
+            try
+            {
+                bool paused = payload.Paused.HasValue && payload.Paused.Value;
+                GetOrCreateActorComponent<AnimationComponent>()
+                    .SetAnimationState(payload.AnimationName, payload.AnimationTime, speed: null, !paused);
+            }
+            finally
+            {
+                onCompleteCallback?.Invoke();
+            }
+        }
+
+        [CommandHandler(typeof(DEPRECATED_StopAnimation))]
+        private void OnStopAnimation(DEPRECATED_StopAnimation payload, Action onCompleteCallback)
+        {
+            try
+            {
+                GetOrCreateActorComponent<AnimationComponent>()
+                    .SetAnimationState(payload.AnimationName, payload.AnimationTime, speed: null, false);
+            }
+            finally
+            {
+                onCompleteCallback?.Invoke();
+            }
+        }
+
+        [CommandHandler(typeof(DEPRECATED_PauseAnimation))]
+        private void OnPauseAnimation(DEPRECATED_PauseAnimation payload, Action onCompleteCallback)
+        {
+            try
+            {
+                GetOrCreateActorComponent<AnimationComponent>()
+                    .SetAnimationState(payload.AnimationName, time: null, speed: null, false);
+            }
+            finally
+            {
+                onCompleteCallback?.Invoke();
+            }
+        }
+
+        [CommandHandler(typeof(DEPRECATED_ResumeAnimation))]
+        private void OnResumeAnimation(DEPRECATED_ResumeAnimation payload, Action onCompleteCallback)
+        {
+            try
+            {
+                GetOrCreateActorComponent<AnimationComponent>()
+                    .SetAnimationState(payload.AnimationName, time: null, speed: null, true);
+            }
+            finally
+            {
+                onCompleteCallback?.Invoke();
+            }
+        }
+
+        [CommandHandler(typeof(DEPRECATED_ResetAnimation))]
+        private void OnResetAnimation(DEPRECATED_ResetAnimation payload, Action onCompleteCallback)
+        {
+            try
+            {
+                GetOrCreateActorComponent<AnimationComponent>()
+                    .SetAnimationState(payload.AnimationName, time: 0, speed: null, null);
+            }
+            finally
+            {
+                onCompleteCallback?.Invoke();
+            }
+        }
+
+        [CommandHandler(typeof(DEPRECATED_EnableRigidBody))]
+        private void OnEnableRigidBody(DEPRECATED_EnableRigidBody payload, Action onCompleteCallback)
+        {
+            try
+            {
+                OperationResult result = EnableRigidBody(payload.RigidBody);
+                App.Protocol.Send(result, payload.MessageId);
+            }
+            finally
+            {
+                onCompleteCallback?.Invoke();
+            }
+        }
+
+        [CommandHandler(typeof(DEPRECATED_EnableLight))]
+        private void OnEnableLight(DEPRECATED_EnableLight payload, Action onCompleteCallback)
+        {
+            try
+            {
+                OperationResult result = EnableLight(payload.Light);
+                App.Protocol.Send(result, payload.MessageId);
+            }
+            finally
+            {
+                onCompleteCallback?.Invoke();
+            }
+        }
+
+        [CommandHandler(typeof(DEPRECATED_EnableText))]
+        private void OnEnableText(DEPRECATED_EnableText payload, Action onCompleteCallback)
+        {
+            try
+            {
+                OperationResult result = EnableText(payload.Text);
+                App.Protocol.Send(result, payload.MessageId);
+            }
+            finally
+            {
+                onCompleteCallback?.Invoke();
+            }
+        }
+
+        [CommandHandler(typeof(SetAnimationState))]
+        private void OnSetAnimationState(SetAnimationState payload, Action onCompleteCallback)
+        {
+            try
+            {
+                GetOrCreateActorComponent<AnimationComponent>()
+                    .SetAnimationState(payload.AnimationName, payload.State.Time, payload.State.Speed, payload.State.Enabled);
+            }
+            finally
+            {
+                onCompleteCallback?.Invoke();
+            }
+        }
+
+        [CommandHandler(typeof(SetSoundState))]
+        private void OnSetSoundState(SetSoundState payload, Action onCompleteCallback)
+        {
+            try
+            {
+                if (payload.SoundCommand == SoundCommand.Start)
+                {
+                    var obj = MREAPI.AppsAPI.AssetCache.GetAsset(payload.SoundAssetId);
+                    var audioClip = MREAPI.AppsAPI.AssetCache.GetAsset(payload.SoundAssetId) as AudioClip;
+                    if (audioClip != null)
+                    {
+                        float offset = payload.StartTimeOffset;
+                        if (payload.Options.Looping != null && payload.Options.Looping.Value)
+                        {
+                            offset = payload.StartTimeOffset % audioClip.length;
+                        }
+                        if (offset < audioClip.length)
+                        {
+                            var soundInstance = gameObject.AddComponent<AudioSource>();
+                            soundInstance.clip = audioClip;
+                            soundInstance.time = offset;
+                            soundInstance.spatialBlend = 1.0f;
+                            soundInstance.spread = 90.0f;   //only affects multichannel sounds. Default to 50% spread, 50% stereo.
+                            soundInstance.minDistance = 1.0f;
+                            soundInstance.maxDistance = 1000000.0f;
+                            App.SoundManager.TrackUnpauseSound(payload.Id);
+                            App.SoundManager.ApplySoundStateOptions(soundInstance, payload.Options, payload.Id);
+                            if (payload.Options.paused == null || payload.Options.paused.Value == false)
+                            {
+                                soundInstance.Play();
+                            }
+                            App.SoundManager.AddSoundInstance(payload.Id, soundInstance);
+                        }
+                    }
+                }
+                else
+                {
+                    AudioSource soundInstance;
+                    if (App.SoundManager.TryGetSoundInstance(payload.Id, out soundInstance))
+                    {
+                        switch (payload.SoundCommand)
+                        {
+                            case SoundCommand.Stop:
+                                App.SoundManager.DestroySoundInstance(soundInstance, payload.Id);
+                                break;
+                            case SoundCommand.Update:
+                                App.SoundManager.ApplySoundStateOptions(soundInstance, payload.Options, payload.Id);
+                                break;
+                        }
+                    }
+                }
+            }
+            finally
+            {
+                onCompleteCallback?.Invoke();
+            }
+        }
+
+        [CommandHandler(typeof(InterpolateActor))]
+        private void OnInterpolateActor(InterpolateActor payload, Action onCompleteCallback)
+        {
+            try
+            {
+                GetOrCreateActorComponent<AnimationComponent>()
+                    .Interpolate(
+                        payload.Value,
+                        payload.AnimationName,
+                        payload.Duration,
+                        payload.Curve,
+                        payload.Enabled);
+            }
+            finally
+            {
+                onCompleteCallback?.Invoke();
+            }
+        }
+
+        [CommandHandler(typeof(SetBehavior))]
+        private void OnSetBehavior(SetBehavior payload, Action onCompleteCallback)
+        {
+            try
+            {
+                var behaviorComponent = GetOrCreateActorComponent<BehaviorComponent>();
+
+                if (payload.BehaviorType == BehaviorType.None && behaviorComponent.ContainsBehaviorHandler())
+                {
+                    behaviorComponent.ClearBehaviorHandler();
+                }
+                else
+                {
+                    var handler = BehaviorHandlerFactory.CreateBehaviorHandler(payload.BehaviorType, this, new WeakReference<MixedRealityExtensionApp>(App));
+                    behaviorComponent.SetBehaviorHandler(handler);
+                }
+            }
+            finally
+            {
+                onCompleteCallback?.Invoke();
+            }
+        }
+
+        #endregion
+
         #region Command Handlers - Rigid Body Commands
 
         [CommandHandler(typeof(RBMovePosition))]
-        private void OnRBMovePosition(RBMovePosition payload)
+        private void OnRBMovePosition(RBMovePosition payload, Action onCompleteCallback)
         {
-            RigidBody?.RigidBodyMovePosition(new MWVector3().ApplyPatch(payload.Position));
+            try
+            {
+                RigidBody?.RigidBodyMovePosition(new MWVector3().ApplyPatch(payload.Position));
+            }
+            finally
+            {
+                onCompleteCallback?.Invoke();
+            }
         }
 
         [CommandHandler(typeof(RBMoveRotation))]
-        private void OnRBMoveRotation(RBMoveRotation payload)
+        private void OnRBMoveRotation(RBMoveRotation payload, Action onCompleteCallback)
         {
-            RigidBody?.RigidBodyMoveRotation(new MWQuaternion().ApplyPatch(payload.Rotation));
+            try
+            {
+                RigidBody?.RigidBodyMoveRotation(new MWQuaternion().ApplyPatch(payload.Rotation));
+            }
+            finally
+            {
+                onCompleteCallback?.Invoke();
+            }
         }
 
         [CommandHandler(typeof(RBAddForce))]
-        private void OnRBAddForce(RBAddForce payload)
+        private void OnRBAddForce(RBAddForce payload, Action onCompleteCallback)
         {
-            RigidBody?.RigidBodyAddForce(new MWVector3().ApplyPatch(payload.Force));
+            try
+            {
+                RigidBody?.RigidBodyAddForce(new MWVector3().ApplyPatch(payload.Force));
+            }
+            finally
+            {
+                onCompleteCallback?.Invoke();
+            }
         }
 
         [CommandHandler(typeof(RBAddForceAtPosition))]
-        private void OnRBAddForceAtPosition(RBAddForceAtPosition payload)
+        private void OnRBAddForceAtPosition(RBAddForceAtPosition payload, Action onCompleteCallback)
         {
-            var force = new MWVector3().ApplyPatch(payload.Force);
-            var position = new MWVector3().ApplyPatch(payload.Position);
-            RigidBody?.RigidBodyAddForceAtPosition(force, position);
+            try
+            {
+                var force = new MWVector3().ApplyPatch(payload.Force);
+                var position = new MWVector3().ApplyPatch(payload.Position);
+                RigidBody?.RigidBodyAddForceAtPosition(force, position);
+            }
+            finally
+            {
+                onCompleteCallback?.Invoke();
+            }
         }
 
         [CommandHandler(typeof(RBAddTorque))]
-        private void OnRBAddTorque(RBAddTorque payload)
+        private void OnRBAddTorque(RBAddTorque payload, Action onCompleteCallback)
         {
-            RigidBody?.RigidBodyAddTorque(new MWVector3().ApplyPatch(payload.Torque));
+            try
+            {
+                RigidBody?.RigidBodyAddTorque(new MWVector3().ApplyPatch(payload.Torque));
+            }
+            finally
+            {
+                onCompleteCallback?.Invoke();
+            }
         }
 
         [CommandHandler(typeof(RBAddRelativeTorque))]
-        private void OnRBAddRelativeTorque(RBAddRelativeTorque payload)
+        private void OnRBAddRelativeTorque(RBAddRelativeTorque payload, Action onCompleteCallback)
         {
-            RigidBody?.RigidBodyAddRelativeTorque(new MWVector3().ApplyPatch(payload.RelativeTorque));
+            try
+            {
+                RigidBody?.RigidBodyAddRelativeTorque(new MWVector3().ApplyPatch(payload.RelativeTorque));
+            }
+            finally
+            {
+                onCompleteCallback?.Invoke();
+            }
         }
 
         #endregion
