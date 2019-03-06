@@ -4,7 +4,6 @@
 using MixedRealityExtension.Animation;
 using MixedRealityExtension.API;
 using MixedRealityExtension.Assets;
-using MixedRealityExtension.Behaviors;
 using MixedRealityExtension.Core;
 using MixedRealityExtension.Core.Components;
 using MixedRealityExtension.Core.Interfaces;
@@ -120,6 +119,8 @@ namespace MixedRealityExtension.App
 
         internal IConnectionInternal Conn => _conn;
 
+        internal SoundManager SoundManager { get; private set; }
+
         #endregion
 
         /// <summary>
@@ -135,11 +136,13 @@ namespace MixedRealityExtension.App
             _assetLoader = new AssetLoader(ownerScript, this);
             _userManager = new UserManager(this);
             _actorManager = new ActorManager(this);
-            _commandManager = new CommandManager(new[]
+            SoundManager = new SoundManager(this);
+            _commandManager = new CommandManager(new Dictionary<Type, ICommandHandlerContext>()
             {
-                typeof(MixedRealityExtensionApp),
-                typeof(Actor),
-                typeof(AssetLoader)
+                { typeof(MixedRealityExtensionApp), this },
+                { typeof(Actor), null },
+                { typeof(AssetLoader), _assetLoader },
+                { typeof(ActorManager), _actorManager }
             });
 
             RPC = new RPCInterface(this);
@@ -235,9 +238,13 @@ namespace MixedRealityExtension.App
 
             if (_conn != null)
             {
+                // Read and process or queue incoming messages.
                 _conn.Update();
             }
-            SoundUpdate();
+            // Process actor queues after connection update.
+            _actorManager.Update();
+            SoundManager.Update();
+            _commandManager.Update();
         }
 
         /// <inheritdoc />
@@ -340,20 +347,15 @@ namespace MixedRealityExtension.App
 
         internal void OnReceive(Message message)
         {
-            if (message.Payload is LoadAssets || message.Payload is CreateAsset || message.Payload is AssetUpdate)
+            if (message.Payload is NetworkCommandPayload)
             {
                 var ncp = message.Payload as NetworkCommandPayload;
                 ncp.MessageId = message.Id;
-                ExecuteCommandPayload(_assetLoader, ncp);
-            }
-            else if (message.Payload is NetworkCommandPayload commandPayload)
-            {
-                commandPayload.MessageId = message.Id;
-                ExecuteCommandPayload(commandPayload);
+                _commandManager.ExecuteCommandPayload(ncp, null);
             }
             else
             {
-                MREAPI.Logger.LogError("Unexpected message");
+                throw new Exception("Unexpected message.");
             }
         }
 
@@ -366,14 +368,14 @@ namespace MixedRealityExtension.App
             }
         }
 
-        internal void ExecuteCommandPayload(ICommandPayload commandPayload)
+        internal void ExecuteCommandPayload(ICommandPayload commandPayload, Action onCompleteCallback)
         {
-            ExecuteCommandPayload(this, commandPayload);
+            ExecuteCommandPayload(this, commandPayload, onCompleteCallback);
         }
 
-        internal void ExecuteCommandPayload(ICommandHandlerContext handlerContext, ICommandPayload commandPayload)
+        internal void ExecuteCommandPayload(ICommandHandlerContext handlerContext, ICommandPayload commandPayload, Action onCompleteCallback)
         {
-            _commandManager.ExecuteCommandPayload(handlerContext, commandPayload);
+            _commandManager.ExecuteCommandPayload(handlerContext, commandPayload, onCompleteCallback);
         }
 
         internal bool OwnsActor(IActor actor)
@@ -388,116 +390,21 @@ namespace MixedRealityExtension.App
         #region Methods - Private
 
         [CommandHandler(typeof(CreateFromGLTF))]
-        private async Task OnCreateFromGLTF(CreateFromGLTF payload)
+        private async Task OnCreateFromGLTF(CreateFromGLTF payload, Action onCompleteCallback)
         {
-            if (_actorManager.HasActor(payload.Actor?.Id) && _actorManager.IsActorReserved(payload.Actor?.Id))
-            {
-                SendCreateActorResponse(payload, failureMessage: $"An actor with ID {payload.Actor?.Id} already exists");
-                return;
-            }
-
-            _actorManager.Reserve(payload.Actor?.Id);
-
             IList<Actor> createdActors;
             try
             {
                 createdActors = await _assetLoader.CreateFromGLTF(payload.ResourceUrl, payload.AssetName,
                     payload.Actor?.ParentId, payload.ColliderType);
+                ProcessCreatedActors(payload, createdActors, onCompleteCallback);
             }
-            catch (Exception ex)
+            catch (Exception e)
             {
-                EndCreateFromGLTF(failureMessage: UtilMethods.FormatException(
-                    $"An unexpected error occurred while loading glTF model [{payload.ResourceUrl}].", ex));
+                SendCreateActorResponse(payload,
+                    failureMessage: $"An unexpected error occurred while loading glTF model [{payload.ResourceUrl}].\n{e.ToString()}",
+                    onCompleteCallback: onCompleteCallback);
                 return;
-            }
-
-            DeterministicGuids guids = new DeterministicGuids(payload.Actor?.Id);
-            foreach (var createdActor in createdActors)
-            {
-                _ownedGameObjects.Add(createdActor.gameObject);
-                _actorManager.AddActor(guids.Next(), createdActor);
-                createdActor.AddSubscriptions(payload.Subscriptions);
-            }
-
-            createdActors.FirstOrDefault()?.ApplyPatch(payload.Actor);
-
-            EndCreateFromGLTF(actors: createdActors);
-
-            void EndCreateFromGLTF(IList<Actor> actors = null, string failureMessage = null)
-            {
-                OperationResultCode resultCode = (actors != null) ? OperationResultCode.Success : OperationResultCode.Error;
-                Trace trace = new Trace()
-                {
-                    Severity = (resultCode == OperationResultCode.Success) ? TraceSeverity.Info : TraceSeverity.Error,
-                    Message = (resultCode == OperationResultCode.Success) ?
-                        $"Successfully created {actors.Count} objects from glTF." :
-                        failureMessage
-                };
-
-                Protocol.Send(new ObjectSpawned()
-                    {
-                        Result = new OperationResult()
-                        {
-                            ResultCode = resultCode,
-                            Message = trace.Message
-                        },
-                        Traces = new List<Trace>() { trace },
-                        Actors = actors?.Select((actor) => actor.GenerateInitialPatch()).ToList() ?? new List<ActorPatch>()
-                    },
-                    payload.MessageId);
-            }
-        }
-
-        private OperationResult EnableRigidBody(Guid actorId, RigidBodyPatch rigidBodyPatch)
-        {
-            var actor = (Actor)FindActor(actorId);
-            if (actor == null)
-            {
-                return new OperationResult()
-                {
-                    ResultCode = OperationResultCode.Error,
-                    Message = $"Could not find an actor with id {actorId} to enable a rigidbody on."
-                };
-            }
-            else
-            {
-                return actor.EnableRigidBody(rigidBodyPatch);
-            }
-        }
-
-        private OperationResult EnableLight(Guid actorId, LightPatch lightPatch)
-        {
-            var actor = (Actor)FindActor(actorId);
-
-            if (actor == null)
-            {
-                return new OperationResult()
-                {
-                    Message = $"PatchLight: Actor {actorId} not found",
-                    ResultCode = OperationResultCode.Error
-                };
-            }
-            else
-            {
-                return actor.EnableLight(lightPatch);
-            }
-        }
-
-        private OperationResult EnableText(Guid actorId, TextPatch textPatch)
-        {
-            var actor = (Actor)FindActor(actorId);
-
-            if (actor == null)
-            {
-                return new OperationResult()
-                {
-                    Message = String.Format("PatchText: Actor {0} not found", actorId),
-                    ResultCode = OperationResultCode.Error
-                };
-            }
-            else
-            {
-                return actor.EnableText(textPatch);
             }
         }
 
@@ -582,129 +489,84 @@ namespace MixedRealityExtension.App
             }
         }
 
-        private void UpdateActorSubsciptions(UpdateSubscriptions payload)
-        {
-            var actor = _actorManager.FindActor(payload.Id);
-            if (actor != null)
-            {
-                actor.RemoveSubscriptions(payload.Removes);
-                actor.AddSubscriptions(payload.Adds);
-            }
-        }
-
         #endregion
 
         #region Command Handlers
 
         [CommandHandler(typeof(AppToEngineRPC))]
-        private void OnRPCReceived(AppToEngineRPC payload)
+        private void OnRPCReceived(AppToEngineRPC payload, Action onCompleteCallback)
         {
             RPC.ReceiveRPC(payload);
+            onCompleteCallback?.Invoke();
         }
 
         [CommandHandler(typeof(CreateFromLibrary))]
-        private async void OnCreateFromLibrary(CreateFromLibrary payload)
+        private async void OnCreateFromLibrary(CreateFromLibrary payload, Action onCompleteCallback)
         {
-            if (_actorManager.HasActor(payload.Actor?.Id) && _actorManager.IsActorReserved(payload.Actor?.Id))
+            try
             {
-                SendCreateActorResponse(payload, failureMessage: $"An actor with ID {payload.Actor?.Id} already exists");
+                var actors = await _assetLoader.CreateFromLibrary(payload.ResourceId, payload.Actor?.ParentId);
+                ProcessCreatedActors(payload, actors, onCompleteCallback);
             }
-            else
+            catch (Exception e)
             {
-                _actorManager.Reserve(payload.Actor?.Id);
-                try
-                {
-                    var actors = await _assetLoader.CreateFromLibrary(payload.ResourceId, payload.Actor?.ParentId);
-                    ProcessCreatedActors(payload, actors, actors?[0].gameObject);
-                }
-                catch (Exception e)
-                {
-                    SendCreateActorResponse(payload, failureMessage: e.ToString());
-                    Debug.LogException(e);
-                }
+                SendCreateActorResponse(payload, failureMessage: e.ToString(), onCompleteCallback: onCompleteCallback);
+                Debug.LogException(e);
             }
         }
 
         [CommandHandler(typeof(CreatePrimitive))]
-        private void OnCreatePrimitive(CreatePrimitive payload)
+        private void OnCreatePrimitive(CreatePrimitive payload, Action onCompleteCallback)
         {
-            if (_actorManager.HasActor(payload.Actor?.Id) && _actorManager.IsActorReserved(payload.Actor?.Id))
+            try
             {
-                SendCreateActorResponse(payload, failureMessage: $"An actor with ID {payload.Actor?.Id} already exists");
+                var actors = _assetLoader.CreatePrimitive(payload.Definition, payload.Actor?.ParentId, payload.AddCollider);
+                ProcessCreatedActors(payload, actors, onCompleteCallback);
             }
-            else
+            catch (Exception e)
             {
-                _actorManager.Reserve(payload.Actor?.Id);
-                try
-                {
-                    var actors = _assetLoader.CreatePrimitive(payload.Definition, payload.Actor?.ParentId, payload.AddCollider);
-                    ProcessCreatedActors(payload, actors, actors?[0].gameObject);
-                }
-                catch (Exception e)
-                {
-                    SendCreateActorResponse(payload, failureMessage: e.ToString());
-                    Debug.LogException(e);
-                }
+                SendCreateActorResponse(payload, failureMessage: e.ToString(), onCompleteCallback: onCompleteCallback);
+                Debug.LogException(e);
             }
         }
 
         [CommandHandler(typeof(CreateEmpty))]
-        private void OnCreateEmpty(CreateEmpty payload)
+        private void OnCreateEmpty(CreateEmpty payload, Action onCompleteCallback)
         {
-            if (_actorManager.HasActor(payload.Actor?.Id) && _actorManager.IsActorReserved(payload.Actor?.Id))
+            try
             {
-                SendCreateActorResponse(payload, failureMessage: $"An actor with ID {payload.Actor?.Id} already exists");
+                var actors = _assetLoader.CreateEmpty(payload.Actor?.ParentId);
+                ProcessCreatedActors(payload, actors, onCompleteCallback);
             }
-            else
+            catch (Exception e)
             {
-                _actorManager.Reserve(payload.Actor?.Id);
-                try
-                {
-                    var actors = _assetLoader.CreateEmpty(payload.Actor?.ParentId);
-                    ProcessCreatedActors(payload, actors, actors?[0].gameObject);
-                }
-                catch (Exception e)
-                {
-                    SendCreateActorResponse(payload, failureMessage: e.ToString());
-                    Debug.LogException(e);
-                }
+                SendCreateActorResponse(payload, failureMessage: e.ToString(), onCompleteCallback: onCompleteCallback);
+                Debug.LogException(e);
             }
         }
 
         [CommandHandler(typeof(CreateFromPrefab))]
-        private void OnCreateFromPrefab(CreateFromPrefab payload)
+        private void OnCreateFromPrefab(CreateFromPrefab payload, Action onCompleteCallback)
         {
-            if (_actorManager.HasActor(payload.Actor?.Id) && _actorManager.IsActorReserved(payload.Actor?.Id))
+            try
             {
-                SendCreateActorResponse(payload, failureMessage: $"An actor with ID {payload.Actor?.Id} already exists");
+                var createdActors = _assetLoader.CreateFromPrefab(payload.PrefabId, payload.Actor?.ParentId);
+                ProcessCreatedActors(payload, createdActors, onCompleteCallback);
             }
-            else
+            catch (Exception e)
             {
-                _actorManager.Reserve(payload.Actor?.Id);
-                try
-                {
-                    var createdActors = _assetLoader.CreateFromPrefab(payload.PrefabId, payload.Actor?.ParentId);
-                    ProcessCreatedActors(payload, createdActors, createdActors?[0].gameObject);
-                }
-                catch (Exception e)
-                {
-                    SendCreateActorResponse(payload, failureMessage: e.ToString());
-                    Debug.LogException(e);
-                }
+                SendCreateActorResponse(payload, failureMessage: e.ToString(), onCompleteCallback: onCompleteCallback);
+                Debug.LogException(e);
             }
         }
 
-        private void ProcessCreatedActors(CreateActor originalMessage, IList<Actor> createdActors, GameObject rootGO)
+        private void ProcessCreatedActors(CreateActor originalMessage, IList<Actor> createdActors, Action onCompleteCallback)
         {
-            if (rootGO != null)
-            {
-                _ownedGameObjects.Add(rootGO);
-            }
-
             var guids = new DeterministicGuids(originalMessage.Actor?.Id);
             foreach (var createdActor in createdActors)
             {
                 _actorManager.AddActor(guids.Next(), createdActor);
+                _ownedGameObjects.Add(createdActor.gameObject);
             }
 
             createdActors.FirstOrDefault()?.ApplyPatch(originalMessage.Actor);
@@ -713,10 +575,10 @@ namespace MixedRealityExtension.App
                 actor.AddSubscriptions(originalMessage.Subscriptions);
             }
 
-            SendCreateActorResponse(originalMessage, actors: createdActors);
+            SendCreateActorResponse(originalMessage, actors: createdActors, onCompleteCallback: onCompleteCallback);
         }
 
-        private void SendCreateActorResponse(CreateActor originalMessage, IList<Actor> actors = null, string failureMessage = null)
+        private void SendCreateActorResponse(CreateActor originalMessage, IList<Actor> actors = null, string failureMessage = null, Action onCompleteCallback = null)
         {
             Trace trace = new Trace()
             {
@@ -727,439 +589,89 @@ namespace MixedRealityExtension.App
             };
 
             Protocol.Send(new ObjectSpawned()
+            {
+                Result = new OperationResult()
                 {
-                    Result = new OperationResult()
-                    {
-                        ResultCode = (actors != null) ? OperationResultCode.Success : OperationResultCode.Error,
-                        Message = trace.Message
-                    },
-
-                    Traces = new List<Trace>() { trace },
-                    Actors = actors?.Select((actor) => actor.GenerateInitialPatch()) ?? new ActorPatch[] { }
+                    ResultCode = (actors != null) ? OperationResultCode.Success : OperationResultCode.Error,
+                    Message = trace.Message
                 },
-                originalMessage.MessageId);
-        }
 
-        [CommandHandler(typeof(DEPRECATED_EnableRigidBody))]
-        private void OnEnableRigidBody(DEPRECATED_EnableRigidBody payload)
-        {
-            var result = EnableRigidBody(payload.ActorId, payload.RigidBody);
-            EventManager.QueueLateEvent(new ResponseEvent(payload.ActorId, payload.MessageId, result));
+                Traces = new List<Trace>() { trace },
+                Actors = actors?.Select((actor) => actor.GenerateInitialPatch()) ?? new ActorPatch[] { }
+            },
+                originalMessage.MessageId);
+
+            onCompleteCallback?.Invoke();
         }
 
         [CommandHandler(typeof(DEPRECATED_StateUpdate))]
-        private void OnStateUpdate(DEPRECATED_StateUpdate payload)
+        private void OnStateUpdate(DEPRECATED_StateUpdate payload, Action onCompleteCallback)
         {
             foreach (var updatePayload in payload.Payloads)
             {
                 if (updatePayload is ActorUpdate actorUpdate)
                 {
-                    OnActorUpdate(actorUpdate);
+                    _actorManager.ProcessActorCommand(actorUpdate.Actor.Id, actorUpdate, onCompleteCallback);
                 }
                 else if (updatePayload is AssetUpdate assetUpdate)
                 {
-                    _assetLoader.OnAssetUpdate(assetUpdate);
+                    _assetLoader.OnAssetUpdate(assetUpdate, onCompleteCallback);
                 }
                 else
                 {
                     MREAPI.Logger.LogError($"Unexpected payload in state update: {updatePayload.Type}");
+                    onCompleteCallback?.Invoke();
                 }
             }
-        }
-
-        [CommandHandler(typeof(ActorCorrection))]
-        private void OnActorCorrection(ActorCorrection payload)
-        {
-            // TODO: Interpolate this change onto the actor.
-            var actor = _actorManager.FindActor(payload.Actor.Id);
-            if (actor != null)
-            {
-                actor.SynchronizeEngine(payload.Actor);
-            }
-        }
-
-        [CommandHandler(typeof(ActorUpdate))]
-        private void OnActorUpdate(ActorUpdate payload)
-        {
-            var actor = _actorManager.FindActor(payload.Actor.Id);
-            if (actor != null)
-            {
-                actor.SynchronizeEngine(payload.Actor);
-            }
-        }
-
-        [CommandHandler(typeof(DestroyActors))]
-        private void OnDestroyActors(DestroyActors payload)
-        {
-            _actorManager.DestroyActors(payload.ActorIds, payload.Traces);
-        }
-
-        [CommandHandler(typeof(DEPRECATED_EnableLight))]
-        private void OnEnableLight(DEPRECATED_EnableLight payload)
-        {
-            OperationResult result = EnableLight(payload.ActorId, payload.Light);
-            Protocol.Send(result, payload.MessageId);
-        }
-
-        [CommandHandler(typeof(DEPRECATED_EnableText))]
-        private void OnEnableText(DEPRECATED_EnableText payload)
-        {
-            OperationResult result = EnableText(payload.ActorId, payload.Text);
-            Protocol.Send(result, payload.MessageId);
-        }
-
-        [CommandHandler(typeof(UpdateSubscriptions))]
-        private void OnUpdateSubscriptions(UpdateSubscriptions payload)
-        {
-            UpdateActorSubsciptions(payload);
-        }
-
-        [CommandHandler(typeof(RigidBodyCommands))]
-        private void OnRigidBodyCommands(RigidBodyCommands payload)
-        {
-            _actorManager.FindActor(payload.ActorId)?.ExecuteRigidBodyCommands(payload);
-        }
-
-        [CommandHandler(typeof(CreateAnimation))]
-        private void OnCreateAnimation(CreateAnimation payload)
-        {
-            try
-            {
-                var actor = _actorManager.FindActor(payload.ActorId);
-                if (actor != null)
-                {
-                    actor.GetOrCreateActorComponent<AnimationComponent>()
-                        .CreateAnimation(
-                            payload.AnimationName,
-                            payload.Keyframes,
-                            payload.Events,
-                            payload.WrapMode,
-                            payload.InitialState,
-                            isInternal: false,
-                            onCreatedCallback: () =>
-                            {
-                                Protocol.Send(new OperationResult()
-                                {
-                                    ResultCode = OperationResultCode.Success
-                                }, payload.MessageId);
-                            },
-                            onCompleteCallback: null);
-                }
-                else
-                {
-                    Protocol.Send(new OperationResult()
-                    {
-                        ResultCode = OperationResultCode.Error,
-                        Message = $"Actor {payload.ActorId} not found"
-                    }, payload.MessageId);
-                }
-            }
-            catch (Exception e)
-            {
-                Protocol.Send(new OperationResult()
-                {
-                    ResultCode = OperationResultCode.Error,
-                    Message = e.Message
-                }, payload.MessageId);
-            }
-        }
-
-        [CommandHandler(typeof(DEPRECATED_StartAnimation))]
-        private void OnStartAnimation(DEPRECATED_StartAnimation payload)
-        {
-            bool paused = payload.Paused.HasValue && payload.Paused.Value;
-            _actorManager.FindActor(payload.ActorId)?.GetOrCreateActorComponent<AnimationComponent>()
-                .SetAnimationState(payload.AnimationName, payload.AnimationTime, speed: null, !paused);
-        }
-
-        [CommandHandler(typeof(DEPRECATED_StopAnimation))]
-        private void OnStopAnimation(DEPRECATED_StopAnimation payload)
-        {
-            _actorManager.FindActor(payload.ActorId)?.GetOrCreateActorComponent<AnimationComponent>()
-                .SetAnimationState(payload.AnimationName, payload.AnimationTime, speed: null, false);
-        }
-
-        [CommandHandler(typeof(DEPRECATED_PauseAnimation))]
-        private void OnPauseAnimation(DEPRECATED_PauseAnimation payload)
-        {
-            _actorManager.FindActor(payload.ActorId)?.GetOrCreateActorComponent<AnimationComponent>()
-                .SetAnimationState(payload.AnimationName, time: null, speed: null, false);
-        }
-
-        [CommandHandler(typeof(DEPRECATED_ResumeAnimation))]
-        private void OnResumeAnimation(DEPRECATED_ResumeAnimation payload)
-        {
-            _actorManager.FindActor(payload.ActorId)?.GetOrCreateActorComponent<AnimationComponent>()
-                .SetAnimationState(payload.AnimationName, time: null, speed: null, true);
-        }
-
-        [CommandHandler(typeof(DEPRECATED_ResetAnimation))]
-        private void OnResetAnimation(DEPRECATED_ResetAnimation payload)
-        {
-            _actorManager.FindActor(payload.ActorId)?.GetOrCreateActorComponent<AnimationComponent>()
-                .SetAnimationState(payload.AnimationName, time: 0, speed: null, null);
         }
 
         [CommandHandler(typeof(SyncAnimations))]
-        private void OnSyncAnimations(SyncAnimations payload)
+        private void OnSyncAnimations(SyncAnimations payload, Action onCompleteCallback)
         {
             if (payload.AnimationStates == null)
             {
-                // Gather and send the animation states of all actors.
-                var animationStates = new List<MWActorAnimationState>();
-                foreach (var actor in _actorManager.Actors)
+                _actorManager.UponStable(() =>
                 {
-                    if (actor != null)
+                    // Gather and send the animation states of all actors.
+                    var animationStates = new List<MWActorAnimationState>();
+                    foreach (var actor in _actorManager.Actors)
                     {
-                        var actorAnimationStates = actor.GetOrCreateActorComponent<AnimationComponent>().GetAnimationStates();
-                        if (actorAnimationStates != null)
+                        if (actor != null)
                         {
-                            animationStates.AddRange(actorAnimationStates);
+                            var actorAnimationStates = actor.GetOrCreateActorComponent<AnimationComponent>().GetAnimationStates();
+                            if (actorAnimationStates != null)
+                            {
+                                animationStates.AddRange(actorAnimationStates);
+                            }
                         }
                     }
-                }
-                Protocol.Send(new SyncAnimations()
-                {
-                    AnimationStates = animationStates.ToList()
-                }, payload.MessageId);
+                    Protocol.Send(new SyncAnimations()
+                    {
+                        AnimationStates = animationStates.ToList()
+                    }, payload.MessageId);
+                    onCompleteCallback?.Invoke();
+                });
             }
             else
             {
                 // Apply animation states to the actors.
                 foreach (var animationState in payload.AnimationStates)
                 {
-                    _actorManager.FindActor(animationState.ActorId)?.GetOrCreateActorComponent<AnimationComponent>()
-                        .ApplyAnimationState(animationState);
+                    SetAnimationState setAnimationState = new SetAnimationState();
+                    setAnimationState.ActorId = animationState.ActorId;
+                    setAnimationState.AnimationName = animationState.AnimationName;
+                    setAnimationState.State = animationState.State;
+                    _actorManager.ProcessActorCommand(animationState.ActorId, setAnimationState, null);
                 }
-            }
-        }
-
-        [CommandHandler(typeof(SetAnimationState))]
-        private void OnSetAnimationState(SetAnimationState payload)
-        {
-            _actorManager.FindActor(payload.ActorId)?.GetOrCreateActorComponent<AnimationComponent>()
-                .SetAnimationState(payload.AnimationName, payload.State.Time, payload.State.Speed, payload.State.Enabled);
-        }
-
-
-
-        private Dictionary<Guid, AudioSource> _soundInstances = new Dictionary<Guid, AudioSource>();
-        private List<Guid> _unpausedSoundInstances = new List<Guid>();
-        private int _soundStoppedCheckIndex = 0;
-
-        private void ApplySoundStateOptions(AudioSource soundInstance, SoundStateOptions options, Guid id)
-        {
-            if (options != null)
-            {
-                //pause must happen before other sound state changes
-                if (options.paused != null && options.paused.Value == true)
-                {
-                    var index = _unpausedSoundInstances.FindIndex(x => x == id);
-                    if (index >= 0)
-                    {
-                        _unpausedSoundInstances.RemoveAt(index);
-                        soundInstance.Pause();
-                    }
-                }
-
-                if (options.Volume != null)
-                {
-                    soundInstance.volume = options.Volume.Value;
-                }
-                if (options.Pitch != null)
-                {
-                    //convert from halftone offset (-12/0/12/24/36) to pitch multiplier (0.5/1/2/4/8).
-                    soundInstance.pitch = Mathf.Pow(2.0f, (options.Pitch.Value / 12.0f));
-                }
-                if (options.Looping != null)
-                {
-                    soundInstance.loop = options.Looping.Value;
-                }
-                if (options.Doppler != null)
-                {
-                    soundInstance.dopplerLevel = options.Doppler.Value;
-                }
-                if (options.MultiChannelSpread != null)
-                {
-                    soundInstance.spread = options.MultiChannelSpread.Value * 180.0f;
-                }
-                if (options.RolloffStartDistance != null)
-                {
-                    soundInstance.minDistance = options.RolloffStartDistance.Value;
-                    soundInstance.maxDistance = options.RolloffStartDistance.Value * 1000000.0f;
-                }
-
-                //unpause must happen after other sound state changes
-                if (options.paused != null && options.paused.Value == false)
-                { 
-                    var index = _unpausedSoundInstances.FindIndex(x => x == id);
-                    if (index < 0)
-                    {
-                        soundInstance.UnPause();
-                        _unpausedSoundInstances.Add(id);
-                    }
-                }
-
-
-            }
-        }
-
-
-
-        private void SoundUpdate()
-        {
-            //garbage collect expired sounds, one per frame
-            if (_soundStoppedCheckIndex >= _unpausedSoundInstances.Count)
-            {
-                _soundStoppedCheckIndex = 0;
-            }
-            else
-            {
-                var id = _unpausedSoundInstances[_soundStoppedCheckIndex];
-                AudioSource soundInstance;
-                if (_soundInstances.TryGetValue(id, out soundInstance) && !soundInstance.isPlaying)
-                {
-                    DestroySoundInstance(soundInstance, id);
-                }
-                else
-                {
-                    _soundStoppedCheckIndex++;
-                }
-            }
-        }
-
-        private void DestroySoundInstance(AudioSource soundInstance, Guid id)
-        {
-            Component.Destroy(soundInstance);
-            _soundInstances.Remove(id);
-            var index = _unpausedSoundInstances.FindIndex(x => x == id);
-            if (index >= 0)
-            {
-                _unpausedSoundInstances.RemoveAt(index);
-            }
-        }
-        [CommandHandler(typeof(SetSoundState))]
-        private void OnSetSoundState(SetSoundState payload)
-        {
-            var actor = _actorManager.FindActor(payload.ActorId);
-            if (actor != null)
-            {
-                if (payload.SoundCommand == SoundCommand.Start)
-                {
-                    var obj = MREAPI.AppsAPI.AssetCache.GetAsset(payload.SoundAssetId);
-                    var audioClip = MREAPI.AppsAPI.AssetCache.GetAsset(payload.SoundAssetId) as AudioClip;
-                    if (audioClip != null)
-                    {
-                        float offset = payload.StartTimeOffset;
-                        if (payload.Options.Looping != null && payload.Options.Looping.Value)
-                        {
-                            offset = payload.StartTimeOffset % audioClip.length;
-                        }
-                        if (offset < audioClip.length)
-                        {
-                            var soundInstance = actor.gameObject.AddComponent<AudioSource>();
-                            soundInstance.clip = audioClip;
-                            soundInstance.time = offset;
-                            soundInstance.spatialBlend = 1.0f;
-                            soundInstance.spread = 0.0f;   //only needs to be set for multichannel sounds. Default to 0% spread (=100% directional, 0% stereo)
-                            soundInstance.minDistance = 1.0f;
-                            soundInstance.maxDistance = 1000000.0f;
-                            _unpausedSoundInstances.Add(payload.Id);
-                            ApplySoundStateOptions(soundInstance, payload.Options, payload.Id);
-                            if (payload.Options.paused == null || payload.Options.paused.Value == false)
-                            {
-                                soundInstance.Play();
-                            }
-                            
-                            _soundInstances.Add(payload.Id, soundInstance);
-                        }
-                    }
-                }
-                else
-                {
-                    AudioSource soundInstance;
-                    if (_soundInstances.TryGetValue(payload.Id, out soundInstance))
-                    {
-                        switch (payload.SoundCommand)
-                        {
-                            case SoundCommand.Stop:
-                                DestroySoundInstance(soundInstance, payload.Id);
-                                break;
-                            case SoundCommand.Update:
-                                ApplySoundStateOptions(soundInstance, payload.Options, payload.Id);
-                                break;
-                        }
-                    }
-                }
-            }
-        }
-
-        [CommandHandler(typeof(InterpolateActor))]
-        private void OnInterpolateActor(InterpolateActor payload)
-        {
-            try
-            {
-                var actor = _actorManager.FindActor(payload.ActorId);
-                if (actor != null)
-                {
-                    actor.GetOrCreateActorComponent<AnimationComponent>()
-                        .Interpolate(
-                            payload.Value,
-                            payload.AnimationName,
-                            payload.Duration,
-                            payload.Curve,
-                            payload.Enabled,
-                            onCompleteCallback: () =>
-                        {
-                            Protocol.Send(new OperationResult()
-                            {
-                                ResultCode = OperationResultCode.Success
-                            }, payload.MessageId);
-                        });
-                }
-                else
-                {
-                    Protocol.Send(new OperationResult()
-                    {
-                        ResultCode = OperationResultCode.Error,
-                        Message = $"Actor {payload.ActorId} not found"
-                    }, payload.MessageId);
-                }
-            }
-            catch (Exception e)
-            {
-                Protocol.Send(new OperationResult()
-                {
-                    ResultCode = OperationResultCode.Error,
-                    Message = e.Message
-                }, payload.MessageId);
-            }
-        }
-
-        [CommandHandler(typeof(SetBehavior))]
-        private void OnSetBehavior(SetBehavior payload)
-        {
-            var actor = _actorManager.FindActor(payload.ActorId);
-            if (actor != null)
-            {
-                var behaviorComponent = actor.GetOrCreateActorComponent<BehaviorComponent>();
-
-                if (payload.BehaviorType == BehaviorType.None && behaviorComponent.ContainsBehaviorHandler())
-                {
-                    behaviorComponent.ClearBehaviorHandler();
-
-                    return;
-                }
-
-                var handler = BehaviorHandlerFactory.CreateBehaviorHandler(payload.BehaviorType, actor, new WeakReference<MixedRealityExtensionApp>(this));
-                behaviorComponent.SetBehaviorHandler(handler);
+                onCompleteCallback?.Invoke();
             }
         }
 
         [CommandHandler(typeof(SetAuthoritative))]
-        private void OnSetAuthoritative(SetAuthoritative payload)
+        private void OnSetAuthoritative(SetAuthoritative payload, Action onCompleteCallback)
         {
             IsAuthoritativePeer = payload.Authoritative;
+            onCompleteCallback?.Invoke();
         }
 
         #endregion
