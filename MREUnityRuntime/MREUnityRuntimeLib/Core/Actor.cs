@@ -176,6 +176,10 @@ namespace MixedRealityExtension.Core
         internal void Destroy()
         {
             CleanUp();
+            if (gameObject.GetComponent<AudioSource>() != null)
+            {
+                App.SoundManager.RemoveSoundInstancesForActor(gameObject);
+            }
             Destroy(gameObject);
         }
 

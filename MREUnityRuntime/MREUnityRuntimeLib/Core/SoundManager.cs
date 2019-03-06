@@ -38,6 +38,17 @@ namespace MixedRealityExtension.Core
             _unpausedSoundInstances.Add(id);
         }
 
+        public void RemoveSoundInstancesForActor(GameObject gameObject)
+        {
+            foreach (KeyValuePair<Guid, AudioSource> soundInstance in _soundInstances)
+            {
+                if (soundInstance.Value.gameObject == gameObject)
+                {
+                    DestroySoundInstance(soundInstance.Value, soundInstance.Key);
+                }
+            }
+        }
+
         public void ApplySoundStateOptions(AudioSource soundInstance, SoundStateOptions options, Guid id)
         {
             if (options != null)
