@@ -34,8 +34,11 @@ namespace MixedRealityExtension
         public float? Doppler;
 
         /// <summary>
-        /// For multi-channel sounds (like music), mix audio direction (which speakers to play) for each channel between angle to actor (0.0) and the audio file's channels' original direction (1.0).
-        /// Default to 0.5, to give some directional feel, but collapse all channels to sound like mono.
+        /// Specify how much a sound is non-directional (playing the same volume in each speaker regardless of facing direction)
+        /// vs directional (playing only in the speakers that are pointing towards the sound source).
+        /// This can be used to make sounds seem more "wide".
+        /// It is also useful for multi-channel sounds (such as music), because a fully directional sound will always sound like mono.
+        /// Default to 0.0. For music and ambient looping sounds, set this between 0.5 and 1.0.
         /// </summary>
         public float? MultiChannelSpread;
 
