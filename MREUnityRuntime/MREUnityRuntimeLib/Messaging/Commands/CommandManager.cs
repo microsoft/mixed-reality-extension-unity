@@ -123,7 +123,9 @@ namespace MixedRealityExtension.Messaging.Commands
                             // Command handler did not invoke its onCompleteCallback in a timely manner.
                             MREAPI.Logger.LogError($"ERROR: Timeout waiting for onCompleteCallback invocation from {callback.Location}");
                             _pendingCompletionCallbacks.Remove(callback);
-                            // PONDER: Should we forceably invoke the callback from here?
+
+                            // TODO: Report this error up to the app, once we have implemented error logging payloads.
+                            // Task: https://github.com/Microsoft/mixed-reality-extension-sdk/issues/24
                         }
                         else
                         {
