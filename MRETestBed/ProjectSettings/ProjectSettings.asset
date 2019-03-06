@@ -616,7 +616,6 @@ PlayerSettings:
   m_MobileRenderingPath: 1
   metroPackageName: MRETestBed
   metroPackageVersion: 1.0.0.0
-  metroCertificatePath: Assets\WSATestCertificate.pfx
   metroCertificatePassword: 
   metroCertificateSubject: DefaultCompany
   metroCertificateIssuer: DefaultCompany
