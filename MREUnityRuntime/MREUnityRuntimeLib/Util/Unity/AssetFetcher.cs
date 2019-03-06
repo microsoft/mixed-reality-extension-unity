@@ -8,16 +8,16 @@ namespace MixedRealityExtension.Util.Unity
 
     public static class AssetFetcher<T> where T : class
     {
-        public struct FetchResult<TT> where TT : T
+        public struct FetchResult
         {
-            public TT Asset;
+            public T Asset;
             public string FailureMessage;
             public bool IsPopulated => Asset != null || FailureMessage != null;
         }
 
-        public static async Task<FetchResult<T>> LoadTask(MonoBehaviour runner, Uri uri)
+        public static async Task<FetchResult> LoadTask(MonoBehaviour runner, Uri uri)
         {
-            FetchResult<T> result = new FetchResult<T>()
+            FetchResult result = new FetchResult()
             {
                 Asset = null,
                 FailureMessage = null
