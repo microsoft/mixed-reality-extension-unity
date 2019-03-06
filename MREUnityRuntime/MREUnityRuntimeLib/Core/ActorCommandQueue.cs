@@ -41,7 +41,7 @@ namespace MixedRealityExtension.Core
 
         public void Update()
         {
-            if (busy)
+            if (activeCommand != null || queue.Count == 0)
             {
                 return;
             }
@@ -51,22 +51,16 @@ namespace MixedRealityExtension.Core
                 actor = app.FindActor(actorId) as Actor;
             }
 
-            if (actor != null && queue.Count > 0)
+            if (actor != null)
             {
                 activeCommand = queue.Dequeue();
-                app.ExecuteCommandPayload(actor, activeCommand.Payload, OnCommandComplete);
+                app.ExecuteCommandPayload(actor, activeCommand.Payload, () =>
+                {
+                    activeCommand?.OnCompleteCallback?.Invoke();
+                    activeCommand = null;
+                    Update();
+                });
             }
-        }
-
-        #endregion
-
-        #region Private Methods
-
-        private void OnCommandComplete()
-        {
-            activeCommand?.OnCompleteCallback?.Invoke();
-            activeCommand = null;
-            Update();
         }
 
         #endregion
@@ -78,12 +72,6 @@ namespace MixedRealityExtension.Core
             public NetworkCommandPayload Payload { get; set; }
             public Action OnCompleteCallback { get; set; }
         }
-
-        #endregion
-
-        #region Private Accessors
-
-        private bool busy => activeCommand != null;
 
         #endregion
 

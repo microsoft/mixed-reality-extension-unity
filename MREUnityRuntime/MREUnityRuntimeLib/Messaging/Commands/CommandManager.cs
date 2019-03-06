@@ -21,7 +21,7 @@ namespace MixedRealityExtension.Messaging.Commands
         }
 
         // Command handler methods mapped to MethodInfo by handler object type.
-        private readonly Dictionary<Type, Dictionary<Type, MethodInfo>> _methodHandlersByType = new Dictionary<Type, Dictionary<Type, MethodInfo>>();
+        private readonly Dictionary<Type, Dictionary<Type, MethodInfo>> _methodHandlersByContextType = new Dictionary<Type, Dictionary<Type, MethodInfo>>();
         // Registered invocation targets.
         private readonly Dictionary<Type, ICommandHandlerContext> _invocationTargets = new Dictionary<Type, ICommandHandlerContext>();
         // The list of running commands that haven't yet invoked their onCompleteCallback handler.
@@ -38,14 +38,11 @@ namespace MixedRealityExtension.Messaging.Commands
             foreach (var commandHandlerPair in commandHandlers)
             {
                 // Build table of handler to method info.
-                //var methods = commandHandlers[0].GetMethods(BindingFlags.NonPublic | BindingFlags.Instance); //commandHandlers.SelectMany(t => t.GetMethods(BindingFlags.NonPublic));
-                //var handlerMethods1 = methods.Where(m => m.GetCustomAttributes().OfType<CommandHandler>().Any());
-                //_methodHandlers = handlerMethods1.ToDictionary(m => m.GetCustomAttributes().OfType<CommandHandler>().First().CommandType);
-
-                _methodHandlersByType.Add(commandHandlerPair.Key, new List<Type>() { commandHandlerPair.Key }
-                    .SelectMany(t => t.GetMethods(BindingFlags.NonPublic | BindingFlags.Instance))
-                    .Where(m => m.GetCustomAttributes().OfType<CommandHandler>().Any())
-                    .ToDictionary(m => m.GetCustomAttributes().OfType<CommandHandler>().First().CommandType));
+                _methodHandlersByContextType.Add(commandHandlerPair.Key,
+                    new Type[] { commandHandlerPair.Key }
+                        .SelectMany(t => t.GetMethods(BindingFlags.NonPublic | BindingFlags.Instance))
+                        .Where(m => m.GetCustomAttributes().OfType<CommandHandler>().Any())
+                        .ToDictionary(m => m.GetCustomAttributes().OfType<CommandHandler>().First().CommandType));
 
                 _invocationTargets.Add(commandHandlerPair.Key, commandHandlerPair.Value);
             }
@@ -54,12 +51,16 @@ namespace MixedRealityExtension.Messaging.Commands
         public void ExecuteCommandPayload(ICommandPayload commandPayload, Action onCompleteCallback)
         {
             var commandPayloadType = commandPayload.GetType();
-            foreach (var methodHandlersPair in _methodHandlersByType)
+            foreach (var methodHandlersPair in _methodHandlersByContextType)
             {
                 if (!methodHandlersPair.Value.ContainsKey(commandPayloadType))
+                {
                     continue;
+                }
                 if (!_invocationTargets.TryGetValue(methodHandlersPair.Key, out ICommandHandlerContext handlerContext) || handlerContext == null)
+                {
                     continue;
+                }
                 ExecuteCommandPayload(handlerContext, commandPayload, methodHandlersPair.Value[commandPayloadType], onCompleteCallback);
                 return;
             }
@@ -69,7 +70,7 @@ namespace MixedRealityExtension.Messaging.Commands
         public void ExecuteCommandPayload(ICommandHandlerContext handlerContext, ICommandPayload commandPayload, Action onCompleteCallback)
         {
             var handlerContextType = handlerContext.GetType();
-            if (_methodHandlersByType.TryGetValue(handlerContextType, out Dictionary<Type, MethodInfo> methodHandlers))
+            if (_methodHandlersByContextType.TryGetValue(handlerContextType, out Dictionary<Type, MethodInfo> methodHandlers))
             {
                 var commandPayloadType = commandPayload.GetType();
                 if (methodHandlers.ContainsKey(commandPayloadType))
@@ -141,7 +142,10 @@ namespace MixedRealityExtension.Messaging.Commands
 
         private Action CreateQueuedCompletionCallback(string location, Action onCompleteCallback)
         {
-            if (onCompleteCallback == null) return null;
+            if (onCompleteCallback == null)
+            {
+                return null;
+            }
 
             // If the queue was previously empty then schedule a time to check it later.
             if (_pendingCompletionCallbacks.Count == 0)
@@ -165,7 +169,7 @@ namespace MixedRealityExtension.Messaging.Commands
                     // Mark as invoked, remove from queue, and make the actual callback.
                     callback.Invoked = true;
                     _pendingCompletionCallbacks.Remove(callback);
-                    try { onCompleteCallback?.Invoke(); } catch { }
+                    onCompleteCallback.Invoke();
                 }
                 else
                 {

@@ -105,8 +105,7 @@ namespace MixedRealityExtension.Core
             else
             {
                 var id = _unpausedSoundInstances[_soundStoppedCheckIndex];
-                AudioSource soundInstance;
-                if (_soundInstances.TryGetValue(id, out soundInstance) && !soundInstance.isPlaying)
+                if (_soundInstances.TryGetValue(id, out AudioSource soundInstance) && !soundInstance.isPlaying)
                 {
                     DestroySoundInstance(soundInstance, id);
                 }
