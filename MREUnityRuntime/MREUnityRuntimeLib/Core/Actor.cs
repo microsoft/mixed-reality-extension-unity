@@ -182,7 +182,7 @@ namespace MixedRealityExtension.Core
             {
                 ParentId = Parent?.Id ?? Guid.Empty;
             }
-
+            Transform = gameObject.transform.ToMWTransform();
             var transform = new TransformPatch()
             {
                 Position = new Vector3Patch(Transform.Position),
