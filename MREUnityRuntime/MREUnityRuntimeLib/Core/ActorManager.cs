@@ -146,10 +146,9 @@ namespace MixedRealityExtension.Core
         #region Command Handlers
 
         [CommandHandler(typeof(ActorCorrection))]
-        private Task OnActorCorrection(ActorCorrection payload, Action onCompleteCallback)
+        private void OnActorCorrection(ActorCorrection payload, Action onCompleteCallback)
         {
             ProcessActorCommand(payload.Actor.Id, payload, onCompleteCallback);
-            return Task.CompletedTask;
         }
 
         [CommandHandler(typeof(ActorUpdate))]
