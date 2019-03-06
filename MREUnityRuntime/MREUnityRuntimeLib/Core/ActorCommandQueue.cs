@@ -54,12 +54,21 @@ namespace MixedRealityExtension.Core
             if (actor != null)
             {
                 activeCommand = queue.Dequeue();
-                app.ExecuteCommandPayload(actor, activeCommand.Payload, () =>
+                try
                 {
-                    activeCommand?.OnCompleteCallback?.Invoke();
+                    app.ExecuteCommandPayload(actor, activeCommand.Payload, () =>
+                    {
+                        activeCommand?.OnCompleteCallback?.Invoke();
+                        activeCommand = null;
+                        Update();
+                    });
+                }
+                catch
+                {
+                    // In case of error, clear activeCommand so that queue processing isn't stalled forever.
                     activeCommand = null;
-                    Update();
-                });
+                    throw;
+                }
             }
         }
 
