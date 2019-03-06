@@ -947,6 +947,16 @@ namespace MixedRealityExtension.App
         private List<Guid> _unpausedSoundInstances = new List<Guid>();
         private int _soundStoppedCheckIndex = 0;
 
+        public void RemoveSoundInstancesForActor(GameObject gameObject)
+        {
+            foreach (KeyValuePair<Guid, AudioSource> soundInstance in _soundInstances)
+            {
+                if(soundInstance.Value.gameObject == gameObject)
+                {
+                    DestroySoundInstance(soundInstance.Value, soundInstance.Key);
+                }
+            }
+        }
         private void ApplySoundStateOptions(AudioSource soundInstance, SoundStateOptions options, Guid id)
         {
             if (options != null)
