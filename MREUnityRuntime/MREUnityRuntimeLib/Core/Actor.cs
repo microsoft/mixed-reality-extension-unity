@@ -20,6 +20,7 @@ using UnityEngine;
 
 using UnityLight = UnityEngine.Light;
 using UnityCollider = UnityEngine.Collider;
+using MixedRealityExtension.PluginInterfaces.Behaviors;
 
 namespace MixedRealityExtension.Core
 {
@@ -78,7 +79,9 @@ namespace MixedRealityExtension.Core
         internal MWTransform LocalTransform => transform.ToMWTransform();
 
         internal Guid MaterialId { get; set; } = Guid.Empty;
-
+		
+		internal bool Grabbable { get; private set; }
+		
         private bool AppearanceEnabled = true;
         private bool ActiveAndEnabled => ((Parent as Actor)?.ActiveAndEnabled ?? true) && AppearanceEnabled;
 
@@ -775,6 +778,23 @@ namespace MixedRealityExtension.Core
                     _lookAt = GetOrCreateActorComponent<LookAtComponent>();
                 }
                 _lookAt.ApplyPatch(lookAtPatch);
+            }
+        }
+
+        private void PatchGrabbable(bool? grabbable)
+        {
+            if (grabbable != null && grabbable.Value != Grabbable)
+            {
+                // Update existing behavior or add a basic target behavior if there isn't one already.
+                var behaviorComponent = GetActorComponent<BehaviorComponent>();
+                if (behaviorComponent != null)
+                {
+                    behaviorComponent = GetOrCreateActorComponent<BehaviorComponent>();
+                    var handler = BehaviorHandlerFactory.CreateBehaviorHandler(BehaviorType.Target, this, new WeakReference<MixedRealityExtensionApp>(App));
+                    behaviorComponent.SetBehaviorHandler(handler);
+                }
+
+                ((ITargetBehavior)behaviorComponent.Behavior).Grabbable = grabbable.Value;
             }
         }
 

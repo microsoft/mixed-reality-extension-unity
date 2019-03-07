@@ -10,8 +10,18 @@ namespace MixedRealityExtension.PluginInterfaces.Behaviors
     public interface ITargetBehavior : IBehavior
     {
         /// <summary>
-        /// The target action in the target platform..
+        /// Whether the target is grabbable or not.
+        /// </summary>
+        bool Grabbable { get; set; }
+
+        /// <summary>
+        /// The target action in the target platform.
         /// </summary>
         MWAction Target { get; }
+
+        /// <summary>
+        /// The grab action in the target platform.
+        /// </summary>
+        MWAction Grab { get; }
     }
 }
