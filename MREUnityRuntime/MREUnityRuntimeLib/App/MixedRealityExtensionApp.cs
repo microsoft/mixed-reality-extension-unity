@@ -45,10 +45,6 @@ namespace MixedRealityExtension.App
         private IList<GameObject> _ownedGameObjects = new List<GameObject>();
         private Queue<CreateFromGLTF> _createFromGLTFQueue = new Queue<CreateFromGLTF>();
 
-        private Dictionary<Guid, AudioSource> _soundInstances = new Dictionary<Guid, AudioSource>();
-        private List<Guid> _unpausedSoundInstances = new List<Guid>();
-        private int _soundStoppedCheckIndex = 0;
-
         private enum AppState
         {
             Stopped,
