@@ -20,8 +20,11 @@ namespace MixedRealityExtension.Core.Components
 
         internal void ClearBehaviorHandler()
         {
-            _behaviorHandler.CleanUp();
-            _behaviorHandler = null;
+            if (_behaviorHandler != null)
+            {
+                _behaviorHandler.CleanUp();
+                _behaviorHandler = null;
+            }
         }
 
         internal bool ContainsBehaviorHandler()
