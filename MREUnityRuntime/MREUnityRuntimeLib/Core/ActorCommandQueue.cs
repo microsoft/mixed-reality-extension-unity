@@ -30,6 +30,11 @@ namespace MixedRealityExtension.Core
 
         #region Public Methods
 
+        public void Clear()
+        {
+            queue.Clear();
+        }
+
         public void Enqueue(NetworkCommandPayload payload, Action onCompleteCallback)
         {
             queue.Enqueue(new QueuedCommand()

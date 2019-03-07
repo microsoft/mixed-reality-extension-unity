@@ -606,4 +606,16 @@ namespace MixedRealityExtension.Messaging.Payloads
         /// </summary>
         public bool Authoritative { get; set; }
     }
+
+    /// <summary>
+    /// Local-only. Not sent over network.
+    /// Execute a command.
+    /// </summary>
+    public class LocalCommand : NetworkCommandPayload
+    {
+        /// <summary>
+        /// The command to execute when this payload is processed.
+        /// </summary>
+        public Action Command;
+    }
 }
