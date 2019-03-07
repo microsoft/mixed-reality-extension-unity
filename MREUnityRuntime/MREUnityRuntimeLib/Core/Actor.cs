@@ -856,6 +856,13 @@ namespace MixedRealityExtension.Core
 
         #region Command Handlers
 
+        [CommandHandler(typeof(LocalCommand))]
+        private void OnLocalCommand(LocalCommand payload, Action onCompleteCallback)
+        {
+            payload.Command?.Invoke();
+            onCompleteCallback?.Invoke();
+        }
+
         [CommandHandler(typeof(ActorCorrection))]
         private void OnActorCorrection(ActorCorrection payload, Action onCompleteCallback)
         {

@@ -37,35 +37,43 @@ namespace MixedRealityExtension.Core
             return actor;
         }
 
-        internal void DestroyActors(IEnumerable<Guid> ids, IList<Trace> traces)
+        internal void DestroyActors(IEnumerable<Guid> ids)
         {
             foreach (var id in ids)
             {
-                if (!_actorMapping.ContainsKey(id))
+                var destroyActorCommand = new LocalCommand
                 {
-                    var message = "destroy-actors: Actor not found: " + id.ToString() + ".";
-                    if (traces != null)
+                    Command = () =>
                     {
-                        traces.Add(new Trace()
+                        if (_actorCommandQueues.TryGetValue(id, out ActorCommandQueue queue))
                         {
-                            Severity = TraceSeverity.Warning,
-                            Message = message
-                        });
-                    }
+                            // Clear the queue so that pending messages are canceled.
+                            queue.Clear();
+                            _actorCommandQueues.Remove(id);
+                        }
 
-                    MREAPI.Logger.LogError(message);
-                }
-                else
-                {
-                    var actor = _actorMapping[id];
-                    _actorMapping.Remove(id);
-                    try
-                    {
-                        actor.Destroy();
+                        if (!_actorMapping.ContainsKey(id))
+                        {
+                            var message = "destroy-actors: Actor not found: " + id.ToString() + ".";
+                            MREAPI.Logger.LogError(message);
+                        }
+                        else
+                        {
+                            var actor = _actorMapping[id];
+                            _actorMapping.Remove(id);
+                            try
+                            {
+                                actor.Destroy();
+                            }
+                            catch (Exception e)
+                            {
+                                MREAPI.Logger.LogError(e.ToString());
+                            }
+                            // Is there any other cleanup?  Do it here.
+                        }
                     }
-                    catch { }
-                    // Is there any other cleanup?  Do it here.
-                }
+                };
+                ProcessActorCommand(id, destroyActorCommand, null);
             }
         }
 
@@ -101,10 +109,16 @@ namespace MixedRealityExtension.Core
             queue.Enqueue(payload, onCompleteCallback);
         }
 
+        private List<ActorCommandQueue> _queuesForUpdate = new List<ActorCommandQueue>();
+
         internal void Update()
         {
+            // _actorCommandQueues can be modified during the iteration below, so make a shallow copy.
+            _queuesForUpdate.Clear();
+            _queuesForUpdate.AddRange(_actorCommandQueues.Values);
+
             int totalPendingCount = 0;
-            foreach (var queue in _actorCommandQueues.Values)
+            foreach (var queue in _queuesForUpdate)
             {
                 queue.Update();
                 totalPendingCount += queue.Count;
@@ -135,8 +149,10 @@ namespace MixedRealityExtension.Core
                 removed = true;
             }
 
-            if (_actorCommandQueues.ContainsKey(id))
+            if (_actorCommandQueues.TryGetValue(id, out ActorCommandQueue queue))
             {
+                // Clear the queue so that pending messages are canceled.
+                queue.Clear();
                 _actorCommandQueues.Remove(id);
             }
 
@@ -160,7 +176,7 @@ namespace MixedRealityExtension.Core
         [CommandHandler(typeof(DestroyActors))]
         private void OnDestroyActors(DestroyActors payload, Action onCompleteCallback)
         {
-            DestroyActors(payload.ActorIds, payload.Traces);
+            DestroyActors(payload.ActorIds);
             onCompleteCallback?.Invoke();
         }
 
