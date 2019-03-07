@@ -29,6 +29,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <NoWarn>1591;1573</NoWarn>
     <DocumentationFile>..\bin\Debug\MREUnityRuntimeLib.xml</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug_Android|AnyCPU' ">
@@ -38,6 +39,7 @@
     <DefineConstants>DEBUG;TRACE;ANDROID_DEBUG</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <NoWarn>1591;1573</NoWarn>
     <DocumentationFile>..\bin\Debug\MREUnityRuntimeLib.xml</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
@@ -46,6 +48,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <NoWarn>1591;1573</NoWarn>
     <DocumentationFile>..\bin\Release\MREUnityRuntimeLib.xml</DocumentationFile>
     <CodeAnalysisRuleSet>..\..\tools\VSCodeAnalysis\MRESDK_Ruleset.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
@@ -267,7 +270,7 @@
   <PropertyGroup>
     <PostBuildEvent>
       cd $(ProjectDir)\..\
-      if not exist $(ProjectDir)\..\MREUnityProjects.xml copy $(ProjectDir)\..\MREUnityProjects.default.xml $(ProjectDir)\..\MREUnityProjects.xml
+      if not exist "$(ProjectDir)\..\MREUnityProjects.xml" copy "$(ProjectDir)\..\MREUnityProjects.default.xml" "$(ProjectDir)\..\MREUnityProjects.xml"
       PostBuildTool.exe $(ConfigurationName)
     </PostBuildEvent>
   </PropertyGroup>

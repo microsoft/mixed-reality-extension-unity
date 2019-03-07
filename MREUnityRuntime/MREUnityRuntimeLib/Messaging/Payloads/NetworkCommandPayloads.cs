@@ -536,7 +536,7 @@ namespace MixedRealityExtension.Messaging.Payloads
         /// <summary>
         /// Time in seconds since sound was started
         /// </summary>
-        public float StartTimeOffset{ get; set; }
+        public float? StartTimeOffset{ get; set; }
 
         /// <summary>
         /// runtime configurable options.

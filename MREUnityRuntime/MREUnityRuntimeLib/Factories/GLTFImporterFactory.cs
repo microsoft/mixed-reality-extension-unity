@@ -12,7 +12,7 @@ namespace MixedRealityExtension.Factories
     /// <inheritdoc cref="IGLTFImporterFactory"/>
     internal class GLTFImporterFactory : IGLTFImporterFactory
     {
-        /// <inheritdoc cref="CreateImporter"/>
+        /// <inheritdoc cref="CreateImporter(string, ILoader, AsyncCoroutineHelper)"/>
         public GLTFSceneImporter CreateImporter(
             string gltfFileName,
             ILoader externalDataLoader,

@@ -40,7 +40,7 @@ namespace MixedRealityExtension
         /// It is also useful for multi-channel sounds (such as music), because a fully directional sound will always sound like mono.
         /// Default to 0.0. For music and ambient looping sounds, set this between 0.5 and 1.0.
         /// </summary>
-        public float? MultiChannelSpread;
+        public float? Spread;
 
         /// <summary>
         /// Sounds will play at full volume until user is this many meters away, and then volume will decrease logarithmically
