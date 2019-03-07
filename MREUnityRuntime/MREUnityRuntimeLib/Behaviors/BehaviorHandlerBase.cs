@@ -27,6 +27,8 @@ namespace MixedRealityExtension.Behaviors
             }
         }
 
+        IBehavior IBehaviorHandler.Behavior => Behavior;
+
         internal BehaviorHandlerBase(
             IBehavior behavior,
             WeakReference<MixedRealityExtensionApp> appRef, 
