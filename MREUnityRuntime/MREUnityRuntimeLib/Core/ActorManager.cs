@@ -1,15 +1,14 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using MixedRealityExtension.API;
 using MixedRealityExtension.App;
 using MixedRealityExtension.Core.Interfaces;
 using MixedRealityExtension.IPC;
-using MixedRealityExtension.Messaging;
 using MixedRealityExtension.Messaging.Commands;
 using MixedRealityExtension.Messaging.Payloads;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace MixedRealityExtension.Core
 {
@@ -92,6 +91,11 @@ namespace MixedRealityExtension.Core
             {
                 return null;
             }
+        }
+
+        internal IEnumerable<Actor> FindChildren(Guid id)
+        {
+            return _actorMapping.Values.Where(a => a.ParentId == id);
         }
 
         internal bool HasActor(Guid? id)

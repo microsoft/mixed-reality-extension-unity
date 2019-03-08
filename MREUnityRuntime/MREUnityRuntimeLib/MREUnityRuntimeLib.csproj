@@ -103,6 +103,7 @@
     <Compile Include="Core\Types\MWVector2.cs" />
     <Compile Include="Core\UserManager.cs" />
     <Compile Include="Factories\DefaultMaterialApplicator.cs" />
+    <Compile Include="Patching\Types\AppearancePatch.cs" />
     <Compile Include="Patching\Types\LookAtPatch.cs" />
     <Compile Include="PluginInterfaces\IUserInfoProvider.cs" />
     <Compile Include="Messaging\Payloads\AssetCommandPayloads.cs" />

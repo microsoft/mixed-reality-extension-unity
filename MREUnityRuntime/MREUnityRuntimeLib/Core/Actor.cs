@@ -42,13 +42,13 @@ namespace MixedRealityExtension.Core
         private ActorComponentType _subscriptions = ActorComponentType.None;
 
         private new Renderer renderer = null;
-        private Renderer Renderer => renderer = renderer ?? GetComponent<Renderer>();
+        internal Renderer Renderer => renderer = renderer ?? GetComponent<Renderer>();
 
         #region IActor Properties - Public
 
         /// <inheritdoc />
         [HideInInspector]
-        public IActor Parent => transform.parent?.GetComponent<Actor>();
+        public IActor Parent => ParentId.HasValue ? App.FindActor(ParentId.Value) : null;
 
         /// <inheritdoc />
         [HideInInspector]
@@ -79,6 +79,10 @@ namespace MixedRealityExtension.Core
 
         internal Guid? MaterialId { get; set; }
         private UnityEngine.Material originalMaterial;
+
+        private bool AppearanceEnabled = true;
+        private bool ActiveAndEnabled => ((Parent as Actor)?.ActiveAndEnabled ?? true) && AppearanceEnabled;
+
         #endregion
 
         #region Methods - Internal
@@ -150,7 +154,7 @@ namespace MixedRealityExtension.Core
         {
             PatchParent(actorPatch.ParentId);
             PatchName(actorPatch.Name);
-            PatchMaterial(actorPatch.MaterialId);
+            PatchAppearance(actorPatch.Appearance);
             PatchTransform(actorPatch.Transform);
             PatchLight(actorPatch.Light);
             PatchRigidBody(actorPatch.RigidBody);
@@ -211,8 +215,12 @@ namespace MixedRealityExtension.Core
                 Name = Name,
                 Transform = transform,
                 RigidBody = rigidBody,
-                MaterialId = MaterialId,
-                Collider = collider
+                Collider = collider,
+                Appearance = new AppearancePatch()
+                {
+                    Enabled = AppearanceEnabled,
+                    MaterialId = MaterialId
+                }
             };
 
             return (!actorPatch.IsPatched()) ? null : actorPatch;
@@ -595,17 +603,25 @@ namespace MixedRealityExtension.Core
             return Collider;
         }
 
-        private void PatchParent(Guid? parentIdOrNull)
+        private void PatchParent(Guid? parentId)
         {
-            var parentId = parentIdOrNull ?? ParentId;
-            var parent = parentId != null ? App.FindActor(parentId.Value) : Parent;
-            if (parent != null && (Parent == null || (Parent.Id != parent.Id)))
+            if (!parentId.HasValue)
             {
-                transform.SetParent(((Actor)parent).transform, false);
+                return;
             }
-            else if (parent == null && Parent != null)
+
+            var newParent = App.FindActor(parentId.Value);
+            if (parentId.Value != ParentId && newParent != null)
             {
-                // TODO: Unparent?
+                // reassign parent
+                ParentId = parentId.Value;
+                transform.SetParent(((Actor)newParent).transform, false);
+            }
+            else
+            {
+                // clear parent
+                ParentId = Guid.Empty;
+                transform.SetParent(App.SceneRoot.transform, false);
             }
         }
 
@@ -617,32 +633,54 @@ namespace MixedRealityExtension.Core
             }
         }
 
-        private void PatchMaterial(Guid? materialIdOrNull)
+        private void PatchAppearance(AppearancePatch appearance)
         {
-            if (Renderer != null)
+            if (appearance == null || Renderer == null)
             {
-                if (originalMaterial == null)
-                {
-                    originalMaterial = Instantiate(Renderer.sharedMaterial);
-                }
+                return;
+            }
 
-                if (materialIdOrNull == Guid.Empty)
+            if (appearance.Enabled != null)
+            {
+                AppearanceEnabled = appearance.Enabled.Value;
+                ApplyVisibilityUpdate(this);
+            }
+
+            if (originalMaterial == null)
+            {
+                originalMaterial = Instantiate(Renderer.sharedMaterial);
+            }
+
+            if (appearance.MaterialId != null && appearance.MaterialId == Guid.Empty)
+            {
+                Renderer.sharedMaterial = originalMaterial;
+            }
+            else if (appearance.MaterialId != null)
+            {
+                MaterialId = appearance.MaterialId.Value;
+                var sharedMat = MREAPI.AppsAPI.AssetCache.GetAsset(MaterialId) as Material;
+                if (sharedMat != null)
                 {
-                    Renderer.sharedMaterial = originalMaterial;
+                    Renderer.sharedMaterial = sharedMat;
                 }
-                else if (materialIdOrNull != null)
+                else
                 {
-                    MaterialId = materialIdOrNull.Value;
-                    var sharedMat = MREAPI.AppsAPI.AssetCache.GetAsset(MaterialId) as Material;
-                    if (sharedMat != null)
-                    {
-                        Renderer.sharedMaterial = sharedMat;
-                    }
-                    else
-                    {
-                        MREAPI.Logger.LogWarning($"Material {MaterialId} not found, cannot assign to actor {Id}");
-                    }
+                    MREAPI.Logger.LogWarning($"Material {MaterialId} not found, cannot assign to actor {Id}");
                 }
+            }
+        }
+
+        private static void ApplyVisibilityUpdate(Actor actor)
+        {
+            if (actor.Renderer.enabled == actor.ActiveAndEnabled)
+            {
+                return;
+            }
+
+            actor.Renderer.enabled = actor.ActiveAndEnabled;
+            foreach (var child in actor.App.FindChildren(actor.Id))
+            {
+                ApplyVisibilityUpdate(child);
             }
         }
 
