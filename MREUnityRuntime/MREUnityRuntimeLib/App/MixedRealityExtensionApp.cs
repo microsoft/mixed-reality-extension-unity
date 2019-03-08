@@ -326,6 +326,11 @@ namespace MixedRealityExtension.App
             return _actorManager.FindActor(id);
         }
 
+        public IEnumerable<Actor> FindChildren(Guid id)
+        {
+            return _actorManager.FindChildren(id);
+        }
+
         /// <inheritdoc />
         public void OnActorDestroyed(Guid actorId)
         {

@@ -47,7 +47,7 @@ namespace MixedRealityExtension.Core
 
         /// <inheritdoc />
         [HideInInspector]
-        public IActor Parent => transform.parent?.GetComponent<Actor>();
+        public IActor Parent => ParentId.HasValue ? App.FindActor(ParentId.Value) : null;
 
         /// <inheritdoc />
         [HideInInspector]
@@ -80,6 +80,7 @@ namespace MixedRealityExtension.Core
         private UnityEngine.Material originalMaterial;
 
         private bool AppearanceEnabled = true;
+        private bool ActiveAndEnabled => ((Parent as Actor)?.ActiveAndEnabled ?? true) && AppearanceEnabled;
 
         #endregion
 
@@ -596,17 +597,22 @@ namespace MixedRealityExtension.Core
             return Collider;
         }
 
-        private void PatchParent(Guid? parentIdOrNull)
+        private void PatchParent(Guid? parentId)
         {
-            var parentId = parentIdOrNull ?? ParentId;
-            var parent = parentId != null ? App.FindActor(parentId.Value) : Parent;
-            if (parent != null && (Parent == null || (Parent.Id != parent.Id)))
+            if (!parentId.HasValue) return;
+
+            var newParent = App.FindActor(parentId.Value);
+            if (parentId.Value != ParentId && newParent != null)
             {
-                transform.SetParent(((Actor)parent).transform, false);
+                // reassign parent
+                ParentId = parentId.Value;
+                transform.SetParent(((Actor)newParent).transform, false);
             }
-            else if (parent == null && Parent != null)
+            else
             {
-                // TODO: Unparent?
+                // clear parent
+                ParentId = Guid.Empty;
+                transform.SetParent(App.SceneRoot.transform, false);
             }
         }
 
@@ -625,7 +631,7 @@ namespace MixedRealityExtension.Core
             if(appearance.Enabled != null)
             {
                 AppearanceEnabled = appearance.Enabled.Value;
-                Renderer.enabled = AppearanceEnabled;
+                ApplyVisibilityUpdate(this);
             }
 
             if (originalMaterial == null)
@@ -649,6 +655,18 @@ namespace MixedRealityExtension.Core
                 {
                     MREAPI.Logger.LogWarning($"Material {MaterialId} not found, cannot assign to actor {Id}");
                 }
+            }
+        }
+
+        private static void ApplyVisibilityUpdate(Actor actor)
+        {
+            if (actor.Renderer.enabled == actor.ActiveAndEnabled)
+                return;
+
+            actor.Renderer.enabled = actor.ActiveAndEnabled;
+            foreach(var child in actor.App.FindChildren(actor.Id))
+            {
+                ApplyVisibilityUpdate(child);
             }
         }
 
