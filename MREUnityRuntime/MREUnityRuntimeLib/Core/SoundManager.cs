@@ -55,10 +55,17 @@ namespace MixedRealityExtension.Core
                     soundInstance.spread = 90.0f;   //only affects multichannel sounds. Default to 50% spread, 50% stereo.
                     soundInstance.minDistance = 1.0f;
                     soundInstance.maxDistance = 1000000.0f;
-                    _unpausedSoundInstances.Add(new SoundInstance(id,actor));
-                    ApplySoundStateOptions(actor, soundInstance, options, id);
-                    if (options.paused == null || options.paused.Value == false)
+                    ApplySoundStateOptions(actor, soundInstance, options, id, true);
+                    if (options.paused != null && options.paused.Value == true)
                     {
+                        //start as paused
+                        soundInstance.Play();
+                        soundInstance.Pause();
+                    }
+                    else
+                    {
+                        //start as unpaused
+                        _unpausedSoundInstances.Add(new SoundInstance(id, actor));
                         soundInstance.Play();
                     }
                     return soundInstance;
@@ -68,17 +75,15 @@ namespace MixedRealityExtension.Core
         }
 
 
-        public void ApplySoundStateOptions(Actor actor, AudioSource soundInstance, SoundStateOptions options, Guid id)
+        public void ApplySoundStateOptions(Actor actor, AudioSource soundInstance, SoundStateOptions options, Guid id, bool startSound)
         {
             if (options != null)
             {
                 //pause must happen before other sound state changes
                 if (options.paused != null && options.paused.Value == true)
                 {
-                    var index = _unpausedSoundInstances.FindIndex(x => x.id == id);
-                    if (index >= 0)
+                    if (_unpausedSoundInstances.RemoveAll(x => x.id == id)>0)
                     {
-                        _unpausedSoundInstances.RemoveAt(index);
                         soundInstance.Pause();
                     }
                 }
@@ -111,17 +116,17 @@ namespace MixedRealityExtension.Core
                 }
 
                 //unpause must happen after other sound state changes
-                if (options.paused != null && options.paused.Value == false)
+                if (!startSound)
                 {
-                    var index = _unpausedSoundInstances.FindIndex(x => x.id == id);
-                    if (index < 0)
+                    if (options.paused != null && options.paused.Value == false)
                     {
-                        soundInstance.UnPause();
-                        _unpausedSoundInstances.Add(new SoundInstance(id, actor));
+                        if (!_unpausedSoundInstances.Exists(x => x.id == id))
+                        {
+                            soundInstance.UnPause();
+                            _unpausedSoundInstances.Add(new SoundInstance(id, actor));
+                        }
                     }
                 }
-
-
             }
         }
 
@@ -135,11 +140,7 @@ namespace MixedRealityExtension.Core
             else
             {
                 var soundInstance = _unpausedSoundInstances[_soundStoppedCheckIndex];
-                if (soundInstance.actor.CheckIfSoundExpired(soundInstance.id))
-                {
-
-                }
-                else
+                if (!soundInstance.actor.CheckIfSoundExpired(soundInstance.id))
                 {
                     _soundStoppedCheckIndex++;
                 }
@@ -150,18 +151,14 @@ namespace MixedRealityExtension.Core
 
         public void DestroySoundInstance(AudioSource soundInstance, Guid id)
         {
+            _unpausedSoundInstances.RemoveAll(x => x.id == id);
             Component.Destroy(soundInstance);
-            var index = _unpausedSoundInstances.FindIndex(x => x.id == id);
-            if (index >= 0)
-            {
-                _unpausedSoundInstances.RemoveAt(index);
-            }
         }
 
         #region Private Fields
 
         MixedRealityExtensionApp _app;
-        private static List<SoundInstance> _unpausedSoundInstances = new List<SoundInstance>();
+        private List<SoundInstance> _unpausedSoundInstances = new List<SoundInstance>();
         private int _soundStoppedCheckIndex = 0;
 
         #endregion

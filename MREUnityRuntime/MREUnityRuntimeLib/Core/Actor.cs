@@ -32,7 +32,7 @@ namespace MixedRealityExtension.Core
         private UnityLight _light;
         private UnityCollider _collider;
         private LookAtComponent _lookAt;
-        private static Dictionary<Guid, AudioSource> _soundInstances;
+        private Dictionary<Guid, AudioSource> _soundInstances;
         private float _nextUpdateTime;
 
         private Dictionary<Type, ActorComponentBase> _components = new Dictionary<Type, ActorComponentBase>();
@@ -177,13 +177,6 @@ namespace MixedRealityExtension.Core
         internal void Destroy()
         {
             CleanUp();
-            if (_soundInstances != null)
-            {
-                foreach (KeyValuePair<Guid, AudioSource> soundInstance in _soundInstances)
-                {
-                    App.SoundManager.DestroySoundInstance(soundInstance.Value, soundInstance.Key);
-                }
-            }
 
             Destroy(gameObject);
         }
@@ -359,6 +352,14 @@ namespace MixedRealityExtension.Core
             if (userInfo != null)
             {
                 userInfo.BeforeAvatarDestroyed -= UserInfo_BeforeAvatarDestroyed;
+            }
+
+            if (_soundInstances != null)
+            {
+                foreach (KeyValuePair<Guid, AudioSource> soundInstance in _soundInstances)
+                {
+                    App.SoundManager.DestroySoundInstance(soundInstance.Value, soundInstance.Key);
+                }
             }
         }
 
@@ -1009,7 +1010,7 @@ namespace MixedRealityExtension.Core
                             DestroySoundById(payload.Id, soundInstance);
                             break;
                         case SoundCommand.Update:
-                            App.SoundManager.ApplySoundStateOptions(this, soundInstance, payload.Options, payload.Id);
+                            App.SoundManager.ApplySoundStateOptions(this, soundInstance, payload.Options, payload.Id, false);
                             break;
                     }
                 }
