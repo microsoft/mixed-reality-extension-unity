@@ -82,7 +82,7 @@ namespace MixedRealityExtension.Core
                 //pause must happen before other sound state changes
                 if (options.paused != null && options.paused.Value == true)
                 {
-                    if (_unpausedSoundInstances.RemoveAll(x => x.id == id)>0)
+                    if (_unpausedSoundInstances.RemoveAll(x => x.id == id) > 0)
                     {
                         soundInstance.Pause();
                     }
