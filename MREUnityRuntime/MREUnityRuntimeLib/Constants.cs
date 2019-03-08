@@ -45,7 +45,7 @@ namespace MixedRealityExtension
          * This matches major.minor from the package version number, and is updated as part of the manual
          * SDK release procedures.
          */
-        internal const string CurrentClientVersion = "0.7";
+        internal const string CurrentClientVersion = "0.8";
 
         /*
          * Minimum Supported SDK version
