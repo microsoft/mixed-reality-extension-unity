@@ -48,7 +48,7 @@ namespace MixedRealityExtension.Core
         /// <inheritdoc />
         public bool IsTrigger => _collider.isTrigger;
 
-        /// <inheritdoc />
+        // /// <inheritdoc />
         //public CollisionLayer CollisionLayer { get; set; }
 
         /// <inheritdoc />

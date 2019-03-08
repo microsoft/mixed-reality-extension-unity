@@ -32,6 +32,7 @@ namespace MixedRealityExtension.Core
         private UnityLight _light;
         private UnityCollider _collider;
         private LookAtComponent _lookAt;
+        private Dictionary<Guid, AudioSource> _soundInstances;
         private float _nextUpdateTime;
 
         private Dictionary<Type, ActorComponentBase> _components = new Dictionary<Type, ActorComponentBase>();
@@ -176,10 +177,7 @@ namespace MixedRealityExtension.Core
         internal void Destroy()
         {
             CleanUp();
-            if (gameObject.GetComponent<AudioSource>() != null)
-            {
-                App.SoundManager.RemoveSoundInstancesForActor(gameObject);
-            }
+
             Destroy(gameObject);
         }
 
@@ -354,6 +352,14 @@ namespace MixedRealityExtension.Core
             if (userInfo != null)
             {
                 userInfo.BeforeAvatarDestroyed -= UserInfo_BeforeAvatarDestroyed;
+            }
+
+            if (_soundInstances != null)
+            {
+                foreach (KeyValuePair<Guid, AudioSource> soundInstance in _soundInstances)
+                {
+                    App.SoundManager.DestroySoundInstance(soundInstance.Value, soundInstance.Key);
+                }
             }
         }
 
@@ -984,51 +990,53 @@ namespace MixedRealityExtension.Core
         {
             if (payload.SoundCommand == SoundCommand.Start)
             {
-                var obj = MREAPI.AppsAPI.AssetCache.GetAsset(payload.SoundAssetId);
-                var audioClip = MREAPI.AppsAPI.AssetCache.GetAsset(payload.SoundAssetId) as AudioClip;
-                if (audioClip != null)
+                AudioSource soundInstance = App.SoundManager.TryAddSoundInstance(this, payload.Id, payload.SoundAssetId, payload.Options, payload.StartTimeOffset);
+                if (soundInstance)
                 {
-                    float offset = payload.StartTimeOffset;
-                    if (payload.Options.Looping != null && payload.Options.Looping.Value)
+                    if (_soundInstances == null)
                     {
-                        offset = payload.StartTimeOffset % audioClip.length;
+                        _soundInstances = new Dictionary<Guid, AudioSource>();
                     }
-                    if (offset < audioClip.length)
-                    {
-                        var soundInstance = gameObject.AddComponent<AudioSource>();
-                        soundInstance.clip = audioClip;
-                        soundInstance.time = offset;
-                        soundInstance.spatialBlend = 1.0f;
-                        soundInstance.spread = 90.0f;   //only affects multichannel sounds. Default to 50% spread, 50% stereo.
-                        soundInstance.minDistance = 1.0f;
-                        soundInstance.maxDistance = 1000000.0f;
-                        App.SoundManager.TrackUnpauseSound(payload.Id);
-                        App.SoundManager.ApplySoundStateOptions(soundInstance, payload.Options, payload.Id);
-                        if (payload.Options.paused == null || payload.Options.paused.Value == false)
-                        {
-                            soundInstance.Play();
-                        }
-                        App.SoundManager.AddSoundInstance(payload.Id, soundInstance);
-                    }
+                    _soundInstances.Add(payload.Id, soundInstance);
                 }
             }
             else
             {
-                if (App.SoundManager.TryGetSoundInstance(payload.Id, out AudioSource soundInstance))
+                if (_soundInstances != null && _soundInstances.TryGetValue(payload.Id, out AudioSource soundInstance))
                 {
                     switch (payload.SoundCommand)
                     {
                         case SoundCommand.Stop:
-                            App.SoundManager.DestroySoundInstance(soundInstance, payload.Id);
+                            DestroySoundById(payload.Id, soundInstance);
                             break;
                         case SoundCommand.Update:
-                            App.SoundManager.ApplySoundStateOptions(soundInstance, payload.Options, payload.Id);
+                            App.SoundManager.ApplySoundStateOptions(this, soundInstance, payload.Options, payload.Id, false);
                             break;
                     }
                 }
             }
             onCompleteCallback?.Invoke();
         }
+
+        public bool CheckIfSoundExpired(Guid id)
+        {
+            if (_soundInstances != null && _soundInstances.TryGetValue(id, out AudioSource soundInstance))
+            {
+                if (soundInstance.isPlaying)
+                {
+                    return false;
+                }
+                DestroySoundById(id, soundInstance);
+            }
+            return true;
+        }
+
+        private void DestroySoundById(Guid id, AudioSource soundInstance)
+        {
+            _soundInstances.Remove(id);
+            App.SoundManager.DestroySoundInstance(soundInstance, id);
+        }
+
 
         [CommandHandler(typeof(InterpolateActor))]
         private void OnInterpolateActor(InterpolateActor payload, Action onCompleteCallback)

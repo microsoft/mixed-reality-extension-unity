@@ -1,5 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
+using MixedRealityExtension.API;
 using MixedRealityExtension.App;
 using System;
 using System.Collections.Generic;
@@ -10,6 +11,17 @@ using UnityEngine;
 
 namespace MixedRealityExtension.Core
 {
+    internal struct SoundInstance
+    {
+        public Guid id;
+        public Actor actor;
+        public SoundInstance(Guid id, Actor actor)
+        {
+            this.id = id;
+            this.actor = actor;
+        }
+    }
+
     internal class SoundManager
     {
         #region Constructor
@@ -23,43 +35,55 @@ namespace MixedRealityExtension.Core
 
         #region Public Methods
 
-        public void AddSoundInstance(Guid id, AudioSource soundInstance)
+        public AudioSource TryAddSoundInstance(Actor actor, Guid id, Guid soundAssetId, SoundStateOptions options, float? startTimeOffset)
         {
-            _soundInstances.Add(id, soundInstance);
-        }
-
-        public bool TryGetSoundInstance(Guid id, out AudioSource soundInstance)
-        {
-            return _soundInstances.TryGetValue(id, out soundInstance);
-        }
-
-        public void TrackUnpauseSound(Guid id)
-        {
-            _unpausedSoundInstances.Add(id);
-        }
-
-        public void RemoveSoundInstancesForActor(GameObject gameObject)
-        {
-            foreach (KeyValuePair<Guid, AudioSource> soundInstance in _soundInstances)
+            var obj = MREAPI.AppsAPI.AssetCache.GetAsset(soundAssetId);
+            var audioClip = MREAPI.AppsAPI.AssetCache.GetAsset(soundAssetId) as AudioClip;
+            if (audioClip != null)
             {
-                if (soundInstance.Value.gameObject == gameObject)
+                float offset = startTimeOffset.GetValueOrDefault();
+                if (options.Looping != null && options.Looping.Value)
                 {
-                    DestroySoundInstance(soundInstance.Value, soundInstance.Key);
+                    offset = offset % audioClip.length;
+                }
+                if (offset < audioClip.length)
+                {
+                    var soundInstance = actor.gameObject.AddComponent<AudioSource>();
+                    soundInstance.clip = audioClip;
+                    soundInstance.time = offset;
+                    soundInstance.spatialBlend = 1.0f;
+                    soundInstance.spread = 90.0f;   //only affects multichannel sounds. Default to 50% spread, 50% stereo.
+                    soundInstance.minDistance = 1.0f;
+                    soundInstance.maxDistance = 1000000.0f;
+                    ApplySoundStateOptions(actor, soundInstance, options, id, true);
+                    if (options.paused != null && options.paused.Value == true)
+                    {
+                        //start as paused
+                        soundInstance.Play();
+                        soundInstance.Pause();
+                    }
+                    else
+                    {
+                        //start as unpaused
+                        _unpausedSoundInstances.Add(new SoundInstance(id, actor));
+                        soundInstance.Play();
+                    }
+                    return soundInstance;
                 }
             }
+            return null;
         }
 
-        public void ApplySoundStateOptions(AudioSource soundInstance, SoundStateOptions options, Guid id)
+
+        public void ApplySoundStateOptions(Actor actor, AudioSource soundInstance, SoundStateOptions options, Guid id, bool startSound)
         {
             if (options != null)
             {
                 //pause must happen before other sound state changes
                 if (options.paused != null && options.paused.Value == true)
                 {
-                    var index = _unpausedSoundInstances.FindIndex(x => x == id);
-                    if (index >= 0)
+                    if (_unpausedSoundInstances.RemoveAll(x => x.id == id) > 0)
                     {
-                        _unpausedSoundInstances.RemoveAt(index);
                         soundInstance.Pause();
                     }
                 }
@@ -81,9 +105,9 @@ namespace MixedRealityExtension.Core
                 {
                     soundInstance.dopplerLevel = options.Doppler.Value;
                 }
-                if (options.MultiChannelSpread != null)
+                if (options.Spread != null)
                 {
-                    soundInstance.spread = options.MultiChannelSpread.Value * 180.0f;
+                    soundInstance.spread = options.Spread.Value * 180.0f;
                 }
                 if (options.RolloffStartDistance != null)
                 {
@@ -92,17 +116,17 @@ namespace MixedRealityExtension.Core
                 }
 
                 //unpause must happen after other sound state changes
-                if (options.paused != null && options.paused.Value == false)
+                if (!startSound)
                 {
-                    var index = _unpausedSoundInstances.FindIndex(x => x == id);
-                    if (index < 0)
+                    if (options.paused != null && options.paused.Value == false)
                     {
-                        soundInstance.UnPause();
-                        _unpausedSoundInstances.Add(id);
+                        if (!_unpausedSoundInstances.Exists(x => x.id == id))
+                        {
+                            soundInstance.UnPause();
+                            _unpausedSoundInstances.Add(new SoundInstance(id, actor));
+                        }
                     }
                 }
-
-
             }
         }
 
@@ -115,12 +139,8 @@ namespace MixedRealityExtension.Core
             }
             else
             {
-                var id = _unpausedSoundInstances[_soundStoppedCheckIndex];
-                if (_soundInstances.TryGetValue(id, out AudioSource soundInstance) && !soundInstance.isPlaying)
-                {
-                    DestroySoundInstance(soundInstance, id);
-                }
-                else
+                var soundInstance = _unpausedSoundInstances[_soundStoppedCheckIndex];
+                if (!soundInstance.actor.CheckIfSoundExpired(soundInstance.id))
                 {
                     _soundStoppedCheckIndex++;
                 }
@@ -131,20 +151,14 @@ namespace MixedRealityExtension.Core
 
         public void DestroySoundInstance(AudioSource soundInstance, Guid id)
         {
+            _unpausedSoundInstances.RemoveAll(x => x.id == id);
             Component.Destroy(soundInstance);
-            _soundInstances.Remove(id);
-            var index = _unpausedSoundInstances.FindIndex(x => x == id);
-            if (index >= 0)
-            {
-                _unpausedSoundInstances.RemoveAt(index);
-            }
         }
 
         #region Private Fields
 
         MixedRealityExtensionApp _app;
-        private static Dictionary<Guid, AudioSource> _soundInstances = new Dictionary<Guid, AudioSource>();
-        private static List<Guid> _unpausedSoundInstances = new List<Guid>();
+        private List<SoundInstance> _unpausedSoundInstances = new List<SoundInstance>();
         private int _soundStoppedCheckIndex = 0;
 
         #endregion
