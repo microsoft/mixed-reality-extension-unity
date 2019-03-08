@@ -599,7 +599,10 @@ namespace MixedRealityExtension.Core
 
         private void PatchParent(Guid? parentId)
         {
-            if (!parentId.HasValue) return;
+            if (!parentId.HasValue)
+            {
+                return;
+            }
 
             var newParent = App.FindActor(parentId.Value);
             if (parentId.Value != ParentId && newParent != null)
@@ -626,9 +629,12 @@ namespace MixedRealityExtension.Core
 
         private void PatchAppearance(AppearancePatch appearance)
         {
-            if (appearance == null || Renderer == null) return;
+            if (appearance == null || Renderer == null)
+            {
+                return;
+            }
 
-            if(appearance.Enabled != null)
+            if (appearance.Enabled != null)
             {
                 AppearanceEnabled = appearance.Enabled.Value;
                 ApplyVisibilityUpdate(this);
@@ -661,10 +667,12 @@ namespace MixedRealityExtension.Core
         private static void ApplyVisibilityUpdate(Actor actor)
         {
             if (actor.Renderer.enabled == actor.ActiveAndEnabled)
+            {
                 return;
+            }
 
             actor.Renderer.enabled = actor.ActiveAndEnabled;
-            foreach(var child in actor.App.FindChildren(actor.Id))
+            foreach (var child in actor.App.FindChildren(actor.Id))
             {
                 ApplyVisibilityUpdate(child);
             }
