@@ -20,8 +20,8 @@ public class InstantiateTests : MonoBehaviour
             var test = GameObject.Instantiate(functionalTestPrefab, transform.parent);
             test.name = testName;
             test.transform.Find("Label").GetComponent<TextMesh>().text = testName;
-            var mre = test.GetComponentInChildren<MREComponent>();
-            if (mre != null)
+            var mres = test.GetComponentsInChildren<MREComponent>();
+            foreach(var mre in mres)
             {
                 mre.SessionID = testName;
                 mre.MREURL = $"{MREURL}?test={testName}&autorun=true";
