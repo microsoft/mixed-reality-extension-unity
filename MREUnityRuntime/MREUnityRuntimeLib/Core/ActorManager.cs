@@ -40,39 +40,32 @@ namespace MixedRealityExtension.Core
         {
             foreach (var id in ids)
             {
-                var destroyActorCommand = new LocalCommand
+                if (_actorCommandQueues.TryGetValue(id, out ActorCommandQueue queue))
                 {
-                    Command = () =>
-                    {
-                        if (_actorCommandQueues.TryGetValue(id, out ActorCommandQueue queue))
-                        {
-                            // Clear the queue so that pending messages are canceled.
-                            queue.Clear();
-                            _actorCommandQueues.Remove(id);
-                        }
+                    // Clear the queue so that pending messages are canceled.
+                    queue.Clear();
+                    _actorCommandQueues.Remove(id);
+                }
 
-                        if (!_actorMapping.ContainsKey(id))
-                        {
-                            var message = "destroy-actors: Actor not found: " + id.ToString() + ".";
-                            MREAPI.Logger.LogError(message);
-                        }
-                        else
-                        {
-                            var actor = _actorMapping[id];
-                            _actorMapping.Remove(id);
-                            try
-                            {
-                                actor.Destroy();
-                            }
-                            catch (Exception e)
-                            {
-                                MREAPI.Logger.LogError(e.ToString());
-                            }
-                            // Is there any other cleanup?  Do it here.
-                        }
+                if (!_actorMapping.ContainsKey(id))
+                {
+                    var message = "destroy-actors: Actor not found: " + id.ToString() + ".";
+                    MREAPI.Logger.LogError(message);
+                }
+                else
+                {
+                    var actor = _actorMapping[id];
+                    _actorMapping.Remove(id);
+                    try
+                    {
+                        actor.Destroy();
                     }
-                };
-                ProcessActorCommand(id, destroyActorCommand, null);
+                    catch (Exception e)
+                    {
+                        MREAPI.Logger.LogError(e.ToString());
+                    }
+                    // Is there any other cleanup?  Do it here.
+                }
             }
         }
 
