@@ -432,6 +432,11 @@ Prefab:
       propertyPath: m_WalkSpeed
       value: 20
       objectReference: {fileID: 0}
+    - target: {fileID: 224157667028544564, guid: d67a625648c6fd743a7451d9b6d5357a,
+        type: 2}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_ParentPrefab: {fileID: 100100000, guid: d67a625648c6fd743a7451d9b6d5357a, type: 2}
   m_IsPrefabParent: 0
@@ -860,13 +865,16 @@ MonoBehaviour:
   - gltf-gen-test
   - input-test
   - interpolation-test
-  - library-test
+  - light-test
   - look-at-test
+  - physics-sim-test
   - primitives-test
   - reparent-test
   - rigid-body-test
+  - sound-test
   - text-test
   - user-test
+  - visibility-test
 --- !u!1 &1651315071
 GameObject:
   m_ObjectHideFlags: 0
