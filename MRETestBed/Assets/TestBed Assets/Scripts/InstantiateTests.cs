@@ -24,7 +24,7 @@ public class InstantiateTests : MonoBehaviour
             foreach(var mre in mres)
             {
                 mre.SessionID = testName;
-                mre.MREURL = $"{MREURL}?test={testName}&autorun=true";
+                mre.MREURL = $"{MREURL}?test={testName}&autorun=true&nomenu=true";
                 mre.AppID = testName;
                 mre.UserGameObject = transform.parent.Find("FPSControllerWithCursor").gameObject;
             }
