@@ -651,7 +651,7 @@ namespace MixedRealityExtension.Core
                 originalMaterial = Instantiate(Renderer.sharedMaterial);
             }
 
-            if (appearance.MaterialId != null && appearance.MaterialId == Guid.Empty)
+            if (appearance.MaterialId == Guid.Empty)
             {
                 Renderer.sharedMaterial = originalMaterial;
             }

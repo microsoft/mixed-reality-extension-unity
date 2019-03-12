@@ -149,33 +149,54 @@ namespace MixedRealityExtension.Assets
 
             IList<Asset> assets = null;
             string failureMessage = null;
-            try
+
+            // attempt to get cached assets instead of loading
+            var oldGuids = MREAPI.AppsAPI.AssetCache.GetAssetIdsInSource(payload.Source);
+            if (oldGuids != null)
             {
-                assets = await loader(payload.Source, payload.ColliderType);
-            }
-            catch (Exception e)
-            {
-                failureMessage = UtilMethods.FormatException(
-                    $"An unexpected error occurred while loading the asset [{payload.Source.Uri}].", e);
-            }
-            finally
-            {
-                _app.Protocol.Send(new Message()
+                assets = new List<Asset>(5);
+                foreach (var guid in oldGuids)
                 {
-                    ReplyToId = payload.MessageId,
-                    Payload = new AssetsLoaded()
-                    {
-                        FailureMessage = failureMessage,
-                        Assets = assets ?? new Asset[] { }
-                    }
-                });
-                onCompleteCallback?.Invoke();
+                    var oldAsset = MREAPI.AppsAPI.AssetCache.GetAsset(guid);
+                    if (oldAsset == null)
+                        continue;
+
+                    var patch = generateAssetPatch(oldAsset, guid);
+                    patch.Name = oldAsset.name;
+                    patch.Source = payload.Source;
+                    assets.Add(patch);
+                }
             }
+            else
+            {
+                try
+                {
+                    assets = await loader(payload.Source, payload.ColliderType);
+                }
+                catch (Exception e)
+                {
+                    failureMessage = UtilMethods.FormatException(
+                        $"An unexpected error occurred while loading the asset [{payload.Source.Uri}].", e);
+                }
+            }
+            
+            _app.Protocol.Send(new Message()
+            {
+                ReplyToId = payload.MessageId,
+                Payload = new AssetsLoaded()
+                {
+                    FailureMessage = failureMessage,
+                    Assets = assets ?? new Asset[] { }
+                }
+            });
+            onCompleteCallback?.Invoke();
         }
 
         private async Task<IList<Asset>> LoadAssetsFromGLTF(AssetSource source, ColliderType colliderType)
         {
             IList<Asset> assets = new List<Asset>();
+
+            
             DeterministicGuids guidGenerator = new DeterministicGuids(UtilMethods.StringToGuid(source.ParsedUri.AbsoluteUri));
 
             // download file
@@ -200,12 +221,13 @@ namespace MixedRealityExtension.Assets
                     await importer.LoadSceneAsync(i);
 
                     GameObject rootObject = importer.LastLoadedScene;
+                    rootObject.name = gltfRoot.Scenes[i].Name ?? $"scene:{i}";
                     MWGOTreeWalker.VisitTree(rootObject, (go) => {
                         go.layer = UnityConstants.ActorLayerIndex;
                     });
 
                     var def = generateAssetPatch(rootObject, guidGenerator.Next());
-                    def.Name = gltfRoot.Scenes[i].Name ?? $"scene:{i}";
+                    def.Name = rootObject.name;
                     def.Source = new AssetSource(source.ContainerType, source.Uri, $"scene:{i}");
                     MREAPI.AppsAPI.AssetCache.CacheAsset(rootObject, def.Id, source);
                     assets.Add(def);
@@ -219,9 +241,11 @@ namespace MixedRealityExtension.Assets
                 {
                     await importer.LoadTextureAsync(gltfRoot.Textures[i], i, true);
                     var texture = importer.GetTexture(i);
+                    texture.name = gltfRoot.Textures[i].Name ?? $"texture:{i}";
+
                     var asset = generateAssetPatch(texture, guidGenerator.Next());
-                    asset.Name = $"texture:{i}";
-                    asset.Source = new AssetSource(source.ContainerType, source.Uri, asset.Name);
+                    asset.Name = texture.name;
+                    asset.Source = new AssetSource(source.ContainerType, source.Uri, $"texture:{i}");
                     MREAPI.AppsAPI.AssetCache.CacheAsset(texture, asset.Id, source);
                     assets.Add(asset);
                 }
@@ -233,9 +257,11 @@ namespace MixedRealityExtension.Assets
                 for (var i = 0; i < gltfRoot.Materials.Count; i++)
                 {
                     var material = await importer.LoadMaterialAsync(i);
+                    material.name = gltfRoot.Materials[i].Name ?? $"material:{i}";
+
                     var asset = generateAssetPatch(material, guidGenerator.Next());
-                    asset.Name = $"material:{i}";
-                    asset.Source = new AssetSource(source.ContainerType, source.Uri, asset.Name);
+                    asset.Name = material.name;
+                    asset.Source = new AssetSource(source.ContainerType, source.Uri, $"material:{i}");
                     MREAPI.AppsAPI.AssetCache.CacheAsset(material, asset.Id, source);
                     assets.Add(asset);
                 }
@@ -260,9 +286,8 @@ namespace MixedRealityExtension.Assets
                 if (matdef.MainTextureId != null && matdef.MainTextureId != Guid.Empty)
                 {
                     assignOrQueueTexture(def.Id, matdef.MainTextureId.Value);
-                    matdef.MainTextureId = null;
+                    matdef.MainTextureId = null; // so the MaterialPatcher doesn't pick it up
                 }
-
                 MREAPI.AppsAPI.MaterialPatcher.ApplyMaterialPatch(mat, matdef);
             }
             else if(def.Texture != null && tex != null)

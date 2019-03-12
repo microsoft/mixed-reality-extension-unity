@@ -102,7 +102,7 @@
     <Compile Include="Core\SoundStateOptions.cs" />
     <Compile Include="Core\Types\MWVector2.cs" />
     <Compile Include="Core\UserManager.cs" />
-    <Compile Include="Factories\DefaultMaterialApplicator.cs" />
+    <Compile Include="Factories\DefaultMaterialPatcher.cs" />
     <Compile Include="Patching\Types\AppearancePatch.cs" />
     <Compile Include="Patching\Types\LookAtPatch.cs" />
     <Compile Include="PluginInterfaces\IUserInfoProvider.cs" />
