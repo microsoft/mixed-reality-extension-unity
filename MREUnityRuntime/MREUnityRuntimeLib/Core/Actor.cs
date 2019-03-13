@@ -48,7 +48,7 @@ namespace MixedRealityExtension.Core
 
         /// <inheritdoc />
         [HideInInspector]
-        public IActor Parent => ParentId.HasValue ? App.FindActor(ParentId.Value) : null;
+        public IActor Parent => App.FindActor(ParentId);
 
         /// <inheritdoc />
         [HideInInspector]
@@ -62,7 +62,7 @@ namespace MixedRealityExtension.Core
 
         #region Properties - Internal
 
-        internal Guid? ParentId { get; private set; }
+        internal Guid ParentId { get; set; } = Guid.Empty;
 
         internal RigidBody RigidBody { get; private set; }
 
@@ -77,7 +77,7 @@ namespace MixedRealityExtension.Core
 
         internal MWTransform LocalTransform => transform.ToMWTransform();
 
-        internal Guid? MaterialId { get; set; }
+        internal Guid MaterialId { get; set; } = Guid.Empty;
         private UnityEngine.Material originalMaterial;
 
         private bool AppearanceEnabled = true;
@@ -187,10 +187,6 @@ namespace MixedRealityExtension.Core
 
         internal ActorPatch GenerateInitialPatch()
         {
-            if (ParentId == null)
-            {
-                ParentId = Parent?.Id ?? Guid.Empty;
-            }
             Transform = gameObject.transform.ToMWTransform();
             var transform = new TransformPatch()
             {
@@ -290,11 +286,6 @@ namespace MixedRealityExtension.Core
                 ResultCode = OperationResultCode.Error,
                 Message = string.Format("Failed to create and enable the text object for actor with id {0}", Id)
             };
-        }
-
-        internal IActor GetParent()
-        {
-            return ParentId != null ? App.FindActor(ParentId.Value) : Parent;
         }
 
         internal void AddSubscriptions(IEnumerable<ActorComponentType> adds)

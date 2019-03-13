@@ -90,13 +90,11 @@ namespace MixedRealityExtension.Assets
 
             await importer.LoadSceneAsync().ConfigureAwait(true);
 
+            // note: actor properties are set in App#ProcessCreatedActors
             IList<Actor> actors = new List<Actor>();
             MWGOTreeWalker.VisitTree(importer.LastLoadedScene, (go) =>
             {
-                // Set layer index
                 go.layer = UnityConstants.ActorLayerIndex;
-
-                // Wrap as an actor and clear parent if the object is the scene root.
                 actors.Add(go.AddComponent<Actor>());
             });
 
@@ -116,17 +114,12 @@ namespace MixedRealityExtension.Assets
             GameObject instance = UnityEngine.Object.Instantiate(
                 prefab, GetGameObjectFromParentId(parentId).transform, false);
 
+            // note: actor properties are set in App#ProcessCreatedActors
             var actorList = new List<Actor>();
             MWGOTreeWalker.VisitTree(instance, go =>
             {
-                var actor = go.AddComponent<Actor>();
-                actorList.Add(actor);
-
-                var renderer = go.GetComponent<Renderer>();
-                if (renderer != null)
-                {
-                    actor.MaterialId = MREAPI.AppsAPI.AssetCache.GetId(renderer.sharedMaterial);
-                }
+                go.layer = UnityConstants.ActorLayerIndex;
+                actorList.Add(go.AddComponent<Actor>());
             });
 
             return actorList;
