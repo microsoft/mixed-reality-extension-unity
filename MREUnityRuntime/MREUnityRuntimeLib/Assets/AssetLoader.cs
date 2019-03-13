@@ -188,8 +188,6 @@ namespace MixedRealityExtension.Assets
         private async Task<IList<Asset>> LoadAssetsFromGLTF(AssetSource source, ColliderType colliderType)
         {
             IList<Asset> assets = new List<Asset>();
-
-            
             DeterministicGuids guidGenerator = new DeterministicGuids(UtilMethods.StringToGuid(source.ParsedUri.AbsoluteUri));
 
             // download file
