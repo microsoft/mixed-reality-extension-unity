@@ -152,9 +152,11 @@ namespace MixedRealityExtension.Assets
                 {
                     var oldAsset = MREAPI.AppsAPI.AssetCache.GetAsset(guid);
                     if (oldAsset == null)
+                    {
                         continue;
+                    }
 
-                    var patch = generateAssetPatch(oldAsset, guid);
+                    var patch = GenerateAssetPatch(oldAsset, guid);
                     patch.Name = oldAsset.name;
                     patch.Source = payload.Source;
                     assets.Add(patch);
@@ -213,11 +215,12 @@ namespace MixedRealityExtension.Assets
 
                     GameObject rootObject = importer.LastLoadedScene;
                     rootObject.name = gltfRoot.Scenes[i].Name ?? $"scene:{i}";
-                    MWGOTreeWalker.VisitTree(rootObject, (go) => {
+                    MWGOTreeWalker.VisitTree(rootObject, (go) =>
+                    {
                         go.layer = UnityConstants.ActorLayerIndex;
                     });
 
-                    var def = generateAssetPatch(rootObject, guidGenerator.Next());
+                    var def = GenerateAssetPatch(rootObject, guidGenerator.Next());
                     def.Name = rootObject.name;
                     def.Source = new AssetSource(source.ContainerType, source.Uri, $"scene:{i}");
                     MREAPI.AppsAPI.AssetCache.CacheAsset(rootObject, def.Id, source);
@@ -234,7 +237,7 @@ namespace MixedRealityExtension.Assets
                     var texture = importer.GetTexture(i);
                     texture.name = gltfRoot.Textures[i].Name ?? $"texture:{i}";
 
-                    var asset = generateAssetPatch(texture, guidGenerator.Next());
+                    var asset = GenerateAssetPatch(texture, guidGenerator.Next());
                     asset.Name = texture.name;
                     asset.Source = new AssetSource(source.ContainerType, source.Uri, $"texture:{i}");
                     MREAPI.AppsAPI.AssetCache.CacheAsset(texture, asset.Id, source);
@@ -250,7 +253,7 @@ namespace MixedRealityExtension.Assets
                     var material = await importer.LoadMaterialAsync(i);
                     material.name = gltfRoot.Materials[i].Name ?? $"material:{i}";
 
-                    var asset = generateAssetPatch(material, guidGenerator.Next());
+                    var asset = GenerateAssetPatch(material, guidGenerator.Next());
                     asset.Name = material.name;
                     asset.Source = new AssetSource(source.ContainerType, source.Uri, $"material:{i}");
                     MREAPI.AppsAPI.AssetCache.CacheAsset(material, asset.Id, source);
@@ -345,7 +348,7 @@ namespace MixedRealityExtension.Assets
 
                 try
                 {
-                    response.Assets = new Asset[] { generateAssetPatch(unityAsset, def.Id) };
+                    response.Assets = new Asset[] { GenerateAssetPatch(unityAsset, def.Id) };
                 }
                 catch(Exception e)
                 {
@@ -368,7 +371,7 @@ namespace MixedRealityExtension.Assets
             onCompleteCallback?.Invoke();
         }
 
-        private Asset generateAssetPatch(UnityEngine.Object unityAsset, Guid id)
+        private Asset GenerateAssetPatch(UnityEngine.Object unityAsset, Guid id)
         {
             if (unityAsset is GameObject go)
             {
