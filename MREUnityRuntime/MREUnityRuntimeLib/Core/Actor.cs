@@ -78,7 +78,6 @@ namespace MixedRealityExtension.Core
         internal MWTransform LocalTransform => transform.ToMWTransform();
 
         internal Guid MaterialId { get; set; } = Guid.Empty;
-        private UnityEngine.Material originalMaterial;
 
         private bool AppearanceEnabled = true;
         private bool ActiveAndEnabled => ((Parent as Actor)?.ActiveAndEnabled ?? true) && AppearanceEnabled;
@@ -637,14 +636,9 @@ namespace MixedRealityExtension.Core
                 ApplyVisibilityUpdate(this);
             }
 
-            if (originalMaterial == null)
-            {
-                originalMaterial = Instantiate(Renderer.sharedMaterial);
-            }
-
             if (appearance.MaterialId == Guid.Empty)
             {
-                Renderer.sharedMaterial = originalMaterial;
+                Renderer.sharedMaterial = MREAPI.AppsAPI.DefaultMaterial;
             }
             else if (appearance.MaterialId != null)
             {
