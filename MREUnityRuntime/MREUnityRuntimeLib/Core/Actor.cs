@@ -79,10 +79,11 @@ namespace MixedRealityExtension.Core
         internal MWTransform LocalTransform => transform.ToMWTransform();
 
         internal Guid MaterialId { get; set; } = Guid.Empty;
-		
-		internal bool Grabbable { get; private set; }
-		
-        private bool AppearanceEnabled = true;
+
+        internal bool Grabbable { get; private set; }
+        
+        private bool AppearanceEnabled { get; set; } = true;
+
         private bool ActiveAndEnabled => ((Parent as Actor)?.ActiveAndEnabled ?? true) && AppearanceEnabled;
 
         #endregion
@@ -164,6 +165,7 @@ namespace MixedRealityExtension.Core
             PatchText(actorPatch.Text);
             PatchAttachment(actorPatch.Attachment);
             PatchLookAt(actorPatch.LookAt);
+            PatchGrabbable(actorPatch.Grabbable);
         }
 
         internal void SynchronizeEngine(ActorPatch actorPatch)
@@ -787,7 +789,7 @@ namespace MixedRealityExtension.Core
             {
                 // Update existing behavior or add a basic target behavior if there isn't one already.
                 var behaviorComponent = GetActorComponent<BehaviorComponent>();
-                if (behaviorComponent != null)
+                if (behaviorComponent == null)
                 {
                     behaviorComponent = GetOrCreateActorComponent<BehaviorComponent>();
                     var handler = BehaviorHandlerFactory.CreateBehaviorHandler(BehaviorType.Target, this, new WeakReference<MixedRealityExtensionApp>(App));
@@ -795,6 +797,8 @@ namespace MixedRealityExtension.Core
                 }
 
                 ((ITargetBehavior)behaviorComponent.Behavior).Grabbable = grabbable.Value;
+
+                Grabbable = grabbable.Value;
             }
         }
 

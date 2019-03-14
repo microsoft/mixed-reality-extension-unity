@@ -30,6 +30,9 @@ namespace MixedRealityExtension.Patching.Types
         [PatchProperty]
         public LookAtPatch LookAt { get; set; }
 
+        [PatchProperty]
+        public bool? Grabbable { get; set; }
+
         public ActorPatch()
         {
         }
