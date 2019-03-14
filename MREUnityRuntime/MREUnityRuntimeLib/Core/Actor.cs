@@ -151,8 +151,8 @@ namespace MixedRealityExtension.Core
 
         internal void ApplyPatch(ActorPatch actorPatch)
         {
-            PatchParent(actorPatch.ParentId);
             PatchName(actorPatch.Name);
+            PatchParent(actorPatch.ParentId);
             PatchAppearance(actorPatch.Appearance);
             PatchTransform(actorPatch.Transform);
             PatchLight(actorPatch.Light);
@@ -601,17 +601,25 @@ namespace MixedRealityExtension.Core
             }
 
             var newParent = App.FindActor(parentId.Value);
-            if (parentId.Value != ParentId && newParent != null)
+            if (parentId.Value == Guid.Empty)
+            {
+                // clear parent
+                ParentId = Guid.Empty;
+                transform.SetParent(App.SceneRoot.transform, false);
+            }
+            else if (parentId.Value != ParentId && newParent != null)
             {
                 // reassign parent
                 ParentId = parentId.Value;
                 transform.SetParent(((Actor)newParent).transform, false);
             }
-            else
+            else if (parentId.Value != ParentId)
             {
-                // clear parent
-                ParentId = Guid.Empty;
-                transform.SetParent(App.SceneRoot.transform, false);
+                // queue parent reassignment
+                App.ProcessActorCommand(parentId.Value, new LocalCommand()
+                {
+                    Command = () => PatchParent(parentId.Value)
+                }, null);
             }
         }
 
@@ -620,6 +628,7 @@ namespace MixedRealityExtension.Core
             if (nameOrNull != null)
             {
                 Name = nameOrNull;
+                name = Name;
             }
         }
 

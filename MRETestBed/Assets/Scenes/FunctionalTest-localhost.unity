@@ -873,6 +873,7 @@ MonoBehaviour:
   - rigid-body-test
   - sound-test
   - text-test
+  - transform-test
   - user-test
   - visibility-test
 --- !u!1 &1651315071

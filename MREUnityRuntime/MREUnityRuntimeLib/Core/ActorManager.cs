@@ -106,7 +106,7 @@ namespace MixedRealityExtension.Core
             queue.Enqueue(payload, onCompleteCallback);
         }
 
-        private List<ActorCommandQueue> _queuesForUpdate = new List<ActorCommandQueue>();
+        private List<ActorCommandQueue> _queuesForUpdate = new List<ActorCommandQueue>(10);
 
         internal void Update()
         {

@@ -383,6 +383,14 @@ namespace MixedRealityExtension.App
             _commandManager.ExecuteCommandPayload(handlerContext, commandPayload, onCompleteCallback);
         }
 
+        /// <summary>
+        /// Used to set actor parents when the parent is pending
+        /// </summary>
+        internal void ProcessActorCommand(Guid actorId, NetworkCommandPayload payload, Action onCompleteCallback)
+        {
+            _actorManager.ProcessActorCommand(actorId, payload, onCompleteCallback);
+        }
+
         internal bool OwnsActor(IActor actor)
         {
             return FindActor(actor.Id) != null;
@@ -393,25 +401,6 @@ namespace MixedRealityExtension.App
         #endregion
 
         #region Methods - Private
-
-        [CommandHandler(typeof(CreateFromGLTF))]
-        private async Task OnCreateFromGLTF(CreateFromGLTF payload, Action onCompleteCallback)
-        {
-            IList<Actor> createdActors;
-            try
-            {
-                createdActors = await _assetLoader.CreateFromGLTF(payload.ResourceUrl, payload.AssetName,
-                    payload.Actor?.ParentId, payload.ColliderType);
-                ProcessCreatedActors(payload, createdActors, onCompleteCallback);
-            }
-            catch (Exception e)
-            {
-                SendCreateActorResponse(payload,
-                    failureMessage: $"An unexpected error occurred while loading glTF model [{payload.ResourceUrl}].\n{e.ToString()}",
-                    onCompleteCallback: onCompleteCallback);
-                return;
-            }
-        }
 
         private void Conn_OnConnecting()
         {
@@ -503,6 +492,25 @@ namespace MixedRealityExtension.App
         {
             RPC.ReceiveRPC(payload);
             onCompleteCallback?.Invoke();
+        }
+
+        [CommandHandler(typeof(CreateFromGLTF))]
+        private async Task OnCreateFromGLTF(CreateFromGLTF payload, Action onCompleteCallback)
+        {
+            IList<Actor> createdActors;
+            try
+            {
+                createdActors = await _assetLoader.CreateFromGLTF(payload.ResourceUrl, payload.AssetName,
+                    payload.Actor?.ParentId, payload.ColliderType);
+                ProcessCreatedActors(payload, createdActors, onCompleteCallback);
+            }
+            catch (Exception e)
+            {
+                SendCreateActorResponse(payload,
+                    failureMessage: $"An unexpected error occurred while loading glTF model [{payload.ResourceUrl}].\n{e.ToString()}",
+                    onCompleteCallback: onCompleteCallback);
+                return;
+            }
         }
 
         [CommandHandler(typeof(CreateFromLibrary))]
