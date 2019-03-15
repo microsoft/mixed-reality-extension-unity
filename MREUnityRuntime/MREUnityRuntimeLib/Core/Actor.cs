@@ -117,8 +117,9 @@ namespace MixedRealityExtension.Core
                 var actorPatch = new ActorPatch(Id);
 
                 // We need to detect for changes in parent on the client, and handle updating the server.
+                // But only update if the identified parent is not pending.
                 var parentId = Parent?.Id ?? Guid.Empty;
-                if (ParentId != parentId)
+                if (ParentId != parentId && App.FindActor(ParentId) != null)
                 {
                     // TODO @tombu - Determine if the new parent is an actor in OUR MRE.
                     // TODO: Add in MRE ID's to help identify whether the new parent is in our MRE or not, not just
@@ -601,7 +602,7 @@ namespace MixedRealityExtension.Core
             }
 
             var newParent = App.FindActor(parentId.Value);
-            if (parentId.Value == Guid.Empty)
+            if (parentId.Value != ParentId && parentId.Value == Guid.Empty)
             {
                 // clear parent
                 ParentId = Guid.Empty;
@@ -616,9 +617,17 @@ namespace MixedRealityExtension.Core
             else if (parentId.Value != ParentId)
             {
                 // queue parent reassignment
-                App.ProcessActorCommand(parentId.Value, new LocalCommand()
+                ParentId = parentId.Value;
+                App.ProcessActorCommand(ParentId, new LocalCommand()
                 {
-                    Command = () => PatchParent(parentId.Value)
+                    Command = () =>
+                    {
+                        var freshParent = App.FindActor(ParentId) as Actor;
+                        if (this != null && freshParent != null && transform.parent != freshParent.transform)
+                        {
+                            transform.SetParent(freshParent.transform, false);
+                        }
+                    }
                 }, null);
             }
         }

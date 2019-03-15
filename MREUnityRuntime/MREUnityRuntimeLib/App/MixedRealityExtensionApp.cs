@@ -576,12 +576,13 @@ namespace MixedRealityExtension.App
         private void ProcessCreatedActors(CreateActor originalMessage, IList<Actor> createdActors, Action onCompleteCallback)
         {
             var guids = new DeterministicGuids(originalMessage.Actor?.Id);
+
             foreach (var actor in createdActors)
             {
                 _actorManager.AddActor(guids.Next(), actor);
                 _ownedGameObjects.Add(actor.gameObject);
 
-                actor.ParentId = actor.transform.parent.GetComponent<Actor>()?.Id ?? Guid.Empty;
+                actor.ParentId = actor.transform.parent.GetComponent<Actor>()?.Id ?? actor.ParentId;
                 if (actor.Renderer != null)
                 {
                     actor.MaterialId = MREAPI.AppsAPI.AssetCache.GetId(actor.Renderer.sharedMaterial) ?? Guid.Empty;
