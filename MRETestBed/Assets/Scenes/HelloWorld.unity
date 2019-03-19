@@ -152,6 +152,11 @@ Prefab:
       propertyPath: m_RootOrder
       value: 3
       objectReference: {fileID: 0}
+    - target: {fileID: 224157667028544564, guid: d67a625648c6fd743a7451d9b6d5357a,
+        type: 2}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_ParentPrefab: {fileID: 100100000, guid: d67a625648c6fd743a7451d9b6d5357a, type: 2}
   m_IsPrefabParent: 0
@@ -200,9 +205,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c08c6a44e83210c48bc797284376afc5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  MREURL: ws://mre-hello-world.azurewebsites.net
-  SessionID: foo
-  AppID: solar-system-app
+  MREURL: ws://mre-helloworld.us.openode.io
+  SessionID: testbed
+  AppID: helloworld
   AutoStart: 0
   AutoJoin: 1
   SceneRoot: {fileID: 1141388990}
