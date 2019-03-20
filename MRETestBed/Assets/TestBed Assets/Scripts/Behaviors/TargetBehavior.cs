@@ -9,7 +9,11 @@ namespace Assets.Scripts.Behaviors
 {
     public class TargetBehavior : BehaviorBase, ITargetBehavior
     {
+        public bool Grabbable { get; set; }
+
         public MWAction Target { get; } = new MWAction();
+
+        public MWAction Grab { get; } = new MWAction();
 
         public override Type GetDesiredToolType()
         {

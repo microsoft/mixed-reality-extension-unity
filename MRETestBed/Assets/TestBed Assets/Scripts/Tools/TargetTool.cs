@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 using Assets.Scripts.Behaviors;
 using Assets.Scripts.User;
-using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
@@ -10,53 +9,60 @@ namespace Assets.Scripts.Tools
 {
     public class TargetTool : Tool
     {
+        private GrabTool _grabTool = new GrabTool();
+        private TargetBehavior _currentTargetBehavior;
+
         public GameObject Target { get; private set; }
 
         protected override void UpdateTool(InputSource inputSource)
         {
+            if (_currentTargetBehavior?.Grabbable ?? false)
+            {
+                _grabTool.Update(inputSource, Target);
+                if (_grabTool.GrabActive)
+                {
+                    // If a grab is active, nothing should change about the current target.
+                    return;
+                }
+            }
+
             var newTarget = FindTarget(inputSource);
             if (Target == newTarget)
             {
                 return;
             }
 
-            if (Target != null)
+            if (Target != null && _currentTargetBehavior != null)
             {
-                var oldBehaviors = Target.GetBehaviors<TargetBehavior>();
-                foreach (var behavior in oldBehaviors)
+                var mwUser = _currentTargetBehavior.GetMWUnityUser(inputSource.UserGameObject);
+                if (mwUser != null)
                 {
-                    var mwUser = behavior.GetMWUnityUser(inputSource.UserGameObject);
-                    if (mwUser != null)
-                    {
-                        behavior.Target.StopAction(mwUser);
-                    }
+                    _currentTargetBehavior.Target.StopAction(mwUser);
                 }
             }
 
-            IEnumerable<TargetBehavior> newBehaviors = null;
+            TargetBehavior newBehavior = null;
             if (newTarget != null)
             {
-                newBehaviors = newTarget.GetBehaviors<TargetBehavior>();
-                foreach (var behavior in newBehaviors)
+                newBehavior = newTarget.GetBehavior<TargetBehavior>();
+                var mwUser = newBehavior.GetMWUnityUser(inputSource.UserGameObject);
+                if (mwUser != null)
                 {
-                    var mwUser = behavior.GetMWUnityUser(inputSource.UserGameObject);
-                    if (mwUser != null)
-                    {
-                        behavior.Target.StartAction(mwUser);
-                    }
+                    newBehavior.Target.StartAction(mwUser);
                 }
             }
 
             OnTargetChanged(Target, newTarget, inputSource);
             Target = newTarget;
 
-            if (newBehaviors != null)
+            if (newBehavior != null)
             {
-                var newBehavior = newBehaviors.FirstOrDefault();
                 if (newBehavior.GetDesiredToolType() != inputSource.CurrentTool.GetType())
                 {
                     inputSource.HoldTool(newBehavior.GetDesiredToolType());
                 }
+
+                _currentTargetBehavior = newBehavior;
             }
         }
 
@@ -81,6 +87,11 @@ namespace Assets.Scripts.Tools
             }
 
             return null;
+        }
+
+        void OnDestroy()
+        {
+            _grabTool.Dispose();
         }
     }
 }

@@ -20,6 +20,7 @@ using UnityEngine;
 
 using UnityLight = UnityEngine.Light;
 using UnityCollider = UnityEngine.Collider;
+using MixedRealityExtension.PluginInterfaces.Behaviors;
 
 namespace MixedRealityExtension.Core
 {
@@ -79,7 +80,10 @@ namespace MixedRealityExtension.Core
 
         internal Guid MaterialId { get; set; } = Guid.Empty;
 
-        private bool AppearanceEnabled = true;
+        internal bool Grabbable { get; private set; }
+        
+        private bool AppearanceEnabled { get; set; } = true;
+
         private bool ActiveAndEnabled => ((Parent as Actor)?.ActiveAndEnabled ?? true) && AppearanceEnabled;
 
         #endregion
@@ -162,6 +166,7 @@ namespace MixedRealityExtension.Core
             PatchText(actorPatch.Text);
             PatchAttachment(actorPatch.Attachment);
             PatchLookAt(actorPatch.LookAt);
+            PatchGrabbable(actorPatch.Grabbable);
         }
 
         internal void SynchronizeEngine(ActorPatch actorPatch)
@@ -793,6 +798,25 @@ namespace MixedRealityExtension.Core
                     _lookAt = GetOrCreateActorComponent<LookAtComponent>();
                 }
                 _lookAt.ApplyPatch(lookAtPatch);
+            }
+        }
+
+        private void PatchGrabbable(bool? grabbable)
+        {
+            if (grabbable != null && grabbable.Value != Grabbable)
+            {
+                // Update existing behavior or add a basic target behavior if there isn't one already.
+                var behaviorComponent = GetActorComponent<BehaviorComponent>();
+                if (behaviorComponent == null)
+                {
+                    behaviorComponent = GetOrCreateActorComponent<BehaviorComponent>();
+                    var handler = BehaviorHandlerFactory.CreateBehaviorHandler(BehaviorType.Target, this, new WeakReference<MixedRealityExtensionApp>(App));
+                    behaviorComponent.SetBehaviorHandler(handler);
+                }
+
+                ((ITargetBehavior)behaviorComponent.Behavior).Grabbable = grabbable.Value;
+
+                Grabbable = grabbable.Value;
             }
         }
 

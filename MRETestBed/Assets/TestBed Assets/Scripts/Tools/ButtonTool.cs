@@ -19,7 +19,8 @@ namespace Assets.Scripts.Tools
 
             if (Input.GetButtonDown("Fire1"))
             {
-                foreach (var buttonBehavior in Target.GetBehaviors<ButtonBehavior>())
+                var buttonBehavior = Target.GetBehavior<ButtonBehavior>();
+                if (buttonBehavior != null)
                 {
                     var mwUser = buttonBehavior.GetMWUnityUser(inputSource.UserGameObject);
                     if (mwUser != null)
@@ -30,7 +31,8 @@ namespace Assets.Scripts.Tools
             }
             else if (Input.GetButtonUp("Fire1"))
             {
-                foreach (var buttonBehavior in Target.GetBehaviors<ButtonBehavior>())
+                var buttonBehavior = Target.GetBehavior<ButtonBehavior>();
+                if (buttonBehavior != null)
                 {
                     var mwUser = buttonBehavior.GetMWUnityUser(inputSource.UserGameObject);
                     if (mwUser != null)
@@ -47,13 +49,13 @@ namespace Assets.Scripts.Tools
 
             if (oldTarget != null)
             {
-                var oldBehaviors = oldTarget.GetBehaviors<ButtonBehavior>();
-                foreach (var buttonBehavior in oldBehaviors)
+                var oldBehavior = oldTarget.GetBehavior<ButtonBehavior>();
+                if (oldBehavior != null)
                 {
-                    var mwUser = buttonBehavior.GetMWUnityUser(inputSource.UserGameObject);
+                    var mwUser = oldBehavior.GetMWUnityUser(inputSource.UserGameObject);
                     if (mwUser != null)
                     {
-                        buttonBehavior.Hover.StopAction(mwUser);
+                        oldBehavior.Hover.StopAction(mwUser);
                     }
                 }
             }
@@ -61,13 +63,13 @@ namespace Assets.Scripts.Tools
             
             if (newTarget != null)
             {
-                var newBehaviors = newTarget.GetBehaviors<ButtonBehavior>();
-                foreach (var buttonBehavior in newBehaviors)
+                var newBehavior = newTarget.GetBehavior<ButtonBehavior>();
+                if (newBehavior != null)
                 {
-                    var mwUser = buttonBehavior.GetMWUnityUser(inputSource.UserGameObject);
+                    var mwUser = newBehavior.GetMWUnityUser(inputSource.UserGameObject);
                     if (mwUser != null)
                     {
-                        buttonBehavior.Hover.StartAction(mwUser);
+                        newBehavior.Hover.StartAction(mwUser);
                     }
                 }
             }

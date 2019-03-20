@@ -14,6 +14,7 @@ namespace MixedRealityExtension.Behaviors.Handlers
             : base(target, appRef, attachedActor)
         {
             RegisterActionHandler(target.Target, nameof(target.Target));
+            RegisterActionHandler(target.Grab, nameof(target.Grab));
         }
 
         internal static TargetHandler Create(IActor actor, WeakReference<MixedRealityExtensionApp> appRef)
