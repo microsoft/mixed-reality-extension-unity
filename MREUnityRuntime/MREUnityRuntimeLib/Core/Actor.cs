@@ -82,10 +82,10 @@ namespace MixedRealityExtension.Core
         
         internal bool Grabbable { get; private set; }
         
-        private UInt32 AppearanceEnabled = UInt32.MaxValue;
-        private bool ActiveAndEnabled =>
-            ((Parent as Actor)?.ActiveAndEnabled ?? true)
-            && ((App.LocalUser?.Groups ?? 1) & AppearanceEnabled) > 0;
+        private UInt32 appearanceEnabled = UInt32.MaxValue;
+        private bool activeAndEnabled =>
+            ((Parent as Actor)?.activeAndEnabled ?? true)
+            && ((App.LocalUser?.Groups ?? 1) & appearanceEnabled) > 0;
 
         #endregion
 
@@ -220,7 +220,7 @@ namespace MixedRealityExtension.Core
                 Collider = collider,
                 Appearance = new AppearancePatch()
                 {
-                    Enabled = AppearanceEnabled,
+                    Enabled = appearanceEnabled,
                     MaterialId = MaterialId
                 }
             };
@@ -656,7 +656,7 @@ namespace MixedRealityExtension.Core
 
             if (appearance.Enabled != null)
             {
-                AppearanceEnabled = appearance.Enabled.Value;
+                appearanceEnabled = appearance.Enabled.Value;
                 ApplyVisibilityUpdate(this);
             }
 
@@ -681,14 +681,14 @@ namespace MixedRealityExtension.Core
 
         internal static void ApplyVisibilityUpdate(Actor actor, bool force = false)
         {
-            if (!force && actor.Renderer?.enabled == actor.ActiveAndEnabled)
+            if (!force && actor.Renderer?.enabled == actor.activeAndEnabled)
             {
                 return;
             }
 
             if (actor.Renderer)
             {
-                actor.Renderer.enabled = actor.ActiveAndEnabled;
+                actor.Renderer.enabled = actor.activeAndEnabled;
             }
             foreach (var child in actor.App.FindChildren(actor.Id))
             {
