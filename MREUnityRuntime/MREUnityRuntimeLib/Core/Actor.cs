@@ -79,12 +79,11 @@ namespace MixedRealityExtension.Core
         internal MWTransform LocalTransform => transform.ToMWTransform();
 
         internal Guid MaterialId { get; set; } = Guid.Empty;
-
+        
         internal bool Grabbable { get; private set; }
         
-        private bool AppearanceEnabled { get; set; } = true;
-
-        private bool ActiveAndEnabled => ((Parent as Actor)?.ActiveAndEnabled ?? true) && AppearanceEnabled;
+        private UInt32 AppearanceEnabled = UInt32.MaxValue;
+        private bool ActiveAndEnabled => ((Parent as Actor)?.ActiveAndEnabled ?? true) && AppearanceEnabled > 0;
 
         #endregion
 

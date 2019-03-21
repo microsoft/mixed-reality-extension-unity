@@ -18,6 +18,8 @@ namespace MixedRealityExtension.Core
 
         public IUserInfo UserInfo { get; private set; }
 
+        public UInt32 Groups { get; internal set; }
+
         internal void Initialize(IUserInfo userInfo, MixedRealityExtensionApp app)
         {
             UserInfo = userInfo;

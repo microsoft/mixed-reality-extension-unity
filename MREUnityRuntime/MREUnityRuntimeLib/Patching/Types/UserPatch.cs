@@ -14,6 +14,9 @@ namespace MixedRealityExtension.Patching.Types
         [PatchProperty]
         public string Name { get; set; }
 
+        [PatchProperty]
+        public UInt32 Groups { get; set; }
+
         public Dictionary<string, string> Properties { get; set; }
 
         public UserPatch()
@@ -29,6 +32,7 @@ namespace MixedRealityExtension.Patching.Types
             : this(user.Id)
         {
             Name = user.Name;
+            Groups = user.Groups;
             Properties = user.UserInfo.Properties;
         }
     }
