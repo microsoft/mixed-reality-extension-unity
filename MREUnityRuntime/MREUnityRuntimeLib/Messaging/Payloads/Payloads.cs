@@ -189,17 +189,6 @@ namespace MixedRealityExtension.Messaging.Payloads
     }
 
     /// <summary>
-    /// The payload containing the user patch produced during user update from engine to app.
-    /// </summary>
-    public class UserUpdate : Payload
-    {
-        /// <summary>
-        /// The user patch generated during the user update.
-        /// </summary>
-        public UserPatch User;
-    }
-
-    /// <summary>
     /// The payload for the client to request the latest application state (sent during handshake).
     /// </summary>
     public class SyncRequest : Payload

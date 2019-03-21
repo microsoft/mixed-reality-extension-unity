@@ -863,6 +863,7 @@ MonoBehaviour:
   - gltf-animation-test
   - gltf-concurrency-test
   - gltf-gen-test
+  - grab-test
   - input-test
   - interpolation-test
   - light-test
@@ -874,6 +875,7 @@ MonoBehaviour:
   - sound-test
   - text-test
   - transform-test
+  - user-mask-test
   - user-test
   - visibility-test
 --- !u!1 &1651315071

@@ -13,5 +13,10 @@ namespace MixedRealityExtension.Core.Interfaces
         /// Host-provided IUserInfo instance.
         /// </summary>
         IUserInfo UserInfo { get; }
+
+        /// <summary>
+        /// The group mask for this user.
+        /// </summary>
+        UInt32 Groups { get; }
     }
 }
