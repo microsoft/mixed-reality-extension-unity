@@ -16,7 +16,7 @@ namespace MixedRealityExtension.Messaging.Payloads.Converters
         /// <inheritdoc />
         public override bool CanConvert(Type objectType)
         {
-            return objectType == typeof(UInt32);
+            return UtilMethods.GetActualType(objectType) == typeof(UInt32);
         }
 
         /// <inheritdoc />
@@ -31,7 +31,8 @@ namespace MixedRealityExtension.Messaging.Payloads.Converters
             }
             else
             {
-                throw new JsonSerializationException($"Failed to deserialize {reader.Value}");
+                UnityEngine.Debug.Log($"Failed to deserialize {reader.ValueType} {reader.Value}");
+                return null;
             }
         }
 
