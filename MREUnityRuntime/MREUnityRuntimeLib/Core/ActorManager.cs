@@ -86,14 +86,6 @@ namespace MixedRealityExtension.Core
             }
         }
 
-        internal void UpdateAllVisibility()
-        {
-            foreach(var actor in _actorMapping.Values.Where(a => a.Parent == null))
-            {
-                Actor.ApplyVisibilityUpdate(actor, force: true);
-            }
-        }
-
         internal IEnumerable<Actor> FindChildren(Guid id)
         {
             return _actorMapping.Values.Where(a => a.ParentId == id);

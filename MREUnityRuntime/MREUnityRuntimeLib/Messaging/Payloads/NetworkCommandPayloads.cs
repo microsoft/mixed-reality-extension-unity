@@ -618,15 +618,4 @@ namespace MixedRealityExtension.Messaging.Payloads
         /// </summary>
         public Action Command;
     }
-
-    /// <summary>
-    /// The payload containing the user patch produced during user update from engine to app.
-    /// </summary>
-    public class UserUpdate : NetworkCommandPayload
-    {
-        /// <summary>
-        /// The user patch generated during the user update.
-        /// </summary>
-        public UserPatch User;
-    }
 }

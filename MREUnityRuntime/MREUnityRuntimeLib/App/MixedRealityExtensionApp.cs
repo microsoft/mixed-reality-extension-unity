@@ -352,8 +352,9 @@ namespace MixedRealityExtension.App
 
         internal void OnReceive(Message message)
         {
-            if (message.Payload is NetworkCommandPayload ncp)
+            if (message.Payload is NetworkCommandPayload)
             {
+                var ncp = message.Payload as NetworkCommandPayload;
                 ncp.MessageId = message.Id;
                 _commandManager.ExecuteCommandPayload(ncp, null);
             }
@@ -396,7 +397,7 @@ namespace MixedRealityExtension.App
         }
 
         internal bool IsInteractable(IUser user) => _interactingUserIds.Contains(user.Id);
-        
+
         #endregion
 
         #region Methods - Private
@@ -491,21 +492,6 @@ namespace MixedRealityExtension.App
         {
             RPC.ReceiveRPC(payload);
             onCompleteCallback?.Invoke();
-        }
-
-        [CommandHandler(typeof(UserUpdate))]
-        private void OnUserUpdate(UserUpdate payload, Action onCompleteCallback)
-        {
-            try
-            {
-                ((User)LocalUser).SynchronizeEngine(payload.User);
-                _actorManager.UpdateAllVisibility();
-                onCompleteCallback?.Invoke();
-            }
-            catch(Exception e)
-            {
-                Debug.LogException(e);
-            }
         }
 
         [CommandHandler(typeof(CreateFromGLTF))]

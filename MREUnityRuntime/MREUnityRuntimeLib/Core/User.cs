@@ -2,8 +2,6 @@
 // Licensed under the MIT License.
 using MixedRealityExtension.App;
 using MixedRealityExtension.Core.Interfaces;
-using MixedRealityExtension.Messaging.Commands;
-using MixedRealityExtension.Messaging.Payloads;
 using MixedRealityExtension.Patching;
 using MixedRealityExtension.Patching.Types;
 using System;
@@ -19,8 +17,6 @@ namespace MixedRealityExtension.Core
         public override string Name => UserInfo.Name;
 
         public IUserInfo UserInfo { get; private set; }
-
-        public UInt32 Groups { get; internal set; } = 1;
 
         internal void Initialize(IUserInfo userInfo, MixedRealityExtensionApp app)
         {
@@ -52,15 +48,6 @@ namespace MixedRealityExtension.Core
                 {
                     mreApp.SynchronizeUser(userPatch);
                 }
-            }
-        }
-
-        internal void SynchronizeEngine(UserPatch patch)
-        {
-            // no need to queue like with actors, just slap it right on there
-            if (patch.Groups.HasValue)
-            {
-                Groups = patch.Groups.Value;
             }
         }
 

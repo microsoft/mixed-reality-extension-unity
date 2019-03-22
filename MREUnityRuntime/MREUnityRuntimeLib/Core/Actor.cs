@@ -79,13 +79,12 @@ namespace MixedRealityExtension.Core
         internal MWTransform LocalTransform => transform.ToMWTransform();
 
         internal Guid MaterialId { get; set; } = Guid.Empty;
-        
+
         internal bool Grabbable { get; private set; }
         
-        private UInt32 appearanceEnabled = UInt32.MaxValue;
-        private bool activeAndEnabled =>
-            ((Parent as Actor)?.activeAndEnabled ?? true)
-            && ((App.LocalUser?.Groups ?? 1) & appearanceEnabled) > 0;
+        private bool AppearanceEnabled { get; set; } = true;
+
+        private bool ActiveAndEnabled => ((Parent as Actor)?.ActiveAndEnabled ?? true) && AppearanceEnabled;
 
         #endregion
 
@@ -220,7 +219,7 @@ namespace MixedRealityExtension.Core
                 Collider = collider,
                 Appearance = new AppearancePatch()
                 {
-                    Enabled = appearanceEnabled,
+                    Enabled = AppearanceEnabled,
                     MaterialId = MaterialId
                 }
             };
@@ -656,7 +655,7 @@ namespace MixedRealityExtension.Core
 
             if (appearance.Enabled != null)
             {
-                appearanceEnabled = appearance.Enabled.Value;
+                AppearanceEnabled = appearance.Enabled.Value;
                 ApplyVisibilityUpdate(this);
             }
 
@@ -679,20 +678,17 @@ namespace MixedRealityExtension.Core
             }
         }
 
-        internal static void ApplyVisibilityUpdate(Actor actor, bool force = false)
+        private static void ApplyVisibilityUpdate(Actor actor)
         {
-            if (!force && actor.Renderer?.enabled == actor.activeAndEnabled)
+            if (actor.Renderer.enabled == actor.ActiveAndEnabled)
             {
                 return;
             }
 
-            if (actor.Renderer)
-            {
-                actor.Renderer.enabled = actor.activeAndEnabled;
-            }
+            actor.Renderer.enabled = actor.ActiveAndEnabled;
             foreach (var child in actor.App.FindChildren(actor.Id))
             {
-                ApplyVisibilityUpdate(child, force);
+                ApplyVisibilityUpdate(child);
             }
         }
 
