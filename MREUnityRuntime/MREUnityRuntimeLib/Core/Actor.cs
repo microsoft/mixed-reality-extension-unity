@@ -220,7 +220,7 @@ namespace MixedRealityExtension.Core
                 Collider = collider,
                 Appearance = new AppearancePatch()
                 {
-                    Enabled = appearanceEnabled,
+                    EnabledPacked = appearanceEnabled,
                     MaterialId = MaterialId
                 }
             };
@@ -654,9 +654,9 @@ namespace MixedRealityExtension.Core
                 return;
             }
 
-            if (appearance.Enabled != null)
+            if (appearance.EnabledPacked != null)
             {
-                appearanceEnabled = appearance.Enabled.Value;
+                appearanceEnabled = appearance.EnabledPacked.Value;
                 ApplyVisibilityUpdate(this);
             }
 
