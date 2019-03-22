@@ -6,6 +6,9 @@ namespace MixedRealityExtension.Patching.Types
 {
     public class AppearancePatch
     {
+        [JsonConverter(typeof(UnsignedConverter))]
+        public UInt32? Enabled { get; set; }
+
         [PatchProperty]
         [JsonConverter(typeof(UnsignedConverter))]
         public UInt32? EnabledPacked { get; set; }

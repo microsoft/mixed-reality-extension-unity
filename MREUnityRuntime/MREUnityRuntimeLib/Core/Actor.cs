@@ -82,8 +82,8 @@ namespace MixedRealityExtension.Core
         
         internal bool Grabbable { get; private set; }
         
-        private UInt32 appearanceEnabled = UInt32.MaxValue;
-        private bool activeAndEnabled =>
+        internal UInt32 appearanceEnabled = UInt32.MaxValue;
+        internal bool activeAndEnabled =>
             ((Parent as Actor)?.activeAndEnabled ?? true)
             && ((App.LocalUser?.Groups ?? 1) & appearanceEnabled) > 0;
 
@@ -654,9 +654,10 @@ namespace MixedRealityExtension.Core
                 return;
             }
 
-            if (appearance.EnabledPacked != null)
+            var enabled = appearance.EnabledPacked ?? appearance.Enabled;
+            if (enabled != null)
             {
-                appearanceEnabled = appearance.EnabledPacked.Value;
+                appearanceEnabled = enabled.Value;
                 ApplyVisibilityUpdate(this);
             }
 
