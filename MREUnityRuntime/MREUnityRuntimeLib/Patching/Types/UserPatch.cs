@@ -2,6 +2,8 @@
 // Licensed under the MIT License.
 using MixedRealityExtension.Core;
 using MixedRealityExtension.Core.Types;
+using MixedRealityExtension.Messaging.Payloads.Converters;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 
@@ -15,6 +17,7 @@ namespace MixedRealityExtension.Patching.Types
         public string Name { get; set; }
 
         [PatchProperty]
+        [JsonConverter(typeof(UnsignedConverter))]
         public UInt32? Groups { get; set; }
 
         public Dictionary<string, string> Properties { get; set; }
