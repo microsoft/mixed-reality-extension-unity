@@ -871,7 +871,6 @@ MonoBehaviour:
   - physics-sim-test
   - primitives-test
   - reparent-test
-  - rigid-body-test
   - sound-test
   - text-test
   - transform-test
