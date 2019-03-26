@@ -681,12 +681,13 @@ namespace MixedRealityExtension.Core
 
         internal static void ApplyVisibilityUpdate(Actor actor, bool force = false)
         {
-            if (!force && actor.Renderer?.enabled == actor.activeAndEnabled)
+            // Note: MonoBehaviours don't support conditional access (actor.Renderer?.enabled)
+            if (actor == null || actor.Renderer != null && actor.Renderer.enabled == actor.activeAndEnabled && !force)
             {
                 return;
             }
 
-            if (actor.Renderer)
+            if (actor.Renderer != null)
             {
                 actor.Renderer.enabled = actor.activeAndEnabled;
             }

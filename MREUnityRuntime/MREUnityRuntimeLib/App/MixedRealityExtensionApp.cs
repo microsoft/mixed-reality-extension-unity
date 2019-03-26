@@ -590,26 +590,41 @@ namespace MixedRealityExtension.App
         private void ProcessCreatedActors(CreateActor originalMessage, IList<Actor> createdActors, Action onCompleteCallback)
         {
             var guids = new DeterministicGuids(originalMessage.Actor?.Id);
+            var rootActor = createdActors.FirstOrDefault();
 
-            foreach (var actor in createdActors)
-            {
-                _actorManager.AddActor(guids.Next(), actor);
-                _ownedGameObjects.Add(actor.gameObject);
+            ProcessActors(rootActor.transform, rootActor.transform.parent.GetComponent<Actor>());
 
-                actor.ParentId = actor.transform.parent.GetComponent<Actor>()?.Id ?? actor.ParentId;
-                if (actor.Renderer != null)
-                {
-                    actor.MaterialId = MREAPI.AppsAPI.AssetCache.GetId(actor.Renderer.sharedMaterial) ?? Guid.Empty;
-                }
-            }
+            rootActor?.ApplyPatch(originalMessage.Actor);
+            Actor.ApplyVisibilityUpdate(rootActor);
 
-            createdActors.FirstOrDefault()?.ApplyPatch(originalMessage.Actor);
             foreach (var actor in createdActors)
             {
                 actor.AddSubscriptions(originalMessage.Subscriptions);
             }
 
             SendCreateActorResponse(originalMessage, actors: createdActors, onCompleteCallback: onCompleteCallback);
+
+            void ProcessActors(Transform xfrm, Actor parent)
+            {
+                // Generate actors for all GameObjects, even if the loader didn't. Only loader-generated
+                // actors are returned to the app though. We do this so library objects get enabled/disabled
+                // correctly, even if they're not tracked by the app.
+                var actor = xfrm.gameObject.GetComponent<Actor>() ?? xfrm.gameObject.AddComponent<Actor>();
+
+                _actorManager.AddActor(guids.Next(), actor);
+                _ownedGameObjects.Add(actor.gameObject);
+
+                actor.ParentId = parent?.Id ?? actor.ParentId;
+                if (actor.Renderer != null)
+                {
+                    actor.MaterialId = MREAPI.AppsAPI.AssetCache.GetId(actor.Renderer.sharedMaterial) ?? Guid.Empty;
+                }
+
+                foreach (Transform child in xfrm)
+                {
+                    ProcessActors(child, actor);
+                }
+            }
         }
 
         private void SendCreateActorResponse(CreateActor originalMessage, IList<Actor> actors = null, string failureMessage = null, Action onCompleteCallback = null)
