@@ -79,12 +79,13 @@ namespace MixedRealityExtension.Core
         internal MWTransform LocalTransform => transform.ToMWTransform();
 
         internal Guid MaterialId { get; set; } = Guid.Empty;
-
+        
         internal bool Grabbable { get; private set; }
         
-        private bool AppearanceEnabled { get; set; } = true;
-
-        private bool ActiveAndEnabled => ((Parent as Actor)?.ActiveAndEnabled ?? true) && AppearanceEnabled;
+        internal UInt32 appearanceEnabled = UInt32.MaxValue;
+        internal bool activeAndEnabled =>
+            ((Parent as Actor)?.activeAndEnabled ?? true)
+            && ((App.LocalUser?.Groups ?? 1) & appearanceEnabled) > 0;
 
         #endregion
 
@@ -219,7 +220,7 @@ namespace MixedRealityExtension.Core
                 Collider = collider,
                 Appearance = new AppearancePatch()
                 {
-                    Enabled = AppearanceEnabled,
+                    Enabled = appearanceEnabled,
                     MaterialId = MaterialId
                 }
             };
@@ -655,7 +656,7 @@ namespace MixedRealityExtension.Core
 
             if (appearance.Enabled != null)
             {
-                AppearanceEnabled = appearance.Enabled.Value;
+                appearanceEnabled = appearance.Enabled.Value;
                 ApplyVisibilityUpdate(this);
             }
 
@@ -678,17 +679,21 @@ namespace MixedRealityExtension.Core
             }
         }
 
-        private static void ApplyVisibilityUpdate(Actor actor)
+        internal static void ApplyVisibilityUpdate(Actor actor, bool force = false)
         {
-            if (actor.Renderer.enabled == actor.ActiveAndEnabled)
+            // Note: MonoBehaviours don't support conditional access (actor.Renderer?.enabled)
+            if (actor == null || actor.Renderer != null && actor.Renderer.enabled == actor.activeAndEnabled && !force)
             {
                 return;
             }
 
-            actor.Renderer.enabled = actor.ActiveAndEnabled;
+            if (actor.Renderer != null)
+            {
+                actor.Renderer.enabled = actor.activeAndEnabled;
+            }
             foreach (var child in actor.App.FindChildren(actor.Id))
             {
-                ApplyVisibilityUpdate(child);
+                ApplyVisibilityUpdate(child, force);
             }
         }
 

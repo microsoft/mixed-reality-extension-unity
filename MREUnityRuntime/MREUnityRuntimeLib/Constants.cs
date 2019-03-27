@@ -19,7 +19,7 @@ namespace MixedRealityExtension
                 NullValueHandling = NullValueHandling.Ignore,
             };
 
-            SerializerSettings.Converters.Add(new Messaging.Payloads.Converters.DashFormattedEnumConverter());
+            SerializerSettings.Converters.Add(new DashFormattedEnumConverter());
             SerializerSettings.Converters.Add(new PayloadConverter());
             SerializerSettings.Converters.Add(new CollisionGeometryConverter());
         }
