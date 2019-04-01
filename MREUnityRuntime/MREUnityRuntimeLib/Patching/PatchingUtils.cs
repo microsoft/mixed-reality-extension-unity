@@ -12,6 +12,7 @@ using MRELight = MixedRealityExtension.Core.Light;
 using UnityCollisionDetectionMode = UnityEngine.CollisionDetectionMode;
 using UnityRigidBodyConstraints = UnityEngine.RigidbodyConstraints;
 using UnityLight = UnityEngine.Light;
+using MixedRealityExtension.Util.Unity;
 
 namespace MixedRealityExtension.Patching
 {
@@ -117,14 +118,14 @@ namespace MixedRealityExtension.Patching
             }
         }
 
-        public static TransformPatch GeneratePatch(MWTransform _old, Transform _new)
+        public static TransformPatch GenerateAppTransformPatch(MWTransform _old, Transform _new, Transform appRoot)
         {
             if (_old == null && _new != null)
             {
                 return new TransformPatch()
                 {
-                    Position = GeneratePatch(null, _new.localPosition),
-                    Rotation = GeneratePatch(null, _new.localRotation)
+                    Position = GeneratePatch(null, appRoot.InverseTransformPoint(_new.position)),
+                    Rotation = GeneratePatch(null, _new.rotation * appRoot.rotation),
                 };
             }
             else if (_new == null)
@@ -133,6 +134,31 @@ namespace MixedRealityExtension.Patching
             }
 
             TransformPatch transform = new TransformPatch()
+            {
+                Position = GeneratePatch(_old.Position, appRoot.InverseTransformPoint(_new.position)),
+                Rotation = GeneratePatch(_old.Rotation, _new.rotation * appRoot.rotation),
+            };
+
+            return transform.IsPatched() ? transform : null;
+        }
+
+        public static ScaledTransformPatch GenerateLocalTransformPatch(MWScaledTransform _old, Transform _new)
+        {
+            if (_old == null && _new != null)
+            {
+                return new ScaledTransformPatch()
+                {
+                    Position = GeneratePatch(null, _new.localPosition),
+                    Rotation = GeneratePatch(null, _new.localRotation),
+                    Scale = GeneratePatch(null, _new.localScale)
+                };
+            }
+            else if (_new == null)
+            {
+                return null;
+            }
+
+            ScaledTransformPatch transform = new ScaledTransformPatch()
             {
                 Position = GeneratePatch(_old.Position, _new.localPosition),
                 Rotation = GeneratePatch(_old.Rotation, _new.localRotation),
@@ -367,26 +393,36 @@ namespace MixedRealityExtension.Patching
             return _this;
         }
 
-        public static MWTransform ApplyPatch(this MWTransform _this, TransformPatch transform)
+        public static void ApplyLocalPatch(this Transform _this, MWScaledTransform current, ScaledTransformPatch patch)
         {
-            if (transform == null || !transform.IsPatched())
+            if (patch.Position != null)
             {
-                return _this;
+                _this.localPosition = _this.localPosition.GetPatchApplied(current.Position.ApplyPatch(patch.Position));
             }
 
-            if (transform.Position != null && transform.Position.IsPatched())
+            if (patch.Rotation != null)
             {
-                _this.Position.ApplyPatch(transform.Position);
+                _this.localRotation = _this.localRotation.GetPatchApplied(current.Rotation.ApplyPatch(patch.Rotation));
             }
 
-            if (transform.Rotation != null && transform.Rotation.IsPatched())
+            if (patch.Scale != null)
             {
-                _this.Rotation.ApplyPatch(transform.Rotation);
+                _this.localScale = _this.localScale.GetPatchApplied(current.Scale.ApplyPatch(patch.Scale));
+            }
+        }
+
+        public static Transform ApplyAppPatch(this Transform _this, Transform appRoot, MWTransform current, TransformPatch patch)
+        {
+            if (patch.Position != null)
+            {
+                var newAppPos = appRoot.InverseTransformPoint(_this.position).GetPatchApplied(current.Position.ApplyPatch(patch.Position));
+                _this.position = appRoot.TransformPoint(newAppPos);
             }
 
-            if (transform.Scale != null && transform.Scale.IsPatched())
+            if (patch.Rotation != null)
             {
-                _this?.Scale.ApplyPatch(transform.Scale);
+                var newAppRotation = (_this.rotation * appRoot.rotation).GetPatchApplied(current.Rotation.ApplyPatch(patch.Rotation));
+                _this.rotation = newAppRotation * _this.rotation;
             }
 
             return _this;

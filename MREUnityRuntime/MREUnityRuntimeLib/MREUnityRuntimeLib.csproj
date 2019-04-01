@@ -205,7 +205,6 @@
     <Compile Include="Patching\Types\ActorPatch.cs" />
     <Compile Include="Patching\Types\ColorPatch.cs" />
     <Compile Include="Patching\Types\LightPatch.cs" />
-    <Compile Include="Patching\Types\MixedRealityExtensionObjectPatch.cs" />
     <Compile Include="Patching\Types\QuaternionPatch.cs" />
     <Compile Include="Patching\Types\RigidBodyPatch.cs" />
     <Compile Include="Patching\Types\TextPatch.cs" />

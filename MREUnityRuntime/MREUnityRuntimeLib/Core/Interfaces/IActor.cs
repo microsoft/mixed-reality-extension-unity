@@ -1,5 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
+using MixedRealityExtension.Core.Types;
+
 namespace MixedRealityExtension.Core.Interfaces
 {
     /// <summary>
@@ -16,5 +18,10 @@ namespace MixedRealityExtension.Core.Interfaces
         /// Gets the name of the actor.
         /// </summary>
         string Name { get; set; }
+
+        /// <summary>
+        /// Gets the local space transform of the actor.
+        /// </summary>
+        MWScaledTransform LocalTransform { get; }
     }
 }

@@ -27,9 +27,9 @@ namespace MixedRealityExtension.Core.Interfaces
         IUser LocalUser { get; }
 
         /// <summary>
-        /// The transform of this mixed reality extension object.
+        /// The app space transform of this mixed reality extension object.
         /// </summary>
-        MWTransform Transform { get; }
+        MWTransform AppTransform { get; }
 
         /// <summary>
         /// The unity game object that the actor is associated with.

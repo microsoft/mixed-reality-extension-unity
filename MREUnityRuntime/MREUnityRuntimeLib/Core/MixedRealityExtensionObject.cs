@@ -23,7 +23,7 @@ namespace MixedRealityExtension.Core
         public virtual string Name => gameObject.name;
 
         /// <inheritdoc />
-        public MWTransform Transform { get; set; }
+        public MWTransform AppTransform => transform.ToAppTransform(App.SceneRoot.transform);
 
         /// <inheritdoc />
         public GameObject GameObject => this.gameObject;
@@ -36,7 +36,6 @@ namespace MixedRealityExtension.Core
         {
             Id = id;
             App = app;
-            Transform = transform.ToMWTransform();
         }
 
         protected abstract void InternalUpdate();
@@ -59,20 +58,6 @@ namespace MixedRealityExtension.Core
         protected virtual void OnDestroyed()
         {
 
-        }
-
-        protected TransformPatch SynchronizeTransform(Transform engineTransform)
-        {
-            var transformPatch = GenerateTransformPatch(engineTransform);
-            Transform = engineTransform.ToMWTransform();
-            return transformPatch;
-        }
-
-        private TransformPatch GenerateTransformPatch(Transform engineTransform)
-        {
-            TransformPatch patch = PatchingUtilMethods.GeneratePatch(Transform, engineTransform);
-            Transform.ApplyPatch(patch);
-            return patch;
         }
 
         #region MonoBehaviour Methods

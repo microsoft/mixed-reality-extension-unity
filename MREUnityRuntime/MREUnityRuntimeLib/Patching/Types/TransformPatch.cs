@@ -12,18 +12,32 @@ namespace MixedRealityExtension.Patching.Types
         [PatchProperty]
         public QuaternionPatch Rotation { get; set; }
 
-        [PatchProperty]
-        public Vector3Patch Scale { get; set; }
-
-        public TransformPatch()
+        internal TransformPatch()
         {
-            
+
         }
 
-        internal TransformPatch(MWVector3 position, MWQuaternion rotation, MWVector3 scale)
+        internal TransformPatch(MWVector3 position, MWQuaternion rotation)
         {
             this.Position = new Vector3Patch(position);
             this.Rotation = new QuaternionPatch(rotation);
+        }
+    }
+
+    public class ScaledTransformPatch: TransformPatch
+    {
+        [PatchProperty]
+        public Vector3Patch Scale { get; set; }
+
+        internal ScaledTransformPatch()
+            : base()
+        {
+
+        }
+
+        internal ScaledTransformPatch(MWVector3 position, MWQuaternion rotation, MWVector3 scale)
+            : base(position, rotation)
+        {
             this.Scale = new Vector3Patch(scale);
         }
     }
