@@ -40,8 +40,6 @@ namespace MixedRealityExtension.Core
 
         internal void SynchronizeApps()
         {
-            var transformPatch = SynchronizeTransform(transform);
-
             foreach (var mreApp in _joinedApps)
             {
                 var userPatch = new UserPatch(Id);

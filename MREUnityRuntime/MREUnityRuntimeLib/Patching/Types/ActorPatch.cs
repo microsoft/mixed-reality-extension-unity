@@ -4,8 +4,25 @@ using System;
 
 namespace MixedRealityExtension.Patching.Types
 {
-    public class ActorPatch : MixedRealityExtensionObjectPatch
+    public class ActorTransformPatch: IPatchable
     {
+        [PatchProperty]
+        public TransformPatch App { get; set; }
+
+        [PatchProperty]
+        public ScaledTransformPatch Local { get; set; }
+    }
+
+    public class ActorPatch: IPatchable
+    {
+        public Guid Id { get; set; }
+
+        [PatchProperty]
+        public string Name { get; set; }
+
+        [PatchProperty]
+        public ActorTransformPatch Transform { get; set; }
+
         [PatchProperty]
         public Guid? ParentId { get; set; }
 
@@ -38,9 +55,8 @@ namespace MixedRealityExtension.Patching.Types
         }
 
         internal ActorPatch(Guid id)
-            : base(id)
         {
-            
+            Id = id;
         }
     }
 }

@@ -66,13 +66,22 @@ namespace MixedRealityExtension.Util.Unity
             };
         }
 
-        public static MWTransform ToMWTransform(this Transform transform)
+        public static MWScaledTransform ToLocalTransform(this Transform transform)
         {
-            return new MWTransform()
+            return new MWScaledTransform()
             {
                 Position = transform.localPosition.ToMWVector3(),
                 Rotation = transform.localRotation.ToMWQuaternion(),
                 Scale = transform.localScale.ToMWVector3()
+            };
+        }
+
+        public static MWTransform ToAppTransform(this Transform transform, Transform appRoot)
+        {
+            return new MWTransform()
+            {
+                Position = appRoot.InverseTransformPoint(transform.position).ToMWVector3(),
+                Rotation = (transform.rotation * appRoot.rotation).ToMWQuaternion()
             };
         }
 

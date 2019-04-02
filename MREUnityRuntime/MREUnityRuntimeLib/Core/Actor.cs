@@ -59,6 +59,10 @@ namespace MixedRealityExtension.Core
             set => transform.name = value;
         }
 
+        /// <inheritdoc />
+        [HideInInspector]
+        public MWScaledTransform LocalTransform => transform.ToLocalTransform();
+
         #endregion
 
         #region Properties - Internal
@@ -75,8 +79,6 @@ namespace MixedRealityExtension.Core
 
         internal Attachment Attachment { get; } = new Attachment();
         private Attachment _cachedAttachment = new Attachment();
-
-        internal MWTransform LocalTransform => transform.ToMWTransform();
 
         internal Guid MaterialId { get; set; } = Guid.Empty;
         
@@ -193,12 +195,17 @@ namespace MixedRealityExtension.Core
 
         internal ActorPatch GenerateInitialPatch()
         {
-            Transform = gameObject.transform.ToMWTransform();
-            var transform = new TransformPatch()
+            var localTransform = new ScaledTransformPatch()
             {
-                Position = new Vector3Patch(Transform.Position),
-                Rotation = new QuaternionPatch(Transform.Rotation),
-                Scale = new Vector3Patch(Transform.Scale)
+                Position = new Vector3Patch(transform.localPosition),
+                Rotation = new QuaternionPatch(transform.localRotation),
+                Scale = new Vector3Patch(transform.localScale)
+            };
+
+            var appTransform = new TransformPatch()
+            {
+                Position = new Vector3Patch(App.SceneRoot.transform.InverseTransformPoint(transform.position)),
+                Rotation = new QuaternionPatch(transform.rotation * App.SceneRoot.transform.rotation)
             };
 
             var rigidBody = PatchingUtilMethods.GeneratePatch(RigidBody, (Rigidbody)null, App.SceneRoot.transform);
@@ -215,7 +222,11 @@ namespace MixedRealityExtension.Core
             {
                 ParentId = ParentId,
                 Name = Name,
-                Transform = transform,
+                Transform = new ActorTransformPatch()
+                {
+                    Local = localTransform,
+                    App = appTransform
+                },
                 RigidBody = rigidBody,
                 Collider = collider,
                 Appearance = new AppearancePatch()
@@ -322,7 +333,11 @@ namespace MixedRealityExtension.Core
 
             if ((flags & ActorComponentType.Transform) != ActorComponentType.None)
             {
-                actorPatch.Transform = transform.ToMWTransform().AsPatch();
+                actorPatch.Transform = new ActorTransformPatch()
+                {
+                    Local = transform.ToLocalTransform().AsPatch(),
+                    App = transform.ToAppTransform(App.SceneRoot.transform).AsPatch()
+                };
             }
 
             //if ((flags & SubscriptionType.Rigidbody) != SubscriptionType.None)
@@ -494,7 +509,7 @@ namespace MixedRealityExtension.Core
         private void UserInfo_BeforeAvatarDestroyed()
         {
             // Remember the original local transform.
-            MWTransform cachedTransform = LocalTransform;
+            MWScaledTransform cachedTransform = LocalTransform;
 
             // Detach from parent. This will preserve the world transform (changing the local transform).
             // This is desired so that the actor doesn't change position, but we must restore the local
@@ -697,31 +712,82 @@ namespace MixedRealityExtension.Core
             }
         }
 
-        private void PatchTransform(TransformPatch transformPatch)
+        private void PatchTransform(ActorTransformPatch transformPatch)
         {
             if (transformPatch != null)
             {
                 if (RigidBody == null)
                 {
-                    transform.localPosition = transform.localPosition.GetPatchApplied(LocalTransform.Position.ApplyPatch(transformPatch.Position));
-                    transform.localRotation = transform.localRotation.GetPatchApplied(LocalTransform.Rotation.ApplyPatch(transformPatch.Rotation));
-                    transform.localScale = transform.localScale.GetPatchApplied(LocalTransform.Scale.ApplyPatch(transformPatch.Scale));
+                    // Apply local first.
+                    if (transformPatch.Local != null)
+                    {
+                        transform.ApplyLocalPatch(LocalTransform, transformPatch.Local);
+                    }
+
+                    // Apply app patch second to ensure it overrides any duplicate values from the local patch.
+                    // App transform patching always wins over local, except for scale.
+                    if (transformPatch.App != null)
+                    {
+                        transform.ApplyAppPatch(App.SceneRoot.transform, AppTransform, transformPatch.App);
+                    }
                 }
                 else
                 {
-                    // In case of rigid body:
-                    // - Apply scale directly.
-                    transform.localScale = transform.localScale.GetPatchApplied(LocalTransform.Scale.ApplyPatch(transformPatch.Scale));
-                    // - Apply position and rotation via rigid body.
-                    var position = transform.localPosition.GetPatchApplied(LocalTransform.Position.ApplyPatch(transformPatch.Position));
-                    var rotation = transform.localRotation.GetPatchApplied(LocalTransform.Rotation.ApplyPatch(transformPatch.Rotation));
-                    RigidBodyPatch rigidBodyPatch = new RigidBodyPatch()
+                    RigidBodyPatch rigidBodyPatch = null;
+                    if (transformPatch.Local != null)
                     {
-                        Position = new Vector3Patch(position),
-                        Rotation = new QuaternionPatch(rotation)
-                    };
-                    // Queue update to happen in the fixed update
-                    RigidBody.SynchronizeEngine(rigidBodyPatch);
+                        // In case of rigid body:
+                        // - Apply scale directly.
+                        transform.localScale = transform.localScale.GetPatchApplied(LocalTransform.Scale.ApplyPatch(transformPatch.Local.Scale));
+
+                        // - Apply position and rotation via rigid body.
+                        var position = transform.localPosition.GetPatchApplied(LocalTransform.Position.ApplyPatch(transformPatch.Local.Position));
+                        var rotation = transform.localRotation.GetPatchApplied(LocalTransform.Rotation.ApplyPatch(transformPatch.Local.Rotation));
+                        rigidBodyPatch = new RigidBodyPatch()
+                        {
+                            Position = new Vector3Patch(position),
+                            Rotation = new QuaternionPatch(rotation)
+                        };
+                    }
+
+                    if (transformPatch.App != null)
+                    {
+                        var appTransform = App.SceneRoot.transform;
+                        var newPos = transform.position;
+                        var newRot = transform.rotation;
+
+                        if (transformPatch.App.Position != null)
+                        {
+                            // New app space position.
+                            var newAppPos = appTransform.InverseTransformPoint(transform.position)
+                                .GetPatchApplied(AppTransform.Position.ApplyPatch(transformPatch.App.Position));
+
+                            // Transform new position to world space.
+                            newPos = appTransform.TransformPoint(newAppPos);
+                        }
+
+                        if (transformPatch.App.Rotation != null)
+                        {
+                            // New app space rotation
+                            var newAppRot = (transform.rotation * appTransform.rotation)
+                                .GetPatchApplied(AppTransform.Rotation.ApplyPatch(transformPatch.App.Rotation));
+
+                            // Transform new app rotation to world space.
+                            newRot = newAppRot * transform.rotation;
+                        }
+                        
+                        rigidBodyPatch = new RigidBodyPatch()
+                        {
+                            Position = new Vector3Patch(newPos),
+                            Rotation = new QuaternionPatch(newRot)
+                        };
+                    }
+                    
+                    if (rigidBodyPatch != null)
+                    {
+                        // Queue update to happen in the fixed update
+                        RigidBody.SynchronizeEngine(rigidBodyPatch);
+                    }
                 }
             }
         }
@@ -827,8 +893,11 @@ namespace MixedRealityExtension.Core
 
         private void GenerateTransformPatch(ActorPatch actorPatch)
         {
-            actorPatch.Transform = PatchingUtilMethods.GeneratePatch(Transform, gameObject.transform);
-            Transform = gameObject.transform.ToMWTransform();
+            actorPatch.Transform = new ActorTransformPatch()
+            {
+                Local = PatchingUtilMethods.GenerateLocalTransformPatch(LocalTransform, transform),
+                App = PatchingUtilMethods.GenerateAppTransformPatch(AppTransform, transform, App.SceneRoot.transform)
+            };
         }
 
         private void GenerateRigidBodyPatch(ActorPatch actorPatch)

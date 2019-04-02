@@ -148,13 +148,14 @@ namespace MixedRealityExtension.Core
             // Apply any changes made to the state of the mixed reality extension runtime version of the rigid body.
             if (patch.Position != null && patch.Position.IsPatched())
             {
-                var localPosition = _sceneRoot.InverseTransformPoint(_rigidbody.position).ToMWVector3();
-                _rigidbody.position = _rigidbody.position.GetPatchApplied(_sceneRoot.TransformPoint(localPosition.ApplyPatch(patch.Position).ToVector3()));
+                var appPosition = _sceneRoot.InverseTransformPoint(_rigidbody.position).ToMWVector3();
+                _rigidbody.position = _rigidbody.position.GetPatchApplied(_sceneRoot.TransformPoint(appPosition.ApplyPatch(patch.Position).ToVector3()));
             }
             if (patch.Rotation != null && patch.Rotation.IsPatched())
             {
-                var localRotation = (_rigidbody.rotation * _sceneRoot.rotation).ToMWQuaternion();
-                _rigidbody.rotation = _sceneRoot.rotation * _rigidbody.rotation.GetPatchApplied(localRotation.ApplyPatch(patch.Rotation));
+                var currAppRotation = (_rigidbody.rotation * _sceneRoot.rotation);
+                var newAppRotation = currAppRotation.GetPatchApplied(currAppRotation.ToMWQuaternion().ApplyPatch(patch.Rotation));
+                _rigidbody.rotation = newAppRotation * _rigidbody.rotation;
             }
             if (patch.Velocity != null && patch.Velocity.IsPatched())
             {

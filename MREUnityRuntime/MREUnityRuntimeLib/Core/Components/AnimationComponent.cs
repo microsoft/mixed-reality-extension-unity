@@ -144,7 +144,7 @@ namespace MixedRealityExtension.Core.Components
                     AddFloatPatch(type, String.Format("{0}.w", propertyName), time, value?.W);
                 }
 
-                void AddTransformPatch(float time, TransformPatch value)
+                void AddTransformPatch(float time, ScaledTransformPatch value)
                 {
                     // Work around a Unity bug/feature where all position components must be specified
                     // in the keyframe or the missing fields get set to zero.
@@ -171,7 +171,7 @@ namespace MixedRealityExtension.Core.Components
 
                 void AddActorPatch(float time, ActorPatch value)
                 {
-                    AddTransformPatch(time, value?.Transform);
+                    AddTransformPatch(time, value?.Transform.Local);
                 }
 
                 void AddKeyframe(MWAnimationKeyframe keyframe)
@@ -229,15 +229,15 @@ namespace MixedRealityExtension.Core.Components
             const int FPS = 10;
             float timeStep = duration / FPS;
 
-            // If the curve is malformed, fallback to linear.
+            // If the curve is malformed, fall back to linear.
             if (curve.Length != 4)
             {
                 curve = new float[] { 0, 0, 1, 1 };
             }
 
             // Are we patching the transform?
-            bool animateTransform = finalFrame.Transform != null && finalFrame.Transform.IsPatched();
-            var finalTransform = finalFrame.Transform;
+            bool animateTransform = finalFrame.Transform != null && finalFrame.Transform.Local != null && finalFrame.Transform.Local.IsPatched();
+            var finalTransform = finalFrame.Transform.Local;
 
             // What parts of the transform are we animating?
             bool animatePosition = animateTransform && finalTransform.Position != null && finalTransform.Position.IsPatched();
@@ -254,7 +254,7 @@ namespace MixedRealityExtension.Core.Components
                     rotation.Z.HasValue &&
                     rotation.W.HasValue;
 
-                // If quaternion is incomplete, fallback to the identity.
+                // If quaternion is incomplete, fall back to the identity.
                 if (!hasAllComponents)
                 {
                     finalTransform.Rotation = new QuaternionPatch(Quaternion.identity);
@@ -269,7 +269,7 @@ namespace MixedRealityExtension.Core.Components
                     (rotation.W.Value * rotation.W.Value);
                 if (lengthSquared == 0)
                 {
-                    // If the quaternion is length zero, fallback to the identity.
+                    // If the quaternion is length zero, fall back to the identity.
                     finalTransform.Rotation = new QuaternionPatch(Quaternion.identity);
                     break;
                 }
@@ -345,15 +345,15 @@ namespace MixedRealityExtension.Core.Components
                 float value;
                 if (LerpFloat(out value, transform.localPosition.x, finalTransform.Position.X, t))
                 {
-                    keyframe.Value.Transform.Position.X = value;
+                    keyframe.Value.Transform.Local.Position.X = value;
                 }
                 if (LerpFloat(out value, transform.localPosition.y, finalTransform.Position.Y, t))
                 {
-                    keyframe.Value.Transform.Position.Y = value;
+                    keyframe.Value.Transform.Local.Position.Y = value;
                 }
                 if (LerpFloat(out value, transform.localPosition.z, finalTransform.Position.Z, t))
                 {
-                    keyframe.Value.Transform.Position.Z = value;
+                    keyframe.Value.Transform.Local.Position.Z = value;
                 }
             }
 
@@ -362,15 +362,15 @@ namespace MixedRealityExtension.Core.Components
                 float value;
                 if (LerpFloat(out value, transform.localScale.x, finalTransform.Scale.X, t))
                 {
-                    keyframe.Value.Transform.Scale.X = value;
+                    keyframe.Value.Transform.Local.Scale.X = value;
                 }
                 if (LerpFloat(out value, transform.localScale.y, finalTransform.Scale.Y, t))
                 {
-                    keyframe.Value.Transform.Scale.Y = value;
+                    keyframe.Value.Transform.Local.Scale.Y = value;
                 }
                 if (LerpFloat(out value, transform.localScale.z, finalTransform.Scale.Z, t))
                 {
-                    keyframe.Value.Transform.Scale.Z = value;
+                    keyframe.Value.Transform.Local.Scale.Z = value;
                 }
             }
 
@@ -379,7 +379,7 @@ namespace MixedRealityExtension.Core.Components
                 Quaternion value;
                 if (SlerpQuaternion(out value, transform.localRotation, finalTransform.Rotation, t))
                 {
-                    keyframe.Value.Transform.Rotation = new QuaternionPatch(value);
+                    keyframe.Value.Transform.Local.Rotation = new QuaternionPatch(value);
                 }
             }
 
@@ -411,19 +411,22 @@ namespace MixedRealityExtension.Core.Components
 
                 if (animateTransform)
                 {
-                    keyframe.Value.Transform = new TransformPatch();
+                    keyframe.Value.Transform = new ActorTransformPatch()
+                    {
+                        Local = new ScaledTransformPatch()
+                    };
                 }
                 if (animatePosition)
                 {
-                    keyframe.Value.Transform.Position = new Vector3Patch();
+                    keyframe.Value.Transform.Local.Position = new Vector3Patch();
                 }
                 if (animateRotation)
                 {
-                    keyframe.Value.Transform.Rotation = new QuaternionPatch();
+                    keyframe.Value.Transform.Local.Rotation = new QuaternionPatch();
                 }
                 if (animateScale)
                 {
-                    keyframe.Value.Transform.Scale = new Vector3Patch();
+                    keyframe.Value.Transform.Local.Scale = new Vector3Patch();
                 }
                 return keyframe;
             }
