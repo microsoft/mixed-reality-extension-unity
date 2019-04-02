@@ -17,19 +17,14 @@ namespace MixedRealityExtension.Core.Interfaces
         Guid Id { get; }
 
         /// <summary>
+        /// Gets the name of the actor.
+        /// </summary>
+        string Name { get; }
+
+        /// <summary>
         /// The instance id of the app that is the owner of this mixed reality extension object.
         /// </summary>
         Guid AppInstanceId { get; }
-
-        /// <summary>
-        /// The local user.
-        /// </summary>
-        IUser LocalUser { get; }
-
-        /// <summary>
-        /// The app space transform of this mixed reality extension object.
-        /// </summary>
-        MWTransform AppTransform { get; }
 
         /// <summary>
         /// The unity game object that the actor is associated with.
