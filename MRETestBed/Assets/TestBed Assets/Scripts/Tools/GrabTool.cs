@@ -36,6 +36,7 @@ namespace Assets.Scripts.Tools
                     if (mwUser != null)
                     {
                         grabBehavior.Grab.StartAction(mwUser);
+                        grabBehavior.IsGrabbed = true;
                     }
                 }
 
@@ -50,6 +51,7 @@ namespace Assets.Scripts.Tools
                     if (mwUser != null)
                     {
                         grabBehavior.Grab.StopAction(mwUser);
+                        grabBehavior.IsGrabbed = false;
                     }
                 }
 

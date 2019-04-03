@@ -36,6 +36,9 @@ namespace MixedRealityExtension.Core
         private Dictionary<Guid, AudioSource> _soundInstances;
         private float _nextUpdateTime;
 
+        private MWScaledTransform _localTransform;
+        private MWTransform _appTransform;
+
         private Dictionary<Type, ActorComponentBase> _components = new Dictionary<Type, ActorComponentBase>();
 
         private Queue<Action<Actor>> _updateActions = new Queue<Action<Actor>>();
@@ -61,7 +64,35 @@ namespace MixedRealityExtension.Core
 
         /// <inheritdoc />
         [HideInInspector]
-        public MWScaledTransform LocalTransform => transform.ToLocalTransform();
+        public MWScaledTransform LocalTransform
+        {
+            get
+            {
+                _localTransform = _localTransform ?? transform.ToLocalTransform();
+                return _localTransform;
+            }
+
+            private set
+            {
+                _localTransform = value;
+            }
+        }
+
+        /// <inheritdoc />
+        [HideInInspector]
+        public MWTransform AppTransform
+        {
+            get
+            {
+                _appTransform = _appTransform ?? transform.ToAppTransform(App.SceneRoot.transform);
+                return _appTransform;
+            }
+
+            private set
+            {
+                _appTransform = value;
+            }
+        }
 
         #endregion
 
@@ -83,6 +114,20 @@ namespace MixedRealityExtension.Core
         internal Guid MaterialId { get; set; } = Guid.Empty;
         
         internal bool Grabbable { get; private set; }
+
+        internal bool IsGrabbed
+        {
+            get
+            {
+                var behaviorComponent = GetActorComponent<BehaviorComponent>();
+                if (behaviorComponent != null && behaviorComponent.Behavior is ITargetBehavior targetBehavior)
+                {
+                    return targetBehavior.IsGrabbed;
+                }
+
+                return false;
+            }
+        }
         
         internal UInt32 appearanceEnabled = UInt32.MaxValue;
         internal bool activeAndEnabled =>
@@ -195,6 +240,9 @@ namespace MixedRealityExtension.Core
 
         internal ActorPatch GenerateInitialPatch()
         {
+            LocalTransform = transform.ToLocalTransform();
+            AppTransform = transform.ToAppTransform(App.SceneRoot.transform);
+
             var localTransform = new ScaledTransformPatch()
             {
                 Position = new Vector3Patch(transform.localPosition),
@@ -205,7 +253,7 @@ namespace MixedRealityExtension.Core
             var appTransform = new TransformPatch()
             {
                 Position = new Vector3Patch(App.SceneRoot.transform.InverseTransformPoint(transform.position)),
-                Rotation = new QuaternionPatch(transform.rotation * App.SceneRoot.transform.rotation)
+                Rotation = new QuaternionPatch(Quaternion.Inverse(App.SceneRoot.transform.rotation) * transform.rotation)
             };
 
             var rigidBody = PatchingUtilMethods.GeneratePatch(RigidBody, (Rigidbody)null, App.SceneRoot.transform);
@@ -893,11 +941,16 @@ namespace MixedRealityExtension.Core
 
         private void GenerateTransformPatch(ActorPatch actorPatch)
         {
-            actorPatch.Transform = new ActorTransformPatch()
+            var transformPatch = new ActorTransformPatch()
             {
                 Local = PatchingUtilMethods.GenerateLocalTransformPatch(LocalTransform, transform),
                 App = PatchingUtilMethods.GenerateAppTransformPatch(AppTransform, transform, App.SceneRoot.transform)
             };
+
+            LocalTransform = transform.ToLocalTransform();
+            AppTransform = transform.ToAppTransform(App.SceneRoot.transform);
+
+            actorPatch.Transform = transformPatch.IsPatched() ? transformPatch : null;
         }
 
         private void GenerateRigidBodyPatch(ActorPatch actorPatch)
@@ -942,6 +995,12 @@ namespace MixedRealityExtension.Core
                 return false;
             }
 
+            // If the actor is grabbed then we always need to sync the transform.
+            if (IsGrabbed)
+            {
+                subscriptions |= ActorComponentType.Transform;
+            }
+
             // If the actor has a rigid body then always sync the transform and the rigid body.
             if (RigidBody != null)
             {
@@ -964,6 +1023,7 @@ namespace MixedRealityExtension.Core
                 return
                     (App.OperatingModel == OperatingModel.ServerAuthoritative) ||
                     App.IsAuthoritativePeer ||
+                    IsGrabbed ||
                     inOwnedAttachmentHierarchy;
             }
 
@@ -986,9 +1046,11 @@ namespace MixedRealityExtension.Core
 
             // We can send actor updates to the app if we're operating in a server-authoritative model,
             // or if we're in a peer-authoritative model and we've been designated the authoritative peer.
-            // Override the previous rules if this actor is in an attachment hierarchy owned by the local player.
+            // Override the previous rules if this actor is grabbed by the local user or is in an attachment
+            // hierarchy owned by the local user.
             if (App.OperatingModel == OperatingModel.ServerAuthoritative ||
                 App.IsAuthoritativePeer ||
+                IsGrabbed ||
                 inOwnedAttachmentHierarchy)
             {
                 return true;

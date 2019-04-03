@@ -125,7 +125,7 @@ namespace MixedRealityExtension.Patching
                 return new TransformPatch()
                 {
                     Position = GeneratePatch(null, appRoot.InverseTransformPoint(_new.position)),
-                    Rotation = GeneratePatch(null, _new.rotation * appRoot.rotation),
+                    Rotation = GeneratePatch(null, Quaternion.Inverse(appRoot.rotation) * _new.rotation),
                 };
             }
             else if (_new == null)
@@ -136,7 +136,7 @@ namespace MixedRealityExtension.Patching
             TransformPatch transform = new TransformPatch()
             {
                 Position = GeneratePatch(_old.Position, appRoot.InverseTransformPoint(_new.position)),
-                Rotation = GeneratePatch(_old.Rotation, _new.rotation * appRoot.rotation),
+                Rotation = GeneratePatch(_old.Rotation, Quaternion.Inverse(appRoot.rotation) * _new.rotation),
             };
 
             return transform.IsPatched() ? transform : null;
@@ -421,8 +421,9 @@ namespace MixedRealityExtension.Patching
 
             if (patch.Rotation != null)
             {
-                var newAppRotation = (_this.rotation * appRoot.rotation).GetPatchApplied(current.Rotation.ApplyPatch(patch.Rotation));
-                _this.rotation = newAppRotation * _this.rotation;
+                var currAppRotation = Quaternion.Inverse(appRoot.rotation) * _this.rotation;
+                var newAppRotation = currAppRotation.GetPatchApplied(current.Rotation.ApplyPatch(patch.Rotation));
+                _this.rotation = appRoot.rotation * newAppRotation;
             }
 
             return _this;

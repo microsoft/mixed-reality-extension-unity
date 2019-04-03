@@ -153,9 +153,9 @@ namespace MixedRealityExtension.Core
             }
             if (patch.Rotation != null && patch.Rotation.IsPatched())
             {
-                var currAppRotation = (_rigidbody.rotation * _sceneRoot.rotation);
+                var currAppRotation = Quaternion.Inverse(_sceneRoot.rotation) * _rigidbody.rotation;
                 var newAppRotation = currAppRotation.GetPatchApplied(currAppRotation.ToMWQuaternion().ApplyPatch(patch.Rotation));
-                _rigidbody.rotation = newAppRotation * _rigidbody.rotation;
+                _rigidbody.rotation = _sceneRoot.rotation * newAppRotation;
             }
             if (patch.Velocity != null && patch.Velocity.IsPatched())
             {
