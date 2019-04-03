@@ -63,6 +63,9 @@ namespace MixedRealityExtension.Core
         }
 
         /// <inheritdoc />
+        IMixedRealityExtensionApp IActor.App => base.App;
+
+        /// <inheritdoc />
         [HideInInspector]
         public MWScaledTransform LocalTransform
         {
