@@ -281,13 +281,16 @@ namespace MixedRealityExtension.Core.Components
 
             // Generate keyframes
             float currTime = 0;
-            while (currTime <= duration)
+
+            do
             {
                 var keyframe = NewKeyframe(currTime);
-                BuildKeyframe(keyframe, currTime / duration);
+                var unitTime = duration > 0 ? currTime / duration : 1;
+                BuildKeyframe(keyframe, unitTime);
                 keyframes.Add(keyframe);
                 currTime += timeStep;
             }
+            while (currTime <= duration && timeStep > 0);
 
             // Final frame (if needed)
             if (currTime - duration > 0)
