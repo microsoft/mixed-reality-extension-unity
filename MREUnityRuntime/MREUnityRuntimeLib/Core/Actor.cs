@@ -81,9 +81,9 @@ namespace MixedRealityExtension.Core
         private Attachment _cachedAttachment = new Attachment();
 
         internal Guid MaterialId { get; set; } = Guid.Empty;
-        
+
         internal bool Grabbable { get; private set; }
-        
+
         internal UInt32 appearanceEnabled = UInt32.MaxValue;
         internal bool activeAndEnabled =>
             ((Parent as Actor)?.activeAndEnabled ?? true)
@@ -116,10 +116,12 @@ namespace MixedRealityExtension.Core
             return component;
         }
 
-        internal void SynchronizeApp()
+        internal void SynchronizeApp(ActorComponentType? subscriptionsOverride = null)
         {
             if (CanSync())
             {
+                var subscriptions = subscriptionsOverride.HasValue ? subscriptionsOverride.Value : _subscriptions;
+
                 // Handle changes in game state and raise appropriate events for network updates.
                 var actorPatch = new ActorPatch(Id);
 
@@ -135,12 +137,12 @@ namespace MixedRealityExtension.Core
                     actorPatch.ParentId = ParentId;
                 }
 
-                if (ShouldSync(_subscriptions, ActorComponentType.Transform))
+                if (ShouldSync(subscriptions, ActorComponentType.Transform))
                 {
                     GenerateTransformPatch(actorPatch);
                 }
 
-                if (ShouldSync(_subscriptions, ActorComponentType.Rigidbody))
+                if (ShouldSync(subscriptions, ActorComponentType.Rigidbody))
                 {
                     GenerateRigidBodyPatch(actorPatch);
                 }
