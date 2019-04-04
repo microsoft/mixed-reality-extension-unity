@@ -15,6 +15,11 @@ namespace MixedRealityExtension.PluginInterfaces.Behaviors
         bool Grabbable { get; set; }
 
         /// <summary>
+        /// Whether the target behavior grab is active.
+        /// </summary>
+        bool IsGrabbed { get; set; }
+
+        /// <summary>
         /// The target action in the target platform.
         /// </summary>
         MWAction Target { get; }

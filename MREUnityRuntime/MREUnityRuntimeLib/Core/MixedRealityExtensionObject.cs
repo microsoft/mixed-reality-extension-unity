@@ -23,9 +23,6 @@ namespace MixedRealityExtension.Core
         public virtual string Name => gameObject.name;
 
         /// <inheritdoc />
-        public MWTransform AppTransform => transform.ToAppTransform(App.SceneRoot.transform);
-
-        /// <inheritdoc />
         public GameObject GameObject => this.gameObject;
 
         internal MixedRealityExtensionApp App { get; private set; }
