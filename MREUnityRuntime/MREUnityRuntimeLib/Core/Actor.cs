@@ -384,7 +384,7 @@ namespace MixedRealityExtension.Core
         {
             ActorPatch actorPatch = new ActorPatch(Id);
 
-            if ((flags & ActorComponentType.Transform) != ActorComponentType.None)
+            if (flags.HasFlag(ActorComponentType.Transform))
             {
                 actorPatch.Transform = new ActorTransformPatch()
                 {
@@ -1023,7 +1023,7 @@ namespace MixedRealityExtension.Core
                 subscriptions = ActorComponentType.None;
             }
 
-            if ((subscriptions & flag) != ActorComponentType.None)
+            if (subscriptions.HasFlag(flag))
             {
                 return
                     (App.OperatingModel == OperatingModel.ServerAuthoritative) ||
