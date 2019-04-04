@@ -30,23 +30,6 @@ namespace MixedRealityExtension.Core.Components
 
         private bool GetAnimationData(string animationName, out AnimationData animationData) => _animationData.TryGetValue(animationName, out animationData);
 
-        internal bool Animating
-        {
-            get
-            {
-                var animation = GetUnityAnimationComponent();
-                if (animation != null)
-                {
-                    if (animation.isPlaying)
-                    {
-                        return true;
-                    }
-                }
-
-                return false;
-            }
-        }
-
         private void Update()
         {
             // Check for changes to an animation's enabled state and notify the server when a change is detected.
@@ -70,6 +53,12 @@ namespace MixedRealityExtension.Core.Components
                                     animationTime: null,
                                     animationSpeed: null,
                                     animationEnabled: animationData.Enabled);
+
+                                // If the animation stopped, sync the actor's final transform.
+                                if (!animationData.Enabled)
+                                {
+                                    AttachedActor.SynchronizeApp(ActorComponentType.Transform);
+                                }
 
                                 // If this was an internal one-shot animation (aka an interpolation), remove it.
                                 if (!animationData.Enabled && animationData.IsInternal)

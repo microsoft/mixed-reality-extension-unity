@@ -4,9 +4,9 @@ namespace MixedRealityExtension.PluginInterfaces
 {
     public struct MRELayers
     {
-        int Object;
-        int Environment;
-        int Hologram;
+        // int Object;
+        // int Environment;
+        // int Hologram;
     }
 
     public interface IEngineConstants
