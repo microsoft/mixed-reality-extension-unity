@@ -9,8 +9,8 @@ namespace MixedRealityExtension.Core
 {
     public class Attachment : IEquatable<Attachment>
     {
-        internal string AttachPoint { get; set; }
-        internal Guid UserId { get; set; }
+        internal string AttachPoint { get; set; } = "none";
+        internal Guid UserId { get; set; } = Guid.Empty;
 
         public bool Equals(Attachment other)
         {
@@ -45,7 +45,7 @@ namespace MixedRealityExtension.Core
 
         internal AttachmentPatch GeneratePatch(Attachment other)
         {
-            if (this != other)
+            if (!this.Equals(other))
             {
                 return new AttachmentPatch()
                 {
