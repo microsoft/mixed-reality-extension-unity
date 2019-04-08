@@ -12,7 +12,7 @@ namespace MixedRealityExtension.Patching.Types
         [PatchProperty]
         public QuaternionPatch Rotation { get; set; }
 
-        internal TransformPatch()
+        public TransformPatch()
         {
 
         }
@@ -29,7 +29,7 @@ namespace MixedRealityExtension.Patching.Types
         [PatchProperty]
         public Vector3Patch Scale { get; set; }
 
-        internal ScaledTransformPatch()
+        public ScaledTransformPatch()
             : base()
         {
 
