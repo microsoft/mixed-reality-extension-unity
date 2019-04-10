@@ -16,14 +16,6 @@ namespace MixedRealityExtension.Patching.Types
         private MRERigidBodyConstraints? _constraintFlags;
         private MRERigidBodyConstraints[] _constraints;
 
-        // Local only. Not synchronized.
-        [PatchProperty]
-        public Vector3Patch Position { get; set; }
-
-        // Local only. Not synchronized.
-        [PatchProperty]
-        public QuaternionPatch Rotation { get; set; }
-
         [PatchProperty]
         public Vector3Patch Velocity { get; set; }
 

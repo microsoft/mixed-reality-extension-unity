@@ -9,7 +9,7 @@ namespace MixedRealityExtension.Core.Components
     {
         private IBehaviorHandler _behaviorHandler;
 
-        internal IBehavior Behavior => _behaviorHandler.Behavior;
+        internal IBehavior Behavior => _behaviorHandler?.Behavior;
 
         internal void SetBehaviorHandler(IBehaviorHandler behaviorHandler)
         {

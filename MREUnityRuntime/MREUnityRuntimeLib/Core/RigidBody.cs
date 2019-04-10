@@ -146,17 +146,6 @@ namespace MixedRealityExtension.Core
         internal void ApplyPatch(RigidBodyPatch patch)
         {
             // Apply any changes made to the state of the mixed reality extension runtime version of the rigid body.
-            if (patch.Position != null && patch.Position.IsPatched())
-            {
-                var appPosition = _sceneRoot.InverseTransformPoint(_rigidbody.position).ToMWVector3();
-                _rigidbody.position = _rigidbody.position.GetPatchApplied(_sceneRoot.TransformPoint(appPosition.ApplyPatch(patch.Position).ToVector3()));
-            }
-            if (patch.Rotation != null && patch.Rotation.IsPatched())
-            {
-                var currAppRotation = Quaternion.Inverse(_sceneRoot.rotation) * _rigidbody.rotation;
-                var newAppRotation = currAppRotation.GetPatchApplied(currAppRotation.ToMWQuaternion().ApplyPatch(patch.Rotation));
-                _rigidbody.rotation = _sceneRoot.rotation * newAppRotation;
-            }
             if (patch.Velocity != null && patch.Velocity.IsPatched())
             {
                 _rigidbody.velocity = _rigidbody.velocity.GetPatchApplied(_sceneRoot.TransformDirection(Velocity.ApplyPatch(patch.Velocity).ToVector3()));
@@ -184,9 +173,33 @@ namespace MixedRealityExtension.Core
             _rigidbody.constraints = (RigidbodyConstraints)((int)_rigidbody.constraints).GetPatchApplied((int)ConstraintFlags.ApplyPatch(patch.ConstraintFlags));
         }
 
+        internal void UpdateTransform(RigidBodyTransformUpdate update)
+        {
+            if (update.Position != null)
+            {
+                _rigidbody.position = update.Position.Value;
+            }
+            if (update.Rotation != null)
+            {
+                _rigidbody.rotation = update.Rotation.Value;
+            }
+        }
+
+        internal void SynchronizeEngine(RigidBodyTransformUpdate update)
+        {
+            _updateActions.Enqueue((rigidBody) => UpdateTransform(update));
+        }
+
         internal void SynchronizeEngine(RigidBodyPatch patch)
         {
             _updateActions.Enqueue((rigidbody) => ApplyPatch(patch));
+        }
+
+        internal struct RigidBodyTransformUpdate
+        {
+            internal Vector3? Position { get; set; }
+
+            internal Quaternion? Rotation { get; set; }
         }
     }
 }
