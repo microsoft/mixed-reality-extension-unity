@@ -786,28 +786,30 @@ namespace MixedRealityExtension.Core
                 }
                 else
                 {
-                    RigidBodyPatch rigidBodyPatch = null;
+                    RigidBody.RigidBodyTransformUpdate transformUpdate = new RigidBody.RigidBodyTransformUpdate();
                     if (transformPatch.Local != null)
                     {
                         // In case of rigid body:
                         // - Apply scale directly.
                         transform.localScale = transform.localScale.GetPatchApplied(LocalTransform.Scale.ApplyPatch(transformPatch.Local.Scale));
 
-                        // - Apply position and rotation via rigid body.
-                        var position = transform.localPosition.GetPatchApplied(LocalTransform.Position.ApplyPatch(transformPatch.Local.Position));
-                        var rotation = transform.localRotation.GetPatchApplied(LocalTransform.Rotation.ApplyPatch(transformPatch.Local.Rotation));
-                        rigidBodyPatch = new RigidBodyPatch()
+                        // - Apply position and rotation via rigid body from local to world space.
+                        if (transformPatch.Local.Position != null)
                         {
-                            Position = new Vector3Patch(position),
-                            Rotation = new QuaternionPatch(rotation)
-                        };
+                            var localPosition = transform.localPosition.GetPatchApplied(LocalTransform.Position.ApplyPatch(transformPatch.Local.Position));
+                            transformUpdate.Position = transform.TransformPoint(localPosition);
+                        }
+
+                        if (transformPatch.Local.Rotation != null)
+                        {
+                            var localRotation = transform.localRotation.GetPatchApplied(LocalTransform.Rotation.ApplyPatch(transformPatch.Local.Rotation));
+                            transformUpdate.Rotation = transform.rotation * localRotation;
+                        }
                     }
 
                     if (transformPatch.App != null)
                     {
                         var appTransform = App.SceneRoot.transform;
-                        var newPos = transform.position;
-                        var newRot = transform.rotation;
 
                         if (transformPatch.App.Position != null)
                         {
@@ -816,7 +818,7 @@ namespace MixedRealityExtension.Core
                                 .GetPatchApplied(AppTransform.Position.ApplyPatch(transformPatch.App.Position));
 
                             // Transform new position to world space.
-                            newPos = appTransform.TransformPoint(newAppPos);
+                            transformUpdate.Position = appTransform.TransformPoint(newAppPos);
                         }
 
                         if (transformPatch.App.Rotation != null)
@@ -826,21 +828,12 @@ namespace MixedRealityExtension.Core
                                 .GetPatchApplied(AppTransform.Rotation.ApplyPatch(transformPatch.App.Rotation));
 
                             // Transform new app rotation to world space.
-                            newRot = newAppRot * transform.rotation;
+                            transformUpdate.Rotation = newAppRot * transform.rotation;
                         }
-                        
-                        rigidBodyPatch = new RigidBodyPatch()
-                        {
-                            Position = new Vector3Patch(newPos),
-                            Rotation = new QuaternionPatch(newRot)
-                        };
                     }
-                    
-                    if (rigidBodyPatch != null)
-                    {
-                        // Queue update to happen in the fixed update
-                        RigidBody.SynchronizeEngine(rigidBodyPatch);
-                    }
+
+                    // Queue update to happen in the fixed update
+                    RigidBody.SynchronizeEngine(transformUpdate);
                 }
             }
         }
