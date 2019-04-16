@@ -2,6 +2,8 @@
 // Licensed under the MIT License.
 
 using MixedRealityExtension.Core;
+using MixedRealityExtension.Core.Collision;
+using System.Collections.Generic;
 
 namespace MixedRealityExtension.Patching.Types
 {
@@ -18,5 +20,8 @@ namespace MixedRealityExtension.Patching.Types
 
         [PatchProperty]
         public ColliderGeometry ColliderGeometry { get; set; }
+
+        [PatchProperty]
+        public IEnumerable<ColliderEventType> EventSubscriptions { get; set; }
     }
 }

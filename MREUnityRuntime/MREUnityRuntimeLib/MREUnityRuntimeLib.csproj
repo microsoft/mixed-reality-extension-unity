@@ -93,6 +93,9 @@
     <Compile Include="Assets\AssetSource.cs" />
     <Compile Include="Core\ActorCommandQueue.cs" />
     <Compile Include="Core\Attachment.cs" />
+    <Compile Include="Core\Collision\CollisionData.cs" />
+    <Compile Include="Core\Collision\ColliderEventType.cs" />
+    <Compile Include="Core\Collision\ContactPoint.cs" />
     <Compile Include="Core\Components\MREAttachmentComponent.cs" />
     <Compile Include="Core\ColliderGeometry.cs" />
     <Compile Include="Core\Interfaces\ICollider.cs" />
@@ -103,6 +106,8 @@
     <Compile Include="Core\Types\MWVector2.cs" />
     <Compile Include="Core\UserManager.cs" />
     <Compile Include="Factories\DefaultMaterialPatcher.cs" />
+    <Compile Include="Messaging\Events\Types\ColliderEvent.cs" />
+    <Compile Include="Messaging\Events\Types\TriggerEvent.cs" />
     <Compile Include="Messaging\Payloads\Converters\UnsignedConverter.cs" />
     <Compile Include="Patching\Types\AppearancePatch.cs" />
     <Compile Include="Patching\Types\LookAtPatch.cs" />
