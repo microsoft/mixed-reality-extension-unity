@@ -42,7 +42,12 @@ namespace MixedRealityExtension.Core
         /// <summary>
         /// Mesh based collider.
         /// </summary>
-        Mesh = 3
+        Mesh = 3,
+
+        /// <summary>
+        /// Capsule shaped collider.
+        /// </summary>
+        Capsule = 4
     }
 
     internal class Collider : MonoBehaviour, ICollider
@@ -115,6 +120,10 @@ namespace MixedRealityExtension.Core
             else if (_collider is MeshCollider meshCollider)
             {
                 colliderGeo = new MeshColliderGeometry();
+            }
+            else if (_collider is CapsuleCollider capsuleCollider)
+            {
+                colliderGeo = new CapsuleColliderGeometry();
             }
             else
             {

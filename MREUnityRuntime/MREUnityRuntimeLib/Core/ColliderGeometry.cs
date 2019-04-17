@@ -115,4 +115,14 @@ namespace MixedRealityExtension.Core
             // We do not accept patching for mesh colliders from the app.
         }
     }
+
+    public class CapsuleColliderGeometry : ColliderGeometry
+    {
+        public override ColliderType ColliderType => ColliderType.Capsule;
+
+        internal override void Patch(UnityCollider collider)
+        {
+            // We do not accept patching for capsule colliders from the app.
+        }
+    }
 }
