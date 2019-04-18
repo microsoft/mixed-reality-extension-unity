@@ -3,7 +3,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using MixedRealityExtension.Assets;
 
 namespace MixedRealityExtension.Messaging.Payloads
 {
@@ -20,6 +19,7 @@ namespace MixedRealityExtension.Messaging.Payloads
     [PayloadType(typeof(CreateFromLibrary), "create-from-library")]
     [PayloadType(typeof(CreateFromPrefab), "create-from-prefab")]
     [PayloadType(typeof(CreatePrimitive), "create-primitive")]
+    [PayloadType(typeof(CollisionEventRaised), "collision-event-raised")]
     [PayloadType(typeof(DestroyActors), "destroy-actors")]
     [PayloadType(typeof(EngineToAppRPC), "engine2app-rpc")]
     [PayloadType(typeof(Handshake), "handshake")]
@@ -48,6 +48,7 @@ namespace MixedRealityExtension.Messaging.Payloads
     [PayloadType(typeof(SyncAnimations), "sync-animations")]
     [PayloadType(typeof(SyncComplete), "sync-complete")]
     [PayloadType(typeof(SyncRequest), "sync-request")]
+    [PayloadType(typeof(TriggerEventRaised), "trigger-event-raised")]
     [PayloadType(typeof(UpdateSubscriptions), "update-subscriptions")]
     [PayloadType(typeof(UserJoined), "user-joined")]
     [PayloadType(typeof(UserLeft), "user-left")]

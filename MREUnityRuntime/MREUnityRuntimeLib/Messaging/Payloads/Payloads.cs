@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 using MixedRealityExtension.Behaviors;
 using MixedRealityExtension.Behaviors.Actions;
+using MixedRealityExtension.Core.Collision;
 using MixedRealityExtension.Patching.Types;
 using System;
 using System.Collections.Generic;
@@ -254,6 +255,51 @@ namespace MixedRealityExtension.Messaging.Payloads
         /// </summary>
         public ActionState ActionState;
     }
+
+    /// <summary>
+    /// Engine => App
+    /// Sends the collision event information to the app.
+    /// </summary>
+    public class CollisionEventRaised: Payload
+    {
+        /// <summary>
+        /// The actor id of the collider the event is being raised on.
+        /// </summary>
+        public Guid ActorId;
+
+        /// <summary>
+        /// The collision event type that is being raised.
+        /// </summary>
+        public ColliderEventType EventType;
+
+        /// <summary>
+        /// The collision data provided for the collision event.
+        /// </summary>
+        public CollisionData CollisionData;
+    }
+
+    /// <summary>
+    /// Engine => App
+    /// Sends the trigger event information to the app.
+    /// </summary>
+    public class TriggerEventRaised: Payload
+    {
+        /// <summary>
+        /// The actor id of the collider the event is being raised on.
+        /// </summary>
+        public Guid ActorId;
+
+        /// <summary>
+        /// The collision event type that is being raised.
+        /// </summary>
+        public ColliderEventType EventType;
+
+        /// <summary>
+        /// The id of the other actor that has caused the trigger event.
+        /// </summary>
+        public Guid OtherActorId;
+    }
+
 
     /// <summary>
     /// App => Engine, Engine => App

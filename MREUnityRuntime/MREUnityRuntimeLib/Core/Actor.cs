@@ -267,7 +267,8 @@ namespace MixedRealityExtension.Core
             _collider = gameObject.GetComponent<UnityCollider>();
             if (_collider != null)
             {
-                Collider = new Collider(_collider);
+                Collider = gameObject.AddComponent<Collider>();
+                Collider.Initialize(_collider);
                 collider = Collider.GenerateInitialPatch();
             }
 
@@ -664,7 +665,8 @@ namespace MixedRealityExtension.Core
                     break;
             }
 
-            Collider = (unityCollider != null) ? new Collider(_collider) : null;
+            Collider = (unityCollider != null) ? gameObject.AddComponent<Collider>() : null;
+            Collider?.Initialize(_collider);
             return Collider;
         }
 
