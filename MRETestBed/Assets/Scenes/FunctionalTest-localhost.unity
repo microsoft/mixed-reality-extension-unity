@@ -860,6 +860,7 @@ MonoBehaviour:
   - asset-mutability-test
   - asset-preload-test
   - clock-sync-test
+  - gltf-actor-sync-test
   - gltf-animation-test
   - gltf-concurrency-test
   - gltf-gen-test

@@ -47,12 +47,8 @@ namespace MixedRealityExtension.Core
                     _actorCommandQueues.Remove(id);
                 }
 
-                if (!_actorMapping.ContainsKey(id))
-                {
-                    var message = "destroy-actors: Actor not found: " + id.ToString() + ".";
-                    MREAPI.Logger.LogError(message);
-                }
-                else
+                // Ignore missing actors in destroy calls
+                if (_actorMapping.ContainsKey(id))
                 {
                     var actor = _actorMapping[id];
                     _actorMapping.Remove(id);
