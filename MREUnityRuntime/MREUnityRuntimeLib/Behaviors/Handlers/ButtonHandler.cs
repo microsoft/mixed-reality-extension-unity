@@ -15,6 +15,7 @@ namespace MixedRealityExtension.Behaviors.Handlers
         {
             RegisterActionHandler(button.Hover, nameof(button.Hover));
             RegisterActionHandler(button.Click, nameof(button.Click));
+            RegisterActionHandler(button.Button, nameof(button.Button));
         }
 
         internal static new ButtonHandler Create(IActor actor, WeakReference<MixedRealityExtensionApp> appRef)

@@ -928,8 +928,11 @@ namespace MixedRealityExtension.Core
                 var behaviorComponent = GetActorComponent<BehaviorComponent>();
                 if (behaviorComponent == null)
                 {
+                    // NOTE: We need to have the default behavior on an actor be a button for now in the case we want the actor
+                    // to be able to be grabbed on all controller types for host apps.  This will be a base Target behavior once we
+                    // update host apps to handle button conflicts.
                     behaviorComponent = GetOrCreateActorComponent<BehaviorComponent>();
-                    var handler = BehaviorHandlerFactory.CreateBehaviorHandler(BehaviorType.Target, this, new WeakReference<MixedRealityExtensionApp>(App));
+                    var handler = BehaviorHandlerFactory.CreateBehaviorHandler(BehaviorType.Button, this, new WeakReference<MixedRealityExtensionApp>(App));
                     behaviorComponent.SetBehaviorHandler(handler);
                 }
 
