@@ -18,5 +18,10 @@ namespace MixedRealityExtension.PluginInterfaces.Behaviors
         /// The click action in the target platform.
         /// </summary>
         MWAction Click { get; }
+
+        /// <summary>
+        /// The button down/up action in the target platform.
+        /// </summary>
+        MWAction Button { get; }
     }
 }
