@@ -13,6 +13,8 @@ namespace Assets.Scripts.Behaviors
 
         public MWAction Click { get; } = new MWAction();
 
+        public MWAction Button { get; } = new MWAction();
+
         public override Type GetDesiredToolType()
         {
             return typeof(ButtonTool);

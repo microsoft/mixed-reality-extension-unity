@@ -25,7 +25,7 @@ namespace Assets.Scripts.Tools
                     var mwUser = buttonBehavior.GetMWUnityUser(inputSource.UserGameObject);
                     if (mwUser != null)
                     {
-                        buttonBehavior.Click.StartAction(mwUser);
+                        buttonBehavior.Button.StartAction(mwUser);
                     }
                 }
             }
@@ -37,7 +37,8 @@ namespace Assets.Scripts.Tools
                     var mwUser = buttonBehavior.GetMWUnityUser(inputSource.UserGameObject);
                     if (mwUser != null)
                     {
-                        buttonBehavior.Click.StopAction(mwUser);
+                        buttonBehavior.Button.StopAction(mwUser);
+                        buttonBehavior.Click.StartAction(mwUser);
                     }
                 }
             }
