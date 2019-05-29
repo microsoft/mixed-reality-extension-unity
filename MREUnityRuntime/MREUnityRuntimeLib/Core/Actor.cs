@@ -35,6 +35,7 @@ namespace MixedRealityExtension.Core
         private LookAtComponent _lookAt;
         private Dictionary<Guid, AudioSource> _soundInstances;
         private float _nextUpdateTime;
+        private bool _grabbedLastSync = false;
 
         private MWScaledTransform _localTransform;
         private MWTransform _appTransform;
@@ -204,6 +205,12 @@ namespace MixedRealityExtension.Core
                 {
                     App.EventManager.QueueEvent(new ActorChangedEvent(Id, actorPatch));
                 }
+
+                // We update whether the actor was grabbed this sync to ensure we send one last transform update
+                // on the sync when they are no longer grabbed.  This is the final transform update after the grab
+                // is completed.  This should always be cached at the very end of the sync to ensure the value is valid
+                // for any test calls to ShouldSync above.
+                _grabbedLastSync = IsGrabbed;
             }
         }
 
@@ -998,8 +1005,9 @@ namespace MixedRealityExtension.Core
                 return false;
             }
 
-            // If the actor is grabbed then we always need to sync the transform.
-            if (IsGrabbed)
+            // If the actor is grabbed or was grabbed last time we synced and is not grabbed any longer,
+            // then we always need to sync the transform.
+            if (IsGrabbed || _grabbedLastSync)
             {
                 subscriptions |= ActorComponentType.Transform;
             }
@@ -1054,6 +1062,7 @@ namespace MixedRealityExtension.Core
             if (App.OperatingModel == OperatingModel.ServerAuthoritative ||
                 App.IsAuthoritativePeer ||
                 IsGrabbed ||
+                _grabbedLastSync ||
                 inOwnedAttachmentHierarchy)
             {
                 return true;
