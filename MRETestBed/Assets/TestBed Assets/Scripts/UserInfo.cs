@@ -6,15 +6,17 @@ using UnityEngine;
 
 internal class UserInfo : IUserInfo
 {
-    public UserInfo(Guid id)
+    public UserInfo(Guid id, string name)
     {
         Id = id;
+        this.name = name;
     }
 
     public GameObject UserGO { get; set; }
 
     public Guid Id { get; }
 
+    private string name;
     public string Name => UserGO.name;
 
     public Dictionary<string, string> Properties => new Dictionary<string, string>()

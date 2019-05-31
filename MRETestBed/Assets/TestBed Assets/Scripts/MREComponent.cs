@@ -70,8 +70,6 @@ public class MREComponent : MonoBehaviour
 
     public event AppEventHandler OnAppShutdown;
 
-    private const string UserId = "ReadyPlayerOne";
-
     private Guid _appId;
 
     private static bool _apiInitialized = false;
@@ -281,8 +279,10 @@ public class MREComponent : MonoBehaviour
 
     public void UserJoin()
     {
-        string source = $"{UserId}-{AppID}-{SessionID}-{gameObject.GetInstanceID()}";
-        UserInfo userInfo = new UserInfo(UtilMethods.StringToGuid(source))
+        var rng = new System.Random();
+        var userId = rng.Next().ToString("X8");
+        string source = $"{userId}-{AppID}-{SessionID}-{gameObject.GetInstanceID()}";
+        UserInfo userInfo = new UserInfo(UtilMethods.StringToGuid(source), userId)
         {
             UserGO = UserGameObject
         };
