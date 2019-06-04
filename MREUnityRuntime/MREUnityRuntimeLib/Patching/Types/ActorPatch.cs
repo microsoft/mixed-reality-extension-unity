@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
+using MixedRealityExtension.Messaging.Payloads;
 using System;
+using System.Collections.Generic;
 
 namespace MixedRealityExtension.Patching.Types
 {
@@ -49,6 +51,9 @@ namespace MixedRealityExtension.Patching.Types
 
         [PatchProperty]
         public bool? Grabbable { get; set; }
+
+        [PatchProperty]
+        public IEnumerable<ActorComponentType> Subscriptions { get; set; }
 
         public ActorPatch()
         {

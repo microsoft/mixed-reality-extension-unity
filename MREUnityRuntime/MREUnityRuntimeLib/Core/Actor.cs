@@ -220,6 +220,7 @@ namespace MixedRealityExtension.Core
             PatchAttachment(actorPatch.Attachment);
             PatchLookAt(actorPatch.LookAt);
             PatchGrabbable(actorPatch.Grabbable);
+            PatchSubscriptions(actorPatch.Subscriptions);
         }
 
         internal void SynchronizeEngine(ActorPatch actorPatch)
@@ -357,28 +358,6 @@ namespace MixedRealityExtension.Core
                 ResultCode = OperationResultCode.Error,
                 Message = string.Format("Failed to create and enable the text object for actor with id {0}", Id)
             };
-        }
-
-        internal void AddSubscriptions(IEnumerable<ActorComponentType> adds)
-        {
-            if (adds != null)
-            {
-                foreach (var subscription in adds)
-                {
-                    _subscriptions |= subscription;
-                }
-            }
-        }
-
-        internal void RemoveSubscriptions(IEnumerable<ActorComponentType> removes)
-        {
-            if (removes != null)
-            {
-                foreach (var subscription in removes)
-                {
-                    _subscriptions &= ~subscription;
-                }
-            }
         }
 
         internal void SendActorUpdate(ActorComponentType flags)
@@ -942,6 +921,18 @@ namespace MixedRealityExtension.Core
             }
         }
 
+        private void PatchSubscriptions(IEnumerable<ActorComponentType> subscriptions)
+        {
+            if (subscriptions != null)
+            {
+                _subscriptions = ActorComponentType.None;
+                foreach (var subscription in subscriptions)
+                {
+                    _subscriptions |= subscription;
+                }
+            }
+        }
+
         private void GenerateTransformPatch(ActorPatch actorPatch)
         {
             var transformPatch = new ActorTransformPatch()
@@ -1088,14 +1079,6 @@ namespace MixedRealityExtension.Core
             onCompleteCallback?.Invoke();
         }
 
-        [CommandHandler(typeof(UpdateSubscriptions))]
-        private void OnUpdateSubscriptions(UpdateSubscriptions payload, Action onCompleteCallback)
-        {
-            RemoveSubscriptions(payload.Removes);
-            AddSubscriptions(payload.Adds);
-            onCompleteCallback?.Invoke();
-        }
-
         [CommandHandler(typeof(RigidBodyCommands))]
         private void OnRigidBodyCommands(RigidBodyCommands payload, Action onCompleteCallback)
         {
@@ -1114,71 +1097,6 @@ namespace MixedRealityExtension.Core
                     payload.InitialState,
                     isInternal: false,
                     onCreatedCallback: () => onCompleteCallback?.Invoke());
-        }
-
-        [CommandHandler(typeof(DEPRECATED_StartAnimation))]
-        private void OnStartAnimation(DEPRECATED_StartAnimation payload, Action onCompleteCallback)
-        {
-            bool paused = payload.Paused.HasValue && payload.Paused.Value;
-            GetOrCreateActorComponent<AnimationComponent>()
-                .SetAnimationState(payload.AnimationName, payload.AnimationTime, speed: null, !paused);
-            onCompleteCallback?.Invoke();
-        }
-
-        [CommandHandler(typeof(DEPRECATED_StopAnimation))]
-        private void OnStopAnimation(DEPRECATED_StopAnimation payload, Action onCompleteCallback)
-        {
-            GetOrCreateActorComponent<AnimationComponent>()
-                .SetAnimationState(payload.AnimationName, payload.AnimationTime, speed: null, false);
-            onCompleteCallback?.Invoke();
-        }
-
-        [CommandHandler(typeof(DEPRECATED_PauseAnimation))]
-        private void OnPauseAnimation(DEPRECATED_PauseAnimation payload, Action onCompleteCallback)
-        {
-            GetOrCreateActorComponent<AnimationComponent>()
-                .SetAnimationState(payload.AnimationName, time: null, speed: null, false);
-            onCompleteCallback?.Invoke();
-        }
-
-        [CommandHandler(typeof(DEPRECATED_ResumeAnimation))]
-        private void OnResumeAnimation(DEPRECATED_ResumeAnimation payload, Action onCompleteCallback)
-        {
-            GetOrCreateActorComponent<AnimationComponent>()
-                .SetAnimationState(payload.AnimationName, time: null, speed: null, true);
-            onCompleteCallback?.Invoke();
-        }
-
-        [CommandHandler(typeof(DEPRECATED_ResetAnimation))]
-        private void OnResetAnimation(DEPRECATED_ResetAnimation payload, Action onCompleteCallback)
-        {
-            GetOrCreateActorComponent<AnimationComponent>()
-                .SetAnimationState(payload.AnimationName, time: 0, speed: null, null);
-            onCompleteCallback?.Invoke();
-        }
-
-        [CommandHandler(typeof(DEPRECATED_EnableRigidBody))]
-        private void OnEnableRigidBody(DEPRECATED_EnableRigidBody payload, Action onCompleteCallback)
-        {
-            OperationResult result = EnableRigidBody(payload.RigidBody);
-            App.Protocol.Send(result, payload.MessageId);
-            onCompleteCallback?.Invoke();
-        }
-
-        [CommandHandler(typeof(DEPRECATED_EnableLight))]
-        private void OnEnableLight(DEPRECATED_EnableLight payload, Action onCompleteCallback)
-        {
-            OperationResult result = EnableLight(payload.Light);
-            App.Protocol.Send(result, payload.MessageId);
-            onCompleteCallback?.Invoke();
-        }
-
-        [CommandHandler(typeof(DEPRECATED_EnableText))]
-        private void OnEnableText(DEPRECATED_EnableText payload, Action onCompleteCallback)
-        {
-            OperationResult result = EnableText(payload.Text);
-            App.Protocol.Send(result, payload.MessageId);
-            onCompleteCallback?.Invoke();
         }
 
         [CommandHandler(typeof(SetAnimationState))]

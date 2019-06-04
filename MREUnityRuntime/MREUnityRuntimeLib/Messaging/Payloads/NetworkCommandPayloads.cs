@@ -38,11 +38,6 @@ namespace MixedRealityExtension.Messaging.Payloads
         /// The initial actor patch to apply to the newly created actor.
         /// </summary>
         public ActorPatch Actor { get; set; }
-
-        /// <summary>
-        /// The actor components to subscribe to. App will receive updates when these components change (if supported by the component type).
-        /// </summary>
-        public List<ActorComponentType> Subscriptions { get; set; }
     }
 
     /// <summary>
@@ -106,30 +101,12 @@ namespace MixedRealityExtension.Messaging.Payloads
 
     /// <summary>
     /// App => Engine
-    /// Payload for when the app wants to enable a rigid body on an actor.
-    /// Deprecated in 0.7.0. Remove after Min SDK version is 0.8.0.
-    /// </summary>
-    public class DEPRECATED_EnableRigidBody : NetworkCommandPayload
-    {
-        /// <summary>
-        /// The id of the actor to enable the rigid body on.
-        /// </summary>
-        public Guid ActorId { get; set; }
-
-        /// <summary>
-        /// The initial patch to apply to the rigid body.
-        /// </summary>
-        public RigidBodyPatch RigidBody { get; set; }
-    }
-
-    /// <summary>
-    /// App => Engine
     /// Payload for when the app wants to update an actor with a patch.
     /// </summary>
     public class ActorUpdate : NetworkCommandPayload
     {
         /// <summary>
-        /// The actor patch to apply to the actor assocaited with the patch.
+        /// The actor patch to apply to the actor associated with the patch.
         /// </summary>
         public ActorPatch Actor { get; set; }
     }
@@ -141,7 +118,7 @@ namespace MixedRealityExtension.Messaging.Payloads
     public class ActorCorrection : NetworkCommandPayload
     {
         /// <summary>
-        /// The actor patch to apply to the actor assocaited with the patch.
+        /// The actor patch to apply to the actor associated with the patch.
         /// </summary>
         public ActorPatch Actor { get; set; }
     }
@@ -159,85 +136,14 @@ namespace MixedRealityExtension.Messaging.Payloads
     }
 
     /// <summary>
-    /// App => Engine
-    /// Payload for when the app wants to update state through an enumeration of payloads to execute on.
-    /// Deprecated in 0.6.0. Remove after Min SDK version is 0.7.0.
-    /// </summary>
-    public class DEPRECATED_StateUpdate : NetworkCommandPayload
-    {
-        /// <summary>
-        /// The enumeration of payloads to executed on.
-        /// </summary>
-        public IEnumerable<Payload> Payloads { get; set; }
-    }
-
-    /// <summary>
     /// Payload for when the app needs to restore the state of a set of actors.
     /// </summary>
     public class StateRestore : NetworkCommandPayload
     {
         /// <summary>
-        /// The enumeration of actor patchs to apply to their corresponding actors.
+        /// The enumeration of actor patches to apply to their corresponding actors.
         /// </summary>
         public IEnumerable<ActorPatch> Actors { get; set; }
-    }
-
-    /// <summary>
-    /// App => Engine
-    /// Payload for when the app wants to enable a light on an actor.
-    /// Deprecated in 0.7.0. Remove after Min SDK version is 0.8.0.
-    /// </summary>
-    public class DEPRECATED_EnableLight : NetworkCommandPayload
-    {
-        /// <summary>
-        /// The id of the actor to enable a light on.
-        /// </summary>
-        public Guid ActorId { get; set; }
-
-        /// <summary>
-        /// The initial light patch to apply to the light.
-        /// </summary>
-        public LightPatch Light { get; set; }
-    }
-
-    /// <summary>
-    /// App => Engine
-    /// Payload for when the app wants to set text on an actor
-    /// Deprecated in 0.7.0. Remove after Min SDK version is 0.8.0.
-    /// </summary>
-    public class DEPRECATED_EnableText : NetworkCommandPayload
-    {
-        /// <summary>
-        /// The id of the actor to add text to
-        /// </summary>
-        public Guid ActorId { get; set; }
-
-        /// <summary>
-        /// The initial text patch
-        /// </summary>
-        public TextPatch Text { get; set; }
-    }
-
-    /// <summary>
-    /// App => Engine
-    /// Payload for when the app wants to update the subscriptions registered for a specific owner type.
-    /// </summary>
-    public class UpdateSubscriptions : NetworkCommandPayload
-    {
-        /// <summary>
-        /// The id of the mixed reality extension object to update subscriptions for.
-        /// </summary>
-        public Guid Id { get; set; }
-
-        /// <summary>
-        /// The actor components to subscribe to on the actor. See <see cref="ActorComponentType"/>.
-        /// </summary>
-        public IEnumerable<ActorComponentType> Adds { get; set; }
-
-        /// <summary>
-        /// The actor components to unsubscribe from on the actor. See <see cref="ActorComponentType"/>.
-        /// </summary>
-        public IEnumerable<ActorComponentType> Removes { get; set; }
     }
 
     /// <summary>
@@ -369,111 +275,6 @@ namespace MixedRealityExtension.Messaging.Payloads
         /// (Optional) The initial time, speed, and enable state of the animation (all values also optional). See <see cref="MWSetAnimationStateOptions"/>.
         /// </summary>
         public MWSetAnimationStateOptions InitialState { get; set; }
-    }
-
-    /// <summary>
-    /// App => Engine
-    /// Payload for when the app wants to start an animation.
-    /// Deprecated in 0.4.0. Remove after min SDK version is 0.5.0.
-    /// </summary>
-    public class DEPRECATED_StartAnimation : NetworkCommandPayload
-    {
-        /// <summary>
-        /// The id of the actor to start the animation on.
-        /// </summary>
-        public Guid ActorId { get; set; }
-
-        /// <summary>
-        /// The name of the animation to start.
-        /// </summary>
-        public string AnimationName { get; set; }
-
-        /// <summary>
-        /// (Optional) The time code (in seconds) at which to start the animation.
-        /// </summary>
-        public float? AnimationTime { get; set; }
-
-        /// <summary>
-        /// (Optional) Whether or not to start the animation in the paused state.
-        /// </summary>
-        public bool? Paused { get; set; }
-    }
-
-    /// <summary>
-    /// App => Engine
-    /// Payload for when the app wants to stop an animation.
-    /// Deprecated in 0.4.0. Remove after min SDK version is 0.5.0.
-    /// </summary>
-    public class DEPRECATED_StopAnimation : NetworkCommandPayload
-    {
-        /// <summary>
-        /// The id of the actor to stop the animation on.
-        /// </summary>
-        public Guid ActorId { get; set; }
-
-        /// <summary>
-        /// The name of the animation to stop.
-        /// </summary>
-        public string AnimationName { get; set; }
-
-        /// <summary>
-        /// (Optional) The time offset into the animation when it was stopped.
-        /// </summary>
-        public float? AnimationTime { get; set; }
-    }
-
-    /// <summary>
-    /// App => Engine
-    /// Payload for when the app wants to reset an animation.
-    /// Deprecated in 0.4.0. Remove after min SDK version is 0.5.0.
-    /// </summary>
-    public class DEPRECATED_ResetAnimation : NetworkCommandPayload
-    {
-        /// <summary>
-        /// The id of the actor to reset the animation on.
-        /// </summary>
-        public Guid ActorId { get; set; }
-
-        /// <summary>
-        /// The name of the animation to reset.
-        /// </summary>
-        public string AnimationName { get; set; }
-    }
-
-    /// <summary>
-    /// App => Engine
-    /// Payload for when the app wants to reset an animation.
-    /// Deprecated in 0.4.0. Remove after min SDK version is 0.5.0.
-    /// </summary>
-    public class DEPRECATED_PauseAnimation : NetworkCommandPayload
-    {
-        /// <summary>
-        /// The id of the actor to reset the animation on.
-        /// </summary>
-        public Guid ActorId { get; set; }
-
-        /// <summary>
-        /// The name of the animation to reset.
-        /// </summary>
-        public string AnimationName { get; set; }
-    }
-
-    /// <summary>
-    /// App => Engine
-    /// Payload for when the app wants to reset an animation.
-    /// Deprecated in 0.4.0. Remove after min SDK version is 0.5.0.
-    /// </summary>
-    public class DEPRECATED_ResumeAnimation : NetworkCommandPayload
-    {
-        /// <summary>
-        /// The id of the actor to reset the animation on.
-        /// </summary>
-        public Guid ActorId { get; set; }
-
-        /// <summary>
-        /// The name of the animation to reset.
-        /// </summary>
-        public string AnimationName { get; set; }
     }
 
     /// <summary>

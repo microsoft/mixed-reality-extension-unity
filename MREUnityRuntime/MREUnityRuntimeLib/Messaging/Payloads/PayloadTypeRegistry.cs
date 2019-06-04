@@ -49,20 +49,10 @@ namespace MixedRealityExtension.Messaging.Payloads
     [PayloadType(typeof(SyncComplete), "sync-complete")]
     [PayloadType(typeof(SyncRequest), "sync-request")]
     [PayloadType(typeof(TriggerEventRaised), "trigger-event-raised")]
-    [PayloadType(typeof(UpdateSubscriptions), "update-subscriptions")]
     [PayloadType(typeof(UserJoined), "user-joined")]
     [PayloadType(typeof(UserLeft), "user-left")]
     [PayloadType(typeof(UserUpdate), "user-update")]
     [PayloadType(typeof(Traces), "traces")]
-    [PayloadType(typeof(DEPRECATED_StartAnimation), "start-animation")]
-    [PayloadType(typeof(DEPRECATED_StopAnimation), "stop-animation")]
-    [PayloadType(typeof(DEPRECATED_ResetAnimation), "reset-animation")]
-    [PayloadType(typeof(DEPRECATED_PauseAnimation), "pause-animation")]
-    [PayloadType(typeof(DEPRECATED_ResumeAnimation), "resume-animation")]
-    [PayloadType(typeof(DEPRECATED_EnableLight), "enable-light")]
-    [PayloadType(typeof(DEPRECATED_EnableText), "enable-text")]
-    [PayloadType(typeof(DEPRECATED_EnableRigidBody), "enable-rigidbody")]
-    [PayloadType(typeof(DEPRECATED_StateUpdate), "state-update")]
     internal static class PayloadTypeRegistry
     {
         private static Dictionary<string, Type> _stringToPayloadMap;
