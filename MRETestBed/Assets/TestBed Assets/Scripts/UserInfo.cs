@@ -9,15 +9,14 @@ internal class UserInfo : IUserInfo
     public UserInfo(Guid id, string name)
     {
         Id = id;
-        this.name = name;
+        Name = name;
     }
 
     public GameObject UserGO { get; set; }
 
     public Guid Id { get; }
 
-    private string name;
-    public string Name => UserGO.name;
+    public string Name { get; private set; }
 
     public Dictionary<string, string> Properties => new Dictionary<string, string>()
     {
