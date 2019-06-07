@@ -47,6 +47,11 @@ namespace MixedRealityExtension.Assets
         /// If this asset is a sound, contains those properties
         /// </summary>
         public Sound? Sound;
+
+        /// <summary>
+        /// If this asset is a video, contains those properties
+        /// </summary>
+        public VideoStream? VideoStream;
     }
 
     /// <summary>
@@ -98,8 +103,31 @@ namespace MixedRealityExtension.Assets
     }
 
     /// <summary>
-    /// Contains material asset info
+    /// Type  describing how to interpret the video Source URI
     /// </summary>
+    public enum VideoSourceType
+    {
+        /// <summary>
+        ///  URI is just a Raw URL
+        /// </summary>
+        Raw,
+        /// <summary>
+        ///  URI is Mixer.com stream
+        /// </summary>
+        Mixer,
+        /// <summary>
+        ///  URI is Twitch stream
+        /// </summary>
+        Twitch,
+        /// <summary>
+        ///  URI is a YouTube video or live stream
+        /// </summary>
+        YouTube,
+    }
+
+    /// <summary>
+         /// Contains material asset info
+         /// </summary>
     public struct Material
     {
         /// <summary>
@@ -172,6 +200,27 @@ namespace MixedRealityExtension.Assets
         /// <summary>
         /// Duration in seconds.
         /// </summary>
-        public float Duration;
+        public float? Duration;
+    }
+
+    /// <summary>
+    /// Contains a basic video stream description
+    /// </summary>
+    public struct VideoStream
+    {
+        /// <summary>
+        /// The type describing the URI. use as URL if empty
+        /// </summary>
+        public VideoSourceType? VideoSourceType;
+
+        /// <summary>
+        /// The VideoSourceType specific URI
+        /// </summary>
+        public string Uri;
+
+        /// <summary>
+        /// Duration in seconds.
+        /// </summary>
+        public float? Duration;
     }
 }

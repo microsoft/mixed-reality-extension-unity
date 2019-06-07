@@ -311,7 +311,7 @@ namespace MixedRealityExtension.Messaging.Payloads
     /// App => Engine
     /// Payload for when the app wants to set animation state.
     /// </summary>
-    public class SetSoundState : NetworkCommandPayload
+    public class SetMediaState : NetworkCommandPayload
     {
         /// <summary>
         /// The id of the sound instance - used to manipulate the sound after instantiation
@@ -331,7 +331,7 @@ namespace MixedRealityExtension.Messaging.Payloads
         /// <summary>
         /// Command type (start, update, or stop)
         /// </summary>
-        public SoundCommand SoundCommand { get; set; }
+        public MediaCommand MediaCommand { get; set; }
 
         /// <summary>
         /// Time in seconds since sound was started
@@ -341,7 +341,7 @@ namespace MixedRealityExtension.Messaging.Payloads
         /// <summary>
         /// runtime configurable options.
         /// </summary>
-        public SoundStateOptions Options { get; set; }
+        public MediaStateOptions Options { get; set; }
 
     }
 
