@@ -37,7 +37,6 @@ namespace MixedRealityExtension.Core
 
         public AudioSource TryAddSoundInstance(Actor actor, Guid id, Guid soundAssetId, SoundStateOptions options, float? startTimeOffset)
         {
-            var obj = MREAPI.AppsAPI.AssetCache.GetAsset(soundAssetId);
             var audioClip = MREAPI.AppsAPI.AssetCache.GetAsset(soundAssetId) as AudioClip;
             if (audioClip != null)
             {

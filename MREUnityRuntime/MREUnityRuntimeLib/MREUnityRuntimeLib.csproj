@@ -105,6 +105,7 @@
     <Compile Include="Core\SoundStateOptions.cs" />
     <Compile Include="Core\Types\MWVector2.cs" />
     <Compile Include="Core\UserManager.cs" />
+    <Compile Include="Core\VideoStreamDescription.cs" />
     <Compile Include="Factories\DefaultMaterialPatcher.cs" />
     <Compile Include="Messaging\Events\Types\ActorCorrectionEvent.cs" />
     <Compile Include="Messaging\Events\Types\ColliderEvent.cs" />
@@ -143,6 +144,8 @@
     <Compile Include="Core\Components\LookAtComponent.cs" />
     <Compile Include="Core\Text.cs" />
     <Compile Include="Factories\MWTextFactory.cs" />
+    <Compile Include="PluginInterfaces\IVideoPlayer.cs" />
+    <Compile Include="PluginInterfaces\IVideoPlayerFactory.cs" />
     <Compile Include="UnityConstants.cs" />
     <Compile Include="PluginInterfaces\Behaviors\IBehavior.cs" />
     <Compile Include="PluginInterfaces\Behaviors\IBehaviorFactory.cs" />

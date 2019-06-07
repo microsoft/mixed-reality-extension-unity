@@ -22,7 +22,7 @@ using UnityLight = UnityEngine.Light;
 using UnityCollider = UnityEngine.Collider;
 using MixedRealityExtension.PluginInterfaces.Behaviors;
 using MixedRealityExtension.Util;
-
+using IVideoPlayer = MixedRealityExtension.PluginInterfaces.IVideoPlayer;
 namespace MixedRealityExtension.Core
 {
     /// <summary>
@@ -34,7 +34,7 @@ namespace MixedRealityExtension.Core
         private UnityLight _light;
         private UnityCollider _collider;
         private LookAtComponent _lookAt;
-        private Dictionary<Guid, AudioSource> _soundInstances;
+        private Dictionary<Guid, System.Object> _mediaInstances;
         private float _nextUpdateTime;
         private bool _grabbedLastSync = false;
 
@@ -444,11 +444,11 @@ namespace MixedRealityExtension.Core
                 userInfo.BeforeAvatarDestroyed -= UserInfo_BeforeAvatarDestroyed;
             }
 
-            if (_soundInstances != null)
+            if (_mediaInstances != null)
             {
-                foreach (KeyValuePair<Guid, AudioSource> soundInstance in _soundInstances)
+                foreach (KeyValuePair<Guid, System.Object> mediaInstance in _mediaInstances)
                 {
-                    App.SoundManager.DestroySoundInstance(soundInstance.Value, soundInstance.Key);
+                    DestroyMediaById(mediaInstance.Key, mediaInstance.Value);
                 }
             }
         }
@@ -1240,51 +1240,84 @@ namespace MixedRealityExtension.Core
         {
             if (payload.SoundCommand == SoundCommand.Start)
             {
+                if (_mediaInstances == null)
+                {
+                    _mediaInstances = new Dictionary<Guid, System.Object>();
+                }
                 AudioSource soundInstance = App.SoundManager.TryAddSoundInstance(this, payload.Id, payload.SoundAssetId, payload.Options, payload.StartTimeOffset);
                 if (soundInstance)
                 {
-                    if (_soundInstances == null)
+                    _mediaInstances.Add(payload.Id, soundInstance);
+                }
+                else
+                {
+                    var factory = MREAPI.AppsAPI.VideoPlayerFactory
+                        ?? throw new ArgumentException("Cannot movie player not implemented library.");
+                    IVideoPlayer videoPlayer = factory.CreateVideoPlayer(this);
+
+                    var videoStreamDescription= MREAPI.AppsAPI.AssetCache.GetAsset(payload.SoundAssetId) as VideoStreamDescription;
+                    if (videoStreamDescription != null)
                     {
-                        _soundInstances = new Dictionary<Guid, AudioSource>();
+                        videoPlayer.Play(videoStreamDescription, payload.Options, payload.StartTimeOffset);
                     }
-                    _soundInstances.Add(payload.Id, soundInstance);
+//                    videoPlayer.Play("https://www.youtube.com/watch?v=E6GAxUVs37c", payload.Options, payload.StartTimeOffset);
+                    _mediaInstances.Add(payload.Id, videoPlayer);
+
                 }
             }
             else
             {
-                if (_soundInstances != null && _soundInstances.TryGetValue(payload.Id, out AudioSource soundInstance))
+                if (_mediaInstances != null && _mediaInstances.TryGetValue(payload.Id, out System.Object mediaInstance))
                 {
                     switch (payload.SoundCommand)
                     {
                         case SoundCommand.Stop:
-                            DestroySoundById(payload.Id, soundInstance);
+                            _mediaInstances.Remove(payload.Id);
+                            DestroyMediaById(payload.Id, mediaInstance);
                             break;
+
                         case SoundCommand.Update:
-                            App.SoundManager.ApplySoundStateOptions(this, soundInstance, payload.Options, payload.Id, false);
+                            if (mediaInstance is AudioSource soundInstance)
+                            {
+                                App.SoundManager.ApplySoundStateOptions(this, soundInstance, payload.Options, payload.Id, false);
+                            }
+                            else if (mediaInstance is IVideoPlayer videoPlayer)
+                            {
+                                videoPlayer.ApplyMediaStateOptions(payload.Options);
+
+                            }
                             break;
                     }
+
                 }
+
             }
             onCompleteCallback?.Invoke();
         }
 
         public bool CheckIfSoundExpired(Guid id)
         {
-            if (_soundInstances != null && _soundInstances.TryGetValue(id, out AudioSource soundInstance))
+            if (_mediaInstances != null && _mediaInstances.TryGetValue(id, out System.Object mediaInstance))
             {
-                if (soundInstance.isPlaying)
+                if (mediaInstance is AudioSource soundInstance)
                 {
-                    return false;
+                    if (soundInstance.isPlaying)
+                    {
+                        return false;
+                    }
+                    _mediaInstances.Remove(id);
+                    DestroyMediaById(id, soundInstance);
                 }
-                DestroySoundById(id, soundInstance);
             }
             return true;
         }
 
-        private void DestroySoundById(Guid id, AudioSource soundInstance)
+        private void DestroyMediaById(Guid id, object mediaInstance)
         {
-            _soundInstances.Remove(id);
-            App.SoundManager.DestroySoundInstance(soundInstance, id);
+            if (mediaInstance is AudioSource soundInstance)
+            {
+                App.SoundManager.DestroySoundInstance(soundInstance, id);
+            }
         }
 
 
