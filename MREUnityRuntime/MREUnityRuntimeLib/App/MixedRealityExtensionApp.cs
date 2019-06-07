@@ -597,11 +597,6 @@ namespace MixedRealityExtension.App
             rootActor?.ApplyPatch(originalMessage.Actor);
             Actor.ApplyVisibilityUpdate(rootActor);
 
-            foreach (var actor in createdActors)
-            {
-                actor.AddSubscriptions(originalMessage.Subscriptions);
-            }
-
             SendCreateActorResponse(originalMessage, actors: createdActors, onCompleteCallback: onCompleteCallback);
 
             void ProcessActors(Transform xfrm, Actor parent)
@@ -651,27 +646,6 @@ namespace MixedRealityExtension.App
                 originalMessage.MessageId);
 
             onCompleteCallback?.Invoke();
-        }
-
-        [CommandHandler(typeof(DEPRECATED_StateUpdate))]
-        private void OnStateUpdate(DEPRECATED_StateUpdate payload, Action onCompleteCallback)
-        {
-            foreach (var updatePayload in payload.Payloads)
-            {
-                if (updatePayload is ActorUpdate actorUpdate)
-                {
-                    _actorManager.ProcessActorCommand(actorUpdate.Actor.Id, actorUpdate, onCompleteCallback);
-                }
-                else if (updatePayload is AssetUpdate assetUpdate)
-                {
-                    _assetLoader.OnAssetUpdate(assetUpdate, onCompleteCallback);
-                }
-                else
-                {
-                    MREAPI.Logger.LogError($"Unexpected payload in state update: {updatePayload.Type}");
-                    onCompleteCallback?.Invoke();
-                }
-            }
         }
 
         [CommandHandler(typeof(SyncAnimations))]

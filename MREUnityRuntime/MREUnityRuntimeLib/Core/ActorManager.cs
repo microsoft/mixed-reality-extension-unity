@@ -181,30 +181,6 @@ namespace MixedRealityExtension.Core
             onCompleteCallback?.Invoke();
         }
 
-        [CommandHandler(typeof(DEPRECATED_EnableRigidBody))]
-        private void OnEnableRigidBody(DEPRECATED_EnableRigidBody payload, Action onCompleteCallback)
-        {
-            ProcessActorCommand(payload.ActorId, payload, onCompleteCallback);
-        }
-
-        [CommandHandler(typeof(DEPRECATED_EnableLight))]
-        private void OnEnableLight(DEPRECATED_EnableLight payload, Action onCompleteCallback)
-        {
-            ProcessActorCommand(payload.ActorId, payload, onCompleteCallback);
-        }
-
-        [CommandHandler(typeof(DEPRECATED_EnableText))]
-        private void OnEnableText(DEPRECATED_EnableText payload, Action onCompleteCallback)
-        {
-            ProcessActorCommand(payload.ActorId, payload, onCompleteCallback);
-        }
-
-        [CommandHandler(typeof(UpdateSubscriptions))]
-        private void OnUpdateSubscriptions(UpdateSubscriptions payload, Action onCompleteCallback)
-        {
-            ProcessActorCommand(payload.Id, payload, onCompleteCallback);
-        }
-
         [CommandHandler(typeof(RigidBodyCommands))]
         private void OnRigidBodyCommands(RigidBodyCommands payload, Action onCompleteCallback)
         {
@@ -213,36 +189,6 @@ namespace MixedRealityExtension.Core
 
         [CommandHandler(typeof(CreateAnimation))]
         private void OnCreateAnimation(CreateAnimation payload, Action onCompleteCallback)
-        {
-            ProcessActorCommand(payload.ActorId, payload, onCompleteCallback);
-        }
-
-        [CommandHandler(typeof(DEPRECATED_StartAnimation))]
-        private void OnStartAnimation(DEPRECATED_StartAnimation payload, Action onCompleteCallback)
-        {
-            ProcessActorCommand(payload.ActorId, payload, onCompleteCallback);
-        }
-
-        [CommandHandler(typeof(DEPRECATED_StopAnimation))]
-        private void OnStopAnimation(DEPRECATED_StopAnimation payload, Action onCompleteCallback)
-        {
-            ProcessActorCommand(payload.ActorId, payload, onCompleteCallback);
-        }
-
-        [CommandHandler(typeof(DEPRECATED_PauseAnimation))]
-        private void OnPauseAnimation(DEPRECATED_PauseAnimation payload, Action onCompleteCallback)
-        {
-            ProcessActorCommand(payload.ActorId, payload, onCompleteCallback);
-        }
-
-        [CommandHandler(typeof(DEPRECATED_ResumeAnimation))]
-        private void OnResumeAnimation(DEPRECATED_ResumeAnimation payload, Action onCompleteCallback)
-        {
-            ProcessActorCommand(payload.ActorId, payload, onCompleteCallback);
-        }
-
-        [CommandHandler(typeof(DEPRECATED_ResetAnimation))]
-        private void OnResetAnimation(DEPRECATED_ResetAnimation payload, Action onCompleteCallback)
         {
             ProcessActorCommand(payload.ActorId, payload, onCompleteCallback);
         }
