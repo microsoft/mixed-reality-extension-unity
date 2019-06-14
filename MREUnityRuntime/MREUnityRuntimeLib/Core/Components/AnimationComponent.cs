@@ -133,7 +133,7 @@ namespace MixedRealityExtension.Core.Components
                     AddFloatPatch(type, String.Format("{0}.w", propertyName), time, value?.W);
                 }
 
-                void AddTransformPatch(float time, ScaledTransformPatch value)
+                void AddLocalTransformPatch(float time, ScaledTransformPatch value)
                 {
                     // Work around a Unity bug/feature where all position components must be specified
                     // in the keyframe or the missing fields get set to zero.
@@ -158,9 +158,84 @@ namespace MixedRealityExtension.Core.Components
                     AddVector3Patch(typeof(Transform), "m_LocalScale", time, value?.Scale);
                 }
 
+                void AddAppTransformPatch(float time, TransformPatch value)
+                {
+                    // Work around a Unity bug/feature where all position components must be specified
+                    // in the keyframe or the missing fields get set to zero.
+                    Vector3Patch position = value?.Position;
+                    if (position != null && position.IsPatched())
+                    {
+                        if (!position.X.HasValue) { position.X = transform.position.x; }
+                        if (!position.Y.HasValue) { position.Y = transform.position.y; }
+                        if (!position.Z.HasValue) { position.Z = transform.position.z; }
+                    }
+
+                    if (value != null)
+                    {
+                        var appRootTransform = AttachedActor.App.SceneRoot.transform;
+
+                        if (position != null)
+                        {
+                            // We need the patch to be a unity vector 3.
+                            Vector3 unityAppPosition;
+                            unityAppPosition.x = position.X.Value;
+                            unityAppPosition.y = position.Y.Value;
+                            unityAppPosition.z = position.Z.Value;
+
+                            // Convert the app space position to a world space position.
+                            var worldPosition = appRootTransform.TransformPoint(unityAppPosition);
+
+                            // Update the position patch to be world space for the animation.
+                            position.X = worldPosition.x;
+                            position.Y = worldPosition.y;
+                            position.Z = worldPosition.z;
+
+                            // Add the world space vector to the animation.
+                            AddVector3Patch(typeof(Transform), "Position", time, position);
+                        }
+
+                        if (value.Rotation != null)
+                        {
+                            QuaternionPatch rotation = value.Rotation;
+
+                            // We need the patch to be a unity quaternion.
+                            Quaternion unityAppRotation;
+                            unityAppRotation.w = rotation.W.Value;
+                            unityAppRotation.x = rotation.X.Value;
+                            unityAppRotation.y = rotation.Y.Value;
+                            unityAppRotation.z = rotation.Z.Value;
+
+                            // Convert the app space rotation to a world space rotation.
+                            var worldRotation = appRootTransform.rotation * unityAppRotation;
+
+                            // Update the rotation patch to be world space for the animation.
+                            rotation.W = worldRotation.w;
+                            rotation.X = worldRotation.x;
+                            rotation.Y = worldRotation.y;
+                            rotation.Z = worldRotation.z;
+
+                            // Add the world space rotation to the animation.
+                            AddQuaternionPatch(typeof(Transform), "Rotation", time, rotation);
+                        }
+                    }
+                }
+
                 void AddActorPatch(float time, ActorPatch value)
                 {
-                    AddTransformPatch(time, value?.Transform.Local);
+                    if (value == null)
+                    {
+                        return;
+                    }
+
+                    if (value.Transform.App != null)
+                    {
+                        AddAppTransformPatch(time, value.Transform.App);
+                    }
+
+                    if (value.Transform.Local != null)
+                    {
+                        AddLocalTransformPatch(time, value?.Transform.Local);
+                    }
                 }
 
                 void AddKeyframe(MWAnimationKeyframe keyframe)
@@ -225,13 +300,43 @@ namespace MixedRealityExtension.Core.Components
             }
 
             // Are we patching the transform?
-            bool animateTransform = finalFrame.Transform != null && finalFrame.Transform.Local != null && finalFrame.Transform.Local.IsPatched();
-            var finalTransform = finalFrame.Transform.Local;
+            bool animateTransform = finalFrame.Transform != null;
+            bool animateLocalTransform = animateTransform && finalFrame.Transform.Local != null && finalFrame.Transform.Local.IsPatched();
+            bool animateAppTransform = animateTransform && finalFrame.Transform.App != null && finalFrame.Transform.App.IsPatched();
+            animateTransform = finalFrame.Transform != null && (animateAppTransform || animateLocalTransform);
 
-            // What parts of the transform are we animating?
-            bool animatePosition = animateTransform && finalTransform.Position != null && finalTransform.Position.IsPatched();
-            bool animateRotation = animateTransform && finalTransform.Rotation != null && finalTransform.Rotation.IsPatched();
-            bool animateScale = animateTransform && finalTransform.Scale != null && finalTransform.Scale.IsPatched();
+            // Start with local, and override with app values
+            TransformPatch finalTransform = finalFrame.Transform.Local;
+            bool animateLocalPosition = animateLocalTransform && finalTransform.Position != null && finalTransform.Position.IsPatched();
+            bool animateLocalRotation = animateLocalTransform && finalTransform.Rotation != null && finalTransform.Rotation.IsPatched();
+            bool animateLocalScale = animateLocalTransform &&
+                (finalTransform as ScaledTransformPatch).Scale != null &&
+                (finalTransform as ScaledTransformPatch).Scale.IsPatched();
+
+            // Override with app transform.
+            bool animateAppPosition = false;
+            bool animateAppRotation = false;
+            if (animateAppTransform)
+            {
+                // Ensure we have a transform.  If there was no local supplied, set it to the app transform.
+                finalTransform = finalTransform ?? finalFrame.Transform.App;
+
+                // Override the individual elements of the transform if there are present in the app transform.
+                if (finalFrame.Transform.App.Position != null)
+                {
+                    finalTransform.Position = finalFrame.Transform.App.Position;
+                    animateAppPosition = finalTransform.Position != null && finalTransform.Position.IsPatched();
+                }
+
+                if (finalFrame.Transform.App.Rotation != null)
+                {
+                    finalTransform.Rotation = finalFrame.Transform.App.Rotation;
+                    animateAppRotation = finalTransform.Rotation != null && finalTransform.Rotation.IsPatched();
+                }
+            }
+
+            bool animatePosition = animateAppPosition || animateLocalPosition;
+            bool animateRotation = animateAppRotation || animateLocalRotation;
 
             // Ensure we have a well-formed rotation quaternion.
             for (; animateRotation;)
@@ -335,32 +440,57 @@ namespace MixedRealityExtension.Core.Components
             void BuildKeyframePosition(MWAnimationKeyframe keyframe, float t)
             {
                 float value;
-                if (LerpFloat(out value, transform.localPosition.x, finalTransform.Position.X, t))
+                if (animateAppPosition)
                 {
-                    keyframe.Value.Transform.Local.Position.X = value;
+                    Vector3 appPosition = AttachedActor.App.SceneRoot.transform.InverseTransformPoint(transform.localPosition);
+                    if (LerpFloat(out value, appPosition.x, finalTransform.Position.X, t))
+                    {
+                        keyframe.Value.Transform.App.Position.X = value;
+                    }
+                    if (LerpFloat(out value, appPosition.y, finalTransform.Position.Y, t))
+                    {
+                        keyframe.Value.Transform.App.Position.Y = value;
+                    }
+                    if (LerpFloat(out value, appPosition.z, finalTransform.Position.Z, t))
+                    {
+                        keyframe.Value.Transform.App.Position.Z = value;
+                    }
                 }
-                if (LerpFloat(out value, transform.localPosition.y, finalTransform.Position.Y, t))
+                else
                 {
-                    keyframe.Value.Transform.Local.Position.Y = value;
-                }
-                if (LerpFloat(out value, transform.localPosition.z, finalTransform.Position.Z, t))
-                {
-                    keyframe.Value.Transform.Local.Position.Z = value;
+                    if (LerpFloat(out value, transform.localPosition.x, finalTransform.Position.X, t))
+                    {
+                        keyframe.Value.Transform.Local.Position.X = value;
+                    }
+                    if (LerpFloat(out value, transform.localPosition.y, finalTransform.Position.Y, t))
+                    {
+                        keyframe.Value.Transform.Local.Position.Y = value;
+                    }
+                    if (LerpFloat(out value, transform.localPosition.z, finalTransform.Position.Z, t))
+                    {
+                        keyframe.Value.Transform.Local.Position.Z = value;
+                    }
                 }
             }
 
             void BuildKeyframeScale(MWAnimationKeyframe keyframe, float t)
             {
+                if (!(animateLocalTransform && animateLocalScale))
+                {
+                    return;
+                }
+
                 float value;
-                if (LerpFloat(out value, transform.localScale.x, finalTransform.Scale.X, t))
+                ScaledTransformPatch localTransform = finalTransform as ScaledTransformPatch;
+                if (LerpFloat(out value, transform.localScale.x, localTransform.Scale.X, t))
                 {
                     keyframe.Value.Transform.Local.Scale.X = value;
                 }
-                if (LerpFloat(out value, transform.localScale.y, finalTransform.Scale.Y, t))
+                if (LerpFloat(out value, transform.localScale.y, localTransform.Scale.Y, t))
                 {
                     keyframe.Value.Transform.Local.Scale.Y = value;
                 }
-                if (LerpFloat(out value, transform.localScale.z, finalTransform.Scale.Z, t))
+                if (LerpFloat(out value, transform.localScale.z, localTransform.Scale.Z, t))
                 {
                     keyframe.Value.Transform.Local.Scale.Z = value;
                 }
@@ -369,9 +499,26 @@ namespace MixedRealityExtension.Core.Components
             void BuildKeyframeRotation(MWAnimationKeyframe keyframe, float t)
             {
                 Quaternion value;
-                if (SlerpQuaternion(out value, transform.localRotation, finalTransform.Rotation, t))
+                if (animateAppRotation)
                 {
-                    keyframe.Value.Transform.Local.Rotation = new QuaternionPatch(value);
+                    var appRotation = transform.rotation * AttachedActor.App.SceneRoot.transform.rotation;
+                    if (SlerpQuaternion(out value, appRotation, finalTransform.Rotation, t))
+                    {
+                        keyframe.Value.Transform.App.Rotation.W = value.w;
+                        keyframe.Value.Transform.App.Rotation.X = value.x;
+                        keyframe.Value.Transform.App.Rotation.Y = value.y;
+                        keyframe.Value.Transform.App.Rotation.Z = value.z;
+                    }
+                }
+                else
+                {
+                    if (SlerpQuaternion(out value, transform.localRotation, finalTransform.Rotation, t))
+                    {
+                        keyframe.Value.Transform.Local.Rotation.W = value.w;
+                        keyframe.Value.Transform.Local.Rotation.X = value.x;
+                        keyframe.Value.Transform.Local.Rotation.Y = value.y;
+                        keyframe.Value.Transform.Local.Rotation.Z = value.z;
+                    }
                 }
             }
 
@@ -387,7 +534,7 @@ namespace MixedRealityExtension.Core.Components
                 {
                     BuildKeyframeRotation(keyframe, curveTime);
                 }
-                if (animateScale)
+                if (animateLocalScale)
                 {
                     BuildKeyframeScale(keyframe, curveTime);
                 }
@@ -403,23 +550,49 @@ namespace MixedRealityExtension.Core.Components
 
                 if (animateTransform)
                 {
-                    keyframe.Value.Transform = new ActorTransformPatch()
+                    if (animateLocalTransform)
                     {
-                        Local = new ScaledTransformPatch()
-                    };
+                        keyframe.Value.Transform = new ActorTransformPatch()
+                        {
+                            Local = new ScaledTransformPatch()
+                        };
+                    }
+
+                    if (animateAppTransform)
+                    {
+                        keyframe.Value.Transform = keyframe.Value.Transform ?? new ActorTransformPatch();
+                        keyframe.Value.Transform.App = new TransformPatch();
+                    }
                 }
-                if (animatePosition)
+
+                if (animateLocalTransform)
                 {
-                    keyframe.Value.Transform.Local.Position = new Vector3Patch();
+                    if (animateLocalPosition && !animateAppPosition)
+                    {
+                        keyframe.Value.Transform.Local.Position = new Vector3Patch();
+                    }
+                    if (animateLocalRotation && !animateAppRotation)
+                    {
+                        keyframe.Value.Transform.Local.Rotation = new QuaternionPatch();
+                    }
+                    if (animateLocalScale)
+                    {
+                        keyframe.Value.Transform.Local.Scale = new Vector3Patch();
+                    }
                 }
-                if (animateRotation)
+
+                if (animateAppTransform)
                 {
-                    keyframe.Value.Transform.Local.Rotation = new QuaternionPatch();
+                    if (animateAppPosition)
+                    {
+                        keyframe.Value.Transform.App.Position = new Vector3Patch();
+                    }
+                    if (animateAppRotation)
+                    {
+                        keyframe.Value.Transform.App.Rotation = new QuaternionPatch();
+                    }
                 }
-                if (animateScale)
-                {
-                    keyframe.Value.Transform.Local.Scale = new Vector3Patch();
-                }
+
                 return keyframe;
             }
         }
