@@ -117,10 +117,9 @@ namespace MixedRealityExtension.Messaging.Payloads
     /// </summary>
     public class ActorCorrection : NetworkCommandPayload
     {
-        /// <summary>
-        /// The actor patch to apply to the actor associated with the patch.
-        /// </summary>
-        public ActorPatch Actor { get; set; }
+        public Guid ActorId { get; set; }
+
+        public MWTransform AppTransform { get; set; }
     }
 
     /// <summary>

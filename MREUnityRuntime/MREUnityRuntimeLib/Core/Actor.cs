@@ -21,6 +21,7 @@ using UnityEngine;
 using UnityLight = UnityEngine.Light;
 using UnityCollider = UnityEngine.Collider;
 using MixedRealityExtension.PluginInterfaces.Behaviors;
+using MixedRealityExtension.Util;
 
 namespace MixedRealityExtension.Core
 {
@@ -39,6 +40,8 @@ namespace MixedRealityExtension.Core
 
         private MWScaledTransform _localTransform;
         private MWTransform _appTransform;
+
+        private TransformLerper _transformLerper;
 
         private Dictionary<Type, ActorComponentBase> _components = new Dictionary<Type, ActorComponentBase>();
 
@@ -206,6 +209,19 @@ namespace MixedRealityExtension.Core
                     App.EventManager.QueueEvent(new ActorChangedEvent(Id, actorPatch));
                 }
 
+                // If the actor is grabbed or was grabbed last time we synced and is not grabbed any longer,
+                // then we always need to sync the transform.
+                if (IsGrabbed || _grabbedLastSync)
+                {
+                    var actorCorrection = new ActorCorrection()
+                    {
+                        ActorId = Id,
+                        AppTransform = AppTransform
+                    };
+
+                    App.EventManager.QueueEvent(new ActorCorrectionEvent(Id, actorCorrection));
+                }
+
                 // We update whether the actor was grabbed this sync to ensure we send one last transform update
                 // on the sync when they are no longer grabbed.  This is the final transform update after the grab
                 // is completed.  This should always be cached at the very end of the sync to ensure the value is valid
@@ -230,9 +246,19 @@ namespace MixedRealityExtension.Core
             PatchSubscriptions(actorPatch.Subscriptions);
         }
 
+        internal void ApplyCorrection(ActorCorrection actorCorrection)
+        {
+            CorrectAppTransform(actorCorrection.AppTransform);
+        }
+
         internal void SynchronizeEngine(ActorPatch actorPatch)
         {
             _updateActions.Enqueue((actor) => ApplyPatch(actorPatch));
+        }
+
+        internal void EngineCorrection(ActorCorrection actorCorrection)
+        {
+            _updateActions.Enqueue((actor) => ApplyCorrection(actorCorrection));
         }
 
         internal void ExecuteRigidBodyCommands(RigidBodyCommands commandPayload, Action onCompleteCallback)
@@ -443,6 +469,8 @@ namespace MixedRealityExtension.Core
             {
                 MREAPI.Logger.LogError($"Failed to synchronize app.  Exception: {e.Message}\nStackTrace: {e.StackTrace}");
             }
+
+            _transformLerper.LerpIfNeeded();
         }
 
         protected override void InternalFixedUpdate()
@@ -826,6 +854,32 @@ namespace MixedRealityExtension.Core
             }
         }
 
+        private void CorrectAppTransform(MWTransform transform)
+        {
+            if (transform == null)
+            {
+                return;
+            }
+
+            if (RigidBody == null)
+            {
+                // We need to lerp at the transform level with the transform lerper.
+                if (_transformLerper == null)
+                {
+                    _transformLerper = new TransformLerper(gameObject.transform);
+                }
+
+                // We do not pass in a value for the update period at this point.  We will be adding in lag
+                // prediction for the network here in the future once that is more fully fleshed out.
+                _transformLerper.SetTarget(transform.Position, transform.Rotation);
+            }
+            else
+            {
+                // Lerping and correction needs to happen at the rigid body level here to
+                // not interfere with physics simulation.
+            }
+        }
+
         private void PatchLight(LightPatch lightPatch)
         {
             if (lightPatch != null)
@@ -954,6 +1008,15 @@ namespace MixedRealityExtension.Core
             actorPatch.Transform = transformPatch.IsPatched() ? transformPatch : null;
         }
 
+        private void GenerateTransformCorrection(ActorCorrection actorCorrection)
+        {
+            if (PatchingUtilMethods.GenerateAppTransformPatch(AppTransform, transform, App.SceneRoot.transform).IsPatched())
+            {
+                AppTransform = transform.ToAppTransform(App.SceneRoot.transform);
+                actorCorrection.AppTransform = AppTransform;
+            }
+        }
+
         private void GenerateRigidBodyPatch(ActorPatch actorPatch)
         {
             if (_rigidbody != null && RigidBody != null)
@@ -996,13 +1059,6 @@ namespace MixedRealityExtension.Core
                 return false;
             }
 
-            // If the actor is grabbed or was grabbed last time we synced and is not grabbed any longer,
-            // then we always need to sync the transform.
-            if (IsGrabbed || _grabbedLastSync)
-            {
-                subscriptions |= ActorComponentType.Transform;
-            }
-
             // If the actor has a rigid body then always sync the transform and the rigid body.
             if (RigidBody != null)
             {
@@ -1023,10 +1079,9 @@ namespace MixedRealityExtension.Core
             if (subscriptions.HasFlag(flag))
             {
                 return
-                    (App.OperatingModel == OperatingModel.ServerAuthoritative) ||
+                    ((App.OperatingModel == OperatingModel.ServerAuthoritative) ||
                     App.IsAuthoritativePeer ||
-                    IsGrabbed ||
-                    inOwnedAttachmentHierarchy;
+                    inOwnedAttachmentHierarchy) && !IsGrabbed;
             }
 
             return false;
@@ -1076,8 +1131,7 @@ namespace MixedRealityExtension.Core
         [CommandHandler(typeof(ActorCorrection))]
         private void OnActorCorrection(ActorCorrection payload, Action onCompleteCallback)
         {
-            // TODO: Interpolate this change onto the actor.
-            SynchronizeEngine(payload.Actor);
+            EngineCorrection(payload);
             onCompleteCallback?.Invoke();
         }
 
