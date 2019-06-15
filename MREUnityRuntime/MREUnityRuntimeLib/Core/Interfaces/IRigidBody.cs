@@ -122,6 +122,12 @@ namespace MixedRealityExtension.Core.Interfaces
         bool UseGravity { get; }
 
         /// <summary>
+        /// Gets whether the rigid body is kinematic or not.  Kinematic rigid bodies are not
+        /// simulated by the physics engine.
+        /// </summary>
+        bool IsKinematic { get; }
+
+        /// <summary>
         /// Gets the constraint flags applied to the rigid body.
         /// </summary>
         MRERigidBodyConstraints ConstraintFlags { get; }
