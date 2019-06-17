@@ -49,6 +49,8 @@ namespace MixedRealityExtension.Core
 
         private ActorComponentType _subscriptions = ActorComponentType.None;
 
+        private ActorTransformPatch _rbTransformPatch;
+
         private new Renderer renderer = null;
         internal Renderer Renderer => renderer = renderer ?? GetComponent<Renderer>();
 
@@ -213,10 +215,12 @@ namespace MixedRealityExtension.Core
                 // then we always need to sync the transform.
                 if (IsGrabbed || _grabbedLastSync)
                 {
+                    var appTransform = transform.ToAppTransform(App.SceneRoot.transform);
+
                     var actorCorrection = new ActorCorrection()
                     {
                         ActorId = Id,
-                        AppTransform = AppTransform
+                        AppTransform = appTransform
                     };
 
                     App.EventManager.QueueEvent(new ActorCorrectionEvent(Id, actorCorrection));
@@ -470,7 +474,7 @@ namespace MixedRealityExtension.Core
                 MREAPI.Logger.LogError($"Failed to synchronize app.  Exception: {e.Message}\nStackTrace: {e.StackTrace}");
             }
 
-            _transformLerper.LerpIfNeeded();
+            _transformLerper?.Update();
         }
 
         protected override void InternalFixedUpdate()
@@ -802,56 +806,66 @@ namespace MixedRealityExtension.Core
                 }
                 else
                 {
-                    RigidBody.RigidBodyTransformUpdate transformUpdate = new RigidBody.RigidBodyTransformUpdate();
-                    if (transformPatch.Local != null)
-                    {
-                        // In case of rigid body:
-                        // - Apply scale directly.
-                        transform.localScale = transform.localScale.GetPatchApplied(LocalTransform.Scale.ApplyPatch(transformPatch.Local.Scale));
-
-                        // - Apply position and rotation via rigid body from local to world space.
-                        if (transformPatch.Local.Position != null)
-                        {
-                            var localPosition = transform.localPosition.GetPatchApplied(LocalTransform.Position.ApplyPatch(transformPatch.Local.Position));
-                            transformUpdate.Position = transform.TransformPoint(localPosition);
-                        }
-
-                        if (transformPatch.Local.Rotation != null)
-                        {
-                            var localRotation = transform.localRotation.GetPatchApplied(LocalTransform.Rotation.ApplyPatch(transformPatch.Local.Rotation));
-                            transformUpdate.Rotation = transform.rotation * localRotation;
-                        }
-                    }
-
-                    if (transformPatch.App != null)
-                    {
-                        var appTransform = App.SceneRoot.transform;
-
-                        if (transformPatch.App.Position != null)
-                        {
-                            // New app space position.
-                            var newAppPos = appTransform.InverseTransformPoint(transform.position)
-                                .GetPatchApplied(AppTransform.Position.ApplyPatch(transformPatch.App.Position));
-
-                            // Transform new position to world space.
-                            transformUpdate.Position = appTransform.TransformPoint(newAppPos);
-                        }
-
-                        if (transformPatch.App.Rotation != null)
-                        {
-                            // New app space rotation
-                            var newAppRot = (transform.rotation * appTransform.rotation)
-                                .GetPatchApplied(AppTransform.Rotation.ApplyPatch(transformPatch.App.Rotation));
-
-                            // Transform new app rotation to world space.
-                            transformUpdate.Rotation = newAppRot * transform.rotation;
-                        }
-                    }
-
-                    // Queue update to happen in the fixed update
-                    RigidBody.SynchronizeEngine(transformUpdate);
+                    PatchTransformWithRigidBody(transformPatch);   
                 }
             }
+        }
+
+        private void PatchTransformWithRigidBody(ActorTransformPatch transformPatch)
+        {
+            if (_rigidbody == null)
+            {
+                return;
+            }
+
+            RigidBody.RigidBodyTransformUpdate transformUpdate = new RigidBody.RigidBodyTransformUpdate();
+            if (transformPatch.Local != null)
+            {
+                // In case of rigid body:
+                // - Apply scale directly.
+                transform.localScale = transform.localScale.GetPatchApplied(LocalTransform.Scale.ApplyPatch(transformPatch.Local.Scale));
+
+                // - Apply position and rotation via rigid body from local to world space.
+                if (transformPatch.Local.Position != null)
+                {
+                    var localPosition = transform.localPosition.GetPatchApplied(LocalTransform.Position.ApplyPatch(transformPatch.Local.Position));
+                    transformUpdate.Position = transform.TransformPoint(localPosition);
+                }
+
+                if (transformPatch.Local.Rotation != null)
+                {
+                    var localRotation = transform.localRotation.GetPatchApplied(LocalTransform.Rotation.ApplyPatch(transformPatch.Local.Rotation));
+                    transformUpdate.Rotation = transform.rotation * localRotation;
+                }
+            }
+
+            if (transformPatch.App != null)
+            {
+                var appTransform = App.SceneRoot.transform;
+
+                if (transformPatch.App.Position != null)
+                {
+                    // New app space position.
+                    var newAppPos = appTransform.InverseTransformPoint(transform.position)
+                        .GetPatchApplied(AppTransform.Position.ApplyPatch(transformPatch.App.Position));
+
+                    // Transform new position to world space.
+                    transformUpdate.Position = appTransform.TransformPoint(newAppPos);
+                }
+
+                if (transformPatch.App.Rotation != null)
+                {
+                    // New app space rotation
+                    var newAppRot = (transform.rotation * appTransform.rotation)
+                        .GetPatchApplied(AppTransform.Rotation.ApplyPatch(transformPatch.App.Rotation));
+
+                    // Transform new app rotation to world space.
+                    transformUpdate.Rotation = newAppRot * transform.rotation;
+                }
+            }
+
+            // Queue update to happen in the fixed update
+            RigidBody.SynchronizeEngine(transformUpdate);
         }
 
         private void CorrectAppTransform(MWTransform transform)
@@ -869,14 +883,73 @@ namespace MixedRealityExtension.Core
                     _transformLerper = new TransformLerper(gameObject.transform);
                 }
 
+                // Convert the app relative transform for the correction to world position relative to our app root.
+                Vector3? newPos = null;
+                Quaternion? newRot = null;
+
+                if (transform.Position != null)
+                {
+                    Vector3 appPos;
+                    appPos.x = transform.Position.X;
+                    appPos.y = transform.Position.Y;
+                    appPos.z = transform.Position.Z;
+                    newPos = App.SceneRoot.transform.TransformPoint(appPos);
+                }
+
+                if (transform.Rotation != null)
+                {
+                    Quaternion appRot;
+                    appRot.w = transform.Rotation.W;
+                    appRot.x = transform.Rotation.X;
+                    appRot.y = transform.Rotation.Y;
+                    appRot.z = transform.Rotation.Z;
+                    newRot = App.SceneRoot.transform.rotation * appRot;
+                }
+
                 // We do not pass in a value for the update period at this point.  We will be adding in lag
                 // prediction for the network here in the future once that is more fully fleshed out.
-                _transformLerper.SetTarget(transform.Position, transform.Rotation);
+                _transformLerper.SetTarget(newPos, newRot);
             }
             else
             {
                 // Lerping and correction needs to happen at the rigid body level here to
-                // not interfere with physics simulation.
+                // not interfere with physics simulation.  This will change with kinematic being
+                // enabled on a rigid body for when it is grabbed.  We do not support this currently,
+                // and thus do not interpolate the actor.  Just set the position for the rigid body.
+
+                _rbTransformPatch = _rbTransformPatch ?? new ActorTransformPatch()
+                {
+                    App = new TransformPatch()
+                    {
+                        Position = new Vector3Patch(),
+                        Rotation = new QuaternionPatch()
+                    }
+                };
+
+                if (transform.Position != null)
+                {
+                    _rbTransformPatch.App.Position.X = transform.Position.X;
+                    _rbTransformPatch.App.Position.Y = transform.Position.Y;
+                    _rbTransformPatch.App.Position.Z = transform.Position.Z;
+                }
+                else
+                {
+                    _rbTransformPatch.App.Position = null;
+                }
+
+                if (transform.Rotation != null)
+                {
+                    _rbTransformPatch.App.Rotation.W = transform.Rotation.W;
+                    _rbTransformPatch.App.Rotation.X = transform.Rotation.X;
+                    _rbTransformPatch.App.Rotation.Y = transform.Rotation.Y;
+                    _rbTransformPatch.App.Rotation.Z = transform.Rotation.Z;
+                }
+                else
+                {
+                    _rbTransformPatch.App.Rotation = null;
+                }
+
+                PatchTransformWithRigidBody(_rbTransformPatch);
             }
         }
 
@@ -1006,15 +1079,6 @@ namespace MixedRealityExtension.Core
             AppTransform = transform.ToAppTransform(App.SceneRoot.transform);
 
             actorPatch.Transform = transformPatch.IsPatched() ? transformPatch : null;
-        }
-
-        private void GenerateTransformCorrection(ActorCorrection actorCorrection)
-        {
-            if (PatchingUtilMethods.GenerateAppTransformPatch(AppTransform, transform, App.SceneRoot.transform).IsPatched())
-            {
-                AppTransform = transform.ToAppTransform(App.SceneRoot.transform);
-                actorCorrection.AppTransform = AppTransform;
-            }
         }
 
         private void GenerateRigidBodyPatch(ActorPatch actorPatch)

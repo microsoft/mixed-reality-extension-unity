@@ -70,6 +70,15 @@ namespace MixedRealityExtension.Core.Types
                 Rotation = new QuaternionPatch(Rotation)
             };
         }
+
+        /// <summary>
+        /// Gets the string representation of a <see cref="MWTransform"/> instance.
+        /// </summary>
+        /// <returns>The string representation.</returns>
+        public override string ToString()
+        {
+            return $"Transform:\n\tPosition: {Position.ToString()}\n\tRotation: {Rotation.ToString()}";
+        }
     }
 
     /// <summary>
@@ -122,6 +131,15 @@ namespace MixedRealityExtension.Core.Types
             return
                 base.Equals(other) &&
                 Scale.Equals(other.Scale);
+        }
+
+        /// <summary>
+        /// Gets the string representation of a <see cref="MWScaledTransform"/> instance.
+        /// </summary>
+        /// <returns>The string representation.</returns>
+        public override string ToString()
+        {
+            return $"Transform:\n\tPosition: {Position.ToString()}\n\tRotation: {Rotation.ToString()}\n\tScale: {Scale.ToString()}";
         }
 
         internal new ScaledTransformPatch AsPatch()
