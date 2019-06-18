@@ -16,6 +16,7 @@ namespace MixedRealityExtension.Core
     {
         private MixedRealityExtensionApp _app;
         private Dictionary<Guid, Actor> _actorMapping = new Dictionary<Guid, Actor>();
+        private List<ActorCommandQueue> _queuesForUpdate = new List<ActorCommandQueue>(10);
         private Dictionary<Guid, ActorCommandQueue> _actorCommandQueues = new Dictionary<Guid, ActorCommandQueue>();
         private List<Action> _uponStable = new List<Action>();
 
@@ -110,8 +111,6 @@ namespace MixedRealityExtension.Core
             queue.Enqueue(payload, onCompleteCallback);
         }
 
-        private List<ActorCommandQueue> _queuesForUpdate = new List<ActorCommandQueue>(10);
-
         internal void Update()
         {
             // _actorCommandQueues can be modified during the iteration below, so make a shallow copy.
@@ -165,7 +164,7 @@ namespace MixedRealityExtension.Core
         [CommandHandler(typeof(ActorCorrection))]
         private void OnActorCorrection(ActorCorrection payload, Action onCompleteCallback)
         {
-            ProcessActorCommand(payload.Actor.Id, payload, onCompleteCallback);
+            ProcessActorCommand(payload.ActorId, payload, onCompleteCallback);
         }
 
         [CommandHandler(typeof(ActorUpdate))]

@@ -36,6 +36,32 @@ namespace MixedRealityExtension.Util.Unity
             return _this;
         }
 
+        public static Vector3 SetValue(ref this Vector3 _this, MWVector3 value)
+        {
+            _this.x = value.X;
+            _this.y = value.Y;
+            _this.z = value.Z;
+            return _this;
+        }
+
+        public static Quaternion SetValue(ref this Quaternion _this, MWQuaternion value)
+        {
+            _this.w = value.W;
+            _this.x = value.X;
+            _this.y = value.Y;
+            _this.z = value.Z;
+            return _this;
+        }
+
+        public static Color SetValue(ref this Color _this, MWColor value)
+        {
+            _this.r = value.R;
+            _this.g = value.G;
+            _this.b = value.B;
+            _this.a = value.A;
+            return _this;
+        }
+
         public static MWVector2 ToMWVector2(this Vector2 _this)
         {
             return new MWVector2()
@@ -81,7 +107,7 @@ namespace MixedRealityExtension.Util.Unity
             return new MWTransform()
             {
                 Position = appRoot.InverseTransformPoint(transform.position).ToMWVector3(),
-                Rotation = (transform.rotation * appRoot.rotation).ToMWQuaternion()
+                Rotation = (Quaternion.Inverse(appRoot.rotation) * transform.rotation).ToMWQuaternion()
             };
         }
 

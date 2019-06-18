@@ -70,5 +70,14 @@ namespace MixedRealityExtension.Core.Types
                 Y.Equals(other.Y) &&
                 Z.Equals(other.Z);
         }
+
+        /// <summary>
+        /// Gets the string representation of a <see cref="MWVector3"/> instance.
+        /// </summary>
+        /// <returns>The string representation.</returns>
+        public override string ToString()
+        {
+            return $"{{ X: {X}, Y: {Y}, Z: {Z} }}";
+        }
     }
 }
