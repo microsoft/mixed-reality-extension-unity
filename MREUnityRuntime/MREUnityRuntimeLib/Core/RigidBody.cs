@@ -41,6 +41,9 @@ namespace MixedRealityExtension.Core
         public bool UseGravity { get; set; }
 
         /// <inheritdoc />
+        public bool IsKinematic { get; set; }
+
+        /// <inheritdoc />
         public MRERigidBodyConstraints ConstraintFlags { get; set; }
 
         internal RigidBody(Rigidbody rigidbody, Transform sceneRoot)
@@ -140,6 +143,7 @@ namespace MixedRealityExtension.Core
             DetectCollisions = rigidbody.detectCollisions;
             CollisionDetectionMode = (MRECollisionDetectionMode)Enum.Parse(typeof(MRECollisionDetectionMode), rigidbody.collisionDetectionMode.ToString());
             UseGravity = rigidbody.useGravity;
+            IsKinematic = rigidbody.isKinematic;
             ConstraintFlags = (MRERigidBodyConstraints)Enum.Parse(typeof(MRERigidBodyConstraints), rigidbody.constraints.ToString());
         }
 
@@ -169,6 +173,10 @@ namespace MixedRealityExtension.Core
             if (patch.UseGravity.HasValue)
             {
                 _rigidbody.useGravity = _rigidbody.useGravity.GetPatchApplied(UseGravity.ApplyPatch(patch.UseGravity));
+            }
+            if (patch.IsKinematic.HasValue)
+            {
+                _rigidbody.isKinematic = _rigidbody.isKinematic.GetPatchApplied(IsKinematic.ApplyPatch(patch.IsKinematic));
             }
             _rigidbody.constraints = (RigidbodyConstraints)((int)_rigidbody.constraints).GetPatchApplied((int)ConstraintFlags.ApplyPatch(patch.ConstraintFlags));
         }

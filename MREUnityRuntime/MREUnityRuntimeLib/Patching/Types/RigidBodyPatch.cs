@@ -35,6 +35,9 @@ namespace MixedRealityExtension.Patching.Types
         public bool? UseGravity { get; set; }
 
         [PatchProperty]
+        public bool? IsKinematic { get; set; }
+
+        [PatchProperty]
         public MRERigidBodyConstraints[] Constraints
         {
             get
