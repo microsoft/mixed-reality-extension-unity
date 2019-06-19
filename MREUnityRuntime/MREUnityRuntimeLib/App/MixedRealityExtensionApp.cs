@@ -523,7 +523,7 @@ namespace MixedRealityExtension.App
                 SendCreateActorResponse(payload,
                     failureMessage: $"An unexpected error occurred while loading glTF model [{payload.ResourceUrl}].\n{e.ToString()}",
                     onCompleteCallback: onCompleteCallback);
-                return;
+                Debug.LogException(e);
             }
         }
 
@@ -591,6 +591,23 @@ namespace MixedRealityExtension.App
         {
             var guids = new DeterministicGuids(originalMessage.Actor?.Id);
             var rootActor = createdActors.FirstOrDefault();
+
+            if (rootActor.transform.parent == null)
+            {
+                // Delete entire hierarchy as we no longer have a valid parent actor for the root of this hierarchy.  It was likely
+                // destroyed in the process of the async operation before this callback was called.
+                foreach (var actor in createdActors)
+                {
+                    actor.Destroy();
+                }
+
+                createdActors.Clear();
+
+                SendCreateActorResponse(
+                    originalMessage,
+                    failureMessage: "Parent for the actor being created no longer exists.  Cannot create new actor.");
+                return;
+            }
 
             ProcessActors(rootActor.transform, rootActor.transform.parent.GetComponent<Actor>());
 
