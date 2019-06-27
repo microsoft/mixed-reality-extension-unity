@@ -1260,9 +1260,7 @@ namespace MixedRealityExtension.Core
                     {
                         videoPlayer.Play(videoStreamDescription, payload.Options, payload.StartTimeOffset);
                     }
-//                    videoPlayer.Play("https://www.youtube.com/watch?v=E6GAxUVs37c", payload.Options, payload.StartTimeOffset);
                     _mediaInstances.Add(payload.Id, videoPlayer);
-
                 }
             }
             else
@@ -1275,7 +1273,6 @@ namespace MixedRealityExtension.Core
                             _mediaInstances.Remove(payload.Id);
                             DestroyMediaById(payload.Id, mediaInstance);
                             break;
-
                         case SoundCommand.Update:
                             if (mediaInstance is AudioSource soundInstance)
                             {
@@ -1284,13 +1281,10 @@ namespace MixedRealityExtension.Core
                             else if (mediaInstance is IVideoPlayer videoPlayer)
                             {
                                 videoPlayer.ApplyMediaStateOptions(payload.Options);
-
                             }
                             break;
                     }
-
                 }
-
             }
             onCompleteCallback?.Invoke();
         }

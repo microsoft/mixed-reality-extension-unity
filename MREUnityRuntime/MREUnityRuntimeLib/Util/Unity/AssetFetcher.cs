@@ -6,7 +6,6 @@ using UnityEngine;
 namespace MixedRealityExtension.Util.Unity
 {
 
-
     public static class AssetFetcher<T> where T : class
     {
         public struct FetchResult
@@ -34,7 +33,6 @@ namespace MixedRealityExtension.Util.Unity
 
             IEnumerator LoadCoroutine()
             {
-
                 UnityEngine.Networking.UnityWebRequest www = null;
                 if (typeof(T) == typeof(AudioClip))
                 {
