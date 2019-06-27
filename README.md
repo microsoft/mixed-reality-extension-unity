@@ -16,16 +16,11 @@ https://github.com/Microsoft/mixed-reality-extension-sdk). It also makes it easy
 ## How to build and run Hello World in the Unity3D editor
 From command prompt:
 * `git clone http://github.com/microsoft/mixed-reality-extension-unity`
-* `mixed-reality-extension-unity\RunHelloWorld.bat`
-* Click the play icon
-
+* Run `buildMREUnityRuntimeDLL.bat`
+* Open Unity3D, project folder `mixed-reality-extension-unity/MRETestBed`
+* open the scene `Assets/Scenes/HelloWorld.unity`
+* click play
 You should now see a slowly spinning Hello World label and a clickable cube.
-
-`RunHelloWorld.bat` internally performs the following steps
-* Calls `buildMREUnityRuntimeDLL.bat`
-* Opens Unity3D, project folder `mixed-reality-extension-unity/MRETestBed`
-* opens the scene `Assets/Scenes/HelloWorld.unity`
-
 
 
 ## Scene Descriptions
