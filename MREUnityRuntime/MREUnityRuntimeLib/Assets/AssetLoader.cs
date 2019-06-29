@@ -274,6 +274,7 @@ namespace MixedRealityExtension.Assets
 
             var mat = asset as UnityEngine.Material;
             var tex = asset as UnityEngine.Texture;
+            var snd = asset as UnityEngine.AudioClip;
             if (def.Material != null && mat != null)
             {
                 var matdef = def.Material.Value;
@@ -291,6 +292,10 @@ namespace MixedRealityExtension.Assets
                     tex.wrapModeU = texdef.WrapModeU.Value;
                 if (texdef.WrapModeV != null)
                     tex.wrapModeV = texdef.WrapModeV.Value;
+            }
+            else if (def.Sound != null && snd != null)
+            {
+                // do nothing; sound asset properties are immutable
             }
             else
             {
