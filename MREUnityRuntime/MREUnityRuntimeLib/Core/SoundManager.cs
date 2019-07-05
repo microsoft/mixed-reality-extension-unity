@@ -113,6 +113,10 @@ namespace MixedRealityExtension.Core
                     soundInstance.minDistance = options.RolloffStartDistance.Value;
                     soundInstance.maxDistance = options.RolloffStartDistance.Value * 1000000.0f;
                 }
+                if (options.Time != null)
+                {
+                    soundInstance.time=options.Time.Value;
+                }
 
                 //unpause must happen after other sound state changes
                 if (!startSound)

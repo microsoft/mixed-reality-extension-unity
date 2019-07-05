@@ -18,7 +18,8 @@ namespace MixedRealityExtension
         public float? Volume;
 
         /// <summary>
-        /// repeat the media when ended, or turn it off after playing once. Default to false
+        /// repeat the sound when ended, or turn it off after playing once. Default to false
+        /// This does not apply to video streams, only to sounds
         /// </summary>
         public bool? Looping;
 
@@ -57,7 +58,7 @@ namespace MixedRealityExtension
 
         /// <summary>
         /// Should the video stream be visible or invisible
-        /// Does not apply to sounds, only to video streams
+        /// Does not apply to sounds, only to video streams.
         /// </summary>
         public bool? Visible;
     }
