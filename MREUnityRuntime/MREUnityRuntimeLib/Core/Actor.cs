@@ -121,7 +121,7 @@ namespace MixedRealityExtension.Core
         private Attachment _cachedAttachment = new Attachment();
 
         internal Guid MaterialId { get; set; } = Guid.Empty;
-        
+
         internal bool Grabbable { get; private set; }
 
         internal bool IsGrabbed
@@ -137,7 +137,7 @@ namespace MixedRealityExtension.Core
                 return false;
             }
         }
-        
+
         internal UInt32 appearanceEnabled = UInt32.MaxValue;
         internal bool activeAndEnabled =>
             ((Parent as Actor)?.activeAndEnabled ?? true)
@@ -807,7 +807,7 @@ namespace MixedRealityExtension.Core
                 }
                 else
                 {
-                    PatchTransformWithRigidBody(transformPatch);   
+                    PatchTransformWithRigidBody(transformPatch);
                 }
             }
         }
@@ -1235,8 +1235,8 @@ namespace MixedRealityExtension.Core
             onCompleteCallback?.Invoke();
         }
 
-        [CommandHandler(typeof(SetSoundState))]
-        private void OnSetSoundState(SetSoundState payload, Action onCompleteCallback)
+        [CommandHandler(typeof(SetMediaState))]
+        private void OnSetMediaState(SetMediaState payload, Action onCompleteCallback)
         {
             if (payload.SoundCommand == SoundCommand.Start)
             {
@@ -1255,7 +1255,7 @@ namespace MixedRealityExtension.Core
                         ?? throw new ArgumentException("Cannot movie player not implemented library.");
                     IVideoPlayer videoPlayer = factory.CreateVideoPlayer(this);
 
-                    var videoStreamDescription= MREAPI.AppsAPI.AssetCache.GetAsset(payload.SoundAssetId) as VideoStreamDescription;
+                    var videoStreamDescription = MREAPI.AppsAPI.AssetCache.GetAsset(payload.SoundAssetId) as VideoStreamDescription;
                     if (videoStreamDescription != null)
                     {
                         videoPlayer.Play(videoStreamDescription, payload.Options, payload.StartTimeOffset);
@@ -1276,7 +1276,7 @@ namespace MixedRealityExtension.Core
                         case SoundCommand.Update:
                             if (mediaInstance is AudioSource soundInstance)
                             {
-                                App.SoundManager.ApplySoundStateOptions(this, soundInstance, payload.Options, payload.Id, false);
+                                App.SoundManager.ApplyMediaStateOptions(this, soundInstance, payload.Options, payload.Id, false);
                             }
                             else if (mediaInstance is IVideoPlayer videoPlayer)
                             {
@@ -1311,6 +1311,10 @@ namespace MixedRealityExtension.Core
             if (mediaInstance is AudioSource soundInstance)
             {
                 App.SoundManager.DestroySoundInstance(soundInstance, id);
+            }
+            else if (mediaInstance is IVideoPlayer videoPlayer)
+            {
+                videoPlayer.Destroy();
             }
         }
 

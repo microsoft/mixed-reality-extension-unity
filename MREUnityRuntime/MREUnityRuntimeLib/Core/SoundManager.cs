@@ -35,13 +35,13 @@ namespace MixedRealityExtension.Core
 
         #region Public Methods
 
-        public AudioSource TryAddSoundInstance(Actor actor, Guid id, Guid soundAssetId, SoundStateOptions options, float? startTimeOffset)
+        public AudioSource TryAddSoundInstance(Actor actor, Guid id, Guid soundAssetId, MediaStateOptions options, float? startTimeOffset)
         {
             var audioClip = MREAPI.AppsAPI.AssetCache.GetAsset(soundAssetId) as AudioClip;
             if (audioClip != null)
             {
                 float offset = startTimeOffset.GetValueOrDefault();
-                if (options.Looping != null && options.Looping.Value)
+                if (options.Looping != null && options.Looping.Value && audioClip.length != 0.0f)
                 {
                     offset = offset % audioClip.length;
                 }
@@ -54,7 +54,7 @@ namespace MixedRealityExtension.Core
                     soundInstance.spread = 90.0f;   //only affects multichannel sounds. Default to 50% spread, 50% stereo.
                     soundInstance.minDistance = 1.0f;
                     soundInstance.maxDistance = 1000000.0f;
-                    ApplySoundStateOptions(actor, soundInstance, options, id, true);
+                    ApplyMediaStateOptions(actor, soundInstance, options, id, true);
                     if (options.paused != null && options.paused.Value == true)
                     {
                         //start as paused
@@ -74,7 +74,7 @@ namespace MixedRealityExtension.Core
         }
 
 
-        public void ApplySoundStateOptions(Actor actor, AudioSource soundInstance, SoundStateOptions options, Guid id, bool startSound)
+        public void ApplyMediaStateOptions(Actor actor, AudioSource soundInstance, MediaStateOptions options, Guid id, bool startSound)
         {
             if (options != null)
             {

@@ -10,8 +10,9 @@ namespace MixedRealityExtension.PluginInterfaces
 {
     public interface IVideoPlayer
     {
-        void Play(VideoStreamDescription description, SoundStateOptions options, float? startTimeOffset);
+        void Play(VideoStreamDescription description, MediaStateOptions options, float? startTimeOffset);
         void Seek(float startTimeOffset);
-        void ApplyMediaStateOptions(SoundStateOptions options);
+        void Destroy();
+        void ApplyMediaStateOptions(MediaStateOptions options);
     }
 }
