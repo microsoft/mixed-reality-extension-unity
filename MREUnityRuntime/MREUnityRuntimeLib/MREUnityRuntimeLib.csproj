@@ -102,7 +102,7 @@
     <Compile Include="Core\Interfaces\IUserInfo.cs" />
     <Compile Include="Core\SoundCommand.cs" />
     <Compile Include="Core\SoundManager.cs" />
-    <Compile Include="Core\SoundStateOptions.cs" />
+    <Compile Include="Core\MediaStateOptions.cs" />
     <Compile Include="Core\Types\MWVector2.cs" />
     <Compile Include="Core\UserManager.cs" />
     <Compile Include="Core\VideoStreamDescription.cs" />
