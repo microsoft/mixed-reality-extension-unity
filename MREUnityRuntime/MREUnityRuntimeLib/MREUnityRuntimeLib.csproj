@@ -100,7 +100,7 @@
     <Compile Include="Core\ColliderGeometry.cs" />
     <Compile Include="Core\Interfaces\ICollider.cs" />
     <Compile Include="Core\Interfaces\IUserInfo.cs" />
-    <Compile Include="Core\SoundCommand.cs" />
+    <Compile Include="Core\MediaCommand.cs" />
     <Compile Include="Core\SoundManager.cs" />
     <Compile Include="Core\MediaStateOptions.cs" />
     <Compile Include="Core\Types\MWVector2.cs" />

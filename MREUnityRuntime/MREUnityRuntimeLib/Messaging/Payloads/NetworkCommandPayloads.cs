@@ -331,7 +331,7 @@ namespace MixedRealityExtension.Messaging.Payloads
         /// <summary>
         /// Command type (start, update, or stop)
         /// </summary>
-        public SoundCommand SoundCommand { get; set; }
+        public MediaCommand MediaCommand { get; set; }
 
         /// <summary>
         /// Time in seconds since sound was started

@@ -1238,7 +1238,7 @@ namespace MixedRealityExtension.Core
         [CommandHandler(typeof(SetMediaState))]
         private void OnSetMediaState(SetMediaState payload, Action onCompleteCallback)
         {
-            if (payload.SoundCommand == SoundCommand.Start)
+            if (payload.MediaCommand == MediaCommand.Start)
             {
                 if (_mediaInstances == null)
                 {
@@ -1267,13 +1267,13 @@ namespace MixedRealityExtension.Core
             {
                 if (_mediaInstances != null && _mediaInstances.TryGetValue(payload.Id, out System.Object mediaInstance))
                 {
-                    switch (payload.SoundCommand)
+                    switch (payload.MediaCommand)
                     {
-                        case SoundCommand.Stop:
+                        case MediaCommand.Stop:
                             _mediaInstances.Remove(payload.Id);
                             DestroyMediaById(payload.Id, mediaInstance);
                             break;
-                        case SoundCommand.Update:
+                        case MediaCommand.Update:
                             if (mediaInstance is AudioSource soundInstance)
                             {
                                 App.SoundManager.ApplyMediaStateOptions(this, soundInstance, payload.Options, payload.Id, false);

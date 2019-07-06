@@ -5,7 +5,7 @@ namespace MixedRealityExtension
     /// <summary>
     /// Special commands to change the mode of the sound instance?
     /// </summary>
-    public enum SoundCommand
+    public enum MediaCommand
     {
         /// <summary>
         /// Start a new sound instance
