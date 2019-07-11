@@ -20,6 +20,7 @@ using UnityGLTF.Loader;
 using MWMaterial = MixedRealityExtension.Assets.Material;
 using MWTexture = MixedRealityExtension.Assets.Texture;
 using MWSound = MixedRealityExtension.Assets.Sound;
+using MWVideoStream = MixedRealityExtension.Assets.VideoStream;
 
 namespace MixedRealityExtension.Assets
 {
@@ -274,7 +275,6 @@ namespace MixedRealityExtension.Assets
 
             var mat = asset as UnityEngine.Material;
             var tex = asset as UnityEngine.Texture;
-            var snd = asset as UnityEngine.AudioClip;
             if (def.Material != null && mat != null)
             {
                 var matdef = def.Material.Value;
@@ -293,7 +293,11 @@ namespace MixedRealityExtension.Assets
                 if (texdef.WrapModeV != null)
                     tex.wrapModeV = texdef.WrapModeV.Value;
             }
-            else if (def.Sound != null && snd != null)
+            else if (def.Sound != null && asset as UnityEngine.AudioClip != null)
+            {
+                // do nothing; sound asset properties are immutable
+            }
+            else if (def.VideoStream != null && asset as VideoStreamDescription != null)
             {
                 // do nothing; sound asset properties are immutable
             }
@@ -343,7 +347,26 @@ namespace MixedRealityExtension.Assets
                     MREAPI.AppsAPI.AssetCache.CacheAsset(unityAsset, def.Id);
                 }
             }
-
+            else if (unityAsset == null && def.VideoStream != null)
+            {
+                if (MREAPI.AppsAPI.VideoPlayerFactory != null)
+                {
+                    MixedRealityExtension.PluginInterfaces.FetchResult result2 = MREAPI.AppsAPI.VideoPlayerFactory.PreloadVideoAsset(def.VideoStream.Value.Uri);
+                    if (result2.FailureMessage != null)
+                    {
+                        response.FailureMessage = result2.FailureMessage;
+                    }
+                    else
+                    {
+                        unityAsset = result2.Asset;
+                        MREAPI.AppsAPI.AssetCache.CacheAsset(unityAsset, def.Id);
+                    }
+                }
+                else
+                {
+                    response.FailureMessage = "VideoPlayerFactory not implemented";
+                }
+            }
             if (unityAsset != null)
             {
                 OnAssetUpdate(new AssetUpdate()
@@ -363,7 +386,10 @@ namespace MixedRealityExtension.Assets
             }
             else
             {
-                response.FailureMessage = $"Not implemented: CreateAsset of type {(def.Prefab != null ? "Prefab" : "Mesh")}";
+                if (response.FailureMessage == null)
+                {
+                    response.FailureMessage = $"Not implemented: CreateAsset of new asset type";
+                }
                 MREAPI.Logger.LogError(response.FailureMessage);
             }
 
@@ -428,6 +454,17 @@ namespace MixedRealityExtension.Assets
                     Sound = new MWSound()
                     {
                         Duration = sound.length
+                    }
+                };
+            }
+            else if (unityAsset is VideoStreamDescription videoStream)
+            {
+                return new Asset()
+                {
+                    Id = id,
+                    VideoStream = new MWVideoStream()
+                    {
+                        Duration = videoStream.Duration
                     }
                 };
             }
