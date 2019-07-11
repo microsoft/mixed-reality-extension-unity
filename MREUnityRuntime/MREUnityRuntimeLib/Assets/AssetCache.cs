@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using MixedRealityExtension.PluginInterfaces;
 using MixedRealityExtension.Util;
 using UnityEngine;
@@ -14,16 +15,23 @@ namespace MixedRealityExtension.Assets
     /// </summary>
     public class AssetCache : IAssetCache
     {
-        private const int ASSET_DEFAULT_COUNT = 10;
-        private const int ASSET_SOURCES_DEFAULT_COUNT = 5;
+        private readonly struct CacheEntry
+        {
+            public readonly Guid Id;
+            public readonly Guid ContainerId;
+            public readonly AssetSource Source;
+            public readonly Object Asset;
 
-        private readonly Dictionary<Guid, Object> assets
-            = new Dictionary<Guid, Object>(ASSET_SOURCES_DEFAULT_COUNT * ASSET_DEFAULT_COUNT);
-        private readonly Dictionary<Object, Guid> ids
-            = new Dictionary<Object, Guid>(ASSET_SOURCES_DEFAULT_COUNT * ASSET_DEFAULT_COUNT);
-        private readonly Dictionary<AssetSource, List<Guid>> assetsBySource
-            = new Dictionary<AssetSource, List<Guid>>(ASSET_SOURCES_DEFAULT_COUNT);
-        private readonly List<Guid> manualAssets = new List<Guid>(ASSET_DEFAULT_COUNT);
+            public CacheEntry(Guid id, Guid containerId, AssetSource source, Object asset)
+            {
+                Id = id;
+                ContainerId = containerId;
+                Source = source;
+                Asset = asset;
+            }
+        }
+
+        private readonly List<CacheEntry> cache = new List<CacheEntry>(50);
         private readonly GameObject cacheRoot;
         private readonly GameObject emptyTemplate;
 
@@ -51,58 +59,34 @@ namespace MixedRealityExtension.Assets
         /// <inheritdoc cref="GetAssetIdsInSource"/>
         public IEnumerable<Guid> GetAssetIdsInSource(AssetSource source = null)
         {
-            List<Guid> guids;
-
-            if (source != null)
-            {
-                assetsBySource.TryGetValue(source, out guids);
-            }
-            else
-            {
-                guids = manualAssets;
-            }
-
-            return guids;
+            return cache.Where(c => c.Source == source).Select(c => c.Id);
         }
 
         /// <inheritdoc cref="GetAsset"/>
         public Object GetAsset(Guid? id)
         {
-            if (id == null)
-                return null;
-
-            assets.TryGetValue(id.Value, out var asset);
-            return asset;
+            return cache.Find(c => c.Id == id).Asset;
         }
 
         /// <inheritdoc cref="GetId"/>
         public Guid? GetId(Object asset)
         {
-            if(asset == null)
-            {
-                return null;
-            }
-
-            ids.TryGetValue(asset, out var guid);
-            return guid;
+            var id = cache.Find(c => c.Asset == asset).Id;
+            return id != Guid.Empty ? (Guid?)id : null;
         }
 
         /// <inheritdoc cref="CacheAsset"/>
-        public void CacheAsset(Object asset, Guid id, AssetSource source = null)
+        public void CacheAsset(Object asset, Guid id, Guid containerId, AssetSource source = null)
         {
-            List<Guid> assetList;
-            if(source != null)
-            {
-                assetList = assetsBySource.GetOrCreate(source, () => new List<Guid>(ASSET_DEFAULT_COUNT));
-            }
-            else
-            {
-                assetList = manualAssets;
-            }
+            cache.Add(new CacheEntry(id, containerId, source, asset));
+        }
 
-            assetList.Add(id);
-            assets[id] = asset;
-            ids[asset] = id;
+        /// <inheritdoc cref="UncacheAssets"/>
+        public IEnumerable<Object> UncacheAssets(Guid containerId)
+        {
+            var assets = cache.Where(c => c.ContainerId == containerId).Select(c => c.Asset);
+            cache.RemoveAll(c => c.ContainerId == containerId);
+            return assets;
         }
     }
 }

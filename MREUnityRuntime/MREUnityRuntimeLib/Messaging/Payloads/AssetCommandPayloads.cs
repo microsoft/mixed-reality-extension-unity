@@ -14,6 +14,11 @@ namespace MixedRealityExtension.Messaging.Payloads
     public class LoadAssets : NetworkCommandPayload
     {
         /// <summary>
+        /// The logical container that the new assets should be assigned to.
+        /// </summary>
+        public Guid ContainerId;
+
+        /// <summary>
         /// The asset container to load.
         /// </summary>
         public AssetSource Source;
@@ -72,8 +77,25 @@ namespace MixedRealityExtension.Messaging.Payloads
     public class CreateAsset : NetworkCommandPayload
     {
         /// <summary>
+        /// The logical container that the new assets should be assigned to.
+        /// </summary>
+        public Guid ContainerId;
+
+        /// <summary>
         /// Initial properties of the newly created asset
         /// </summary>
         public Asset Definition;
+    }
+
+    /// <summary>
+    /// App => Engine
+    /// Destroy all assets in the given container
+    /// </summary>
+    public class UnloadAssets : NetworkCommandPayload
+    {
+        /// <summary>
+        /// The container to unload
+        /// </summary>
+        public Guid ContainerId;
     }
 }
