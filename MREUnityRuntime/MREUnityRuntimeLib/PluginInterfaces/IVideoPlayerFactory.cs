@@ -27,6 +27,6 @@ namespace MixedRealityExtension.PluginInterfaces
     public interface IVideoPlayerFactory
     {
         IVideoPlayer CreateVideoPlayer(IActor parent);
-        FetchResult PreloadVideoAsset(VideoSourceType videoSourceType, string uri);
+        FetchResult PreloadVideoAsset(string uri);
     }
 }

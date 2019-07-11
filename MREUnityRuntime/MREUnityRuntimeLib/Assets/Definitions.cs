@@ -101,30 +101,6 @@ namespace MixedRealityExtension.Assets
         /// </summary>
         Blend
     }
-
-    /// <summary>
-    /// Type  describing how to interpret the video Source URI
-    /// </summary>
-    public enum VideoSourceType
-    {
-        /// <summary>
-        ///  URI is just a Raw URL
-        /// </summary>
-        Raw,
-        /// <summary>
-        ///  URI is Mixer.com stream
-        /// </summary>
-        Mixer,
-        /// <summary>
-        ///  URI is Twitch stream
-        /// </summary>
-        Twitch,
-        /// <summary>
-        ///  URI is a YouTube video or live stream
-        /// </summary>
-        YouTube,
-    }
-
     /// <summary>
          /// Contains material asset info
          /// </summary>
@@ -209,12 +185,8 @@ namespace MixedRealityExtension.Assets
     public struct VideoStream
     {
         /// <summary>
-        /// The type describing the URI. use as URL if empty
-        /// </summary>
-        public VideoSourceType? VideoSourceType;
-
-        /// <summary>
-        /// The VideoSourceType specific URI
+        /// The specific URI for the video stream
+        /// This can be either Youtube://xxx, Mixer://xxx, Twitch://xxx or a regular URL
         /// </summary>
         public string Uri;
 

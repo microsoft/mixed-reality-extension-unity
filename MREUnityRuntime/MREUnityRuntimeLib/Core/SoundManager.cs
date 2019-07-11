@@ -115,7 +115,7 @@ namespace MixedRealityExtension.Core
                 }
                 if (options.Time != null)
                 {
-                    soundInstance.time=options.Time.Value;
+                    soundInstance.time = options.Time.Value;
                 }
 
                 //unpause must happen after other sound state changes

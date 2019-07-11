@@ -351,7 +351,7 @@ namespace MixedRealityExtension.Assets
             {
                 if (MREAPI.AppsAPI.VideoPlayerFactory != null)
                 {
-                    MixedRealityExtension.PluginInterfaces.FetchResult result2 = MREAPI.AppsAPI.VideoPlayerFactory.PreloadVideoAsset(def.VideoStream.Value.VideoSourceType.GetValueOrDefault(VideoSourceType.Raw), def.VideoStream.Value.Uri);
+                    MixedRealityExtension.PluginInterfaces.FetchResult result2 = MREAPI.AppsAPI.VideoPlayerFactory.PreloadVideoAsset(def.VideoStream.Value.Uri);
                     if (result2.FailureMessage != null)
                     {
                         response.FailureMessage = result2.FailureMessage;
