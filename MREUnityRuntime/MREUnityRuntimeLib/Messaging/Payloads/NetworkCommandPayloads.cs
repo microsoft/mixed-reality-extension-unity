@@ -326,7 +326,7 @@ namespace MixedRealityExtension.Messaging.Payloads
         /// <summary>
         /// The GUID of the sound asset to start playing
         /// </summary>
-        public Guid SoundAssetId { get; set; }
+        public Guid MediaAssetId { get; set; }
 
         /// <summary>
         /// Command type (start, update, or stop)

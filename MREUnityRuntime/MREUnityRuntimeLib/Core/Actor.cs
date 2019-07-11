@@ -1238,42 +1238,47 @@ namespace MixedRealityExtension.Core
         [CommandHandler(typeof(SetMediaState))]
         private void OnSetMediaState(SetMediaState payload, Action onCompleteCallback)
         {
-            if (payload.MediaCommand == MediaCommand.Start)
+            if (_mediaInstances == null)
             {
-                if (_mediaInstances == null)
-                {
-                    _mediaInstances = new Dictionary<Guid, System.Object>();
-                }
-                AudioSource soundInstance = App.SoundManager.TryAddSoundInstance(this, payload.Id, payload.SoundAssetId, payload.Options, payload.StartTimeOffset);
-                if (soundInstance)
-                {
-                    _mediaInstances.Add(payload.Id, soundInstance);
-                }
-                else
-                {
-                    var factory = MREAPI.AppsAPI.VideoPlayerFactory
-                        ?? throw new ArgumentException("Cannot movie player not implemented library.");
-                    IVideoPlayer videoPlayer = factory.CreateVideoPlayer(this);
-
-                    var videoStreamDescription = MREAPI.AppsAPI.AssetCache.GetAsset(payload.SoundAssetId) as VideoStreamDescription;
-                    if (videoStreamDescription != null)
-                    {
-                        videoPlayer.Play(videoStreamDescription, payload.Options, payload.StartTimeOffset);
-                    }
-                    _mediaInstances.Add(payload.Id, videoPlayer);
-                }
+                _mediaInstances = new Dictionary<Guid, System.Object>();
             }
-            else
+            switch (payload.MediaCommand)
             {
-                if (_mediaInstances != null && _mediaInstances.TryGetValue(payload.Id, out System.Object mediaInstance))
-                {
-                    switch (payload.MediaCommand)
+                case MediaCommand.Start:
                     {
-                        case MediaCommand.Stop:
+                        AudioSource soundInstance = App.SoundManager.TryAddSoundInstance(this, payload.Id, payload.MediaAssetId, payload.Options, payload.StartTimeOffset);
+                        if (soundInstance)
+                        {
+                            _mediaInstances.Add(payload.Id, soundInstance);
+                        }
+                        else
+                        {
+                            var factory = MREAPI.AppsAPI.VideoPlayerFactory
+                                ?? throw new ArgumentException("Cannot start video stream - VideoPlayerFactory not implemented.");
+                            IVideoPlayer videoPlayer = factory.CreateVideoPlayer(this);
+
+                            var videoStreamDescription = MREAPI.AppsAPI.AssetCache.GetAsset(payload.MediaAssetId) as VideoStreamDescription;
+                            if (videoStreamDescription != null)
+                            {
+                                videoPlayer.Play(videoStreamDescription, payload.Options, payload.StartTimeOffset);
+                            }
+                            _mediaInstances.Add(payload.Id, videoPlayer);
+                        }
+                    }
+                    break;
+                case MediaCommand.Stop:
+                    {
+                        if (_mediaInstances.TryGetValue(payload.Id, out System.Object mediaInstance))
+                        {
                             _mediaInstances.Remove(payload.Id);
                             DestroyMediaById(payload.Id, mediaInstance);
-                            break;
-                        case MediaCommand.Update:
+                        }
+                    }
+                    break;
+                case MediaCommand.Update:
+                    {
+                        if (_mediaInstances.TryGetValue(payload.Id, out System.Object mediaInstance))
+                        {
                             if (mediaInstance is AudioSource soundInstance)
                             {
                                 App.SoundManager.ApplyMediaStateOptions(this, soundInstance, payload.Options, payload.Id, false);
@@ -1282,9 +1287,9 @@ namespace MixedRealityExtension.Core
                             {
                                 videoPlayer.ApplyMediaStateOptions(payload.Options);
                             }
-                            break;
+                        }
                     }
-                }
+                    break;
             }
             onCompleteCallback?.Invoke();
         }
