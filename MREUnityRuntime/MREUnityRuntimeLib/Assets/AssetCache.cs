@@ -84,7 +84,7 @@ namespace MixedRealityExtension.Assets
         /// <inheritdoc cref="UncacheAssets"/>
         public IEnumerable<Object> UncacheAssets(Guid containerId)
         {
-            var assets = cache.Where(c => c.ContainerId == containerId).Select(c => c.Asset);
+            var assets = cache.Where(c => c.ContainerId == containerId).Select(c => c.Asset).ToArray();
             cache.RemoveAll(c => c.ContainerId == containerId);
             return assets;
         }

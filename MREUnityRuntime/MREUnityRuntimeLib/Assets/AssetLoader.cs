@@ -295,6 +295,7 @@ namespace MixedRealityExtension.Assets
             if(unityAsset == null && def.Material != null)
             {
                 unityAsset = UnityEngine.Object.Instantiate(MREAPI.AppsAPI.DefaultMaterial);
+                unityAsset.name = payload.Definition.Name;
                 MREAPI.AppsAPI.AssetCache.CacheAsset(unityAsset, def.Id, payload.ContainerId);
             }
             else if(unityAsset == null && def.Texture != null)
@@ -307,6 +308,7 @@ namespace MixedRealityExtension.Assets
                 else
                 {
                     unityAsset = result.Asset;
+                    unityAsset.name = payload.Definition.Name;
                     MREAPI.AppsAPI.AssetCache.CacheAsset(unityAsset, def.Id, payload.ContainerId);
                     assignTextureToQueuedMaterials(def.Id);
                 }
@@ -321,6 +323,7 @@ namespace MixedRealityExtension.Assets
                 else
                 {
                     unityAsset = result.Asset;
+                    unityAsset.name = payload.Definition.Name;
                     MREAPI.AppsAPI.AssetCache.CacheAsset(unityAsset, def.Id, payload.ContainerId);
                 }
             }
@@ -362,6 +365,15 @@ namespace MixedRealityExtension.Assets
         {
             foreach (var asset in MREAPI.AppsAPI.AssetCache.UncacheAssets(payload.ContainerId))
             {
+                // workaround: unload meshes implicitly
+                if (asset is GameObject prefab)
+                {
+                    var filters = prefab.GetComponentsInChildren<MeshFilter>();
+                    foreach (var f in filters)
+                    {
+                        UnityEngine.Object.Destroy(f.sharedMesh);
+                    }
+                }
                 UnityEngine.Object.Destroy(asset);
             }
             onCompleteCallback?.Invoke();
