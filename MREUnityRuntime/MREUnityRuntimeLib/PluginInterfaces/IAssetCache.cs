@@ -19,13 +19,6 @@ namespace MixedRealityExtension.PluginInterfaces
         GameObject EmptyTemplate();
 
         /// <summary>
-        /// Retrieve the IDs of assets loaded from a source.
-        /// </summary>
-        /// <param name="source">The asset source</param>
-        /// <returns>A list of IDs, or null if the given source is not loaded.</returns>
-        IEnumerable<Guid> GetAssetIdsInSource(AssetSource source = null);
-
-        /// <summary>
         /// Retrieve an asset from the cache by ID, or null if an asset with that ID is not loaded.
         /// </summary>
         /// <param name="id">The ID of a loaded asset.</param>

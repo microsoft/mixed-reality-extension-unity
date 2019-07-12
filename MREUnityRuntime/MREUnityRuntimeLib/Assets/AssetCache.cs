@@ -56,12 +56,6 @@ namespace MixedRealityExtension.Assets
             return emptyTemplate;
         }
 
-        /// <inheritdoc cref="GetAssetIdsInSource"/>
-        public IEnumerable<Guid> GetAssetIdsInSource(AssetSource source = null)
-        {
-            return cache.Where(c => c.Source == source).Select(c => c.Id);
-        }
-
         /// <inheritdoc cref="GetAsset"/>
         public Object GetAsset(Guid? id)
         {
