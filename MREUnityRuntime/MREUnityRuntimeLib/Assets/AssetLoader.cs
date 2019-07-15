@@ -335,7 +335,7 @@ namespace MixedRealityExtension.Assets
             {
                 if (MREAPI.AppsAPI.VideoPlayerFactory != null)
                 {
-                    MixedRealityExtension.PluginInterfaces.FetchResult result2 = MREAPI.AppsAPI.VideoPlayerFactory.PreloadVideoAsset(def.VideoStream.Value.Uri);
+                    PluginInterfaces.FetchResult result2 = MREAPI.AppsAPI.VideoPlayerFactory.PreloadVideoAsset(def.VideoStream.Value.Uri);
                     if (result2.FailureMessage != null)
                     {
                         response.FailureMessage = result2.FailureMessage;
@@ -343,7 +343,7 @@ namespace MixedRealityExtension.Assets
                     else
                     {
                         unityAsset = result2.Asset;
-                        MREAPI.AppsAPI.AssetCache.CacheAsset(unityAsset, def.Id);
+                        MREAPI.AppsAPI.AssetCache.CacheAsset(unityAsset, def.Id, payload.ContainerId);
                     }
                 }
                 else
