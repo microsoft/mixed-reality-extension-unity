@@ -19,13 +19,6 @@ namespace MixedRealityExtension.PluginInterfaces
         GameObject EmptyTemplate();
 
         /// <summary>
-        /// Retrieve the IDs of assets loaded from a source.
-        /// </summary>
-        /// <param name="source">The asset source</param>
-        /// <returns>A list of IDs, or null if the given source is not loaded.</returns>
-        IEnumerable<Guid> GetAssetIdsInSource(AssetSource source = null);
-
-        /// <summary>
         /// Retrieve an asset from the cache by ID, or null if an asset with that ID is not loaded.
         /// </summary>
         /// <param name="id">The ID of a loaded asset.</param>
@@ -44,7 +37,15 @@ namespace MixedRealityExtension.PluginInterfaces
         /// </summary>
         /// <param name="asset">The native Unity asset</param>
         /// <param name="id">The ID of the asset.</param>
+        /// <param name="containerId">The container ID of the asset.</param>
         /// <param name="source">The origin container.</param>
-        void CacheAsset(UnityEngine.Object asset, Guid id, AssetSource source = null);
+        void CacheAsset(UnityEngine.Object asset, Guid id, Guid containerId, AssetSource source = null);
+
+        /// <summary>
+        /// Remove assets from the cache with the given container ID.
+        /// </summary>
+        /// <param name="containerId">The container ID.</param>
+        /// <returns>The list of assets removed from the cache</returns>
+        IEnumerable<UnityEngine.Object> UncacheAssets(Guid containerId);
     }
 }

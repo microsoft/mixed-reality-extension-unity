@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.Networking;
 
 namespace MixedRealityExtension.Util.Unity
 {
@@ -24,6 +25,7 @@ namespace MixedRealityExtension.Util.Unity
             };
 
             runner.StartCoroutine(LoadCoroutine());
+
             while (!result.IsPopulated)
             {
                 await Task.Delay(50);
@@ -33,16 +35,22 @@ namespace MixedRealityExtension.Util.Unity
 
             IEnumerator LoadCoroutine()
             {
-                UnityEngine.Networking.UnityWebRequest www = null;
+                DownloadHandler handler;
                 if (typeof(T) == typeof(AudioClip))
                 {
-                    www = UnityEngine.Networking.UnityWebRequestMultimedia.GetAudioClip(uri, AudioType.UNKNOWN);
+                    handler = new DownloadHandlerAudioClip(uri, AudioType.UNKNOWN);
                 }
                 else if (typeof(T) == typeof(Texture))
                 {
-                    www = UnityEngine.Networking.UnityWebRequestTexture.GetTexture(uri, true);
+                    handler = new DownloadHandlerTexture(false);
                 }
-                using (www)
+                else
+                {
+                    result.FailureMessage = $"Unknown download type: {typeof(T)}";
+                    yield break;
+                }
+
+                using (var www = new UnityWebRequest(uri, "GET", handler, null))
                 {
                     yield return www.SendWebRequest();
                     if (www.isNetworkError)
@@ -57,11 +65,11 @@ namespace MixedRealityExtension.Util.Unity
                     {
                         if (typeof(T) == typeof(AudioClip))
                         {
-                            result.Asset = UnityEngine.Networking.DownloadHandlerAudioClip.GetContent(www) as T;
+                            result.Asset = ((DownloadHandlerAudioClip) handler).audioClip as T;
                         }
                         else if (typeof(T) == typeof(Texture))
                         {
-                            result.Asset = UnityEngine.Networking.DownloadHandlerTexture.GetContent(www) as T;
+                            result.Asset = ((DownloadHandlerTexture) handler).texture as T;
                         }
                     }
                 }
