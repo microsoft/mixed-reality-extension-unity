@@ -198,8 +198,8 @@ namespace MixedRealityExtension.Core
             ProcessActorCommand(payload.ActorId, payload, onCompleteCallback);
         }
 
-        [CommandHandler(typeof(SetSoundState))]
-        private void OnSetSoundState(SetSoundState payload, Action onCompleteCallback)
+        [CommandHandler(typeof(SetMediaState))]
+        private void OnSetMediaState(SetMediaState payload, Action onCompleteCallback)
         {
             ProcessActorCommand(payload.ActorId, payload, onCompleteCallback);
         }

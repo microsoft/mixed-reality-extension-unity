@@ -42,6 +42,7 @@ namespace MixedRealityExtension.API
             IAssetCache assetCache = null,
             IGLTFImporterFactory gltfImporterFactory = null,
             IMaterialPatcher materialPatcher = null,
+            IVideoPlayerFactory videoPlayerFactory = null,
             IUserInfoProvider userInfoProvider = null,
 			IEngineConstants engineConstants = null,
             IMRELogger logger = null)
@@ -51,6 +52,7 @@ namespace MixedRealityExtension.API
             AppsAPI.TextFactory = textFactory ?? throw new ArgumentException($"{nameof(textFactory)} cannot be null");
             AppsAPI.PrimitiveFactory = primitiveFactory ?? new MWPrimitiveFactory();
             AppsAPI.LibraryResourceFactory = libraryFactory;
+            AppsAPI.VideoPlayerFactory = videoPlayerFactory;
             AppsAPI.AssetCache = assetCache ?? new AssetCache();
             AppsAPI.GLTFImporterFactory = gltfImporterFactory ?? new GLTFImporterFactory();
             AppsAPI.MaterialPatcher = materialPatcher ?? new DefaultMaterialPatcher();
@@ -102,6 +104,8 @@ namespace MixedRealityExtension.API
         internal IPrimitiveFactory PrimitiveFactory { get; set; }
 
         internal ILibraryResourceFactory LibraryResourceFactory { get; set; }
+
+        internal IVideoPlayerFactory VideoPlayerFactory { get; set; }
 
         internal IGLTFImporterFactory GLTFImporterFactory { get; set; }
 
