@@ -45,8 +45,6 @@ namespace MixedRealityExtension.Core
 
         private Dictionary<Type, ActorComponentBase> _components = new Dictionary<Type, ActorComponentBase>();
 
-        private Queue<Action<Actor>> _updateActions = new Queue<Action<Actor>>();
-
         private ActorComponentType _subscriptions = ActorComponentType.None;
 
         private ActorTransformPatch _rbTransformPatch;
