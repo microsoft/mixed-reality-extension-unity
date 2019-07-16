@@ -45,8 +45,6 @@ namespace MixedRealityExtension.Core
 
         private Dictionary<Type, ActorComponentBase> _components = new Dictionary<Type, ActorComponentBase>();
 
-        private Queue<Action<Actor>> _updateActions = new Queue<Action<Actor>>();
-
         private ActorComponentType _subscriptions = ActorComponentType.None;
 
         private ActorTransformPatch _rbTransformPatch;
@@ -257,12 +255,12 @@ namespace MixedRealityExtension.Core
 
         internal void SynchronizeEngine(ActorPatch actorPatch)
         {
-            _updateActions.Enqueue((actor) => ApplyPatch(actorPatch));
+            ApplyPatch(actorPatch);
         }
 
         internal void EngineCorrection(ActorCorrection actorCorrection)
         {
-            _updateActions.Enqueue((actor) => ApplyCorrection(actorCorrection));
+            ApplyCorrection(actorCorrection);
         }
 
         internal void ExecuteRigidBodyCommands(RigidBodyCommands commandPayload, Action onCompleteCallback)
@@ -457,11 +455,6 @@ namespace MixedRealityExtension.Core
         {
             try
             {
-                while (_updateActions.Count > 0)
-                {
-                    _updateActions.Dequeue()(this);
-                }
-
                 // TODO: Add ability to flag an actor for "high-frequency" updates
                 if (Time.time >= _nextUpdateTime)
                 {
