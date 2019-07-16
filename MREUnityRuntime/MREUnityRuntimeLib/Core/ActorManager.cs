@@ -104,13 +104,8 @@ namespace MixedRealityExtension.Core
 
         internal void ProcessActorCommand(Guid actorId, NetworkCommandPayload payload, Action onCompleteCallback)
         {
-            _actorCommandQueues.GetOrCreate(actorId, () =>
-            {
-                var queue = new ActorCommandQueue(actorId, _app);
-                _actorCommandQueues.Add(actorId, queue);
-                return queue;
-            })
-            .Enqueue(payload, onCompleteCallback);
+            _actorCommandQueues.GetOrCreate(actorId, () => new ActorCommandQueue(actorId, _app))
+                .Enqueue(payload, onCompleteCallback);
         }
 
         internal void Update(Guid actorId)
