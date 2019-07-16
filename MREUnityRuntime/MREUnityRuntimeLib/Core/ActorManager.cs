@@ -108,14 +108,6 @@ namespace MixedRealityExtension.Core
                 .Enqueue(payload, onCompleteCallback);
         }
 
-        internal void Update(Guid actorId)
-        {
-            if (_actorCommandQueues.TryGetValue(actorId, out ActorCommandQueue queue))
-            {
-                queue.Update();
-            }
-        }
-
         internal void Update()
         {
             // _actorCommandQueues can be modified during the iteration below, so make a shallow copy.
