@@ -6,6 +6,7 @@ using MixedRealityExtension.Core.Interfaces;
 using MixedRealityExtension.IPC;
 using MixedRealityExtension.Messaging.Commands;
 using MixedRealityExtension.Messaging.Payloads;
+using MixedRealityExtension.Util;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -103,12 +104,21 @@ namespace MixedRealityExtension.Core
 
         internal void ProcessActorCommand(Guid actorId, NetworkCommandPayload payload, Action onCompleteCallback)
         {
-            if (!_actorCommandQueues.TryGetValue(actorId, out ActorCommandQueue queue))
+            _actorCommandQueues.GetOrCreate(actorId, () =>
             {
-                queue = new ActorCommandQueue(actorId, _app);
+                var queue = new ActorCommandQueue(actorId, _app);
                 _actorCommandQueues.Add(actorId, queue);
+                return queue;
+            })
+            .Enqueue(payload, onCompleteCallback);
+        }
+
+        internal void Update(Guid actorId)
+        {
+            if (_actorCommandQueues.TryGetValue(actorId, out ActorCommandQueue queue))
+            {
+                queue.Update();
             }
-            queue.Enqueue(payload, onCompleteCallback);
         }
 
         internal void Update()

@@ -614,7 +614,8 @@ namespace MixedRealityExtension.App
             rootActor?.ApplyPatch(originalMessage.Actor);
             Actor.ApplyVisibilityUpdate(rootActor);
 
-            SendCreateActorResponse(originalMessage, actors: createdActors, onCompleteCallback: onCompleteCallback);
+            _actorManager.UponStable(
+                () => SendCreateActorResponse(originalMessage, actors: createdActors, onCompleteCallback: onCompleteCallback));
 
             void ProcessActors(Transform xfrm, Actor parent)
             {
