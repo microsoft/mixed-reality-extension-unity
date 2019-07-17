@@ -15,6 +15,7 @@ namespace MixedRealityExtension.Core
     {
         private TextMesh _tm;
         private Renderer _renderer;
+        private MWColor _color = new MWColor();
 
         /// <inheritdoc />
         public bool Enabled
@@ -124,7 +125,12 @@ namespace MixedRealityExtension.Core
         /// <inheritdoc />
         public MWColor Color
         {
-            get => _tm.color.ToMWColor();
+            get
+            {
+                _color.FromUnityColor(_tm.color);
+                return _color;
+            }
+
             private set => _tm.color = value.ToColor();
         }
 

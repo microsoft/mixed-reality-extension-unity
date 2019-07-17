@@ -10,130 +10,198 @@ namespace MixedRealityExtension.Util.Unity
 {
     internal static class MWUnityTypeExtensions
     {
-        public static MWVector3 SetValue(this MWVector3 _this, Vector3 value)
-        {
-            _this.X = value.x;
-            _this.Y = value.y;
-            _this.Z = value.z;
-            return _this;
-        }
+        //public static MWVector3 SetValue(this MWVector3 _this, Vector3 value)
+        //{
+        //    _this.X = value.x;
+        //    _this.Y = value.y;
+        //    _this.Z = value.z;
+        //    return _this;
+        //}
+        //
+        //public static MWQuaternion SetValue(this MWQuaternion _this, Quaternion value)
+        //{
+        //    _this.W = value.w;
+        //    _this.X = value.x;
+        //    _this.Y = value.y;
+        //    _this.Z = value.z;
+        //    return _this;
+        //}
+        //
+        //public static MWColor SetValue(this MWColor _this, Color value)
+        //{
+        //    _this.R = value.r;
+        //    _this.G = value.g;
+        //    _this.B = value.b;
+        //    _this.A = value.a;
+        //    return _this;
+        //}
+        //
+        //public static Vector3 SetValue(ref this Vector3 _this, MWVector3 value)
+        //{
+        //    _this.x = value.X;
+        //    _this.y = value.Y;
+        //    _this.z = value.Z;
+        //    return _this;
+        //}
+        //
+        //public static Quaternion SetValue(ref this Quaternion _this, MWQuaternion value)
+        //{
+        //    _this.w = value.W;
+        //    _this.x = value.X;
+        //    _this.y = value.Y;
+        //    _this.z = value.Z;
+        //    return _this;
+        //}
+        //
+        //public static Color SetValue(ref this Color _this, MWColor value)
+        //{
+        //    _this.r = value.R;
+        //    _this.g = value.G;
+        //    _this.b = value.B;
+        //    _this.a = value.A;
+        //    return _this;
+        //}
 
-        public static MWQuaternion SetValue(this MWQuaternion _this, Quaternion value)
-        {
-            _this.W = value.w;
-            _this.X = value.x;
-            _this.Y = value.y;
-            _this.Z = value.z;
-            return _this;
-        }
-
-        public static MWColor SetValue(this MWColor _this, Color value)
-        {
-            _this.R = value.r;
-            _this.G = value.g;
-            _this.B = value.b;
-            _this.A = value.a;
-            return _this;
-        }
-
-        public static Vector3 SetValue(ref this Vector3 _this, MWVector3 value)
-        {
-            _this.x = value.X;
-            _this.y = value.Y;
-            _this.z = value.Z;
-            return _this;
-        }
-
-        public static Quaternion SetValue(ref this Quaternion _this, MWQuaternion value)
-        {
-            _this.w = value.W;
-            _this.x = value.X;
-            _this.y = value.Y;
-            _this.z = value.Z;
-            return _this;
-        }
-
-        public static Color SetValue(ref this Color _this, MWColor value)
-        {
-            _this.r = value.R;
-            _this.g = value.G;
-            _this.b = value.B;
-            _this.a = value.A;
-            return _this;
-        }
-
-        public static void FromUnityVector2(this MWVector2 _this, Vector2 other)
+        public static MWVector2 FromUnityVector2(this MWVector2 _this, Vector2 other)
         {
             _this.X = other.x;
             _this.Y = other.y;
+            return _this;
         }
 
-        public static void FromUnityVector3(this MWVector3 _this, Vector3 other)
+        public static MWVector3 FromUnityVector3(this MWVector3 _this, Vector3 other)
         {
             _this.X = other.x;
             _this.Y = other.y;
             _this.Z = other.z;
+            return _this;
         }
 
-        public static void FromUnityQuaternion(this MWQuaternion _this, Quaternion other)
+        public static MWQuaternion FromUnityQuaternion(this MWQuaternion _this, Quaternion other)
         {
             _this.W = other.w;
             _this.X = other.x;
             _this.Y = other.y;
             _this.Z = other.z;
+            return _this;
         }
 
-        public static MWScaledTransform ToLocalTransform(this Transform transform)
+        public static MWColor FromUnityColor(this MWColor _this, Color other)
         {
-            return new MWScaledTransform()
+            _this.R = other.r;
+            _this.G = other.g;
+            _this.B = other.b;
+            _this.A = other.a;
+            return _this;
+        }
+
+        public static MWVector2 CreateMWVector2(this Vector2 _this)
+        {
+            return new MWVector2()
             {
-                Position = transform.localPosition.ToMWVector3(),
-                Rotation = transform.localRotation.ToMWQuaternion(),
-                Scale = transform.localScale.ToMWVector3()
+                X = _this.x,
+                Y = _this.y
             };
         }
 
-        public static MWTransform ToAppTransform(this Transform transform, Transform appRoot)
+        public static MWVector3 CreateMWVector3(this Vector3 _this)
         {
-            return new MWTransform()
+            return new MWVector3()
             {
-                Position = appRoot.InverseTransformPoint(transform.position).ToMWVector3(),
-                Rotation = (Quaternion.Inverse(appRoot.rotation) * transform.rotation).ToMWQuaternion()
+                X = _this.x,
+                Y = _this.y,
+                Z = _this.z
             };
         }
 
-        public static MWColor ToMWColor(this Color color)
+        public static MWQuaternion CreateMWQuaternion(this Quaternion _this)
         {
-            return new MWColor(color.r, color.g, color.b, color.a);
+            return new MWQuaternion()
+            {
+                W = _this.w,
+                X = _this.x,
+                Y = _this.y,
+                Z = _this.z
+            };
         }
 
-        public static void FromMWVector2(ref this Vector2 _this, MWVector2 vector2)
+        public static void ToLocalTransform(this MWScaledTransform _this, Transform transform)
         {
-            _this.x = vector2.X;
-            _this.y = vector2.Y;
+            if (_this.Position == null)
+            {
+                _this.Position = new MWVector3();
+            }
+
+            if (_this.Rotation == null)
+            {
+                _this.Rotation = new MWQuaternion();
+            }
+
+            if (_this.Scale == null)
+            {
+                _this.Scale = new MWVector3();
+            }
+
+            _this.Position.FromUnityVector3(transform.localPosition);
+            _this.Rotation.FromUnityQuaternion(transform.localRotation);
+            _this.Scale.FromUnityVector3(transform.localScale);
         }
 
-        public static void FromMWVector3(ref this Vector3 _this, MWVector3 vector3)
+        public static void ToAppTransform(this MWTransform _this, Transform transform, Transform appRoot)
         {
-            _this.x = vector3.X;
-            _this.y = vector3.Y;
-            _this.z = vector3.Z;
+            if (_this.Position == null)
+            {
+                _this.Position = new MWVector3();
+            }
+
+            if (_this.Rotation == null)
+            {
+                _this.Rotation = new MWQuaternion();
+            }
+
+            _this.Position.FromUnityVector3(appRoot.InverseTransformPoint(transform.position));
+            _this.Rotation.FromUnityQuaternion(Quaternion.Inverse(appRoot.rotation) * transform.rotation);
         }
 
-        public static void FromMWQuaternion(ref this Quaternion _this, MWQuaternion quaternion)
+        public static Vector2 ToVector2(this MWVector2 _this)
         {
-            _this.w = _this.W;
-            _this.x = _this.X;
-            _this.y = _this.Y;
-            _this.z = _this.Z;
+            return new Vector2()
+            {
+                x = _this.X,
+                y = _this.Y
+            };
         }
 
-        public static void FromMWColor(ref this Color _this, MWColor color)
+        public static Vector3 ToVector3(this MWVector3 _this)
         {
-            _this.r = color.R;
-            _this.g = color.G;
-            _this.b = color.B;
-            _this.a = color.A;
+            return new Vector3()
+            {
+                x = _this.X,
+                y = _this.Y,
+                z = _this.Z
+            };
+        }
+
+        public static Quaternion ToQuaternion(this MWQuaternion _this)
+        {
+            return new Quaternion()
+            {
+                w = _this.W,
+                x = _this.X,
+                y = _this.Y,
+                z = _this.Z
+            };
+        }
+
+        public static Color ToColor(this MWColor _this)
+        {
+            return new Color()
+            {
+                r = _this.R,
+                g = _this.G,
+                b = _this.B,
+                a = _this.A
+            };
         }
 
         public static GLTFSceneImporter.ColliderType ToGLTFColliderType(this ColliderType _this)

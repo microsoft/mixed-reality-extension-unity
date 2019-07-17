@@ -75,7 +75,12 @@ namespace MixedRealityExtension.Core
         {
             get
             {
-                _localTransform = _localTransform ?? transform.ToLocalTransform();
+                if (_localTransform == null)
+                {
+                    _localTransform = new MWScaledTransform();
+                    _localTransform.ToLocalTransform(transform);
+                }
+
                 return _localTransform;
             }
 
@@ -91,7 +96,12 @@ namespace MixedRealityExtension.Core
         {
             get
             {
-                _appTransform = _appTransform ?? transform.ToAppTransform(App.SceneRoot.transform);
+                if (_appTransform == null)
+                {
+                    _appTransform = new MWTransform();
+                    _appTransform.ToAppTransform(transform, App.SceneRoot.transform);
+                }
+
                 return _appTransform;
             }
 
@@ -213,7 +223,8 @@ namespace MixedRealityExtension.Core
                 // then we always need to sync the transform.
                 if (IsGrabbed || _grabbedLastSync)
                 {
-                    var appTransform = transform.ToAppTransform(App.SceneRoot.transform);
+                    var appTransform = new MWTransform();
+                    appTransform.ToAppTransform(transform, App.SceneRoot.transform);
 
                     var actorCorrection = new ActorCorrection()
                     {
@@ -281,8 +292,8 @@ namespace MixedRealityExtension.Core
 
         internal ActorPatch GenerateInitialPatch()
         {
-            LocalTransform = transform.ToLocalTransform();
-            AppTransform = transform.ToAppTransform(App.SceneRoot.transform);
+            LocalTransform.ToLocalTransform(transform);
+            AppTransform.ToAppTransform(transform, App.SceneRoot.transform);
 
             var localTransform = new ScaledTransformPatch()
             {
@@ -395,16 +406,21 @@ namespace MixedRealityExtension.Core
             };
         }
 
+        private MWScaledTransform localTransform = new MWScaledTransform();
+        private MWTransform appTransform = new MWTransform();
         internal void SendActorUpdate(ActorComponentType flags)
         {
             ActorPatch actorPatch = new ActorPatch(Id);
 
             if (flags.HasFlag(ActorComponentType.Transform))
             {
+                localTransform.ToLocalTransform(transform);
+                appTransform.ToAppTransform(transform, App.SceneRoot.transform);
+
                 actorPatch.Transform = new ActorTransformPatch()
                 {
-                    Local = transform.ToLocalTransform().AsPatch(),
-                    App = transform.ToAppTransform(App.SceneRoot.transform).AsPatch()
+                    Local = localTransform.AsPatch(),
+                    App = appTransform.AsPatch()
                 };
             }
 
@@ -1069,8 +1085,8 @@ namespace MixedRealityExtension.Core
                 App = PatchingUtilMethods.GenerateAppTransformPatch(AppTransform, transform, App.SceneRoot.transform)
             };
 
-            LocalTransform = transform.ToLocalTransform();
-            AppTransform = transform.ToAppTransform(App.SceneRoot.transform);
+            LocalTransform.ToLocalTransform(transform);
+            AppTransform.ToAppTransform(transform, App.SceneRoot.transform);
 
             actorPatch.Transform = transformPatch.IsPatched() ? transformPatch : null;
         }

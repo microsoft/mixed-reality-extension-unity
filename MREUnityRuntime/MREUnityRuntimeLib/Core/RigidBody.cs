@@ -137,8 +137,8 @@ namespace MixedRealityExtension.Core
         internal void Update(Rigidbody rigidbody)
         {
             // No need to read Position or Rotation. They're write-only from the patch to the component.
-            Velocity = _sceneRoot.InverseTransformDirection(rigidbody.velocity).ToMWVector3();
-            AngularVelocity = _sceneRoot.InverseTransformDirection(rigidbody.angularVelocity).ToMWVector3();
+            Velocity.FromUnityVector3(_sceneRoot.InverseTransformDirection(rigidbody.velocity));
+            AngularVelocity.FromUnityVector3(_sceneRoot.InverseTransformDirection(rigidbody.angularVelocity));
             Mass = rigidbody.mass;
             DetectCollisions = rigidbody.detectCollisions;
             CollisionDetectionMode = (MRECollisionDetectionMode)Enum.Parse(typeof(MRECollisionDetectionMode), rigidbody.collisionDetectionMode.ToString());
