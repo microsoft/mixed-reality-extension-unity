@@ -334,11 +334,6 @@ namespace MixedRealityExtension.Messaging.Payloads
         public MediaCommand MediaCommand { get; set; }
 
         /// <summary>
-        /// Time in seconds since sound was started
-        /// </summary>
-        public float? StartTimeOffset { get; set; }
-
-        /// <summary>
         /// runtime configurable options.
         /// </summary>
         public MediaStateOptions Options { get; set; }
