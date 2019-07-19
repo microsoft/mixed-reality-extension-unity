@@ -35,12 +35,12 @@ namespace MixedRealityExtension.Core
 
         #region Public Methods
 
-        public AudioSource TryAddSoundInstance(Actor actor, Guid id, Guid soundAssetId, MediaStateOptions options, float? startTimeOffset)
+        public AudioSource TryAddSoundInstance(Actor actor, Guid id, Guid soundAssetId, MediaStateOptions options)
         {
             var audioClip = MREAPI.AppsAPI.AssetCache.GetAsset(soundAssetId) as AudioClip;
             if (audioClip != null)
             {
-                float offset = startTimeOffset.GetValueOrDefault();
+                float offset = options.Time.GetValueOrDefault();
                 if (options.Looping != null && options.Looping.Value && audioClip.length != 0.0f)
                 {
                     offset = offset % audioClip.length;

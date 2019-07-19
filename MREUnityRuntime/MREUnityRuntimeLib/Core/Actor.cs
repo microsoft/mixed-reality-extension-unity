@@ -1239,7 +1239,7 @@ namespace MixedRealityExtension.Core
             {
                 case MediaCommand.Start:
                     {
-                        AudioSource soundInstance = App.SoundManager.TryAddSoundInstance(this, payload.Id, payload.MediaAssetId, payload.Options, payload.StartTimeOffset);
+                        AudioSource soundInstance = App.SoundManager.TryAddSoundInstance(this, payload.Id, payload.MediaAssetId, payload.Options);
                         if (soundInstance)
                         {
                             _mediaInstances.Add(payload.Id, soundInstance);
@@ -1253,7 +1253,7 @@ namespace MixedRealityExtension.Core
                             var videoStreamDescription = MREAPI.AppsAPI.AssetCache.GetAsset(payload.MediaAssetId) as VideoStreamDescription;
                             if (videoStreamDescription != null)
                             {
-                                videoPlayer.Play(videoStreamDescription, payload.Options, payload.StartTimeOffset);
+                                videoPlayer.Play(videoStreamDescription, payload.Options);
                             }
                             _mediaInstances.Add(payload.Id, videoPlayer);
                         }
