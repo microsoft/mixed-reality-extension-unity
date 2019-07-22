@@ -52,6 +52,6 @@ namespace MixedRealityExtension
          * The oldest SDK version that runs. Since compatibility with older MREs is essential, changing
          * this *is* a big deal, and requires discussion and signoff from the dev team.
          */
-        internal const string MinimumSupportedSDKVersion = "0.11";
+        internal const string MinimumSupportedSDKVersion = "0.12";
     }
 }
