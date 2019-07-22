@@ -406,21 +406,23 @@ namespace MixedRealityExtension.Core
             };
         }
 
-        private MWScaledTransform localTransform = new MWScaledTransform();
-        private MWTransform appTransform = new MWTransform();
+        // These two variables are for local use in the SendActorUpdate method to prevent unnecessary allocations.  Their
+        // user should be limited to this function.
+        private MWScaledTransform __methodVar_localTransform = new MWScaledTransform();
+        private MWTransform __methodVar_appTransform = new MWTransform();
         internal void SendActorUpdate(ActorComponentType flags)
         {
             ActorPatch actorPatch = new ActorPatch(Id);
 
             if (flags.HasFlag(ActorComponentType.Transform))
             {
-                localTransform.ToLocalTransform(transform);
-                appTransform.ToAppTransform(transform, App.SceneRoot.transform);
+                __methodVar_localTransform.ToLocalTransform(transform);
+                __methodVar_appTransform.ToAppTransform(transform, App.SceneRoot.transform);
 
                 actorPatch.Transform = new ActorTransformPatch()
                 {
-                    Local = localTransform.AsPatch(),
-                    App = appTransform.AsPatch()
+                    Local = __methodVar_localTransform.AsPatch(),
+                    App = __methodVar_appTransform.AsPatch()
                 };
             }
 
