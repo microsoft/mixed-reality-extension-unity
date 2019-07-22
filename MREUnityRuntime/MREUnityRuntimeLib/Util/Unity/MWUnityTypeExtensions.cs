@@ -10,58 +10,6 @@ namespace MixedRealityExtension.Util.Unity
 {
     internal static class MWUnityTypeExtensions
     {
-        //public static MWVector3 SetValue(this MWVector3 _this, Vector3 value)
-        //{
-        //    _this.X = value.x;
-        //    _this.Y = value.y;
-        //    _this.Z = value.z;
-        //    return _this;
-        //}
-        //
-        //public static MWQuaternion SetValue(this MWQuaternion _this, Quaternion value)
-        //{
-        //    _this.W = value.w;
-        //    _this.X = value.x;
-        //    _this.Y = value.y;
-        //    _this.Z = value.z;
-        //    return _this;
-        //}
-        //
-        //public static MWColor SetValue(this MWColor _this, Color value)
-        //{
-        //    _this.R = value.r;
-        //    _this.G = value.g;
-        //    _this.B = value.b;
-        //    _this.A = value.a;
-        //    return _this;
-        //}
-        //
-        //public static Vector3 SetValue(ref this Vector3 _this, MWVector3 value)
-        //{
-        //    _this.x = value.X;
-        //    _this.y = value.Y;
-        //    _this.z = value.Z;
-        //    return _this;
-        //}
-        //
-        //public static Quaternion SetValue(ref this Quaternion _this, MWQuaternion value)
-        //{
-        //    _this.w = value.W;
-        //    _this.x = value.X;
-        //    _this.y = value.Y;
-        //    _this.z = value.Z;
-        //    return _this;
-        //}
-        //
-        //public static Color SetValue(ref this Color _this, MWColor value)
-        //{
-        //    _this.r = value.R;
-        //    _this.g = value.G;
-        //    _this.b = value.B;
-        //    _this.a = value.A;
-        //    return _this;
-        //}
-
         public static MWVector2 FromUnityVector2(this MWVector2 _this, Vector2 other)
         {
             _this.X = other.x;
