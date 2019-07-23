@@ -1,4 +1,5 @@
 ﻿using MixedRealityExtension.API;
+using MixedRealityExtension.Core.Types;
 using MixedRealityExtension.Patching;
 using MixedRealityExtension.Patching.Types;
 using MixedRealityExtension.PluginInterfaces;
@@ -15,21 +16,42 @@ namespace MixedRealityExtension.Factories
     /// </summary>
     public class DefaultMaterialPatcher : IMaterialPatcher
     {
+        private MWColor _materialColor = new MWColor();
+        private MWVector2 _textureOffset = new MWVector2();
+        private MWVector2 _textureScale = new MWVector2();
+
         /// <inheritdoc />
         public void ApplyMaterialPatch(Material material, MWMaterial patch)
         {
             if (patch.Color != null)
-                material.color = material.color.ToMWColor().ApplyPatch(patch.Color).ToColor();
+            {
+                _materialColor.FromUnityColor(material.color);
+                _materialColor.ApplyPatch(patch.Color);
+                material.color = _materialColor.ToColor();
+            }
 
             if (patch.MainTextureId == Guid.Empty)
+            {
                 material.mainTexture = null;
+            }
             else if (patch.MainTextureId != null)
+            {
                 material.mainTexture = (Texture)MREAPI.AppsAPI.AssetCache.GetAsset(patch.MainTextureId.Value);
+            }
 
             if (patch.MainTextureOffset != null)
-                material.mainTextureOffset = material.mainTextureOffset.ToMWVector2().ApplyPatch(patch.MainTextureOffset).ToVector2();
+            {
+                _textureOffset.FromUnityVector2(material.mainTextureOffset);
+                _textureOffset.ApplyPatch(patch.MainTextureOffset);
+                material.mainTextureOffset = _textureOffset.ToVector2();
+            }
+
             if (patch.MainTextureScale != null)
-                material.mainTextureScale = material.mainTextureScale.ToMWVector2().ApplyPatch(patch.MainTextureScale).ToVector2();
+            {
+                _textureScale.FromUnityVector2(material.mainTextureScale);
+                _textureScale.ApplyPatch(patch.MainTextureScale);
+                material.mainTextureScale = _textureScale.ToVector2();
+            }
         }
 
         /// <inheritdoc />

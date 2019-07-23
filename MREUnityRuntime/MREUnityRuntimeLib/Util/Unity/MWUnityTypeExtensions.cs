@@ -10,59 +10,40 @@ namespace MixedRealityExtension.Util.Unity
 {
     internal static class MWUnityTypeExtensions
     {
-        public static MWVector3 SetValue(this MWVector3 _this, Vector3 value)
+        public static MWVector2 FromUnityVector2(this MWVector2 _this, Vector2 other)
         {
-            _this.X = value.x;
-            _this.Y = value.y;
-            _this.Z = value.z;
+            _this.X = other.x;
+            _this.Y = other.y;
             return _this;
         }
 
-        public static MWQuaternion SetValue(this MWQuaternion _this, Quaternion value)
+        public static MWVector3 FromUnityVector3(this MWVector3 _this, Vector3 other)
         {
-            _this.W = value.w;
-            _this.X = value.x;
-            _this.Y = value.y;
-            _this.Z = value.z;
+            _this.X = other.x;
+            _this.Y = other.y;
+            _this.Z = other.z;
             return _this;
         }
 
-        public static MWColor SetValue(this MWColor _this, Color value)
+        public static MWQuaternion FromUnityQuaternion(this MWQuaternion _this, Quaternion other)
         {
-            _this.R = value.r;
-            _this.G = value.g;
-            _this.B = value.b;
-            _this.A = value.a;
+            _this.W = other.w;
+            _this.X = other.x;
+            _this.Y = other.y;
+            _this.Z = other.z;
             return _this;
         }
 
-        public static Vector3 SetValue(ref this Vector3 _this, MWVector3 value)
+        public static MWColor FromUnityColor(this MWColor _this, Color other)
         {
-            _this.x = value.X;
-            _this.y = value.Y;
-            _this.z = value.Z;
+            _this.R = other.r;
+            _this.G = other.g;
+            _this.B = other.b;
+            _this.A = other.a;
             return _this;
         }
 
-        public static Quaternion SetValue(ref this Quaternion _this, MWQuaternion value)
-        {
-            _this.w = value.W;
-            _this.x = value.X;
-            _this.y = value.Y;
-            _this.z = value.Z;
-            return _this;
-        }
-
-        public static Color SetValue(ref this Color _this, MWColor value)
-        {
-            _this.r = value.R;
-            _this.g = value.G;
-            _this.b = value.B;
-            _this.a = value.A;
-            return _this;
-        }
-
-        public static MWVector2 ToMWVector2(this Vector2 _this)
+        public static MWVector2 CreateMWVector2(this Vector2 _this)
         {
             return new MWVector2()
             {
@@ -71,7 +52,7 @@ namespace MixedRealityExtension.Util.Unity
             };
         }
 
-        public static MWVector3 ToMWVector3(this Vector3 _this)
+        public static MWVector3 CreateMWVector3(this Vector3 _this)
         {
             return new MWVector3()
             {
@@ -81,7 +62,7 @@ namespace MixedRealityExtension.Util.Unity
             };
         }
 
-        public static MWQuaternion ToMWQuaternion(this Quaternion _this)
+        public static MWQuaternion CreateMWQuaternion(this Quaternion _this)
         {
             return new MWQuaternion()
             {
@@ -92,33 +73,51 @@ namespace MixedRealityExtension.Util.Unity
             };
         }
 
-        public static MWScaledTransform ToLocalTransform(this Transform transform)
+        public static void ToLocalTransform(this MWScaledTransform _this, Transform transform)
         {
-            return new MWScaledTransform()
+            if (_this.Position == null)
             {
-                Position = transform.localPosition.ToMWVector3(),
-                Rotation = transform.localRotation.ToMWQuaternion(),
-                Scale = transform.localScale.ToMWVector3()
-            };
+                _this.Position = new MWVector3();
+            }
+
+            if (_this.Rotation == null)
+            {
+                _this.Rotation = new MWQuaternion();
+            }
+
+            if (_this.Scale == null)
+            {
+                _this.Scale = new MWVector3();
+            }
+
+            _this.Position.FromUnityVector3(transform.localPosition);
+            _this.Rotation.FromUnityQuaternion(transform.localRotation);
+            _this.Scale.FromUnityVector3(transform.localScale);
         }
 
-        public static MWTransform ToAppTransform(this Transform transform, Transform appRoot)
+        public static void ToAppTransform(this MWTransform _this, Transform transform, Transform appRoot)
         {
-            return new MWTransform()
+            if (_this.Position == null)
             {
-                Position = appRoot.InverseTransformPoint(transform.position).ToMWVector3(),
-                Rotation = (Quaternion.Inverse(appRoot.rotation) * transform.rotation).ToMWQuaternion()
-            };
-        }
+                _this.Position = new MWVector3();
+            }
 
-        public static MWColor ToMWColor(this Color color)
-        {
-            return new MWColor(color.r, color.g, color.b, color.a);
+            if (_this.Rotation == null)
+            {
+                _this.Rotation = new MWQuaternion();
+            }
+
+            _this.Position.FromUnityVector3(appRoot.InverseTransformPoint(transform.position));
+            _this.Rotation.FromUnityQuaternion(Quaternion.Inverse(appRoot.rotation) * transform.rotation);
         }
 
         public static Vector2 ToVector2(this MWVector2 _this)
         {
-            return new Vector2(_this.X, _this.Y);
+            return new Vector2()
+            {
+                x = _this.X,
+                y = _this.Y
+            };
         }
 
         public static Vector3 ToVector3(this MWVector3 _this)
@@ -144,7 +143,13 @@ namespace MixedRealityExtension.Util.Unity
 
         public static Color ToColor(this MWColor _this)
         {
-            return new Color(_this.R, _this.G, _this.B, _this.A);
+            return new Color()
+            {
+                r = _this.R,
+                g = _this.G,
+                b = _this.B,
+                a = _this.A
+            };
         }
 
         public static GLTFSceneImporter.ColliderType ToGLTFColliderType(this ColliderType _this)

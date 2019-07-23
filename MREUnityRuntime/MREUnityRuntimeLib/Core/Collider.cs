@@ -4,6 +4,7 @@
 using MixedRealityExtension.API;
 using MixedRealityExtension.Core.Collision;
 using MixedRealityExtension.Core.Interfaces;
+using MixedRealityExtension.Core.Types;
 using MixedRealityExtension.Messaging.Events.Types;
 using MixedRealityExtension.Patching;
 using MixedRealityExtension.Patching.Types;
@@ -106,15 +107,15 @@ namespace MixedRealityExtension.Core
                 colliderGeo = new SphereColliderGeometry()
                 {
                     Radius = sphereCollider.radius,
-                    Center = sphereCollider.center.ToMWVector3()
+                    Center = sphereCollider.center.CreateMWVector3()
                 };
             }
             else if (_collider is BoxCollider boxCollider)
             {
                 colliderGeo = new BoxColliderGeometry()
                 {
-                    Size = boxCollider.size.ToMWVector3(),
-                    Center = boxCollider.center.ToMWVector3()
+                    Size = boxCollider.size.CreateMWVector3(),
+                    Center = boxCollider.center.CreateMWVector3()
                 };
             }
             else if (_collider is MeshCollider meshCollider)
@@ -192,8 +193,8 @@ namespace MixedRealityExtension.Core
                 {
                     return new MREContactPoint()
                     {
-                        Normal = sceneRoot.InverseTransformDirection(contact.normal).ToMWVector3(),
-                        Point = sceneRoot.InverseTransformPoint(contact.point).ToMWVector3(),
+                        Normal = sceneRoot.InverseTransformDirection(contact.normal).CreateMWVector3(),
+                        Point = sceneRoot.InverseTransformPoint(contact.point).CreateMWVector3(),
                         Separation = contact.separation
                     };
                 });
@@ -202,8 +203,8 @@ namespace MixedRealityExtension.Core
                 {
                     otherActorId = otherActor.Id,
                     Contacts = contacts,
-                    Impulse = sceneRoot.InverseTransformDirection(collision.impulse).ToMWVector3(),
-                    RelativeVelocity = collision.relativeVelocity.ToMWVector3()
+                    Impulse = sceneRoot.InverseTransformDirection(collision.impulse).CreateMWVector3(),
+                    RelativeVelocity = collision.relativeVelocity.CreateMWVector3()
                 };
 
                 _ownerActor.App.EventManager.QueueEvent(

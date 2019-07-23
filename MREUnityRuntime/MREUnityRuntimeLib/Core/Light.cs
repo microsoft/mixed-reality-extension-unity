@@ -27,7 +27,7 @@ namespace MixedRealityExtension.Core
         public MRELightType Type => (MRELightType)Enum.Parse(typeof(MRELightType), _light.type.ToString());
 
         /// <inheritdoc />
-        public MWColor Color => _color.SetValue(_light.color);
+        public MWColor Color => _color.FromUnityColor(_light.color);
 
         /// <inheritdoc />
         public float Range => _light.range;

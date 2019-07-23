@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 using MixedRealityExtension.Core.Types;
-using MixedRealityExtension.Util.Unity;
 using UnityEngine;
 
 using UnityCollider = UnityEngine.Collider;
@@ -52,7 +51,11 @@ namespace MixedRealityExtension.Core
         {
             if (Center != null)
             {
-                collider.center = Center.ToVector3();
+                Vector3 newCenter;
+                newCenter.x = Center.X;
+                newCenter.y = Center.Y;
+                newCenter.z = Center.Z;
+                collider.center = newCenter;
             }
 
             if (Radius != null)
@@ -92,12 +95,20 @@ namespace MixedRealityExtension.Core
         {
             if (Center != null)
             {
-                collider.center = Center.ToVector3();
+                Vector3 newCenter;
+                newCenter.x = Center.X;
+                newCenter.y = Center.Y;
+                newCenter.z = Center.Z;
+                collider.center = newCenter;
             }
 
             if (Size != null)
             {
-                collider.size = Size.ToVector3();
+                Vector3 newSize;
+                newSize.x = Size.X;
+                newSize.y = Size.Y;
+                newSize.z = Size.Z;
+                collider.size = newSize;
             }
         }
     }
