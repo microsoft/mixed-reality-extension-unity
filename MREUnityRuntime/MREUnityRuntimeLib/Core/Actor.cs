@@ -1246,16 +1246,19 @@ namespace MixedRealityExtension.Core
                         }
                         else
                         {
-                            var factory = MREAPI.AppsAPI.VideoPlayerFactory
-                                ?? throw new ArgumentException("Cannot start video stream - VideoPlayerFactory not implemented.");
-                            IVideoPlayer videoPlayer = factory.CreateVideoPlayer(this);
-
                             var videoStreamDescription = MREAPI.AppsAPI.AssetCache.GetAsset(payload.MediaAssetId) as VideoStreamDescription;
                             if (videoStreamDescription != null)
                             {
+                                var factory = MREAPI.AppsAPI.VideoPlayerFactory
+                                    ?? throw new ArgumentException("Cannot start video stream - VideoPlayerFactory not implemented.");
+                                IVideoPlayer videoPlayer = factory.CreateVideoPlayer(this);
                                 videoPlayer.Play(videoStreamDescription, payload.Options);
+                                _mediaInstances.Add(payload.Id, videoPlayer);
                             }
-                            _mediaInstances.Add(payload.Id, videoPlayer);
+                            else
+                            {
+                                MREAPI.Logger.LogError($"Failed to start media instance with asset id: {payload.MediaAssetId}\n");
+                            }
                         }
                     }
                     break;
