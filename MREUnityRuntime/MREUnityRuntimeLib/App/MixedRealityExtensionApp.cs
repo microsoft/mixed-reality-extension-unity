@@ -579,7 +579,7 @@ namespace MixedRealityExtension.App
             {
                 MREAPI.AppsAPI.AssetCache.OnCached(payload.PrefabId, _ =>
                 {
-                    if (this == null) return;
+                    if (this == null || _appState != AppState.Running) return;
                     var createdActors = _assetLoader.CreateFromPrefab(payload.PrefabId, payload.Actor?.ParentId);
                     ProcessCreatedActors(payload, createdActors, onCompleteCallback);
                 });
