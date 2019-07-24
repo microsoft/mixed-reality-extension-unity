@@ -77,7 +77,14 @@ namespace MixedRealityExtension.Assets
             var asset = GetAsset(id);
             if (asset != null)
             {
-                callback?.Invoke(asset);
+                try
+                {
+                    callback?.Invoke(asset);
+                }
+                catch (Exception e)
+                {
+                    Debug.LogException(e);
+                }
             }
             else
             {
