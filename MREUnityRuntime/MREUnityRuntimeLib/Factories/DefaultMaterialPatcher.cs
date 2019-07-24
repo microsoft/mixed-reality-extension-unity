@@ -25,7 +25,11 @@ namespace MixedRealityExtension.Factories
                 material.mainTexture = null;
             else if (patch.MainTextureId != null)
             {
-                MREAPI.AppsAPI.AssetCache.OnCached(patch.MainTextureId.Value, tex => material.mainTexture = (Texture)tex);
+                MREAPI.AppsAPI.AssetCache.OnCached(patch.MainTextureId.Value, tex =>
+                {
+                    if (!material) return;
+                    material.mainTexture = (Texture)tex;
+                });
             }
 
             if (patch.MainTextureOffset != null)

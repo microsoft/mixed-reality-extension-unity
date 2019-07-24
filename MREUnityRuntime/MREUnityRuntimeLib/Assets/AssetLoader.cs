@@ -251,6 +251,8 @@ namespace MixedRealityExtension.Assets
             var def = payload.Asset;
             MREAPI.AppsAPI.AssetCache.OnCached(def.Id, asset =>
             {
+                if (!_owner) return;
+
                 var mat = asset as UnityEngine.Material;
                 var tex = asset as UnityEngine.Texture;
                 if (def.Material != null && mat != null)

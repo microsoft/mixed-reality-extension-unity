@@ -751,6 +751,7 @@ namespace MixedRealityExtension.Core
                 MaterialId = appearance.MaterialId.Value;
                 MREAPI.AppsAPI.AssetCache.OnCached(MaterialId, sharedMat =>
                 {
+                    if (!this || !Renderer || MaterialId != appearance.MaterialId.Value) return;
                     Renderer.sharedMaterial = (Material)sharedMat;
                 });
             }

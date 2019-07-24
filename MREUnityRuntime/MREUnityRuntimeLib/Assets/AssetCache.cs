@@ -94,7 +94,14 @@ namespace MixedRealityExtension.Assets
                 cacheCallbacks.Remove(id);
                 foreach (var cb in callbacks)
                 {
-                    cb?.Invoke(asset);
+                    try
+                    {
+                        cb?.Invoke(asset);
+                    }
+                    catch(Exception e)
+                    {
+                        Debug.LogException(e);
+                    }
                 }
             }
         }
