@@ -749,15 +749,10 @@ namespace MixedRealityExtension.Core
             else if (appearance.MaterialId != null)
             {
                 MaterialId = appearance.MaterialId.Value;
-                var sharedMat = MREAPI.AppsAPI.AssetCache.GetAsset(MaterialId) as Material;
-                if (sharedMat != null)
+                MREAPI.AppsAPI.AssetCache.OnCached(MaterialId, sharedMat =>
                 {
-                    Renderer.sharedMaterial = sharedMat;
-                }
-                else
-                {
-                    MREAPI.Logger.LogWarning($"Material {MaterialId} not found, cannot assign to actor {Id}");
-                }
+                    Renderer.sharedMaterial = (Material)sharedMat;
+                });
             }
         }
 

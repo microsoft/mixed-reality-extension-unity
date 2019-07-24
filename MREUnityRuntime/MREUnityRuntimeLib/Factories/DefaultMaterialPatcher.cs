@@ -24,7 +24,9 @@ namespace MixedRealityExtension.Factories
             if (patch.MainTextureId == Guid.Empty)
                 material.mainTexture = null;
             else if (patch.MainTextureId != null)
-                material.mainTexture = (Texture)MREAPI.AppsAPI.AssetCache.GetAsset(patch.MainTextureId.Value);
+            {
+                MREAPI.AppsAPI.AssetCache.OnCached(patch.MainTextureId.Value, tex => material.mainTexture = (Texture)tex);
+            }
 
             if (patch.MainTextureOffset != null)
                 material.mainTextureOffset = material.mainTextureOffset.ToMWVector2().ApplyPatch(patch.MainTextureOffset).ToVector2();
