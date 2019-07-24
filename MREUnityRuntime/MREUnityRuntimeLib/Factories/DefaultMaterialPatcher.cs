@@ -4,6 +4,7 @@ using MixedRealityExtension.Patching.Types;
 using MixedRealityExtension.PluginInterfaces;
 using MixedRealityExtension.Util.Unity;
 using System;
+using System.Collections.Generic;
 using Material = UnityEngine.Material;
 using MWMaterial = MixedRealityExtension.Assets.Material;
 using Texture = UnityEngine.Texture;
@@ -15,21 +16,30 @@ namespace MixedRealityExtension.Factories
     /// </summary>
     public class DefaultMaterialPatcher : IMaterialPatcher
     {
+        private Dictionary<int, Guid> textureAssignments = new Dictionary<int, Guid>(20);
+
         /// <inheritdoc />
         public void ApplyMaterialPatch(Material material, MWMaterial patch)
         {
             if (patch.Color != null)
                 material.color = material.color.ToMWColor().ApplyPatch(patch.Color).ToColor();
 
-            if (patch.MainTextureId == Guid.Empty)
-                material.mainTexture = null;
-            else if (patch.MainTextureId != null)
+            if (patch.MainTextureId != null)
             {
-                MREAPI.AppsAPI.AssetCache.OnCached(patch.MainTextureId.Value, tex =>
+                var textureId = patch.MainTextureId.Value;
+                textureAssignments[material.GetInstanceID()] = textureId;
+                if (patch.MainTextureId == Guid.Empty)
                 {
-                    if (!material) return;
-                    material.mainTexture = (Texture)tex;
-                });
+                    material.mainTexture = null;
+                }
+                else
+                {
+                    MREAPI.AppsAPI.AssetCache.OnCached(textureId, tex =>
+                    {
+                        if (!material || textureAssignments[material.GetInstanceID()] != textureId) return;
+                        material.mainTexture = (Texture)tex;
+                    });
+                }
             }
 
             if (patch.MainTextureOffset != null)
