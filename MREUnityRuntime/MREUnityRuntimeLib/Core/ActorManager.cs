@@ -71,6 +71,7 @@ namespace MixedRealityExtension.Core
         {
             _actorMapping.Clear();
             _actorCommandQueues.Clear();
+            _uponStable.Clear();
         }
 
         internal Actor FindActor(Guid id)
