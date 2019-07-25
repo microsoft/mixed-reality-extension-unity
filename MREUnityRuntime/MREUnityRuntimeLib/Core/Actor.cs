@@ -752,7 +752,7 @@ namespace MixedRealityExtension.Core
                 MREAPI.AppsAPI.AssetCache.OnCached(MaterialId, sharedMat =>
                 {
                     if (!this || !Renderer || MaterialId != appearance.MaterialId.Value) return;
-                    Renderer.sharedMaterial = (Material)sharedMat;
+                    Renderer.sharedMaterial = (Material)sharedMat ?? MREAPI.AppsAPI.DefaultMaterial;
                 });
             }
         }
@@ -1235,24 +1235,27 @@ namespace MixedRealityExtension.Core
             {
                 case MediaCommand.Start:
                     {
-                        AudioSource soundInstance = App.SoundManager.TryAddSoundInstance(this, payload.Id, payload.MediaAssetId, payload.Options);
-                        if (soundInstance)
+                        MREAPI.AppsAPI.AssetCache.OnCached(payload.MediaAssetId, asset =>
                         {
-                            _mediaInstances.Add(payload.Id, soundInstance);
-                        }
-                        else
-                        {
-                            var factory = MREAPI.AppsAPI.VideoPlayerFactory
-                                ?? throw new ArgumentException("Cannot start video stream - VideoPlayerFactory not implemented.");
-                            IVideoPlayer videoPlayer = factory.CreateVideoPlayer(this);
-
-                            var videoStreamDescription = MREAPI.AppsAPI.AssetCache.GetAsset(payload.MediaAssetId) as VideoStreamDescription;
-                            if (videoStreamDescription != null)
+                            AudioSource soundInstance = App.SoundManager.TryAddSoundInstance(this, payload.Id, payload.MediaAssetId, payload.Options);
+                            if (soundInstance)
                             {
-                                videoPlayer.Play(videoStreamDescription, payload.Options);
+                                _mediaInstances.Add(payload.Id, soundInstance);
                             }
-                            _mediaInstances.Add(payload.Id, videoPlayer);
-                        }
+                            else
+                            {
+                                var factory = MREAPI.AppsAPI.VideoPlayerFactory
+                                    ?? throw new ArgumentException("Cannot start video stream - VideoPlayerFactory not implemented.");
+                                IVideoPlayer videoPlayer = factory.CreateVideoPlayer(this);
+                                _mediaInstances.Add(payload.Id, videoPlayer);
+
+                                var videoStreamDescription = asset as VideoStreamDescription;
+                                if (videoStreamDescription != null)
+                                {
+                                    videoPlayer.Play(videoStreamDescription, payload.Options);
+                                }
+                            }
+                        });
                     }
                     break;
                 case MediaCommand.Stop:

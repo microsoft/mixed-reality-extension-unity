@@ -24,6 +24,10 @@ namespace MixedRealityExtension.Factories
             if (patch.Color != null)
                 material.color = material.color.ToMWColor().ApplyPatch(patch.Color).ToColor();
 
+            if (patch.MainTextureOffset != null)
+                material.mainTextureOffset = material.mainTextureOffset.ToMWVector2().ApplyPatch(patch.MainTextureOffset).ToVector2();
+            if (patch.MainTextureScale != null)
+                material.mainTextureScale = material.mainTextureScale.ToMWVector2().ApplyPatch(patch.MainTextureScale).ToVector2();
             if (patch.MainTextureId != null)
             {
                 var textureId = patch.MainTextureId.Value;
@@ -41,11 +45,6 @@ namespace MixedRealityExtension.Factories
                     });
                 }
             }
-
-            if (patch.MainTextureOffset != null)
-                material.mainTextureOffset = material.mainTextureOffset.ToMWVector2().ApplyPatch(patch.MainTextureOffset).ToVector2();
-            if (patch.MainTextureScale != null)
-                material.mainTextureScale = material.mainTextureScale.ToMWVector2().ApplyPatch(patch.MainTextureScale).ToVector2();
         }
 
         /// <inheritdoc />

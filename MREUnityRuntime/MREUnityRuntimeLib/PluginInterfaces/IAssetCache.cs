@@ -40,7 +40,7 @@ namespace MixedRealityExtension.PluginInterfaces
         void OnCached(Guid id, Action<UnityEngine.Object> callback);
 
         /// <summary>
-        /// Cache an asset with the given lookup values.
+        /// Cache an asset with the given lookup values. Cache a null asset to indicate it will never be loaded.
         /// </summary>
         /// <param name="asset">The native Unity asset</param>
         /// <param name="id">The ID of the asset.</param>

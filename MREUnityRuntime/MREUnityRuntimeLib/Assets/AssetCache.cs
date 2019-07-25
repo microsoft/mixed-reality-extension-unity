@@ -75,7 +75,7 @@ namespace MixedRealityExtension.Assets
         public void OnCached(Guid id, CacheCallback callback)
         {
             var asset = GetAsset(id);
-            if (asset != null)
+            if (cache.Any(c => c.Id == id))
             {
                 try
                 {
@@ -95,6 +95,11 @@ namespace MixedRealityExtension.Assets
         /// <inheritdoc cref="CacheAsset"/>
         public void CacheAsset(Object asset, Guid id, Guid containerId, AssetSource source = null)
         {
+            if (cache.Any(c => c.Id == id))
+            {
+                throw new Exception($"An asset with ID {id} is already cached!");
+            }
+
             cache.Add(new CacheEntry(id, containerId, source, asset));
             if (cacheCallbacks.TryGetValue(id, out List<CacheCallback> callbacks))
             {
@@ -116,7 +121,7 @@ namespace MixedRealityExtension.Assets
         /// <inheritdoc cref="UncacheAssets"/>
         public IEnumerable<Object> UncacheAssets(Guid containerId)
         {
-            var assets = cache.Where(c => c.ContainerId == containerId).Select(c => c.Asset).ToArray();
+            var assets = cache.Where(c => c.ContainerId == containerId && c.Asset != null).Select(c => c.Asset).ToArray();
             cache.RemoveAll(c => c.ContainerId == containerId);
             return assets;
         }
