@@ -34,7 +34,20 @@ namespace MixedRealityExtension.Core
         private UnityLight _light;
         private UnityCollider _collider;
         private LookAtComponent _lookAt;
-        private Dictionary<Guid, System.Object> _mediaInstances;
+        class MediaInstance
+        {
+            public Guid MediaAssetId { get; }
+
+            //null until asset has finished loading
+            public System.Object Instance { get; set; }
+
+            public MediaInstance(Guid MediaAssetId)
+            {
+                this.MediaAssetId = MediaAssetId;
+            }
+        };
+
+        private Dictionary<Guid, MediaInstance> _mediaInstances;
         private float _nextUpdateTime;
         private bool _grabbedLastSync = false;
 
@@ -444,7 +457,7 @@ namespace MixedRealityExtension.Core
 
             if (_mediaInstances != null)
             {
-                foreach (KeyValuePair<Guid, System.Object> mediaInstance in _mediaInstances)
+                foreach (KeyValuePair<Guid, MediaInstance> mediaInstance in _mediaInstances)
                 {
                     DestroyMediaById(mediaInstance.Key, mediaInstance.Value);
                 }
@@ -1229,23 +1242,28 @@ namespace MixedRealityExtension.Core
         {
             if (_mediaInstances == null)
             {
-                _mediaInstances = new Dictionary<Guid, System.Object>();
+                _mediaInstances = new Dictionary<Guid, MediaInstance>();
             }
             switch (payload.MediaCommand)
             {
                 case MediaCommand.Start:
                     {
+                        MediaInstance mediaInstance = new MediaInstance(payload.MediaAssetId);
+                        _mediaInstances.Add(payload.Id, mediaInstance);
+                        //oncached check here
                         var asset = MREAPI.AppsAPI.AssetCache.GetAsset(payload.MediaAssetId);
+
                         if (asset is AudioClip audioClip)
                         {
                             AudioSource soundInstance = App.SoundManager.AddSoundInstance(this, payload.Id, audioClip, payload.Options);
                             if (soundInstance)
                             {
-                                _mediaInstances.Add(payload.Id, soundInstance);
+                                mediaInstance.Instance = soundInstance;
                             }
                             else
                             {
                                 MREAPI.Logger.LogError($"Trying to start sound instance that should already have completed for: {payload.MediaAssetId}\n");
+                                _mediaInstances.Remove(payload.Id);
                             }
                         }
                         else if (asset is VideoStreamDescription videoStreamDescription)
@@ -1254,18 +1272,20 @@ namespace MixedRealityExtension.Core
                                 ?? throw new ArgumentException("Cannot start video stream - VideoPlayerFactory not implemented.");
                             IVideoPlayer videoPlayer = factory.CreateVideoPlayer(this);
                             videoPlayer.Play(videoStreamDescription, payload.Options);
-                            _mediaInstances.Add(payload.Id, videoPlayer);
+                            mediaInstance.Instance = videoPlayer;
                         }
                         else
                         {
                             MREAPI.Logger.LogError($"Failed to start media instance with asset id: {payload.MediaAssetId}\n");
+                            _mediaInstances.Remove(payload.Id);
                         }
                     }
                     break;
                 case MediaCommand.Stop:
                     {
-                        if (_mediaInstances.TryGetValue(payload.Id, out System.Object mediaInstance))
+                        if (_mediaInstances.TryGetValue(payload.Id, out MediaInstance mediaInstance))
                         {
+                            //oncached check here
                             _mediaInstances.Remove(payload.Id);
                             DestroyMediaById(payload.Id, mediaInstance);
                         }
@@ -1273,15 +1293,19 @@ namespace MixedRealityExtension.Core
                     break;
                 case MediaCommand.Update:
                     {
-                        if (_mediaInstances.TryGetValue(payload.Id, out System.Object mediaInstance))
+                        if (_mediaInstances.TryGetValue(payload.Id, out MediaInstance mediaInstance))
                         {
-                            if (mediaInstance is AudioSource soundInstance)
+                            //oncached check here
+                            if (mediaInstance.Instance != null)
                             {
-                                App.SoundManager.ApplyMediaStateOptions(this, soundInstance, payload.Options, payload.Id, false);
-                            }
-                            else if (mediaInstance is IVideoPlayer videoPlayer)
-                            {
-                                videoPlayer.ApplyMediaStateOptions(payload.Options);
+                                if (mediaInstance.Instance is AudioSource soundInstance)
+                                {
+                                    App.SoundManager.ApplyMediaStateOptions(this, soundInstance, payload.Options, payload.Id, false);
+                                }
+                                else if (mediaInstance.Instance is IVideoPlayer videoPlayer)
+                                {
+                                    videoPlayer.ApplyMediaStateOptions(payload.Options);
+                                }
                             }
                         }
                     }
@@ -1292,30 +1316,36 @@ namespace MixedRealityExtension.Core
 
         public bool CheckIfSoundExpired(Guid id)
         {
-            if (_mediaInstances != null && _mediaInstances.TryGetValue(id, out System.Object mediaInstance))
+            if (_mediaInstances != null && _mediaInstances.TryGetValue(id, out MediaInstance mediaInstance))
             {
-                if (mediaInstance is AudioSource soundInstance)
+                if (mediaInstance.Instance != null)
                 {
-                    if (soundInstance.isPlaying)
+                    if (mediaInstance.Instance is AudioSource soundInstance)
                     {
-                        return false;
+                        if (soundInstance.isPlaying)
+                        {
+                            return false;
+                        }
+                        DestroyMediaById(id, mediaInstance);
                     }
-                    _mediaInstances.Remove(id);
-                    DestroyMediaById(id, soundInstance);
                 }
             }
             return true;
         }
 
-        private void DestroyMediaById(Guid id, object mediaInstance)
+        private void DestroyMediaById(Guid id, MediaInstance mediaInstance)
         {
-            if (mediaInstance is AudioSource soundInstance)
+            if (mediaInstance.Instance != null)
             {
-                App.SoundManager.DestroySoundInstance(soundInstance, id);
-            }
-            else if (mediaInstance is IVideoPlayer videoPlayer)
-            {
-                videoPlayer.Destroy();
+                if (mediaInstance.Instance is AudioSource soundInstance)
+                {
+                    App.SoundManager.DestroySoundInstance(soundInstance, id);
+                }
+                else if (mediaInstance.Instance is IVideoPlayer videoPlayer)
+                {
+                    videoPlayer.Destroy();
+                }
+                mediaInstance.Instance = null;
             }
         }
 
