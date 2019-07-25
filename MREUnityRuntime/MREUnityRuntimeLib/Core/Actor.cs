@@ -1235,31 +1235,31 @@ namespace MixedRealityExtension.Core
             {
                 case MediaCommand.Start:
                     {
-                        MREAPI.AppsAPI.AssetCache.OnCached(payload.MediaAssetId, asset =>
+                        var asset = MREAPI.AppsAPI.AssetCache.GetAsset(payload.MediaAssetId);
+                        if (asset is AudioClip audioClip)
                         {
-                            var audioClip = asset as AudioClip;
-                            var videoStreamDescription = asset as VideoStreamDescription;
-                            if (audioClip != null)
+                            AudioSource soundInstance = App.SoundManager.AddSoundInstance(this, payload.Id, audioClip, payload.Options);
+                            if (soundInstance)
                             {
-                                AudioSource soundInstance = App.SoundManager.TryAddSoundInstance(this, payload.Id, payload.MediaAssetId, payload.Options);
-                                if (soundInstance)
-                                {
-                                    _mediaInstances.Add(payload.Id, soundInstance);
-                                }
-                            }
-                            else if (videoStreamDescription != null)
-                            {
-                                var factory = MREAPI.AppsAPI.VideoPlayerFactory
-                                    ?? throw new ArgumentException("Cannot start video stream - VideoPlayerFactory not implemented.");
-                                IVideoPlayer videoPlayer = factory.CreateVideoPlayer(this);
-                                videoPlayer.Play(videoStreamDescription, payload.Options);
-                                _mediaInstances.Add(payload.Id, videoPlayer);
+                                _mediaInstances.Add(payload.Id, soundInstance);
                             }
                             else
                             {
-                                MREAPI.Logger.LogError($"Failed to start media instance with asset id: {payload.MediaAssetId}\n");
+                                MREAPI.Logger.LogError($"Trying to start sound instance that should already have completed for: {payload.MediaAssetId}\n");
                             }
-                        });
+                        }
+                        else if (asset is VideoStreamDescription videoStreamDescription)
+                        {
+                            var factory = MREAPI.AppsAPI.VideoPlayerFactory
+                                ?? throw new ArgumentException("Cannot start video stream - VideoPlayerFactory not implemented.");
+                            IVideoPlayer videoPlayer = factory.CreateVideoPlayer(this);
+                            videoPlayer.Play(videoStreamDescription, payload.Options);
+                            _mediaInstances.Add(payload.Id, videoPlayer);
+                        }
+                        else
+                        {
+                            MREAPI.Logger.LogError($"Failed to start media instance with asset id: {payload.MediaAssetId}\n");
+                        }
                     }
                     break;
                 case MediaCommand.Stop:
