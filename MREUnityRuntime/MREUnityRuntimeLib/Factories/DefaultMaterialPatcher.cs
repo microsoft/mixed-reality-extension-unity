@@ -16,10 +16,10 @@ namespace MixedRealityExtension.Factories
     /// </summary>
     public class DefaultMaterialPatcher : IMaterialPatcher
     {
-        private Dictionary<int, Guid> textureAssignments = new Dictionary<int, Guid>(20);
+        protected Dictionary<int, Guid> textureAssignments = new Dictionary<int, Guid>(20);
 
         /// <inheritdoc />
-        public void ApplyMaterialPatch(Material material, MWMaterial patch)
+        public virtual void ApplyMaterialPatch(Material material, MWMaterial patch)
         {
             if (patch.Color != null)
                 material.color = material.color.ToMWColor().ApplyPatch(patch.Color).ToColor();
@@ -49,7 +49,7 @@ namespace MixedRealityExtension.Factories
         }
 
         /// <inheritdoc />
-        public MWMaterial GeneratePatch(Material material)
+        public virtual MWMaterial GeneratePatch(Material material)
         {
             return new MWMaterial()
             {
