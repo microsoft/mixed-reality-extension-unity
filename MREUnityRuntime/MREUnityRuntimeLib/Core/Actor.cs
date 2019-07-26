@@ -788,8 +788,9 @@ namespace MixedRealityExtension.Core
                 return;
             }
 
+            bool forceUpdateRenderer = false;
+
             // update renderers
-            bool forceVisUpdate = false;
             if (appearance.MaterialId != null || appearance.MeshId != null)
             {
                 // patch material
@@ -809,7 +810,7 @@ namespace MixedRealityExtension.Core
                     if (renderer == null)
                     {
                         renderer = gameObject.AddComponent<MeshRenderer>();
-                        forceVisUpdate = true;
+                        forceUpdateRenderer = true;
                     }
                     // guarantee mesh filter (unless it has a skinned mesh renderer)
                     if (renderer is MeshRenderer && filter == null)
@@ -838,7 +839,7 @@ namespace MixedRealityExtension.Core
             }
 
             // apply visibility after renderer updated
-            if (appearance.Enabled != null || forceVisUpdate)
+            if (appearance.Enabled != null || forceUpdateRenderer)
             {
                 appearanceEnabled = appearance.Enabled.Value;
                 ApplyVisibilityUpdate(this);
