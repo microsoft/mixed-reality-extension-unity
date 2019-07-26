@@ -33,7 +33,14 @@ namespace MixedRealityExtension.PluginInterfaces
         Guid? GetId(UnityEngine.Object asset);
 
         /// <summary>
-        /// Cache an asset with the given lookup values.
+        /// Get notified when an asset gets created
+        /// </summary>
+        /// <param name="id">The ID of an asset</param>
+        /// <param name="callback">A function to run once when the asset is registered</param>
+        void OnCached(Guid id, Action<UnityEngine.Object> callback);
+
+        /// <summary>
+        /// Cache an asset with the given lookup values. Cache a null asset to indicate it will never be loaded.
         /// </summary>
         /// <param name="asset">The native Unity asset</param>
         /// <param name="id">The ID of the asset.</param>
