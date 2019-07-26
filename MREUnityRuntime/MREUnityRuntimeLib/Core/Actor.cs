@@ -788,49 +788,60 @@ namespace MixedRealityExtension.Core
                 return;
             }
 
-            if (appearance.Enabled != null)
+            // update renderers
+            bool forceVisUpdate = false;
+            if (appearance.MaterialId != null || appearance.MeshId != null)
+            {
+                // patch material
+                if (appearance.MaterialId != null)
+                {
+                    MaterialId = appearance.MaterialId.Value;
+                }
+                // patch mesh
+                if (appearance.MeshId != null)
+                {
+                    MeshId = appearance.MeshId.Value;
+                }
+                // apply mesh/material to game object
+                if (MaterialId != Guid.Empty && MeshId != Guid.Empty)
+                {
+                    // guarantee renderer component
+                    if (renderer == null)
+                    {
+                        renderer = gameObject.AddComponent<MeshRenderer>();
+                        forceVisUpdate = true;
+                    }
+                    // guarantee mesh filter (unless it has a skinned mesh renderer)
+                    if (renderer is MeshRenderer && filter == null)
+                    {
+                        filter = gameObject.AddComponent<MeshFilter>();
+                    }
+
+                    // look up and assign assets
+                    MREAPI.AppsAPI.AssetCache.OnCached(MeshId, sharedMesh =>
+                    {
+                        if (!this || MeshId != appearance.MeshId.Value) return;
+                        UnityMesh = (Mesh)sharedMesh;
+                    });
+                    MREAPI.AppsAPI.AssetCache.OnCached(MaterialId, sharedMat =>
+                    {
+                        if (!this || !Renderer || MaterialId != appearance.MaterialId.Value) return;
+                        Renderer.sharedMaterial = (Material)sharedMat ?? MREAPI.AppsAPI.DefaultMaterial;
+                    });
+                }
+                // clean up unused components
+                else
+                {
+                    Destroy(Renderer);
+                    Destroy(MeshFilter);
+                }
+            }
+
+            // apply visibility after renderer updated
+            if (appearance.Enabled != null || forceVisUpdate)
             {
                 appearanceEnabled = appearance.Enabled.Value;
                 ApplyVisibilityUpdate(this);
-            }
-
-            // create renderer/mesh filter as needed
-            if (appearance.MaterialId != null || appearance.MeshId != null)
-            {
-                if (renderer == null)
-                {
-                    renderer = gameObject.AddComponent<MeshRenderer>();
-                }
-                if (renderer is MeshRenderer && filter == null)
-                {
-                    filter = gameObject.AddComponent<MeshFilter>();
-                }
-            }
-
-            if (appearance.MaterialId == Guid.Empty)
-            {
-                MaterialId = Guid.Empty;
-                Renderer.sharedMaterial = MREAPI.AppsAPI.DefaultMaterial;
-            }
-            else if (appearance.MaterialId != null)
-            {
-                MaterialId = appearance.MaterialId.Value;
-                MREAPI.AppsAPI.AssetCache.OnCached(MaterialId, sharedMat =>
-                {
-                    if (!this || !Renderer || MaterialId != appearance.MaterialId.Value) return;
-                    Renderer.sharedMaterial = (Material)sharedMat ?? MREAPI.AppsAPI.DefaultMaterial;
-                });
-            }
-
-            if (appearance.MeshId == Guid.Empty)
-            {
-                MeshId = Guid.Empty;
-                UnityMesh = null;
-            }
-            else if (appearance.MeshId != null)
-            {
-                MeshId = appearance.MeshId.Value;
-                UnityMesh = MREAPI.AppsAPI.AssetCache.GetAsset(MeshId) as Mesh;
             }
         }
 
