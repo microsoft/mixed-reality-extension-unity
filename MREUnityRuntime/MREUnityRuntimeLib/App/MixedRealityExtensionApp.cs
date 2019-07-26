@@ -582,7 +582,7 @@ namespace MixedRealityExtension.App
                 var curGeneration = generation;
                 MREAPI.AppsAPI.AssetCache.OnCached(payload.PrefabId, prefab =>
                 {
-                    if (this == null || _appState != AppState.Running || generation != curGeneration) return;
+                    if (this == null || _conn == null || !_conn.IsActive || generation != curGeneration) return;
                     if (prefab != null)
                     {
                         var createdActors = _assetLoader.CreateFromPrefab(payload.PrefabId, payload.Actor?.ParentId);
