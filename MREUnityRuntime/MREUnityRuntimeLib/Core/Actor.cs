@@ -1250,44 +1250,47 @@ namespace MixedRealityExtension.Core
                     {
                         MediaInstance mediaInstance = new MediaInstance(payload.MediaAssetId);
                         _mediaInstances.Add(payload.Id, mediaInstance);
-                        //oncached check here
-                        var asset = MREAPI.AppsAPI.AssetCache.GetAsset(payload.MediaAssetId);
 
-                        if (asset is AudioClip audioClip)
+                        MREAPI.AppsAPI.AssetCache.OnCached(payload.MediaAssetId, asset =>
                         {
-                            AudioSource soundInstance = App.SoundManager.AddSoundInstance(this, payload.Id, audioClip, payload.Options);
-                            if (soundInstance)
+                            if (asset is AudioClip audioClip)
                             {
-                                mediaInstance.Instance = soundInstance;
+                                AudioSource soundInstance = App.SoundManager.AddSoundInstance(this, payload.Id, audioClip, payload.Options);
+                                if (soundInstance)
+                                {
+                                    mediaInstance.Instance = soundInstance;
+                                }
+                                else
+                                {
+                                    MREAPI.Logger.LogError($"Trying to start sound instance that should already have completed for: {payload.MediaAssetId}\n");
+                                    _mediaInstances.Remove(payload.Id);
+                                }
+                            }
+                            else if (asset is VideoStreamDescription videoStreamDescription)
+                            {
+                                var factory = MREAPI.AppsAPI.VideoPlayerFactory
+                                    ?? throw new ArgumentException("Cannot start video stream - VideoPlayerFactory not implemented.");
+                                IVideoPlayer videoPlayer = factory.CreateVideoPlayer(this);
+                                videoPlayer.Play(videoStreamDescription, payload.Options);
+                                mediaInstance.Instance = videoPlayer;
                             }
                             else
                             {
-                                MREAPI.Logger.LogError($"Trying to start sound instance that should already have completed for: {payload.MediaAssetId}\n");
+                                MREAPI.Logger.LogError($"Failed to start media instance with asset id: {payload.MediaAssetId}\n");
                                 _mediaInstances.Remove(payload.Id);
                             }
-                        }
-                        else if (asset is VideoStreamDescription videoStreamDescription)
-                        {
-                            var factory = MREAPI.AppsAPI.VideoPlayerFactory
-                                ?? throw new ArgumentException("Cannot start video stream - VideoPlayerFactory not implemented.");
-                            IVideoPlayer videoPlayer = factory.CreateVideoPlayer(this);
-                            videoPlayer.Play(videoStreamDescription, payload.Options);
-                            mediaInstance.Instance = videoPlayer;
-                        }
-                        else
-                        {
-                            MREAPI.Logger.LogError($"Failed to start media instance with asset id: {payload.MediaAssetId}\n");
-                            _mediaInstances.Remove(payload.Id);
-                        }
+                        });
                     }
                     break;
                 case MediaCommand.Stop:
                     {
                         if (_mediaInstances.TryGetValue(payload.Id, out MediaInstance mediaInstance))
                         {
-                            //oncached check here
-                            _mediaInstances.Remove(payload.Id);
-                            DestroyMediaById(payload.Id, mediaInstance);
+                            MREAPI.AppsAPI.AssetCache.OnCached(mediaInstance.MediaAssetId, asset =>
+                            {
+                                _mediaInstances.Remove(payload.Id);
+                                DestroyMediaById(payload.Id, mediaInstance);
+                            });
                         }
                     }
                     break;
@@ -1295,18 +1298,20 @@ namespace MixedRealityExtension.Core
                     {
                         if (_mediaInstances.TryGetValue(payload.Id, out MediaInstance mediaInstance))
                         {
-                            //oncached check here
-                            if (mediaInstance.Instance != null)
+                            MREAPI.AppsAPI.AssetCache.OnCached(mediaInstance.MediaAssetId, asset =>
                             {
-                                if (mediaInstance.Instance is AudioSource soundInstance)
+                                if (mediaInstance.Instance != null)
                                 {
-                                    App.SoundManager.ApplyMediaStateOptions(this, soundInstance, payload.Options, payload.Id, false);
+                                    if (mediaInstance.Instance is AudioSource soundInstance)
+                                    {
+                                        App.SoundManager.ApplyMediaStateOptions(this, soundInstance, payload.Options, payload.Id, false);
+                                    }
+                                    else if (mediaInstance.Instance is IVideoPlayer videoPlayer)
+                                    {
+                                        videoPlayer.ApplyMediaStateOptions(payload.Options);
+                                    }
                                 }
-                                else if (mediaInstance.Instance is IVideoPlayer videoPlayer)
-                                {
-                                    videoPlayer.ApplyMediaStateOptions(payload.Options);
-                                }
-                            }
+                            });
                         }
                     }
                     break;
