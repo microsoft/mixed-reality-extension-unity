@@ -783,7 +783,7 @@ namespace MixedRealityExtension.Core
 
         private void PatchAppearance(AppearancePatch appearance)
         {
-            if (appearance == null || Renderer == null)
+            if (appearance == null)
             {
                 return;
             }
@@ -794,8 +794,22 @@ namespace MixedRealityExtension.Core
                 ApplyVisibilityUpdate(this);
             }
 
+            // create renderer/mesh filter as needed
+            if (appearance.MaterialId != null || appearance.MeshId != null)
+            {
+                if (renderer == null)
+                {
+                    renderer = gameObject.AddComponent<MeshRenderer>();
+                }
+                if (renderer is MeshRenderer && filter == null)
+                {
+                    filter = gameObject.AddComponent<MeshFilter>();
+                }
+            }
+
             if (appearance.MaterialId == Guid.Empty)
             {
+                MaterialId = Guid.Empty;
                 Renderer.sharedMaterial = MREAPI.AppsAPI.DefaultMaterial;
             }
             else if (appearance.MaterialId != null)
@@ -810,7 +824,13 @@ namespace MixedRealityExtension.Core
 
             if (appearance.MeshId == Guid.Empty)
             {
+                MeshId = Guid.Empty;
                 UnityMesh = null;
+            }
+            else if (appearance.MeshId != null)
+            {
+                MeshId = appearance.MeshId.Value;
+                UnityMesh = MREAPI.AppsAPI.AssetCache.GetAsset(MeshId) as Mesh;
             }
         }
 
