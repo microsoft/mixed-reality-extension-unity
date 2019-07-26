@@ -1237,23 +1237,27 @@ namespace MixedRealityExtension.Core
                     {
                         MREAPI.AppsAPI.AssetCache.OnCached(payload.MediaAssetId, asset =>
                         {
-                            AudioSource soundInstance = App.SoundManager.TryAddSoundInstance(this, payload.Id, payload.MediaAssetId, payload.Options);
-                            if (soundInstance)
+                            var audioClip = asset as AudioClip;
+                            var videoStreamDescription = asset as VideoStreamDescription;
+                            if (audioClip != null)
                             {
-                                _mediaInstances.Add(payload.Id, soundInstance);
+                                AudioSource soundInstance = App.SoundManager.TryAddSoundInstance(this, payload.Id, payload.MediaAssetId, payload.Options);
+                                if (soundInstance)
+                                {
+                                    _mediaInstances.Add(payload.Id, soundInstance);
+                                }
                             }
-                            else
+                            else if (videoStreamDescription != null)
                             {
                                 var factory = MREAPI.AppsAPI.VideoPlayerFactory
                                     ?? throw new ArgumentException("Cannot start video stream - VideoPlayerFactory not implemented.");
                                 IVideoPlayer videoPlayer = factory.CreateVideoPlayer(this);
+                                videoPlayer.Play(videoStreamDescription, payload.Options);
                                 _mediaInstances.Add(payload.Id, videoPlayer);
-
-                                var videoStreamDescription = asset as VideoStreamDescription;
-                                if (videoStreamDescription != null)
-                                {
-                                    videoPlayer.Play(videoStreamDescription, payload.Options);
-                                }
+                            }
+                            else
+                            {
+                                MREAPI.Logger.LogError($"Failed to start media instance with asset id: {payload.MediaAssetId}\n");
                             }
                         });
                     }
