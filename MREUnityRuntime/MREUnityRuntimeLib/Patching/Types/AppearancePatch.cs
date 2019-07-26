@@ -12,5 +12,8 @@ namespace MixedRealityExtension.Patching.Types
 
         [PatchProperty]
         public Guid? MaterialId { get; set; }
+
+        [PatchProperty]
+        public Guid? MeshId { get; set; }
     }
 }

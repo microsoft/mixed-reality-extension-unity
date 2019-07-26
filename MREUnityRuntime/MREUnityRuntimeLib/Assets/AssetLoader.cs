@@ -7,7 +7,6 @@ using MixedRealityExtension.Core.Types;
 using MixedRealityExtension.Messaging;
 using MixedRealityExtension.Messaging.Commands;
 using MixedRealityExtension.Messaging.Payloads;
-using MixedRealityExtension.Patching;
 using MixedRealityExtension.Patching.Types;
 using MixedRealityExtension.Util;
 using MixedRealityExtension.Util.Unity;
@@ -19,6 +18,7 @@ using UnityGLTF;
 using UnityGLTF.Loader;
 using MWMaterial = MixedRealityExtension.Assets.Material;
 using MWTexture = MixedRealityExtension.Assets.Texture;
+using MWMesh = MixedRealityExtension.Assets.Mesh;
 using MWSound = MixedRealityExtension.Assets.Sound;
 using MWVideoStream = MixedRealityExtension.Assets.VideoStream;
 
@@ -240,6 +240,23 @@ namespace MixedRealityExtension.Assets
                 }
             }
 
+            // load meshes
+            if (gltfRoot.Meshes != null)
+            {
+                var cancellationSource = new System.Threading.CancellationTokenSource();
+                for (var i = 0; i < gltfRoot.Meshes.Count; i++)
+                {
+                    var mesh = await importer.LoadMeshAsync(i, cancellationSource.Token);
+                    mesh.name = gltfRoot.Meshes[i].Name ?? $"mesh:{i}";
+
+                    var asset = GenerateAssetPatch(mesh, guidGenerator.Next());
+                    asset.Name = mesh.name;
+                    asset.Source = new AssetSource(source.ContainerType, source.Uri, $"mesh:{i}");
+                    MREAPI.AppsAPI.AssetCache.CacheAsset(mesh, asset.Id, containerId, source);
+                    assets.Add(asset);
+                }
+            }
+
             importer.Dispose();
 
             return assets;
@@ -281,6 +298,10 @@ namespace MixedRealityExtension.Assets
                 else if (def.VideoStream != null)
                 {
                     // do nothing; sound asset properties are immutable
+                }
+                else if (def.Mesh != null)
+                {
+                    // do nothing; mesh properties are immutable
                 }
                 else
                 {
@@ -433,6 +454,18 @@ namespace MixedRealityExtension.Assets
                         },
                         WrapModeU = tex.wrapModeU,
                         WrapModeV = tex.wrapModeV
+                    }
+                };
+            }
+            else if (unityAsset is UnityEngine.Mesh mesh)
+            {
+                return new Asset()
+                {
+                    Id = id,
+                    Mesh = new MWMesh()
+                    {
+                        VertexCount = mesh.vertexCount,
+                        TriangleCount = mesh.triangles.Length / 3
                     }
                 };
             }

@@ -51,6 +51,8 @@ namespace MixedRealityExtension.Core
 
         private new Renderer renderer = null;
         internal Renderer Renderer => renderer = renderer ?? GetComponent<Renderer>();
+        private MeshFilter filter = null;
+        internal MeshFilter MeshFilter => filter = filter ?? GetComponent<MeshFilter>();
 
         #region IActor Properties - Public
 
@@ -129,6 +131,37 @@ namespace MixedRealityExtension.Core
         private Attachment _cachedAttachment = new Attachment();
 
         internal Guid MaterialId { get; set; } = Guid.Empty;
+        internal Guid MeshId { get; set; } = Guid.Empty;
+
+        internal Mesh UnityMesh
+        {
+            get
+            {
+                if (Renderer is SkinnedMeshRenderer skinned)
+                {
+                    return skinned.sharedMesh;
+                }
+                else if (MeshFilter != null)
+                {
+                    return MeshFilter.sharedMesh;
+                }
+                else
+                {
+                    return null;
+                }
+            }
+            set
+            {
+                if (Renderer is SkinnedMeshRenderer skinned)
+                {
+                    skinned.sharedMesh = value;
+                }
+                else
+                {
+                    MeshFilter.sharedMesh = value;
+                }
+            }
+        }
 
         internal bool Grabbable { get; private set; }
 
@@ -333,7 +366,8 @@ namespace MixedRealityExtension.Core
                 Appearance = new AppearancePatch()
                 {
                     Enabled = appearanceEnabled,
-                    MaterialId = MaterialId
+                    MaterialId = MaterialId,
+                    MeshId = MeshId
                 }
             };
 
@@ -772,6 +806,11 @@ namespace MixedRealityExtension.Core
                     if (!this || !Renderer || MaterialId != appearance.MaterialId.Value) return;
                     Renderer.sharedMaterial = (Material)sharedMat ?? MREAPI.AppsAPI.DefaultMaterial;
                 });
+            }
+
+            if (appearance.MeshId == Guid.Empty)
+            {
+                UnityMesh = null;
             }
         }
 

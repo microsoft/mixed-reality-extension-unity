@@ -646,6 +646,7 @@ namespace MixedRealityExtension.App
                 if (actor.Renderer != null)
                 {
                     actor.MaterialId = MREAPI.AppsAPI.AssetCache.GetId(actor.Renderer.sharedMaterial) ?? Guid.Empty;
+                    actor.MeshId = MREAPI.AppsAPI.AssetCache.GetId(actor.UnityMesh) ?? Guid.Empty;
                 }
 
                 foreach (Transform child in xfrm)

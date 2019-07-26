@@ -44,6 +44,11 @@ namespace MixedRealityExtension.Assets
         public Texture? Texture;
 
         /// <summary>
+        /// If this asset is a mesh, contains those properties
+        /// </summary>
+        public Mesh? Mesh;
+
+        /// <summary>
         /// If this asset is a sound, contains those properties
         /// </summary>
         public Sound? Sound;
@@ -161,6 +166,22 @@ namespace MixedRealityExtension.Assets
         /// How out-of-range V coordinates should be handled
         /// </summary>
         public UnityEngine.TextureWrapMode? WrapModeV;
+    }
+
+    /// <summary>
+    /// Contains a basic mesh description
+    /// </summary>
+    public struct Mesh
+    {
+        /// <summary>
+        /// The number of vertices in this mesh
+        /// </summary>
+        public int VertexCount;
+
+        /// <summary>
+        /// The number of triangles in this mesh
+        /// </summary>
+        public int TriangleCount;
     }
 
     /// <summary>
