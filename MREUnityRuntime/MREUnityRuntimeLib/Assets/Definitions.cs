@@ -182,6 +182,21 @@ namespace MixedRealityExtension.Assets
         /// The number of triangles in this mesh
         /// </summary>
         public int TriangleCount;
+
+        /// <summary>
+        /// The size of the mesh's axis-aligned bounding box
+        /// </summary>
+        public Vector3Patch BoundingBoxDimensions;
+
+        /// <summary>
+        /// The center of the mesh's axis-aligned bounding box
+        /// </summary>
+        public Vector3Patch BoundingBoxCenter;
+
+        /// <summary>
+        /// If this mesh is a primitive, the primitive's description
+        /// </summary>
+        public PrimitiveDefinition? PrimitiveDefinition;
     }
 
     /// <summary>

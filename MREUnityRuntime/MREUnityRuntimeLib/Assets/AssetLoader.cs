@@ -358,6 +358,7 @@ namespace MixedRealityExtension.Assets
             }
 
             MREAPI.AppsAPI.AssetCache.CacheAsset(unityAsset, def.Id, payload.ContainerId);
+
             if (unityAsset != null)
             {
                 unityAsset.name = def.Name;
