@@ -35,7 +35,7 @@ namespace MixedRealityExtension.Behaviors
                 }
             }
             
-            MREAPI.Logger.LogError($"Trying to create a behavior of type {behaviorType.ToString()}, but no handler is registered for the given type.");
+            actor.App.Logger.LogError($"Trying to create a behavior of type {behaviorType.ToString()}, but no handler is registered for the given type.");
             return null;
         }
     }

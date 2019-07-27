@@ -57,9 +57,6 @@ namespace MixedRealityExtension.App
         private AppState _appState = AppState.Stopped;
         private int generation = 0;
 
-        /// <summary>
-        /// Gets the logger to use within the MRE SDK.
-        /// </summary>
         public IMRELogger Logger { get; private set; }
 
         #region Events - Public
@@ -457,7 +454,7 @@ namespace MixedRealityExtension.App
 
         private void Connection_OnError(Exception ex)
         {
-            MREAPI.Logger.LogError($"Exception: {ex.Message}\nStack Trace: {ex.StackTrace}");
+            Logger.LogError($"Exception: {ex.Message}\nStack Trace: {ex.StackTrace}");
         }
 
         private void Handshake_OnOperatingModel(OperatingModel operatingModel)
