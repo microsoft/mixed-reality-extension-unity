@@ -17,8 +17,10 @@ using MixedRealityExtension.Messaging.Payloads;
 using MixedRealityExtension.Messaging.Protocols;
 using MixedRealityExtension.Patching;
 using MixedRealityExtension.Patching.Types;
+using MixedRealityExtension.PluginInterfaces;
 using MixedRealityExtension.RPC;
 using MixedRealityExtension.Util;
+using MixedRealityExtension.Util.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -54,6 +56,11 @@ namespace MixedRealityExtension.App
 
         private AppState _appState = AppState.Stopped;
         private int generation = 0;
+
+        /// <summary>
+        /// Gets the logger to use within the MRE SDK.
+        /// </summary>
+        public IMRELogger Logger { get; private set; }
 
         #region Events - Public
 
@@ -129,7 +136,7 @@ namespace MixedRealityExtension.App
         /// </summary>
         /// <param name="globalAppId">The global id of the app.</param>
         /// <param name="ownerScript">The owner mono behaviour script for the app.</param>
-        internal MixedRealityExtensionApp(string globalAppId, MonoBehaviour ownerScript)
+        internal MixedRealityExtensionApp(string globalAppId, MonoBehaviour ownerScript, IMRELogger logger = null)
         {
             GlobalAppId = globalAppId;
             _ownerScript = ownerScript;
@@ -147,6 +154,11 @@ namespace MixedRealityExtension.App
             });
 
             RPC = new RPCInterface(this);
+#if ANDROID_DEBUG
+            Logger = logger ?? new UnityLogger(this);
+#else
+            Logger = logger ?? new ConsoleLogger();
+#endif
         }
 
         /// <inheritdoc />

@@ -60,7 +60,7 @@ namespace MixedRealityExtension.API
             AppsAPI.EngineConstants = engineConstants;
 
 #if ANDROID_DEBUG
-            Logger = logger ?? new UnityLogger();
+            Logger = logger ?? new UnityLogger(null);
 #else
             Logger = logger ?? new ConsoleLogger();
 #endif
@@ -126,6 +126,7 @@ namespace MixedRealityExtension.API
         /// <returns>Returns the newly created mixed reality extension app.</returns>
         public IMixedRealityExtensionApp CreateMixedRealityExtensionApp(string globalAppId, MonoBehaviour ownerScript)
         {
+
             var mreApp = new MixedRealityExtensionApp(globalAppId, ownerScript)
             {
                 InstanceId = Guid.NewGuid()
