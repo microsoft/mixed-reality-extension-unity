@@ -1262,7 +1262,7 @@ namespace MixedRealityExtension.Core
                                 }
                                 else
                                 {
-                                    MREAPI.Logger.LogError($"Trying to start sound instance that should already have completed for: {payload.MediaAssetId}\n");
+                                    App.Logger.LogError($"Trying to start sound instance that should already have completed for: {payload.MediaAssetId}\n");
                                     _mediaInstances.Remove(payload.Id);
                                 }
                             }
