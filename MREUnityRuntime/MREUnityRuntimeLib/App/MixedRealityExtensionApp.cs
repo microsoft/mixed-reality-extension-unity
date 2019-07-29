@@ -154,7 +154,7 @@ namespace MixedRealityExtension.App
 #if ANDROID_DEBUG
             Logger = logger ?? new UnityLogger(this);
 #else
-            Logger = logger ?? new ConsoleLogger();
+            Logger = logger ?? new ConsoleLogger(this);
 #endif
         }
 

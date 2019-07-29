@@ -62,7 +62,7 @@ namespace MixedRealityExtension.API
 #if ANDROID_DEBUG
             Logger = logger ?? new UnityLogger(null);
 #else
-            Logger = logger ?? new ConsoleLogger();
+            Logger = logger ?? new ConsoleLogger(null);
 #endif
         }
 

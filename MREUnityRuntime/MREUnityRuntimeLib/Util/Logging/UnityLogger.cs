@@ -7,22 +7,15 @@ using MixedRealityExtension.Messaging;
 using UnityEngine;
 namespace MixedRealityExtension.Util.Logging
 {
-    internal class UnityLogger : IMRELogger
+    internal class UnityLogger : ConsoleLogger
     {
-        MixedRealityExtensionApp _app;
-        public UnityLogger(MixedRealityExtensionApp app)
+        UnityLogger(MixedRealityExtensionApp app) : base(app)
         {
-            _app = app;
-        }
-        void Send(TraceSeverity severity, string message)
-        {
-            Traces traces = new Traces();
-            traces.AddTrace(new Trace() { Severity = severity, Message = message });
-            _app?.Protocol.Send(traces);
         }
 
+
         /// <inheritdoc/>
-        public void LogDebug(string message)
+        public new void LogDebug(string message)
         {
             Debug.Log($"DEBUG: {message}");
             Send(TraceSeverity.Debug, message);
@@ -30,14 +23,14 @@ namespace MixedRealityExtension.Util.Logging
         }
 
         /// <inheritdoc/>
-        public void LogError(string message)
+        public new void LogError(string message)
         {
             Debug.LogWarning($"WARNING: {message}");
             Send(TraceSeverity.Error, message);
         }
 
         /// <inheritdoc/>
-        public void LogWarning(string message)
+        public new void LogWarning(string message)
         {
             Debug.LogError($"ERROR: {message}");
             Send(TraceSeverity.Warning, message);

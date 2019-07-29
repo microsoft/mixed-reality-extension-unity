@@ -34,8 +34,12 @@ namespace MixedRealityExtension.Behaviors
                     throw new NotImplementedException($"A handler for the behavior type {behaviorType.ToString()} exists but does not have a static create method implemented on it.");
                 }
             }
-            
-            actor.App.Logger.LogError($"Trying to create a behavior of type {behaviorType.ToString()}, but no handler is registered for the given type.");
+
+            MixedRealityExtensionApp app;
+            if (appRef.TryGetTarget(out app))
+            {
+                app.Logger.LogError($"Trying to create a behavior of type {behaviorType.ToString()}, but no handler is registered for the given type.");
+            }
             return null;
         }
     }
