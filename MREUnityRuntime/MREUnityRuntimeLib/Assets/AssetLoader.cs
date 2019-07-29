@@ -56,17 +56,6 @@ namespace MixedRealityExtension.Assets
             return new List<Actor>() { spawnedGO.AddComponent<Actor>() };
         }
 
-        internal IList<Actor> CreatePrimitive(PrimitiveDefinition definition, Guid? parentId, bool addCollider)
-        {
-            var factory = MREAPI.AppsAPI.PrimitiveFactory;
-            GameObject newGO = factory.CreatePrimitive(
-                definition, GetGameObjectFromParentId(parentId), addCollider);
-
-            List<Actor> actors = new List<Actor>() { newGO.AddComponent<Actor>() };
-            newGO.layer = UnityConstants.ActorLayerIndex;
-            return actors;
-        }
-
         internal IList<Actor> CreateEmpty(Guid? parentId)
         {
             GameObject newGO = GameObject.Instantiate(
@@ -316,13 +305,16 @@ namespace MixedRealityExtension.Assets
         {
             var def = payload.Definition;
             var response = new AssetsLoaded();
-
             var unityAsset = MREAPI.AppsAPI.AssetCache.GetAsset(def.Id);
-            if(unityAsset == null && def.Material != null)
+
+            // create materials
+            if (unityAsset == null && def.Material != null)
             {
                 unityAsset = UnityEngine.Object.Instantiate(MREAPI.AppsAPI.DefaultMaterial);
             }
-            else if(unityAsset == null && def.Texture != null)
+
+            // create textures
+            else if (unityAsset == null && def.Texture != null)
             {
                 var result = await AssetFetcher<UnityEngine.Texture>.LoadTask(_owner, new Uri(def.Texture.Value.Uri));
                 unityAsset = result.Asset;
@@ -331,7 +323,23 @@ namespace MixedRealityExtension.Assets
                     response.FailureMessage = result.FailureMessage;
                 }
             }
-            else if(unityAsset == null && def.Sound != null)
+
+            // create meshes
+            else if (unityAsset == null && def.Mesh != null)
+            {
+                if (def.Mesh.Value.PrimitiveDefinition != null)
+                {
+                    var factory = MREAPI.AppsAPI.PrimitiveFactory;
+                    unityAsset = factory.CreatePrimitive(def.Mesh.Value.PrimitiveDefinition.Value);
+                }
+                else
+                {
+                    response.FailureMessage = $"Cannot create mesh {def.Id} without a primitive definition";
+                }
+            }
+
+            // create sounds
+            else if (unityAsset == null && def.Sound != null)
             {
                 var result = await AssetFetcher<UnityEngine.AudioClip>.LoadTask(_owner, new Uri(def.Sound.Value.Uri));
                 unityAsset = result.Asset;
@@ -340,6 +348,8 @@ namespace MixedRealityExtension.Assets
                     response.FailureMessage = result.FailureMessage;
                 }
             }
+
+            // create video streams
             else if (unityAsset == null && def.VideoStream != null)
             {
                 if (MREAPI.AppsAPI.VideoPlayerFactory != null)
@@ -359,6 +369,7 @@ namespace MixedRealityExtension.Assets
 
             MREAPI.AppsAPI.AssetCache.CacheAsset(unityAsset, def.Id, payload.ContainerId);
 
+            // verify creation and apply initial patch
             if (unityAsset != null)
             {
                 unityAsset.name = def.Name;
