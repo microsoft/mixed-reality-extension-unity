@@ -477,7 +477,7 @@ namespace MixedRealityExtension.Core
             }
             catch (Exception e)
             {
-                MREAPI.Logger.LogError($"Failed to synchronize app.  Exception: {e.Message}\nStackTrace: {e.StackTrace}");
+                App.Logger.LogError($"Failed to synchronize app.  Exception: {e.Message}\nStackTrace: {e.StackTrace}");
             }
 
             _transformLerper?.Update();
@@ -499,7 +499,7 @@ namespace MixedRealityExtension.Core
             }
             catch (Exception e)
             {
-                MREAPI.Logger.LogError($"Failed to update rigid body.  Exception: {e.Message}\nStackTrace: {e.StackTrace}");
+                App.Logger.LogError($"Failed to update rigid body.  Exception: {e.Message}\nStackTrace: {e.StackTrace}");
             }
         }
 
@@ -548,7 +548,7 @@ namespace MixedRealityExtension.Core
             }
             catch (Exception e)
             {
-                MREAPI.Logger.LogError($"Exception: {e.Message}\nStackTrace: {e.StackTrace}");
+                App.Logger.LogError($"Exception: {e.Message}\nStackTrace: {e.StackTrace}");
             }
         }
 
@@ -578,7 +578,7 @@ namespace MixedRealityExtension.Core
             }
             catch (Exception e)
             {
-                MREAPI.Logger.LogError($"Exception: {e.Message}\nStackTrace: {e.StackTrace}");
+                App.Logger.LogError($"Exception: {e.Message}\nStackTrace: {e.StackTrace}");
             }
 
             return false;
@@ -684,7 +684,7 @@ namespace MixedRealityExtension.Core
                     unityCollider = sphereCollider;
                     break;
                 default:
-                    MREAPI.Logger.LogWarning("Cannot add the given collider type to the actor " +
+                    App.Logger.LogWarning("Cannot add the given collider type to the actor " +
                         $"during runtime.  Collider Type: {colliderPatch.ColliderGeometry.ColliderType}");
                     break;
             }
@@ -1262,7 +1262,7 @@ namespace MixedRealityExtension.Core
                                 }
                                 else
                                 {
-                                    MREAPI.Logger.LogError($"Trying to start sound instance that should already have completed for: {payload.MediaAssetId}\n");
+                                    App.Logger.LogError($"Trying to start sound instance that should already have completed for: {payload.MediaAssetId}\n");
                                     _mediaInstances.Remove(payload.Id);
                                 }
                             }
@@ -1276,7 +1276,7 @@ namespace MixedRealityExtension.Core
                             }
                             else
                             {
-                                MREAPI.Logger.LogError($"Failed to start media instance with asset id: {payload.MediaAssetId}\n");
+                                App.Logger.LogError($"Failed to start media instance with asset id: {payload.MediaAssetId}\n");
                                 _mediaInstances.Remove(payload.Id);
                             }
                         });

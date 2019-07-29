@@ -1,28 +1,39 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
+using MixedRealityExtension.App;
 using MixedRealityExtension.PluginInterfaces;
+using MixedRealityExtension.Messaging.Payloads;
+using MixedRealityExtension.Messaging;
 using UnityEngine;
-
 namespace MixedRealityExtension.Util.Logging
 {
-    internal class UnityLogger : IMRELogger
+    internal class UnityLogger : ConsoleLogger
     {
+        UnityLogger(MixedRealityExtensionApp app) : base(app)
+        {
+        }
+
+
         /// <inheritdoc/>
-        public void LogDebug(string message)
+        public new void LogDebug(string message)
         {
             Debug.Log($"DEBUG: {message}");
+            Send(TraceSeverity.Debug, message);
+
         }
 
         /// <inheritdoc/>
-        public void LogError(string message)
+        public new void LogError(string message)
         {
             Debug.LogWarning($"WARNING: {message}");
+            Send(TraceSeverity.Error, message);
         }
 
         /// <inheritdoc/>
-        public void LogWarning(string message)
+        public new void LogWarning(string message)
         {
             Debug.LogError($"ERROR: {message}");
+            Send(TraceSeverity.Warning, message);
         }
     }
 }
