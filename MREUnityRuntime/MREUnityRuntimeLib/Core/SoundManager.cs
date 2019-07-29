@@ -35,40 +35,36 @@ namespace MixedRealityExtension.Core
 
         #region Public Methods
 
-        public AudioSource TryAddSoundInstance(Actor actor, Guid id, Guid soundAssetId, MediaStateOptions options)
+        public AudioSource AddSoundInstance(Actor actor, Guid id, AudioClip audioClip, MediaStateOptions options)
         {
-            var audioClip = MREAPI.AppsAPI.AssetCache.GetAsset(soundAssetId) as AudioClip;
-            if (audioClip != null)
+            float offset = options.Time.GetValueOrDefault();
+            if (options.Looping != null && options.Looping.Value && audioClip.length != 0.0f)
             {
-                float offset = options.Time.GetValueOrDefault();
-                if (options.Looping != null && options.Looping.Value && audioClip.length != 0.0f)
+                offset = offset % audioClip.length;
+            }
+            if (offset < audioClip.length)
+            {
+                var soundInstance = actor.gameObject.AddComponent<AudioSource>();
+                soundInstance.clip = audioClip;
+                soundInstance.time = offset;
+                soundInstance.spatialBlend = 1.0f;
+                soundInstance.spread = 90.0f;   //only affects multichannel sounds. Default to 50% spread, 50% stereo.
+                soundInstance.minDistance = 1.0f;
+                soundInstance.maxDistance = 1000000.0f;
+                ApplyMediaStateOptions(actor, soundInstance, options, id, true);
+                if (options.paused != null && options.paused.Value == true)
                 {
-                    offset = offset % audioClip.length;
+                    //start as paused
+                    soundInstance.Play();
+                    soundInstance.Pause();
                 }
-                if (offset < audioClip.length)
+                else
                 {
-                    var soundInstance = actor.gameObject.AddComponent<AudioSource>();
-                    soundInstance.clip = audioClip;
-                    soundInstance.time = offset;
-                    soundInstance.spatialBlend = 1.0f;
-                    soundInstance.spread = 90.0f;   //only affects multichannel sounds. Default to 50% spread, 50% stereo.
-                    soundInstance.minDistance = 1.0f;
-                    soundInstance.maxDistance = 1000000.0f;
-                    ApplyMediaStateOptions(actor, soundInstance, options, id, true);
-                    if (options.paused != null && options.paused.Value == true)
-                    {
-                        //start as paused
-                        soundInstance.Play();
-                        soundInstance.Pause();
-                    }
-                    else
-                    {
-                        //start as unpaused
-                        _unpausedSoundInstances.Add(new SoundInstance(id, actor));
-                        soundInstance.Play();
-                    }
-                    return soundInstance;
+                    //start as unpaused
+                    _unpausedSoundInstances.Add(new SoundInstance(id, actor));
+                    soundInstance.Play();
                 }
+                return soundInstance;
             }
             return null;
         }
