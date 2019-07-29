@@ -767,15 +767,11 @@ namespace MixedRealityExtension.Core
             else if (appearance.MaterialId != null)
             {
                 MaterialId = appearance.MaterialId.Value;
-                var sharedMat = MREAPI.AppsAPI.AssetCache.GetAsset(MaterialId) as Material;
-                if (sharedMat != null)
+                MREAPI.AppsAPI.AssetCache.OnCached(MaterialId, sharedMat =>
                 {
-                    Renderer.sharedMaterial = sharedMat;
-                }
-                else
-                {
-                    MREAPI.Logger.LogWarning($"Material {MaterialId} not found, cannot assign to actor {Id}");
-                }
+                    if (!this || !Renderer || MaterialId != appearance.MaterialId.Value) return;
+                    Renderer.sharedMaterial = (Material)sharedMat ?? MREAPI.AppsAPI.DefaultMaterial;
+                });
             }
         }
 
@@ -1257,15 +1253,19 @@ namespace MixedRealityExtension.Core
             {
                 case MediaCommand.Start:
                     {
-                        AudioSource soundInstance = App.SoundManager.TryAddSoundInstance(this, payload.Id, payload.MediaAssetId, payload.Options);
-                        if (soundInstance)
+                        MREAPI.AppsAPI.AssetCache.OnCached(payload.MediaAssetId, asset =>
                         {
-                            _mediaInstances.Add(payload.Id, soundInstance);
-                        }
-                        else
-                        {
-                            var videoStreamDescription = MREAPI.AppsAPI.AssetCache.GetAsset(payload.MediaAssetId) as VideoStreamDescription;
-                            if (videoStreamDescription != null)
+                            var audioClip = asset as AudioClip;
+                            var videoStreamDescription = asset as VideoStreamDescription;
+                            if (audioClip != null)
+                            {
+                                AudioSource soundInstance = App.SoundManager.TryAddSoundInstance(this, payload.Id, payload.MediaAssetId, payload.Options);
+                                if (soundInstance)
+                                {
+                                    _mediaInstances.Add(payload.Id, soundInstance);
+                                }
+                            }
+                            else if (videoStreamDescription != null)
                             {
                                 var factory = MREAPI.AppsAPI.VideoPlayerFactory
                                     ?? throw new ArgumentException("Cannot start video stream - VideoPlayerFactory not implemented.");
@@ -1277,7 +1277,7 @@ namespace MixedRealityExtension.Core
                             {
                                 MREAPI.Logger.LogError($"Failed to start media instance with asset id: {payload.MediaAssetId}\n");
                             }
-                        }
+                        });
                     }
                     break;
                 case MediaCommand.Stop:

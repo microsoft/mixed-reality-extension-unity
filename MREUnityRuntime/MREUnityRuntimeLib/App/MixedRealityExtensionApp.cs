@@ -53,6 +53,7 @@ namespace MixedRealityExtension.App
         }
 
         private AppState _appState = AppState.Stopped;
+        private int generation = 0;
 
         #region Events - Public
 
@@ -430,6 +431,7 @@ namespace MixedRealityExtension.App
 
         private void Conn_OnDisconnected()
         {
+            generation++;
             if (Protocol != null)
             {
                 Protocol.Stop();
@@ -577,8 +579,21 @@ namespace MixedRealityExtension.App
         {
             try
             {
-                var createdActors = _assetLoader.CreateFromPrefab(payload.PrefabId, payload.Actor?.ParentId);
-                ProcessCreatedActors(payload, createdActors, onCompleteCallback);
+                var curGeneration = generation;
+                MREAPI.AppsAPI.AssetCache.OnCached(payload.PrefabId, prefab =>
+                {
+                    if (this == null || _conn == null || !_conn.IsActive || generation != curGeneration) return;
+                    if (prefab != null)
+                    {
+                        var createdActors = _assetLoader.CreateFromPrefab(payload.PrefabId, payload.Actor?.ParentId);
+                        ProcessCreatedActors(payload, createdActors, onCompleteCallback);
+                    }
+                    else
+                    {
+                        var message = $"Prefab {payload.PrefabId} failed to load, cancelling actor creation";
+                        SendCreateActorResponse(payload, failureMessage: message, onCompleteCallback: onCompleteCallback);
+                    }
+                });
             }
             catch (Exception e)
             {

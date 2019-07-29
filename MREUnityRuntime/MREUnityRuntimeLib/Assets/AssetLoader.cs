@@ -108,10 +108,6 @@ namespace MixedRealityExtension.Assets
         internal IList<Actor> CreateFromPrefab(Guid prefabId, Guid? parentId)
         {
             GameObject prefab = MREAPI.AppsAPI.AssetCache.GetAsset(prefabId) as GameObject;
-            if (prefab == null)
-            {
-                throw new ArgumentException($"Asset {prefabId} does not exist or is the wrong type.");
-            }
 
             GameObject instance = UnityEngine.Object.Instantiate(
                 prefab, GetGameObjectFromParentId(parentId).transform, false);
@@ -232,8 +228,9 @@ namespace MixedRealityExtension.Assets
             {
                 for (var i = 0; i < gltfRoot.Materials.Count; i++)
                 {
+                    var matdef = gltfRoot.Materials[i];
                     var material = await importer.LoadMaterialAsync(i);
-                    material.name = gltfRoot.Materials[i].Name ?? $"material:{i}";
+                    material.name = matdef.Name ?? $"material:{i}";
 
                     var asset = GenerateAssetPatch(material, guidGenerator.Next());
                     asset.Name = material.name;
@@ -252,41 +249,45 @@ namespace MixedRealityExtension.Assets
         internal void OnAssetUpdate(AssetUpdate payload, Action onCompleteCallback)
         {
             var def = payload.Asset;
-            var asset = MREAPI.AppsAPI.AssetCache.GetAsset(def.Id);
+            MREAPI.AppsAPI.AssetCache.OnCached(def.Id, asset =>
+            {
+                if (!_owner) return;
 
-            var mat = asset as UnityEngine.Material;
-            var tex = asset as UnityEngine.Texture;
-            if (def.Material != null && mat != null)
-            {
-                var matdef = def.Material.Value;
-                if (matdef.MainTextureId != null && matdef.MainTextureId != Guid.Empty)
+                var mat = asset as UnityEngine.Material;
+                var tex = asset as UnityEngine.Texture;
+                if (def.Material != null)
                 {
-                    assignOrQueueTexture(def.Id, matdef.MainTextureId.Value);
-                    matdef.MainTextureId = null; // so the MaterialPatcher doesn't pick it up
+                    MREAPI.AppsAPI.MaterialPatcher.ApplyMaterialPatch(mat, def.Material.Value);
                 }
-                MREAPI.AppsAPI.MaterialPatcher.ApplyMaterialPatch(mat, matdef);
-            }
-            else if(def.Texture != null && tex != null)
-            {
-                var texdef = def.Texture.Value;
-                if (texdef.WrapModeU != null)
-                    tex.wrapModeU = texdef.WrapModeU.Value;
-                if (texdef.WrapModeV != null)
-                    tex.wrapModeV = texdef.WrapModeV.Value;
-            }
-            else if (def.Sound != null && asset as UnityEngine.AudioClip != null)
-            {
-                // do nothing; sound asset properties are immutable
-            }
-            else if (def.VideoStream != null && asset as VideoStreamDescription != null)
-            {
-                // do nothing; sound asset properties are immutable
-            }
-            else
-            {
-                MREAPI.Logger.LogError($"Asset {def.Id} is not patchable, or not of the right type!");
-            }
-            onCompleteCallback?.Invoke();
+                else if (def.Texture != null)
+                {
+                    // loading failed
+                    if (tex == null)
+                    {
+                        onCompleteCallback?.Invoke();
+                        return;
+                    }
+
+                    var texdef = def.Texture.Value;
+                    if (texdef.WrapModeU != null)
+                        tex.wrapModeU = texdef.WrapModeU.Value;
+                    if (texdef.WrapModeV != null)
+                        tex.wrapModeV = texdef.WrapModeV.Value;
+                }
+                else if (def.Sound != null)
+                {
+                    // do nothing; sound asset properties are immutable
+                }
+                else if (def.VideoStream != null)
+                {
+                    // do nothing; sound asset properties are immutable
+                }
+                else
+                {
+                    MREAPI.Logger.LogError($"Asset {def.Id} is not patchable, or not of the right type!");
+                }
+                onCompleteCallback?.Invoke();
+            });
         }
 
         [CommandHandler(typeof(CreateAsset))]
@@ -299,36 +300,23 @@ namespace MixedRealityExtension.Assets
             if(unityAsset == null && def.Material != null)
             {
                 unityAsset = UnityEngine.Object.Instantiate(MREAPI.AppsAPI.DefaultMaterial);
-                unityAsset.name = payload.Definition.Name;
-                MREAPI.AppsAPI.AssetCache.CacheAsset(unityAsset, def.Id, payload.ContainerId);
             }
             else if(unityAsset == null && def.Texture != null)
             {
                 var result = await AssetFetcher<UnityEngine.Texture>.LoadTask(_owner, new Uri(def.Texture.Value.Uri));
-                if(result.FailureMessage != null)
+                unityAsset = result.Asset;
+                if (result.FailureMessage != null)
                 {
                     response.FailureMessage = result.FailureMessage;
-                }
-                else
-                {
-                    unityAsset = result.Asset;
-                    unityAsset.name = payload.Definition.Name;
-                    MREAPI.AppsAPI.AssetCache.CacheAsset(unityAsset, def.Id, payload.ContainerId);
-                    assignTextureToQueuedMaterials(def.Id);
                 }
             }
             else if(unityAsset == null && def.Sound != null)
             {
                 var result = await AssetFetcher<UnityEngine.AudioClip>.LoadTask(_owner, new Uri(def.Sound.Value.Uri));
+                unityAsset = result.Asset;
                 if (result.FailureMessage != null)
                 {
                     response.FailureMessage = result.FailureMessage;
-                }
-                else
-                {
-                    unityAsset = result.Asset;
-                    unityAsset.name = payload.Definition.Name;
-                    MREAPI.AppsAPI.AssetCache.CacheAsset(unityAsset, def.Id, payload.ContainerId);
                 }
             }
             else if (unityAsset == null && def.VideoStream != null)
@@ -336,14 +324,10 @@ namespace MixedRealityExtension.Assets
                 if (MREAPI.AppsAPI.VideoPlayerFactory != null)
                 {
                     PluginInterfaces.FetchResult result2 = MREAPI.AppsAPI.VideoPlayerFactory.PreloadVideoAsset(def.VideoStream.Value.Uri);
+                    unityAsset = result2.Asset;
                     if (result2.FailureMessage != null)
                     {
                         response.FailureMessage = result2.FailureMessage;
-                    }
-                    else
-                    {
-                        unityAsset = result2.Asset;
-                        MREAPI.AppsAPI.AssetCache.CacheAsset(unityAsset, def.Id, payload.ContainerId);
                     }
                 }
                 else
@@ -351,8 +335,11 @@ namespace MixedRealityExtension.Assets
                     response.FailureMessage = "VideoPlayerFactory not implemented";
                 }
             }
+
+            MREAPI.AppsAPI.AssetCache.CacheAsset(unityAsset, def.Id, payload.ContainerId);
             if (unityAsset != null)
             {
+                unityAsset.name = def.Name;
                 OnAssetUpdate(new AssetUpdate()
                 {
                     Asset = def
@@ -476,82 +463,5 @@ namespace MixedRealityExtension.Assets
                 throw new Exception($"Asset {id} is not patchable, or not of the right type!");
             }
         }
-
-        #region Async texture management
-
-        /// <summary>
-        /// Maps texture IDs to the list of material IDs assigned to that texture
-        /// </summary>
-        private readonly Dictionary<Guid, List<Guid>> materialsWaitingForTexture = new Dictionary<Guid, List<Guid>>(5);
-
-        /// <summary>
-        /// Maps material IDs to the texture IDs assigned to them
-        /// </summary>
-        private readonly Dictionary<Guid, Guid> textureOnMaterial = new Dictionary<Guid, Guid>(5);
-
-        /// <summary>
-        /// Mark a material to receive a texture once it's loaded
-        /// </summary>
-        /// <param name="materialId"></param>
-        /// <param name="textureId"></param>
-        private void assignOrQueueTexture(Guid materialId, Guid textureId)
-        {
-            // if the material already has a texture on it
-            if (textureOnMaterial.TryGetValue(materialId, out var oldTexId)
-                // and that texture is also pending
-                && materialsWaitingForTexture.ContainsKey(oldTexId)
-                && materialsWaitingForTexture[oldTexId].Contains(materialId))
-            {
-                // dequeue the material from the old tex's update queue
-                materialsWaitingForTexture[oldTexId].Remove(materialId);
-
-                // and clean up old tex queue if it's now empty
-                if(materialsWaitingForTexture[oldTexId].Count == 0)
-                    materialsWaitingForTexture.Remove(oldTexId);
-            }
-
-            // assign the texture to the material
-            textureOnMaterial[materialId] = textureId;
-
-            var tex = MREAPI.AppsAPI.AssetCache.GetAsset(textureId) as UnityEngine.Texture;
-            if (tex == null)
-            {
-                // new texture isn't loaded yet, queue the material to receive it when it's done
-                var waiting = materialsWaitingForTexture.GetOrCreate(textureId, () => new List<Guid>(3));
-                waiting.Add(materialId);
-            }
-            else
-            {
-                // assign immediately
-                var mat = MREAPI.AppsAPI.AssetCache.GetAsset(materialId) as UnityEngine.Material;
-                MREAPI.AppsAPI.MaterialPatcher.ApplyMaterialPatch(mat, new MWMaterial() {
-                    MainTextureId = textureId
-                });
-            }
-        }
-
-        /// <summary>
-        /// Assign the loaded texture to materials waiting for it
-        /// </summary>
-        /// <param name="textureId"></param>
-        private void assignTextureToQueuedMaterials(Guid textureId)
-        {
-            // skip if no waiting materials
-            if (!materialsWaitingForTexture.ContainsKey(textureId))
-                return;
-
-            var tex = MREAPI.AppsAPI.AssetCache.GetAsset(textureId) as UnityEngine.Texture;
-            foreach (var matId in materialsWaitingForTexture[textureId])
-            {
-                var mat = MREAPI.AppsAPI.AssetCache.GetAsset(matId) as UnityEngine.Material;
-                MREAPI.AppsAPI.MaterialPatcher.ApplyMaterialPatch(mat, new MWMaterial() {
-                    MainTextureId = textureId
-                });
-            }
-
-            materialsWaitingForTexture.Remove(textureId);
-        }
-
-        #endregion
     }
 }

@@ -5,6 +5,7 @@ using MixedRealityExtension.Patching.Types;
 using MixedRealityExtension.PluginInterfaces;
 using MixedRealityExtension.Util.Unity;
 using System;
+using System.Collections.Generic;
 using Material = UnityEngine.Material;
 using MWMaterial = MixedRealityExtension.Assets.Material;
 using Texture = UnityEngine.Texture;
@@ -16,27 +17,20 @@ namespace MixedRealityExtension.Factories
     /// </summary>
     public class DefaultMaterialPatcher : IMaterialPatcher
     {
+        protected Dictionary<int, Guid> textureAssignments = new Dictionary<int, Guid>(20);
+
         private MWColor _materialColor = new MWColor();
         private MWVector2 _textureOffset = new MWVector2();
         private MWVector2 _textureScale = new MWVector2();
 
         /// <inheritdoc />
-        public void ApplyMaterialPatch(Material material, MWMaterial patch)
+        public virtual void ApplyMaterialPatch(Material material, MWMaterial patch)
         {
             if (patch.Color != null)
             {
                 _materialColor.FromUnityColor(material.color);
                 _materialColor.ApplyPatch(patch.Color);
                 material.color = _materialColor.ToColor();
-            }
-
-            if (patch.MainTextureId == Guid.Empty)
-            {
-                material.mainTexture = null;
-            }
-            else if (patch.MainTextureId != null)
-            {
-                material.mainTexture = (Texture)MREAPI.AppsAPI.AssetCache.GetAsset(patch.MainTextureId.Value);
             }
 
             if (patch.MainTextureOffset != null)
@@ -52,10 +46,28 @@ namespace MixedRealityExtension.Factories
                 _textureScale.ApplyPatch(patch.MainTextureScale);
                 material.mainTextureScale = _textureScale.ToVector2();
             }
+
+            if (patch.MainTextureId != null)
+            {
+                var textureId = patch.MainTextureId.Value;
+                textureAssignments[material.GetInstanceID()] = textureId;
+                if (patch.MainTextureId == Guid.Empty)
+                {
+                    material.mainTexture = null;
+                }
+                else
+                {
+                    MREAPI.AppsAPI.AssetCache.OnCached(textureId, tex =>
+                    {
+                        if (!material || textureAssignments[material.GetInstanceID()] != textureId) return;
+                        material.mainTexture = (Texture)tex;
+                    });
+                }
+            }
         }
 
         /// <inheritdoc />
-        public MWMaterial GeneratePatch(Material material)
+        public virtual MWMaterial GeneratePatch(Material material)
         {
             return new MWMaterial()
             {
