@@ -284,7 +284,7 @@ namespace MixedRealityExtension.Assets
                 }
                 else
                 {
-                    MREAPI.Logger.LogError($"Asset {def.Id} is not patchable, or not of the right type!");
+                    _app.Logger.LogError($"Asset {def.Id} is not patchable, or not of the right type!");
                 }
                 onCompleteCallback?.Invoke();
             });
@@ -352,7 +352,7 @@ namespace MixedRealityExtension.Assets
                 catch(Exception e)
                 {
                     response.FailureMessage = e.Message;
-                    MREAPI.Logger.LogError(response.FailureMessage);
+                    _app.Logger.LogError(response.FailureMessage);
                 }
             }
             else
@@ -361,7 +361,7 @@ namespace MixedRealityExtension.Assets
                 {
                     response.FailureMessage = $"Not implemented: CreateAsset of new asset type";
                 }
-                MREAPI.Logger.LogError(response.FailureMessage);
+                _app.Logger.LogError(response.FailureMessage);
             }
 
             _app.Protocol.Send(new Message()

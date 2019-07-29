@@ -34,7 +34,20 @@ namespace MixedRealityExtension.Core
         private UnityLight _light;
         private UnityCollider _collider;
         private LookAtComponent _lookAt;
-        private Dictionary<Guid, System.Object> _mediaInstances;
+        class MediaInstance
+        {
+            public Guid MediaAssetId { get; }
+
+            //null until asset has finished loading
+            public System.Object Instance { get; set; }
+
+            public MediaInstance(Guid MediaAssetId)
+            {
+                this.MediaAssetId = MediaAssetId;
+            }
+        };
+
+        private Dictionary<Guid, MediaInstance> _mediaInstances;
         private float _nextUpdateTime;
         private bool _grabbedLastSync = false;
 
@@ -462,7 +475,7 @@ namespace MixedRealityExtension.Core
 
             if (_mediaInstances != null)
             {
-                foreach (KeyValuePair<Guid, System.Object> mediaInstance in _mediaInstances)
+                foreach (KeyValuePair<Guid, MediaInstance> mediaInstance in _mediaInstances)
                 {
                     DestroyMediaById(mediaInstance.Key, mediaInstance.Value);
                 }
@@ -482,7 +495,7 @@ namespace MixedRealityExtension.Core
             }
             catch (Exception e)
             {
-                MREAPI.Logger.LogError($"Failed to synchronize app.  Exception: {e.Message}\nStackTrace: {e.StackTrace}");
+                App.Logger.LogError($"Failed to synchronize app.  Exception: {e.Message}\nStackTrace: {e.StackTrace}");
             }
 
             _transformLerper?.Update();
@@ -504,7 +517,7 @@ namespace MixedRealityExtension.Core
             }
             catch (Exception e)
             {
-                MREAPI.Logger.LogError($"Failed to update rigid body.  Exception: {e.Message}\nStackTrace: {e.StackTrace}");
+                App.Logger.LogError($"Failed to update rigid body.  Exception: {e.Message}\nStackTrace: {e.StackTrace}");
             }
         }
 
@@ -553,7 +566,7 @@ namespace MixedRealityExtension.Core
             }
             catch (Exception e)
             {
-                MREAPI.Logger.LogError($"Exception: {e.Message}\nStackTrace: {e.StackTrace}");
+                App.Logger.LogError($"Exception: {e.Message}\nStackTrace: {e.StackTrace}");
             }
         }
 
@@ -583,7 +596,7 @@ namespace MixedRealityExtension.Core
             }
             catch (Exception e)
             {
-                MREAPI.Logger.LogError($"Exception: {e.Message}\nStackTrace: {e.StackTrace}");
+                App.Logger.LogError($"Exception: {e.Message}\nStackTrace: {e.StackTrace}");
             }
 
             return false;
@@ -689,7 +702,7 @@ namespace MixedRealityExtension.Core
                     unityCollider = sphereCollider;
                     break;
                 default:
-                    MREAPI.Logger.LogWarning("Cannot add the given collider type to the actor " +
+                    App.Logger.LogWarning("Cannot add the given collider type to the actor " +
                         $"during runtime.  Collider Type: {colliderPatch.ColliderGeometry.ColliderType}");
                     break;
             }
@@ -1247,60 +1260,76 @@ namespace MixedRealityExtension.Core
         {
             if (_mediaInstances == null)
             {
-                _mediaInstances = new Dictionary<Guid, System.Object>();
+                _mediaInstances = new Dictionary<Guid, MediaInstance>();
             }
             switch (payload.MediaCommand)
             {
                 case MediaCommand.Start:
                     {
+                        MediaInstance mediaInstance = new MediaInstance(payload.MediaAssetId);
+                        _mediaInstances.Add(payload.Id, mediaInstance);
+
                         MREAPI.AppsAPI.AssetCache.OnCached(payload.MediaAssetId, asset =>
                         {
-                            var audioClip = asset as AudioClip;
-                            var videoStreamDescription = asset as VideoStreamDescription;
-                            if (audioClip != null)
+                            if (asset is AudioClip audioClip)
                             {
-                                AudioSource soundInstance = App.SoundManager.TryAddSoundInstance(this, payload.Id, payload.MediaAssetId, payload.Options);
+                                AudioSource soundInstance = App.SoundManager.AddSoundInstance(this, payload.Id, audioClip, payload.Options);
                                 if (soundInstance)
                                 {
-                                    _mediaInstances.Add(payload.Id, soundInstance);
+                                    mediaInstance.Instance = soundInstance;
+                                }
+                                else
+                                {
+                                    App.Logger.LogError($"Trying to start sound instance that should already have completed for: {payload.MediaAssetId}\n");
+                                    _mediaInstances.Remove(payload.Id);
                                 }
                             }
-                            else if (videoStreamDescription != null)
+                            else if (asset is VideoStreamDescription videoStreamDescription)
                             {
                                 var factory = MREAPI.AppsAPI.VideoPlayerFactory
                                     ?? throw new ArgumentException("Cannot start video stream - VideoPlayerFactory not implemented.");
                                 IVideoPlayer videoPlayer = factory.CreateVideoPlayer(this);
                                 videoPlayer.Play(videoStreamDescription, payload.Options);
-                                _mediaInstances.Add(payload.Id, videoPlayer);
+                                mediaInstance.Instance = videoPlayer;
                             }
                             else
                             {
-                                MREAPI.Logger.LogError($"Failed to start media instance with asset id: {payload.MediaAssetId}\n");
+                                App.Logger.LogError($"Failed to start media instance with asset id: {payload.MediaAssetId}\n");
+                                _mediaInstances.Remove(payload.Id);
                             }
                         });
                     }
                     break;
                 case MediaCommand.Stop:
                     {
-                        if (_mediaInstances.TryGetValue(payload.Id, out System.Object mediaInstance))
+                        if (_mediaInstances.TryGetValue(payload.Id, out MediaInstance mediaInstance))
                         {
-                            _mediaInstances.Remove(payload.Id);
-                            DestroyMediaById(payload.Id, mediaInstance);
+                            MREAPI.AppsAPI.AssetCache.OnCached(mediaInstance.MediaAssetId, asset =>
+                            {
+                                _mediaInstances.Remove(payload.Id);
+                                DestroyMediaById(payload.Id, mediaInstance);
+                            });
                         }
                     }
                     break;
                 case MediaCommand.Update:
                     {
-                        if (_mediaInstances.TryGetValue(payload.Id, out System.Object mediaInstance))
+                        if (_mediaInstances.TryGetValue(payload.Id, out MediaInstance mediaInstance))
                         {
-                            if (mediaInstance is AudioSource soundInstance)
+                            MREAPI.AppsAPI.AssetCache.OnCached(mediaInstance.MediaAssetId, asset =>
                             {
-                                App.SoundManager.ApplyMediaStateOptions(this, soundInstance, payload.Options, payload.Id, false);
-                            }
-                            else if (mediaInstance is IVideoPlayer videoPlayer)
-                            {
-                                videoPlayer.ApplyMediaStateOptions(payload.Options);
-                            }
+                                if (mediaInstance.Instance != null)
+                                {
+                                    if (mediaInstance.Instance is AudioSource soundInstance)
+                                    {
+                                        App.SoundManager.ApplyMediaStateOptions(this, soundInstance, payload.Options, payload.Id, false);
+                                    }
+                                    else if (mediaInstance.Instance is IVideoPlayer videoPlayer)
+                                    {
+                                        videoPlayer.ApplyMediaStateOptions(payload.Options);
+                                    }
+                                }
+                            });
                         }
                     }
                     break;
@@ -1310,30 +1339,36 @@ namespace MixedRealityExtension.Core
 
         public bool CheckIfSoundExpired(Guid id)
         {
-            if (_mediaInstances != null && _mediaInstances.TryGetValue(id, out System.Object mediaInstance))
+            if (_mediaInstances != null && _mediaInstances.TryGetValue(id, out MediaInstance mediaInstance))
             {
-                if (mediaInstance is AudioSource soundInstance)
+                if (mediaInstance.Instance != null)
                 {
-                    if (soundInstance.isPlaying)
+                    if (mediaInstance.Instance is AudioSource soundInstance)
                     {
-                        return false;
+                        if (soundInstance.isPlaying)
+                        {
+                            return false;
+                        }
+                        DestroyMediaById(id, mediaInstance);
                     }
-                    _mediaInstances.Remove(id);
-                    DestroyMediaById(id, soundInstance);
                 }
             }
             return true;
         }
 
-        private void DestroyMediaById(Guid id, object mediaInstance)
+        private void DestroyMediaById(Guid id, MediaInstance mediaInstance)
         {
-            if (mediaInstance is AudioSource soundInstance)
+            if (mediaInstance.Instance != null)
             {
-                App.SoundManager.DestroySoundInstance(soundInstance, id);
-            }
-            else if (mediaInstance is IVideoPlayer videoPlayer)
-            {
-                videoPlayer.Destroy();
+                if (mediaInstance.Instance is AudioSource soundInstance)
+                {
+                    App.SoundManager.DestroySoundInstance(soundInstance, id);
+                }
+                else if (mediaInstance.Instance is IVideoPlayer videoPlayer)
+                {
+                    videoPlayer.Destroy();
+                }
+                mediaInstance.Instance = null;
             }
         }
 

@@ -57,7 +57,7 @@ namespace MixedRealityExtension.Messaging.Protocols
             try
             {
 #if ANDROID_DEBUG
-                MREAPI.Logger.LogDebug($"Recv: {json}");
+                App.Logger.LogDebug($"Recv: {json}");
 #endif
 
                 var message = JsonConvert.DeserializeObject<Message>(json, Constants.SerializerSettings);
@@ -74,7 +74,7 @@ namespace MixedRealityExtension.Messaging.Protocols
             catch (Exception ex)
             {
                 var message = $"Failed to process message: {json}\nError: {ex.Message}\nStackTrace: {ex.StackTrace}";
-                MREAPI.Logger.LogDebug(message);
+                App.Logger.LogDebug(message);
                 try
                 {
                     // In case of failure: make a best effort to send a reply message, so promises don't hang and the app can know something about what went wrong.
@@ -124,7 +124,7 @@ namespace MixedRealityExtension.Messaging.Protocols
                 }
                 catch (Exception e)
                 {
-                    MREAPI.Logger.LogDebug($"Error serializing message. Exception: {e.Message}\nStackTrace: {e.StackTrace}");
+                    App.Logger.LogDebug($"Error serializing message. Exception: {e.Message}\nStackTrace: {e.StackTrace}");
                 }
             }
         }
