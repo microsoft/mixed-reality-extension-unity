@@ -122,6 +122,8 @@ namespace MixedRealityExtension.App
 
         internal SoundManager SoundManager { get; private set; }
 
+        internal AssetLoader AssetLoader => _assetLoader;
+
         #endregion
 
         /// <summary>

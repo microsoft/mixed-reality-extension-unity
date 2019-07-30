@@ -681,6 +681,7 @@ namespace MixedRealityExtension.Core
             return RigidBody;
         }
 
+        private int colliderGeneration = -1;
         private Collider SetCollider(ColliderPatch colliderPatch)
         {
             if (colliderPatch == null || colliderPatch.ColliderGeometry == null)
@@ -688,8 +689,30 @@ namespace MixedRealityExtension.Core
                 return null;
             }
 
+            colliderGeneration++;
             var colliderGeometry = colliderPatch.ColliderGeometry;
             var colliderType = colliderGeometry.ColliderType;
+
+            // must wait for mesh load before auto type will work
+            if (colliderType == ColliderType.Auto)
+            {
+                if (MREAPI.AppsAPI.AssetCache.GetAsset(MeshId) == null)
+                {
+                    var runningGeneration = colliderGeneration;
+                    var runningMeshId = MeshId;
+                    MREAPI.AppsAPI.AssetCache.OnCached(MeshId, _ =>
+                    {
+                        if (runningMeshId != MeshId || runningGeneration != colliderGeneration) return;
+                        SetCollider(colliderPatch);
+                    });
+                    return null;
+                }
+                else
+                {
+                    colliderGeometry = App.AssetLoader.GetPreferredColliderShape(MeshId);
+                    colliderType = colliderGeometry.ColliderType;
+                }
+            }
 
             if (_collider != null)
             {

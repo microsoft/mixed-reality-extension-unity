@@ -48,7 +48,12 @@ namespace MixedRealityExtension.Core
         /// <summary>
         /// Capsule shaped collider.
         /// </summary>
-        Capsule = 4
+        Capsule = 4,
+
+        /// <summary>
+        /// Choose best collider shape for mesh
+        /// </summary>
+        Auto = 5
     }
 
     internal class Collider : MonoBehaviour, ICollider

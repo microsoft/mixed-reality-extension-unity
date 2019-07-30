@@ -61,7 +61,7 @@ namespace MixedRealityExtension.Core
 
             if (Radius != null)
             {
-                collider.radius = Radius.Value;
+                collider.radius = Mathf.Abs(Radius.Value);
             }
         }
     }
@@ -106,9 +106,9 @@ namespace MixedRealityExtension.Core
             if (Size != null)
             {
                 Vector3 newSize;
-                newSize.x = Size.X;
-                newSize.y = Size.Y;
-                newSize.z = Size.Z;
+                newSize.x = Mathf.Abs(Size.X);
+                newSize.y = Mathf.Abs(Size.Y);
+                newSize.z = Mathf.Abs(Size.Z);
                 collider.size = newSize;
             }
         }
@@ -177,8 +177,8 @@ namespace MixedRealityExtension.Core
 
             if (Size != null)
             {
-                collider.radius = Radius.Value;
-                collider.height = Height.Value;
+                collider.radius = Mathf.Abs(Radius.Value);
+                collider.height = Mathf.Abs(Height.Value);
                 collider.direction = Direction.Value;
             }
         }

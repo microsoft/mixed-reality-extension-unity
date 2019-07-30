@@ -32,7 +32,7 @@ namespace MixedRealityExtension.Assets
         private readonly MixedRealityExtensionApp _app;
         private readonly AsyncCoroutineHelper _asyncHelper;
 
-        internal readonly Dictionary<Guid, ColliderGeometry> MeshColliderDescriptions = new Dictionary<Guid, ColliderGeometry>(10);
+        private readonly Dictionary<Guid, ColliderGeometry> MeshColliderDescriptions = new Dictionary<Guid, ColliderGeometry>(10);
 
         internal AssetLoader(MonoBehaviour owner, MixedRealityExtensionApp app)
         {
@@ -40,6 +40,16 @@ namespace MixedRealityExtension.Assets
             _app = app ?? throw new ArgumentException("Asset loader requires a MixedRealityExtensionApp to be associated with.");
             _asyncHelper = _owner.gameObject.GetComponent<AsyncCoroutineHelper>() ??
                            _owner.gameObject.AddComponent<AsyncCoroutineHelper>();
+        }
+
+        internal ColliderGeometry GetPreferredColliderShape(Guid meshId)
+        {
+            if (MeshColliderDescriptions.TryGetValue(meshId, out ColliderGeometry collider))
+            {
+                return collider;
+            }
+
+            return null;
         }
 
         internal GameObject GetGameObjectFromParentId(Guid? parentId)
@@ -248,7 +258,7 @@ namespace MixedRealityExtension.Assets
 
                     MeshColliderDescriptions[asset.Id] = colliderType == ColliderType.Mesh ?
                         (ColliderGeometry) new MeshColliderGeometry() :
-                        (ColliderGeometry) new BoxColliderGeometry() { Size = mesh.bounds.size.CreateMWVector3() };
+                        (ColliderGeometry) new BoxColliderGeometry() { Size = (mesh.bounds.size * 0.8f).CreateMWVector3() };
                 }
             }
 

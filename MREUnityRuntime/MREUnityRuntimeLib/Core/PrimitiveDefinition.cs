@@ -12,8 +12,7 @@ namespace MixedRealityExtension.Core.Types
         Box,
         Capsule,
         Cylinder,
-        Plane,
-        InnerSphere
+        Plane
     }
 
     /// <summary>

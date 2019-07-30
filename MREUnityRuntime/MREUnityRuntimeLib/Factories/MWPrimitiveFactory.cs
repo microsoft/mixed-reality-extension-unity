@@ -20,6 +20,7 @@ namespace MixedRealityExtension.Factories
             MWVector3 dims = definition.Dimensions;
 
             MeshDraft meshDraft;
+            float radius, height;
             switch (definition.Shape)
             {
                 case PrimitiveShape.Sphere:
@@ -27,7 +28,7 @@ namespace MixedRealityExtension.Factories
                     meshDraft = MeshDraft.Sphere(
                         definition.Dimensions.SmallestComponentValue() / 2,
                         definition.USegments.GetValueOrDefault(36),
-                        definition.VSegments.GetValueOrDefault(36),
+                        definition.VSegments.GetValueOrDefault(18),
                         true);
                     break;
 
@@ -38,11 +39,13 @@ namespace MixedRealityExtension.Factories
 
                 case PrimitiveShape.Capsule:
                     dims = dims ?? new MWVector3(0.2f, 1, 0.2f);
+                    radius = definition.Dimensions.SmallestComponentValue() / 2;
+                    height = definition.Dimensions.LargestComponentValue() - 2 * radius;
                     meshDraft = MeshDraft.Capsule(
-                        dims.LargestComponentValue(),
-                        definition.Dimensions.SmallestComponentValue() / 2,
+                        height,
+                        radius,
                         definition.USegments.GetValueOrDefault(36),
-                        definition.VSegments.GetValueOrDefault(36));
+                        definition.VSegments.GetValueOrDefault(18));
 
                     // default capsule is Y-aligned; rotate if necessary
                     if (dims.LargestComponentIndex() == 0)
@@ -57,18 +60,36 @@ namespace MixedRealityExtension.Factories
 
                 case PrimitiveShape.Cylinder:
                     dims = dims ?? new MWVector3(0.2f, 1, 0.2f);
+                    radius = 0.2f;
+                    height = 1;
+                    if (Mathf.Approximately(dims.X, dims.Y))
+                    {
+                        height = dims.Z;
+                        radius = dims.X / 2;
+                    }
+                    else if (Mathf.Approximately(dims.X, dims.Z))
+                    {
+                        height = dims.Y;
+                        radius = dims.X / 2;
+                    }
+                    else
+                    {
+                        height = dims.X;
+                        radius = dims.Y / 2;
+                    }
+
                     meshDraft = MeshDraft.Cylinder(
-                        definition.Dimensions.SmallestComponentValue() / 2,
+                        radius,
                         definition.USegments.GetValueOrDefault(36),
-                        dims.LargestComponentValue(),
+                        height,
                         true);
 
                     // default cylinder is Y-aligned; rotate if necessary
-                    if (dims.LargestComponentIndex() == 0)
+                    if (dims.X == height)
                     {
                         meshDraft.Rotate(Quaternion.Euler(0, 0, 90));
                     }
-                    else if (dims.LargestComponentIndex() == 2)
+                    else if (dims.Z == height)
                     {
                         meshDraft.Rotate(Quaternion.Euler(90, 0, 0));
                     }
@@ -76,50 +97,13 @@ namespace MixedRealityExtension.Factories
 
                 case PrimitiveShape.Plane:
                     dims = dims ?? new MWVector3(1, 0, 1);
-                    var longEdge = dims.LargestComponentValue();
-                    var shortEdge = dims.SecondLargestComponentValue();
                     meshDraft = MeshDraft.Plane(
-                        longEdge,
-                        shortEdge,
+                        dims.X,
+                        dims.Z,
                         definition.USegments.GetValueOrDefault(1),
                         definition.VSegments.GetValueOrDefault(1),
                         true);
-                    meshDraft.Move(new Vector3(-longEdge / 2, 0, -shortEdge / 2));
-
-                    // rotate to orient X and Z to specified long and short axes facing positive third axis
-                    Quaternion quat;
-                    if (longEdge == dims.X)
-                    {
-                        if (shortEdge == dims.Y)
-                            quat = Quaternion.Euler(90, 0, 0); // X long, Y short, facing +Z
-                        else
-                            quat = Quaternion.Euler(0, 0, 0); // X long, Z short, facing +Y
-                    }
-                    else if (longEdge == dims.Y)
-                    {
-                        if (shortEdge == dims.X)
-                            quat = Quaternion.Euler(90, 90, 0); // Y long, X short, facing +Z
-                        else
-                            quat = Quaternion.Euler(0, 0, -90); // Y long, Z short, facing +X
-                    }
-                    else
-                    {
-                        if (shortEdge == dims.X)
-                            quat = Quaternion.Euler(0, 90, 0); // Z long, X short, facing +Y
-                        else
-                            quat = Quaternion.Euler(0, 90, -90); // Z long, Y short, facing +X
-                    }
-                    meshDraft.Rotate(quat);
-                    break;
-
-                case PrimitiveShape.InnerSphere:
-                    dims = dims ?? new MWVector3(1, 1, 1);
-                    meshDraft = MeshDraft.Sphere(
-                        definition.Dimensions.SmallestComponentValue() / 2,
-                        definition.USegments.GetValueOrDefault(36),
-                        definition.VSegments.GetValueOrDefault(36),
-                        true);
-                    meshDraft.FlipFaces();
+                    meshDraft.Move(new Vector3(-dims.X / 2, 0, -dims.Z / 2));
                     break;
 
                 default:
