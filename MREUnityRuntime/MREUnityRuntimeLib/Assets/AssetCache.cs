@@ -95,12 +95,11 @@ namespace MixedRealityExtension.Assets
         /// <inheritdoc cref="CacheAsset"/>
         public void CacheAsset(Object asset, Guid id, Guid containerId, AssetSource source = null)
         {
-            if (cache.Any(c => c.Id == id))
+            if (!cache.Any(c => c.Id == id))
             {
-                throw new Exception($"An asset with ID {id} is already cached!");
+                cache.Add(new CacheEntry(id, containerId, source, asset));
             }
 
-            cache.Add(new CacheEntry(id, containerId, source, asset));
             if (cacheCallbacks.TryGetValue(id, out List<CacheCallback> callbacks))
             {
                 cacheCallbacks.Remove(id);
