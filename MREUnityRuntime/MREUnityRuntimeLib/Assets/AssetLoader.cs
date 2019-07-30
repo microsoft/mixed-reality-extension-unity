@@ -32,7 +32,7 @@ namespace MixedRealityExtension.Assets
         private readonly MixedRealityExtensionApp _app;
         private readonly AsyncCoroutineHelper _asyncHelper;
 
-        private readonly Dictionary<Guid, ColliderGeometry> MeshColliderDescriptions = new Dictionary<Guid, ColliderGeometry>(10);
+        private readonly Dictionary<Guid, ColliderGeometry> meshColliderDescriptions = new Dictionary<Guid, ColliderGeometry>(10);
 
         internal AssetLoader(MonoBehaviour owner, MixedRealityExtensionApp app)
         {
@@ -44,7 +44,7 @@ namespace MixedRealityExtension.Assets
 
         internal ColliderGeometry GetPreferredColliderShape(Guid meshId)
         {
-            if (MeshColliderDescriptions.TryGetValue(meshId, out ColliderGeometry collider))
+            if (meshColliderDescriptions.TryGetValue(meshId, out ColliderGeometry collider))
             {
                 return collider;
             }
@@ -256,7 +256,7 @@ namespace MixedRealityExtension.Assets
                     MREAPI.AppsAPI.AssetCache.CacheAsset(mesh, asset.Id, containerId, source);
                     assets.Add(asset);
 
-                    MeshColliderDescriptions[asset.Id] = colliderType == ColliderType.Mesh ?
+                    meshColliderDescriptions[asset.Id] = colliderType == ColliderType.Mesh ?
                         (ColliderGeometry) new MeshColliderGeometry() :
                         (ColliderGeometry) new BoxColliderGeometry() { Size = (mesh.bounds.size * 0.8f).CreateMWVector3() };
                 }
@@ -349,7 +349,7 @@ namespace MixedRealityExtension.Assets
                     try
                     {
                         unityAsset = factory.CreatePrimitive(def.Mesh.Value.PrimitiveDefinition.Value);
-                        MeshColliderDescriptions[def.Id] = ConvertPrimToCollider(def.Mesh.Value.PrimitiveDefinition.Value);
+                        meshColliderDescriptions[def.Id] = ConvertPrimToCollider(def.Mesh.Value.PrimitiveDefinition.Value);
                     }
                     catch(Exception e)
                     {

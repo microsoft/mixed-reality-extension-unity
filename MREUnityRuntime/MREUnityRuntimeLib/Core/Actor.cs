@@ -696,7 +696,7 @@ namespace MixedRealityExtension.Core
             // must wait for mesh load before auto type will work
             if (colliderType == ColliderType.Auto)
             {
-                if (MREAPI.AppsAPI.AssetCache.GetAsset(MeshId) == null)
+                if (App.AssetLoader.GetPreferredColliderShape(MeshId) == null)
                 {
                     var runningGeneration = colliderGeneration;
                     var runningMeshId = MeshId;
@@ -872,7 +872,10 @@ namespace MixedRealityExtension.Core
             // apply visibility after renderer updated
             if (appearance.Enabled != null || forceUpdateRenderer)
             {
-                appearanceEnabled = appearance.Enabled.Value;
+                if (appearance.Enabled != null)
+                {
+                    appearanceEnabled = appearance.Enabled.Value;
+                }
                 ApplyVisibilityUpdate(this);
             }
         }
