@@ -1,0 +1,86 @@
+Build config:
+    target: windows
+    arch: x86_64
+    host: x86_64-w64-mingw32
+    toolchainPrefix: x86_64-w64-mingw32-
+    sysroot: 
+    prefix: o:/AvStreamPlugin/NativePlugin/build/windows/deps
+    build: o:/AvStreamPlugin/NativePlugin/build/windows
+    environment:
+        PATH: o:/AvStreamPlugin/NativePlugin/build/windows/deps/bin/:/mingw64/bin:/usr/local/bin:/usr/bin:/bin:/c/Program Files (x86)/Microsoft Visual Studio/2017/Enterprise/VC/Tools/MSVC/14.14.26428/bin/HostX86/x86:/c/Program Files (x86)/Microsoft Visual Studio/2017/Enterprise/Common7/IDE/VC/VCPackages:/c/Program Files (x86)/Microsoft SDKs/TypeScript/2.8:/c/Program Files (x86)/Microsoft Visual Studio/2017/Enterprise/Common7/IDE/CommonExtensions/Microsoft/TestWindow:/c/Program Files (x86)/Microsoft Visual Studio/2017/Enterprise/Common7/IDE/CommonExtensions/Microsoft/TeamFoundation/Team Explorer:/c/Program Files (x86)/Microsoft Visual Studio/2017/Enterprise/MSBuild/15.0/bin/Roslyn:/c/Program Files (x86)/Microsoft Visual Studio/2017/Enterprise/Team Tools/Performance Tools:/c/Program Files (x86)/Microsoft Visual Studio/Shared/Common/VSPerfCollectionTools:/c/Program Files (x86)/Microsoft SDKs/Windows/v10.0A/bin/NETFX 4.6.1 Tools:/c/Program Files (x86)/Windows Kits/10/bin/10.0.17134.0/x86:/c/Program Files (x86)/Windows Kits/10/bin/x86:/c/Program Files (x86)/Microsoft Visual Studio/2017/Enterprise/MSBuild/15.0/bin:/c/WINDOWS/Microsoft.NET/Framework/v4.0.30319:/c/Program Files (x86)/Microsoft Visual Studio/2017/Enterprise/Common7/IDE:/c/Program Files (x86)/Microsoft Visual Studio/2017/Enterprise/Common7/Tools:/c/Program Files/Oculus/Support/oculus-runtime:/c/WINDOWS/system32:/c/WINDOWS:/c/WINDOWS/System32/Wbem:/c/WINDOWS/System32/WindowsPowerShell/v1.0:/c/Program Files/GVFS:/c/Program Files/Microsoft SQL Server/130/Tools/Binn:/c/Python27:/c/Program Files/dotnet:/c/Program Files/CMake/bin:/c/Program Files/Microsoft SQL Server/120/Tools/Binn:/c/Program Files/Git LFS:/c/WINDOWS/System32/OpenSSH:/c/Program Files (x86)/GtkSharp/2.12/bin:/c/Program Files/Git/cmd:/c/WINDOWS/system32:/c/WINDOWS:/c/WINDOWS/System32/Wbem:/c/WINDOWS/System32/WindowsPowerShell/v1.0:/c/WINDOWS/System32/OpenSSH:/c/Program Files/nodejs:/c/WINDOWS/SysWOW64/WindowsPowerShell/v1.0/Modules/TShell/TShell:/c/Users/brwils/AppData/Local/Microsoft/WindowsApps:/c/Users/brwils/AppData/Roaming/npm:/c/Users/brwils/AppData/Local/Programs/Microsoft VS Code/bin:/usr/bin/site_perl:/usr/bin/vendor_perl:/usr/bin/core_perl
+        CC: x86_64-w64-mingw32-gcc
+        CXX: x86_64-w64-mingw32-g++
+        AR: ar
+        AS: as
+        LD: o:/AvStreamPlugin/NativePlugin/build/android/toolchain-arm-21/bin/arm-linux-androideabi-ld
+        STRIP: strip
+        RANLIB: ranlib
+        NM: nm
+        PKGCONFIG: /mingw64/bin/pkg-config.exe
+        CFLAGS: -Io:/AvStreamPlugin/NativePlugin/build/windows/deps/include
+        LDFLAGS: -Lo:/AvStreamPlugin/NativePlugin/build/windows/deps/lib
+        PKG_CONFIG_LIBDIR: o:/AvStreamPlugin/NativePlugin/build/windows/deps/lib/pkgconfig
+        PKG_CONFIG_PATH: o:/AvStreamPlugin/NativePlugin/build/windows/deps/lib/pkgconfig
+    
+
+Libraries:
+    GMP                 6.1.2               https://gmplib.org
+    Ogg                 1.3.3               https://xiph.org/ogg
+    Nettle              3.4                 https://www.lysator.liu.se/~nisse/nettle/
+    Libtasn1            4.13                https://www.gnu.org/software/libtasn1/
+    Opus                1.1.5               http://opus-codec.org
+    Vorbus              1.3.6               https://xiph.org/vorbis
+    GnuTLS              3.6.4               https://www.gnutls.org/
+    AMF                 ba4e7f49a21e074d    https://github.com/GPUOpen-LibrariesAndSDKs/AMF.git
+    MFX Dispatch        b93a3acb07d4b51c    https://github.com/lu-zero/mfx_dispatch.git
+    NV Codec Headers    095b13ba5e5b850e    https://github.com/FFmpeg/nv-codec-headers.git
+    AMF                 ba4e7f49a21e074d    https://github.com/GPUOpen-LibrariesAndSDKs/AMF.git
+    FFmpeg              4.0                 http://ffmpeg.org
+
+FFmpeg Config:
+    --disable-static
+    --enable-shared
+    --enable-pic
+    --enable-small
+    --disable-programs
+    --disable-doc
+    --disable-debug
+    --disable-htmlpages
+    --disable-manpages
+    --disable-podpages
+    --disable-txtpages
+    --prefix=o:/AvStreamPlugin/NativePlugin/deps/windows
+    --pkg-config-flags=--static
+    --target-os=mingw32
+    --arch=x86_64
+    --cross-prefix=x86_64-w64-mingw32-
+    --enable-cross-compile
+    --nm=nm
+    --ar=ar
+    --strip=strip
+    --cc=x86_64-w64-mingw32-gcc
+    --cxx=x86_64-w64-mingw32-g++
+    --pkg-config=/mingw64/bin/pkg-config.exe
+    --disable-linux-perf
+    --enable-version3
+    --disable-iconv
+    --disable-bzlib
+    --disable-lzma
+    --disable-zlib
+    --disable-encoders
+    --disable-avdevice
+    --extra-ldflags="-static"
+    --extra-cflags="-static"
+    --enable-libopus
+    --enable-libvorbis
+    --enable-gnutls
+    --enable-gmp
+    --extra-libs="-lcrypt32
+    -liconv"
+    --enable-libmfx
+    --enable-ffnvcodec
+    --enable-nvdec
+    
+    --enable-dxva2
+    --enable-d3d11va
+    

@@ -106,6 +106,7 @@ public class MREComponent : MonoBehaviour
                 libraryFactory: new ResourceFactory(),
                 assetCache: new AssetCache(new GameObject("MRE Asset Cache")),
                 userInfoProvider: new UserInfoProvider(),
+                videoPlayerFactory: new VideoPlayerFactory(),
                 logger: new MRELogger());
             _apiInitialized = true;
         }
