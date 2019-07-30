@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using MixedRealityExtension.Core.Types;
+using MixedRealityExtension.Util.Unity;
 using UnityEngine;
 
 using UnityCollider = UnityEngine.Collider;
@@ -30,14 +31,14 @@ namespace MixedRealityExtension.Core
         public override ColliderType ColliderType => ColliderType.Sphere;
 
         /// <summary>
-        /// The radius of the sphere collider geometry.
-        /// </summary>
-        public float? Radius { get; set; }
-
-        /// <summary>
         /// The center of the sphere collider geometry.
         /// </summary>
         public MWVector3 Center { get; set; }
+
+        /// <summary>
+        /// The radius of the sphere collider geometry.
+        /// </summary>
+        public float? Radius { get; set; }
 
         internal override void Patch(UnityCollider collider)
         {
@@ -131,9 +132,55 @@ namespace MixedRealityExtension.Core
     {
         public override ColliderType ColliderType => ColliderType.Capsule;
 
+        public MWVector3 Center { get; set; }
+
+        /// <summary>
+        /// The dimensions of the collider, with the largest component of the vector being the
+        /// primary axis and height of the capsule, and the second largest the radius.
+        /// </summary>
+        public MWVector3 Size { get; set; }
+
+        public int? Direction
+        {
+            get => Size?.LargestComponentIndex();
+
+        }
+
+        public float? Height
+        {
+            get => Size?.LargestComponentValue();
+        }
+
+        public float? Radius
+        {
+            get => Size != null ? Size.SmallestComponentValue() / 2 : (float?) null;
+        }
+
         internal override void Patch(UnityCollider collider)
         {
-            // We do not accept patching for capsule colliders from the app.
+            if (collider is CapsuleCollider capsuleCollider)
+            {
+                Patch(capsuleCollider);
+            }
+        }
+
+        private void Patch(CapsuleCollider collider)
+        {
+            if (Center != null)
+            {
+                Vector3 newCenter;
+                newCenter.x = Center.X;
+                newCenter.y = Center.Y;
+                newCenter.z = Center.Z;
+                collider.center = newCenter;
+            }
+
+            if (Size != null)
+            {
+                collider.radius = Radius.Value;
+                collider.height = Height.Value;
+                collider.direction = Direction.Value;
+            }
         }
     }
 }

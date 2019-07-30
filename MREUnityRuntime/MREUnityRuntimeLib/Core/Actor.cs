@@ -722,6 +722,11 @@ namespace MixedRealityExtension.Core
                     colliderGeometry.Patch(sphereCollider);
                     unityCollider = sphereCollider;
                     break;
+                case ColliderType.Capsule:
+                    var capsuleCollider = gameObject.AddComponent<CapsuleCollider>();
+                    colliderGeometry.Patch(capsuleCollider);
+                    unityCollider = capsuleCollider;
+                    break;
                 default:
                     MREAPI.Logger.LogWarning("Cannot add the given collider type to the actor " +
                         $"during runtime.  Collider Type: {colliderPatch.ColliderGeometry.ColliderType}");
@@ -803,8 +808,9 @@ namespace MixedRealityExtension.Core
                 {
                     MeshId = appearance.MeshId.Value;
                 }
+
                 // apply mesh/material to game object
-                if (MaterialId != Guid.Empty && MeshId != Guid.Empty)
+                if (MeshId != Guid.Empty)
                 {
                     // guarantee renderer component
                     if (renderer == null)
@@ -818,12 +824,14 @@ namespace MixedRealityExtension.Core
                         filter = gameObject.AddComponent<MeshFilter>();
                     }
 
-                    // look up and assign assets
+                    // look up and assign mesh
                     MREAPI.AppsAPI.AssetCache.OnCached(MeshId, sharedMesh =>
                     {
                         if (!this || MeshId != appearance.MeshId.Value) return;
                         UnityMesh = (Mesh)sharedMesh;
                     });
+
+                    // look up and assign material, or default if none assigned
                     MREAPI.AppsAPI.AssetCache.OnCached(MaterialId, sharedMat =>
                     {
                         if (!this || !Renderer || MaterialId != appearance.MaterialId.Value) return;

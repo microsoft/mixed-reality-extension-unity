@@ -15,19 +15,17 @@ namespace MixedRealityExtension.Factories
     public class MWPrimitiveFactory : IPrimitiveFactory
     {
         /// <inheritdoc />
-        public GameObject CreatePrimitive(PrimitiveDefinition definition, GameObject parent, bool addCollider)
+        public Mesh CreatePrimitive(PrimitiveDefinition definition)
         {
-            var spawnedPrimitive = new GameObject(definition.Shape.ToString());
-            spawnedPrimitive.transform.SetParent(parent.transform, false);
-
             MWVector3 dims = definition.Dimensions;
 
             MeshDraft meshDraft;
             switch (definition.Shape)
             {
                 case PrimitiveShape.Sphere:
+                    dims = dims ?? new MWVector3(1, 1, 1);
                     meshDraft = MeshDraft.Sphere(
-                        definition.Radius.GetValueOrDefault(0.5f),
+                        definition.Dimensions.SmallestComponentValue() / 2,
                         definition.USegments.GetValueOrDefault(36),
                         definition.VSegments.GetValueOrDefault(36),
                         true);
@@ -39,10 +37,10 @@ namespace MixedRealityExtension.Factories
                     break;
 
                 case PrimitiveShape.Capsule:
-                    dims = dims ?? new MWVector3(0, 1, 0);
+                    dims = dims ?? new MWVector3(0.2f, 1, 0.2f);
                     meshDraft = MeshDraft.Capsule(
                         dims.LargestComponentValue(),
-                        definition.Radius.GetValueOrDefault(0.5f),
+                        definition.Dimensions.SmallestComponentValue() / 2,
                         definition.USegments.GetValueOrDefault(36),
                         definition.VSegments.GetValueOrDefault(36));
 
@@ -58,9 +56,9 @@ namespace MixedRealityExtension.Factories
                     break;
 
                 case PrimitiveShape.Cylinder:
-                    dims = dims ?? new MWVector3(0, 1, 0);
+                    dims = dims ?? new MWVector3(0.2f, 1, 0.2f);
                     meshDraft = MeshDraft.Cylinder(
-                        definition.Radius.GetValueOrDefault(0.5f),
+                        definition.Dimensions.SmallestComponentValue() / 2,
                         definition.USegments.GetValueOrDefault(36),
                         dims.LargestComponentValue(),
                         true);
@@ -78,18 +76,46 @@ namespace MixedRealityExtension.Factories
 
                 case PrimitiveShape.Plane:
                     dims = dims ?? new MWVector3(1, 0, 1);
+                    var longEdge = dims.LargestComponentValue();
+                    var shortEdge = dims.SecondLargestComponentValue();
                     meshDraft = MeshDraft.Plane(
-                        dims.X,
-                        dims.Z,
+                        longEdge,
+                        shortEdge,
                         definition.USegments.GetValueOrDefault(1),
                         definition.VSegments.GetValueOrDefault(1),
                         true);
-                    meshDraft.Move(new Vector3(-dims.X / 2, 0, -dims.Z / 2));
+                    meshDraft.Move(new Vector3(-longEdge / 2, 0, -shortEdge / 2));
+
+                    // rotate to orient X and Z to specified long and short axes facing positive third axis
+                    Quaternion quat;
+                    if (longEdge == dims.X)
+                    {
+                        if (shortEdge == dims.Y)
+                            quat = Quaternion.Euler(90, 0, 0); // X long, Y short, facing +Z
+                        else
+                            quat = Quaternion.Euler(0, 0, 0); // X long, Z short, facing +Y
+                    }
+                    else if (longEdge == dims.Y)
+                    {
+                        if (shortEdge == dims.X)
+                            quat = Quaternion.Euler(90, 90, 0); // Y long, X short, facing +Z
+                        else
+                            quat = Quaternion.Euler(0, 0, -90); // Y long, Z short, facing +X
+                    }
+                    else
+                    {
+                        if (shortEdge == dims.X)
+                            quat = Quaternion.Euler(0, 90, 0); // Z long, X short, facing +Y
+                        else
+                            quat = Quaternion.Euler(0, 90, -90); // Z long, Y short, facing +X
+                    }
+                    meshDraft.Rotate(quat);
                     break;
 
                 case PrimitiveShape.InnerSphere:
+                    dims = dims ?? new MWVector3(1, 1, 1);
                     meshDraft = MeshDraft.Sphere(
-                        definition.Radius.GetValueOrDefault(0.5f),
+                        definition.Dimensions.SmallestComponentValue() / 2,
                         definition.USegments.GetValueOrDefault(36),
                         definition.VSegments.GetValueOrDefault(36),
                         true);
@@ -100,59 +126,7 @@ namespace MixedRealityExtension.Factories
                     throw new Exception($"{definition.Shape.ToString()} is not a known primitive type.");
             }
 
-            spawnedPrimitive.AddComponent<MeshFilter>().mesh = meshDraft.ToMesh();
-            var renderer = spawnedPrimitive.AddComponent<MeshRenderer>();
-            renderer.sharedMaterial = MREAPI.AppsAPI.DefaultMaterial;
-
-            if (addCollider)
-            {
-                spawnedPrimitive.AddColliderToPrimitive(definition);
-            }
-
-            return spawnedPrimitive;
-        }
-    }
-
-    static class PrimitiveHelpers
-    {
-        public static void AddColliderToPrimitive(this GameObject _this, PrimitiveDefinition prim)
-        {
-            MWVector3 dims = prim.Dimensions;
-            switch (prim.Shape)
-            {
-                case PrimitiveShape.Sphere:
-                    var sphereCollider = _this.AddComponent<SphereCollider>();
-                    sphereCollider.radius = prim.Radius.GetValueOrDefault(0.5f);
-                    break;
-
-                case PrimitiveShape.Box:
-                    dims = dims ?? new MWVector3(1, 1, 1);
-                    var boxCollider = _this.AddComponent<BoxCollider>();
-                    boxCollider.size = dims.ToVector3();
-                    break;
-
-                case PrimitiveShape.Capsule:
-                    dims = dims ?? new MWVector3(0, 1, 0);
-                    var capsuleCollider = _this.AddComponent<CapsuleCollider>();
-                    capsuleCollider.radius = prim.Radius.GetValueOrDefault(0.5f);
-                    capsuleCollider.height = dims.LargestComponentValue() + 2 * capsuleCollider.radius;
-                    capsuleCollider.direction = dims.LargestComponentIndex();
-                    break;
-
-                case PrimitiveShape.Cylinder:
-                    dims = dims ?? new MWVector3(0, 1, 0);
-                    var cylinderCollider = _this.AddComponent<CapsuleCollider>();
-                    cylinderCollider.radius = prim.Radius.GetValueOrDefault(0.5f);
-                    cylinderCollider.height = dims.LargestComponentValue() + cylinderCollider.radius;
-                    cylinderCollider.direction = dims.LargestComponentIndex();
-                    break;
-
-                case PrimitiveShape.Plane:
-                    dims = dims ?? new MWVector3(1, 0, 1);
-                    var planeCollider = _this.AddComponent<BoxCollider>();
-                    planeCollider.size = new Vector3(dims.X, 0.01f, dims.Z);
-                    break;
-            }
+            return meshDraft.ToMesh();
         }
     }
 }

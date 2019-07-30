@@ -32,6 +32,8 @@ namespace MixedRealityExtension.Assets
         private readonly MixedRealityExtensionApp _app;
         private readonly AsyncCoroutineHelper _asyncHelper;
 
+        internal readonly Dictionary<Guid, ColliderGeometry> MeshColliderDescriptions = new Dictionary<Guid, ColliderGeometry>(10);
+
         internal AssetLoader(MonoBehaviour owner, MixedRealityExtensionApp app)
         {
             _owner = owner ?? throw new ArgumentException("Asset loader requires an owner MonoBehaviour script to be assigned to it.");
@@ -243,6 +245,10 @@ namespace MixedRealityExtension.Assets
                     asset.Source = new AssetSource(source.ContainerType, source.Uri, $"mesh:{i}");
                     MREAPI.AppsAPI.AssetCache.CacheAsset(mesh, asset.Id, containerId, source);
                     assets.Add(asset);
+
+                    MeshColliderDescriptions[asset.Id] = colliderType == ColliderType.Mesh ?
+                        (ColliderGeometry) new MeshColliderGeometry() :
+                        (ColliderGeometry) new BoxColliderGeometry() { Size = mesh.bounds.size.CreateMWVector3() };
                 }
             }
 
@@ -330,7 +336,16 @@ namespace MixedRealityExtension.Assets
                 if (def.Mesh.Value.PrimitiveDefinition != null)
                 {
                     var factory = MREAPI.AppsAPI.PrimitiveFactory;
-                    unityAsset = factory.CreatePrimitive(def.Mesh.Value.PrimitiveDefinition.Value);
+                    try
+                    {
+                        unityAsset = factory.CreatePrimitive(def.Mesh.Value.PrimitiveDefinition.Value);
+                        MeshColliderDescriptions[def.Id] = ConvertPrimToCollider(def.Mesh.Value.PrimitiveDefinition.Value);
+                    }
+                    catch(Exception e)
+                    {
+                        response.FailureMessage = e.Message;
+                        MREAPI.Logger.LogError(response.FailureMessage);
+                    }
                 }
                 else
                 {
@@ -477,7 +492,17 @@ namespace MixedRealityExtension.Assets
                     Mesh = new MWMesh()
                     {
                         VertexCount = mesh.vertexCount,
-                        TriangleCount = mesh.triangles.Length / 3
+                        TriangleCount = mesh.triangles.Length / 3,
+                        BoundingBoxDimensions = new Vector3Patch() {
+                            X = mesh.bounds.size.x,
+                            Y = mesh.bounds.size.y,
+                            Z = mesh.bounds.size.z
+                        },
+                        BoundingBoxCenter = new Vector3Patch() {
+                            X = mesh.bounds.center.x,
+                            Y = mesh.bounds.center.y,
+                            Z = mesh.bounds.center.z
+                        }
                     }
                 };
             }
@@ -506,6 +531,48 @@ namespace MixedRealityExtension.Assets
             else
             {
                 throw new Exception($"Asset {id} is not patchable, or not of the right type!");
+            }
+        }
+
+        public ColliderGeometry ConvertPrimToCollider(PrimitiveDefinition prim)
+        {
+            MWVector3 dims = prim.Dimensions;
+            switch (prim.Shape)
+            {
+                case PrimitiveShape.Sphere:
+                    return new SphereColliderGeometry()
+                    {
+                        Radius = dims.LargestComponentValue()
+                    };
+
+                case PrimitiveShape.Box:
+                    return new BoxColliderGeometry()
+                    {
+                        Size = dims ?? new MWVector3(1, 1, 1)
+                    };
+
+                case PrimitiveShape.Capsule:
+                    return new CapsuleColliderGeometry()
+                    {
+                        Size = dims
+                    };
+
+                case PrimitiveShape.Cylinder:
+                    dims = dims ?? new MWVector3(0.1f, 1, 0.1f);
+                    return new CapsuleColliderGeometry()
+                    {
+                        Size = dims
+                    };
+
+                case PrimitiveShape.Plane:
+                    dims = dims ?? new MWVector3(1, 0, 1);
+                    return new BoxColliderGeometry()
+                    {
+                        Size = new MWVector3(Mathf.Max(dims.X, 0.01f), Mathf.Max(dims.Y, 0.01f), Mathf.Max(dims.Z, 0.01f))
+                    };
+
+                default:
+                    return null;
             }
         }
     }

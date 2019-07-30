@@ -87,17 +87,50 @@ namespace MixedRealityExtension.Util.Unity
 
         public static float LargestComponentValue(this MWVector3 _this)
         {
-            return Math.Max(_this.X, Math.Max(_this.Y, _this.Z));
+            return Mathf.Max(_this.X, _this.Y, _this.Z);
         }
 
         public static int LargestComponentIndex(this MWVector3 _this)
         {
-            if (_this.Z > _this.Y && _this.Z > _this.X)
-                return 2;
-            else if (_this.Y > _this.X)
+            var largest = _this.LargestComponentValue();
+            if (largest == _this.X)
+                return 0;
+            else if (largest == _this.Y)
                 return 1;
             else
+                return 2;
+        }
+
+        public static float SecondLargestComponentValue(this MWVector3 _this)
+        {
+            return Mathf.Clamp(_this.Z, Mathf.Min(_this.X, _this.Y), Mathf.Max(_this.X, _this.Y));
+        }
+
+        public static int SecondLargestComponentIndex(this MWVector3 _this)
+        {
+            var second = _this.SecondLargestComponentValue();
+            if (second == _this.X)
                 return 0;
+            else if (second == _this.Y)
+                return 1;
+            else
+                return 2;
+        }
+
+        public static float SmallestComponentValue(this MWVector3 _this)
+        {
+            return Mathf.Min(_this.X, _this.Y, _this.Z);
+        }
+
+        public static int SmallestComponentIndex(this MWVector3 _this)
+        {
+            var largest = _this.SmallestComponentValue();
+            if (largest == _this.X)
+                return 0;
+            else if (largest == _this.Y)
+                return 1;
+            else
+                return 2;
         }
 
         public static WrapMode ToUnityWrapMode(this MWAnimationWrapMode wrapMode)

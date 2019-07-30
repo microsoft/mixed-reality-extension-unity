@@ -18,7 +18,6 @@ namespace MixedRealityExtension.Messaging.Payloads
     [PayloadType(typeof(CreateFromGLTF), "create-from-gltf")]
     [PayloadType(typeof(CreateFromLibrary), "create-from-library")]
     [PayloadType(typeof(CreateFromPrefab), "create-from-prefab")]
-    [PayloadType(typeof(CreatePrimitive), "create-primitive")]
     [PayloadType(typeof(CollisionEventRaised), "collision-event-raised")]
     [PayloadType(typeof(DestroyActors), "destroy-actors")]
     [PayloadType(typeof(EngineToAppRPC), "engine2app-rpc")]

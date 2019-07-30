@@ -544,21 +544,6 @@ namespace MixedRealityExtension.App
             }
         }
 
-        [CommandHandler(typeof(CreatePrimitive))]
-        private void OnCreatePrimitive(CreatePrimitive payload, Action onCompleteCallback)
-        {
-            try
-            {
-                var actors = _assetLoader.CreatePrimitive(payload.Definition, payload.Actor?.ParentId, payload.AddCollider);
-                ProcessCreatedActors(payload, actors, onCompleteCallback);
-            }
-            catch (Exception e)
-            {
-                SendCreateActorResponse(payload, failureMessage: e.ToString(), onCompleteCallback: onCompleteCallback);
-                Debug.LogException(e);
-            }
-        }
-
         [CommandHandler(typeof(CreateEmpty))]
         private void OnCreateEmpty(CreateEmpty payload, Action onCompleteCallback)
         {

@@ -124,7 +124,25 @@ namespace MixedRealityExtension.Core
             }
             else if (_collider is CapsuleCollider capsuleCollider)
             {
-                colliderGeo = new CapsuleColliderGeometry();
+                MWVector3 size;
+                if (capsuleCollider.direction == 0)
+                {
+                    size = new MWVector3(capsuleCollider.height, 2 * capsuleCollider.radius, 2 * capsuleCollider.radius);
+                }
+                else if (capsuleCollider.direction == 1)
+                {
+                    size = new MWVector3(2 * capsuleCollider.radius, capsuleCollider.height, 2 * capsuleCollider.radius);
+                }
+                else
+                {
+                    size = new MWVector3(2 * capsuleCollider.radius, 2 * capsuleCollider.radius, capsuleCollider.height);
+                }
+
+                colliderGeo = new CapsuleColliderGeometry()
+                {
+                    Center = capsuleCollider.center.CreateMWVector3(),
+                    Size = size
+                };
             }
             else
             {
