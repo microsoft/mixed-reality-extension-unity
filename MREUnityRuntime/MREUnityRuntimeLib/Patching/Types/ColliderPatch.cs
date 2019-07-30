@@ -19,7 +19,7 @@ namespace MixedRealityExtension.Patching.Types
         //public CollisionLayer? CollisionLayer { get; set; }
 
         [PatchProperty]
-        public ColliderGeometry ColliderGeometry { get; set; }
+        public ColliderGeometry Geometry { get; set; }
 
         [PatchProperty]
         public IEnumerable<ColliderEventType> EventSubscriptions { get; set; }

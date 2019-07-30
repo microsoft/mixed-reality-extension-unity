@@ -159,7 +159,7 @@ namespace MixedRealityExtension.Core
                 {
                     IsEnabled = _collider.enabled,
                     IsTrigger = _collider.isTrigger,
-                    ColliderGeometry = colliderGeo
+                    Geometry = colliderGeo
                 };
         }
 

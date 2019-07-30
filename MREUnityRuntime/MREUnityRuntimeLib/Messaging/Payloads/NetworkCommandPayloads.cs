@@ -54,45 +54,6 @@ namespace MixedRealityExtension.Messaging.Payloads
 
     /// <summary>
     /// App => Engine
-    /// Payload for when the app wants to create an asset from a GLTF.
-    /// </summary>
-    public class CreateFromGLTF : CreateActor
-    {
-        /// <summary>
-        /// The resource url for the GLTF.
-        /// </summary>
-        public string ResourceUrl { get; set; }
-
-        /// <summary>
-        /// The assent name within the GLTF to instantiate.
-        /// </summary>
-        public string AssetName { get; set; }
-
-        /// <summary>
-        /// The type of collider to add to the actor upon creation.
-        /// </summary>
-        public ColliderType ColliderType { get; set; }
-    }
-
-    /// <summary>
-    /// App => Engine
-    /// Payload for when the app wants to create a primitive.
-    /// </summary>
-    public class CreatePrimitive : CreateActor
-    {
-        /// <summary>
-        /// The primitive shape to create.
-        /// </summary>
-        public PrimitiveDefinition Definition { get; set; }
-
-        /// <summary>
-        /// Whether to add a collider to the primitive upon creation.
-        /// </summary>
-        public bool AddCollider { get; set; }
-    }
-
-    /// <summary>
-    /// App => Engine
     /// Payload for when the app wants to create an empty actor.
     /// </summary>
     public class CreateEmpty : CreateActor

@@ -684,14 +684,14 @@ namespace MixedRealityExtension.Core
         private int colliderGeneration = -1;
         private Collider SetCollider(ColliderPatch colliderPatch)
         {
-            if (colliderPatch == null || colliderPatch.ColliderGeometry == null)
+            if (colliderPatch == null || colliderPatch.Geometry == null)
             {
                 return null;
             }
 
             colliderGeneration++;
-            var colliderGeometry = colliderPatch.ColliderGeometry;
-            var colliderType = colliderGeometry.ColliderType;
+            var colliderGeometry = colliderPatch.Geometry;
+            var colliderType = colliderGeometry.Shape;
 
             // must wait for mesh load before auto type will work
             if (colliderType == ColliderType.Auto)
@@ -710,7 +710,7 @@ namespace MixedRealityExtension.Core
                 else
                 {
                     colliderGeometry = App.AssetLoader.GetPreferredColliderShape(MeshId);
-                    colliderType = colliderGeometry.ColliderType;
+                    colliderType = colliderGeometry.Shape;
                 }
             }
 
@@ -752,7 +752,7 @@ namespace MixedRealityExtension.Core
                     break;
                 default:
                     MREAPI.Logger.LogWarning("Cannot add the given collider type to the actor " +
-                        $"during runtime.  Collider Type: {colliderPatch.ColliderGeometry.ColliderType}");
+                        $"during runtime.  Collider Type: {colliderPatch.Geometry.Shape}");
                     break;
             }
 
@@ -1113,7 +1113,7 @@ namespace MixedRealityExtension.Core
             {
                 // A collider patch that contains collider geometry signals that we need to update the
                 // collider to match the desired geometry.
-                if (colliderPatch.ColliderGeometry != null)
+                if (colliderPatch.Geometry != null)
                 {
                     SetCollider(colliderPatch);
                 }

@@ -15,9 +15,9 @@ namespace MixedRealityExtension.Core
     public abstract class ColliderGeometry
     {
         /// <summary>
-        /// The type of the collider.  <see cref="ColliderType"/>
+        /// The type of the collider.  <see cref="Shape"/>
         /// </summary>
-        public abstract ColliderType ColliderType { get; }
+        public abstract ColliderType Shape { get; }
 
         internal abstract void Patch(UnityCollider collider);
     }
@@ -28,7 +28,7 @@ namespace MixedRealityExtension.Core
     public class SphereColliderGeometry : ColliderGeometry
     {
         /// <inheritdoc />
-        public override ColliderType ColliderType => ColliderType.Sphere;
+        public override ColliderType Shape => ColliderType.Sphere;
 
         /// <summary>
         /// The center of the sphere collider geometry.
@@ -72,7 +72,7 @@ namespace MixedRealityExtension.Core
     public class BoxColliderGeometry : ColliderGeometry
     {
         /// <inheritdoc />
-        public override ColliderType ColliderType => ColliderType.Box;
+        public override ColliderType Shape => ColliderType.Box;
 
         /// <summary>
         /// The size of the box collider geometry.
@@ -120,7 +120,7 @@ namespace MixedRealityExtension.Core
     public class MeshColliderGeometry : ColliderGeometry
     {
         /// <inheritdoc />
-        public override ColliderType ColliderType => ColliderType.Mesh;
+        public override ColliderType Shape => ColliderType.Mesh;
 
         internal override void Patch(UnityCollider collider)
         {
@@ -130,7 +130,7 @@ namespace MixedRealityExtension.Core
 
     public class CapsuleColliderGeometry : ColliderGeometry
     {
-        public override ColliderType ColliderType => ColliderType.Capsule;
+        public override ColliderType Shape => ColliderType.Capsule;
 
         public MWVector3 Center { get; set; }
 
