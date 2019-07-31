@@ -52,7 +52,7 @@ namespace MixedRealityExtension.Core
                 soundInstance.minDistance = 1.0f;
                 soundInstance.maxDistance = 1000000.0f;
                 ApplyMediaStateOptions(actor, soundInstance, options, id, true);
-                if (options.paused != null && options.paused.Value == true)
+                if (options.Paused != null && options.Paused.Value == true)
                 {
                     //start as paused
                     soundInstance.Play();
@@ -75,7 +75,7 @@ namespace MixedRealityExtension.Core
             if (options != null)
             {
                 //pause must happen before other sound state changes
-                if (options.paused != null && options.paused.Value == true)
+                if (options.Paused != null && options.Paused.Value == true)
                 {
                     if (_unpausedSoundInstances.RemoveAll(x => x.id == id) > 0)
                     {
@@ -117,7 +117,7 @@ namespace MixedRealityExtension.Core
                 //unpause must happen after other sound state changes
                 if (!startSound)
                 {
-                    if (options.paused != null && options.paused.Value == false)
+                    if (options.Paused != null && options.Paused.Value == false)
                     {
                         if (!_unpausedSoundInstances.Exists(x => x.id == id))
                         {

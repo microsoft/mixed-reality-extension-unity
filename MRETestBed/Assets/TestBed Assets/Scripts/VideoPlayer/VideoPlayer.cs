@@ -42,9 +42,9 @@ internal class VideoPlayer : MonoBehaviour, IVideoPlayer
         audioSource.minDistance = 1.0f;
         audioSource.maxDistance = 1000000.0f;
 
-        if (!options.paused.HasValue)
+        if (!options.Paused.HasValue)
         {
-            options.paused = false;
+            options.Paused = false;
         }
         ApplyMediaStateOptions(options);
     }
@@ -59,7 +59,7 @@ internal class VideoPlayer : MonoBehaviour, IVideoPlayer
         if (options != null)
         {
             // Pause must happen before other media state changes.
-            if (options.paused != null && options.paused.Value == true)
+            if (options.Paused != null && options.Paused.Value == true)
             {
                 avStream.Pause();
             }
@@ -92,7 +92,7 @@ internal class VideoPlayer : MonoBehaviour, IVideoPlayer
             }
 
             // Play must happen after other media state changes.
-            if (options.paused != null && options.paused.Value == false)
+            if (options.Paused != null && options.Paused.Value == false)
             {
                 avStream.Play();
             }

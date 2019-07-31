@@ -26,7 +26,7 @@ namespace MixedRealityExtension
         /// <summary>
         /// pause or unpause the media. Default to false
         /// </summary>
-        public bool? paused;
+        public bool? Paused;
 
         /// <summary>
         /// the amount that sound pitch is modified when moving towards/away from sound source.
