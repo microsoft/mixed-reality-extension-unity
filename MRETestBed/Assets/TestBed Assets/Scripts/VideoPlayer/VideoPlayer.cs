@@ -1,6 +1,7 @@
 ﻿using AvStreamPlugin;
 using MixedRealityExtension;
 using MixedRealityExtension.Core;
+using MixedRealityExtension.Core.Interfaces;
 using MixedRealityExtension.PluginInterfaces;
 using System;
 using System.Collections.Generic;
@@ -14,11 +15,17 @@ internal class VideoPlayer : MonoBehaviour, IVideoPlayer
     private VideoSourceDescription videoSourceDescription;
     private AVStream avStream;
     private AudioSource audioSource;
+    private IActor actor;
 
     public void Awake()
     {
         avStream = GetComponentInChildren<AVStream>();
         audioSource = GetComponentInChildren<AudioSource>();
+    }
+
+    public void SetActor(IActor actor)
+    {
+        this.actor = actor;
     }
 
     public void Play(VideoStreamDescription description, MediaStateOptions options)
@@ -84,7 +91,7 @@ internal class VideoPlayer : MonoBehaviour, IVideoPlayer
                 GetComponentInChildren<UnityEngine.Renderer>().enabled = options.Visible.Value;
             }
 
-            // Unpause must happen before other media state changes.
+            // Play must happen after other media state changes.
             if (options.paused != null && options.paused.Value == false)
             {
                 avStream.Play();

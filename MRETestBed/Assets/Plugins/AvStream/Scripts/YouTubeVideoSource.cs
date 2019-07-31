@@ -23,25 +23,30 @@ namespace AvStreamPlugin
 	//
 	internal static class YouTubeVideoSource
     {
-        private const string apiKey = "AIzaSyA-wN8lmcSJ0krClEpw8JdlCN7Mc8WMCgM";
+        private static string apiKey;
+
+        public static void Init(string apiKeyValue)
+        {
+            apiKey = apiKeyValue;
+        }
 
 		// Query Builder: https://developers.google.com/apis-explorer/#p/youtube/v3/youtube.videoCategories.list?part=snippet&regionCode=US&fields=items(id%252Csnippet(assignable%252Ctitle))&_h=2&
-		private const string getCategoriesUri = "https://www.googleapis.com/youtube/v3/videoCategories?part=snippet&regionCode=US&fields=items(id%2Csnippet(assignable%2Ctitle))&key=" + apiKey;
+		private static string getCategoriesUri => "https://www.googleapis.com/youtube/v3/videoCategories?part=snippet&regionCode=US&fields=items(id%2Csnippet(assignable%2Ctitle))&key=" + apiKey;
 
         // Query Builder: https://developers.google.com/apis-explorer/#p/youtube/v3/youtube.search.list?part=snippet&maxResults=20&pageToken=CBQQAA&q=Music&type=video%252Cplaylist&fields=items(id(playlistId%252CvideoId))%252CpageInfo%252FtotalResults%252CnextPageToken%252CprevPageToken&_h=4&
-        private const string searchUri = "https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults={1}&pageToken={2}&q={0}&type=video%2Cplaylist&fields=items(id(playlistId%2CvideoId))%2CpageInfo%2FtotalResults%2CnextPageToken%2CprevPageToken&key=" + apiKey;
+        private static string searchUri => "https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults={1}&pageToken={2}&q={0}&type=video%2Cplaylist&fields=items(id(playlistId%2CvideoId))%2CpageInfo%2FtotalResults%2CnextPageToken%2CprevPageToken&key=" + apiKey;
 
         // Query Builder: https://developers.google.com/apis-explorer/#p/youtube/v3/youtube.search.list?part=snippet&maxResults=20&pageToken=CBQQAA&type=video&videoCategoryId=20&fields=items(id(playlistId%252CvideoId))%252CnextPageToken%252CpageInfo%252FtotalResults%252CprevPageToken&_h=11&
-        private const string categorySearchUri = "https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults={1}&pageToken={2}&type=video&videoCategoryId={0}&fields=items(id(playlistId%2CvideoId))%2CnextPageToken%2CpageInfo%2FtotalResults%2CprevPageToken&key=" + apiKey;
+        private static string categorySearchUri => "https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults={1}&pageToken={2}&type=video&videoCategoryId={0}&fields=items(id(playlistId%2CvideoId))%2CnextPageToken%2CpageInfo%2FtotalResults%2CprevPageToken&key=" + apiKey;
 
         // Query Builder: https://developers.google.com/apis-explorer/#p/youtube/v3/youtube.videos.list?part=snippet%252C+statistics%252C+liveStreamingDetails%252C+contentDetails&id=Lvp-lSqHVKc%252CpD6S69pCj28&fields=items(contentDetails%252Fduration%252Cid%252CliveStreamingDetails(concurrentViewers%252CscheduledStartTime)%252Csnippet(channelTitle%252Cdescription%252CliveBroadcastContent%252Cthumbnails%252Fmedium%252Furl%252Ctitle)%252Cstatistics%252FviewCount)&_h=7&
-        private const string getVideoUri = "https://www.googleapis.com/youtube/v3/videos?part=snippet%2C+statistics%2C+liveStreamingDetails%2C+contentDetails&id={0}&fields=items(contentDetails%2Fduration%2Cid%2CliveStreamingDetails(concurrentViewers%2CscheduledStartTime)%2Csnippet(channelTitle%2Cdescription%2CliveBroadcastContent%2Cthumbnails%2Fmedium%2Furl%2Ctitle)%2Cstatistics%2FviewCount)&key=" + apiKey;
+        private static string getVideoUri => "https://www.googleapis.com/youtube/v3/videos?part=snippet%2C+statistics%2C+liveStreamingDetails%2C+contentDetails&id={0}&fields=items(contentDetails%2Fduration%2Cid%2CliveStreamingDetails(concurrentViewers%2CscheduledStartTime)%2Csnippet(channelTitle%2Cdescription%2CliveBroadcastContent%2Cthumbnails%2Fmedium%2Furl%2Ctitle)%2Cstatistics%2FviewCount)&key=" + apiKey;
 
         // Query Builder: https://developers.google.com/apis-explorer/#p/youtube/v3/youtube.playlists.list?part=snippet%252CcontentDetails&id=PLFgquLnL59alCl_2TQvOiD5Vgm1hCaGSI&fields=items(contentDetails%252Cid%252Csnippet(channelTitle%252Cdescription%252Cthumbnails%252Fmedium%252Furl%252Ctitle))&_h=5&
-        private const string getPlaylistUri = "https://www.googleapis.com/youtube/v3/playlists?part=snippet%2CcontentDetails&id={0}&fields=items(contentDetails%2Cid%2Csnippet(channelTitle%2Cdescription%2Cthumbnails%2Fmedium%2Furl%2Ctitle))&key=" + apiKey;
+        private static string getPlaylistUri => "https://www.googleapis.com/youtube/v3/playlists?part=snippet%2CcontentDetails&id={0}&fields=items(contentDetails%2Cid%2Csnippet(channelTitle%2Cdescription%2Cthumbnails%2Fmedium%2Furl%2Ctitle))&key=" + apiKey;
 
         // Query Builder: https://developers.google.com/apis-explorer/#p/youtube/v3/youtube.playlistItems.list?part=snippet&maxResults=20&playlistId=RDQMsHhx03c4Dwk&fields=items%252Fsnippet%252FresourceId%252FvideoId%252CpageInfo%252FtotalResults%252CnextPageToken%252CprevPageToken&_h=5&
-        private const string getPlaylistItemsUri = "https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults={1}&playlistId={0}&pageToken={2}&fields=items%2Fsnippet%2FresourceId%2FvideoId%2CpageInfo%2FtotalResults%2CnextPageToken%2CprevPageToken&key=" + apiKey;
+        private static string getPlaylistItemsUri => "https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults={1}&playlistId={0}&pageToken={2}&fields=items%2Fsnippet%2FresourceId%2FvideoId%2CpageInfo%2FtotalResults%2CnextPageToken%2CprevPageToken&key=" + apiKey;
 
         internal static List<VideoCategory> GetCategoriesImpl()
         {

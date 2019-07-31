@@ -40,8 +40,6 @@ GameObject:
   - component: {fileID: 64925344196560124}
   - component: {fileID: 82963761332929572}
   - component: {fileID: 114450382493483904}
-  - component: {fileID: 114248056600115024}
-  - component: {fileID: 114485183375458196}
   m_Layer: 0
   m_Name: Screen
   m_TagString: Untagged
@@ -227,19 +225,6 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
---- !u!114 &114248056600115024
-MonoBehaviour:
-  m_ObjectHideFlags: 1
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 100100000}
-  m_GameObject: {fileID: 1526212087796280}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: -1862395651, guid: f70555f144d8491a825f0804e09c671c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_Delegates: []
-  delegates: []
 --- !u!114 &114450382493483904
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -255,17 +240,6 @@ MonoBehaviour:
   requestedVideoFormat: 5
   reconnectionTryCount: 3
   reconnectionWaitTimeSeconds: 2
---- !u!114 &114485183375458196
-MonoBehaviour:
-  m_ObjectHideFlags: 1
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 100100000}
-  m_GameObject: {fileID: 1526212087796280}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6b75cb495d87b8549831388eac729ae1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &114804805921867472
 MonoBehaviour:
   m_ObjectHideFlags: 1

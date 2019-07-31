@@ -99,6 +99,7 @@ public class MREComponent : MonoBehaviour
     {
         if (!_apiInitialized)
         {
+            AvStreamPlugin.Subsystem.Init(youTubeApiKey: "AIzaSyA-wN8lmcSJ0krClEpw8JdlCN7Mc8WMCgM");
             MREAPI.InitializeAPI(
                 DefaultPrimMaterial,
                 behaviorFactory: new BehaviorFactory(),

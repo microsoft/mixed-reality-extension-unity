@@ -26,6 +26,7 @@ internal class VideoPlayerFactory : IVideoPlayerFactory
             GameObject go = UnityEngine.Object.Instantiate(prefab);
             go.transform.SetParent(parent.GameObject.transform, false);
             videoPlayer = go.GetComponentInChildren<VideoPlayer>();
+            videoPlayer.SetActor(parent);
         }
 
         return videoPlayer;
