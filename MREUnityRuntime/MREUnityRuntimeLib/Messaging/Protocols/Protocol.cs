@@ -7,6 +7,7 @@ using MixedRealityExtension.IPC;
 using MixedRealityExtension.Messaging.Payloads;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using UnityEngine;
 
 namespace MixedRealityExtension.Messaging.Protocols
 {
@@ -120,7 +121,15 @@ namespace MixedRealityExtension.Messaging.Protocols
                 try
                 {
                     var json = JsonConvert.SerializeObject(message, Constants.SerializerSettings);
-                    Conn.Send(json);
+                    try
+                    {
+                        Conn.Send(json);
+                    }
+                    catch (Exception e)
+                    {
+                        // Don't log to App.Logger here. The WebSocket might be disconnected.
+                        Debug.LogError($"Error sending message {json}\nException: {e.Message}\nStackTrace: {e.StackTrace}");
+                    }
                 }
                 catch (Exception e)
                 {
