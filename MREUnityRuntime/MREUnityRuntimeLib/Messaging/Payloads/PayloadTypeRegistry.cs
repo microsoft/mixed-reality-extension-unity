@@ -15,7 +15,6 @@ namespace MixedRealityExtension.Messaging.Payloads
     [PayloadType(typeof(CreateAnimation), "create-animation")]
     [PayloadType(typeof(CreateAsset), "create-asset")]
     [PayloadType(typeof(CreateEmpty), "create-empty")]
-    [PayloadType(typeof(CreateFromGLTF), "create-from-gltf")]
     [PayloadType(typeof(CreateFromLibrary), "create-from-library")]
     [PayloadType(typeof(CreateFromPrefab), "create-from-prefab")]
     [PayloadType(typeof(CollisionEventRaised), "collision-event-raised")]

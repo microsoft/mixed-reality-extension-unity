@@ -183,4 +183,18 @@ namespace MixedRealityExtension.Core
             }
         }
     }
+
+    /// <summary>
+    /// Class that represents geometry automatically generated alongside a mesh.
+    /// </summary>
+    public class AutoColliderGeometry : ColliderGeometry
+    {
+        /// <inheritdoc />
+        public override ColliderType Shape => ColliderType.Auto;
+
+        internal override void Patch(UnityCollider collider)
+        {
+            // We do not accept patching for auto colliders from the app.
+        }
+    }
 }

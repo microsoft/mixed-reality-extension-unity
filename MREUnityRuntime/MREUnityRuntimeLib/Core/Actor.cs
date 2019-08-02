@@ -839,6 +839,7 @@ namespace MixedRealityExtension.Core
                     if (renderer == null)
                     {
                         renderer = gameObject.AddComponent<MeshRenderer>();
+                        renderer.sharedMaterial = MREAPI.AppsAPI.DefaultMaterial;
                         forceUpdateRenderer = true;
                     }
                     // guarantee mesh filter (unless it has a skinned mesh renderer)
@@ -848,16 +849,18 @@ namespace MixedRealityExtension.Core
                     }
 
                     // look up and assign mesh
+                    var updatedMeshId = MeshId;
                     MREAPI.AppsAPI.AssetCache.OnCached(MeshId, sharedMesh =>
                     {
-                        if (!this || MeshId != appearance.MeshId.Value) return;
+                        if (!this || MeshId != updatedMeshId) return;
                         UnityMesh = (Mesh)sharedMesh;
                     });
 
                     // look up and assign material, or default if none assigned
+                    var updatedMaterialId = MaterialId;
                     MREAPI.AppsAPI.AssetCache.OnCached(MaterialId, sharedMat =>
                     {
-                        if (!this || !Renderer || MaterialId != appearance.MaterialId.Value) return;
+                        if (!this || !Renderer || MaterialId != updatedMaterialId) return;
                         Renderer.sharedMaterial = (Material)sharedMat ?? MREAPI.AppsAPI.DefaultMaterial;
                     });
                 }

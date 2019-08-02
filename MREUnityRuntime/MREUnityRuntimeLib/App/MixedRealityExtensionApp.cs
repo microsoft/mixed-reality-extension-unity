@@ -43,7 +43,6 @@ namespace MixedRealityExtension.App
         private ISet<Guid> _interactingUserIds = new HashSet<Guid>();
         private IList<Action> _executionProtocolActionQueue = new List<Action>();
         private IList<GameObject> _ownedGameObjects = new List<GameObject>();
-        private Queue<CreateFromGLTF> _createFromGLTFQueue = new Queue<CreateFromGLTF>();
 
         private enum AppState
         {
