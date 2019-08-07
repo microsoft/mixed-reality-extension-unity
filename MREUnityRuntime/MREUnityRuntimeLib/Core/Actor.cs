@@ -682,11 +682,11 @@ namespace MixedRealityExtension.Core
         }
 
         private int colliderGeneration = -1;
-        private Collider SetCollider(ColliderPatch colliderPatch)
+        private void SetCollider(ColliderPatch colliderPatch)
         {
             if (colliderPatch == null || colliderPatch.Geometry == null)
             {
-                return null;
+                return;
             }
 
             colliderGeneration++;
@@ -705,7 +705,7 @@ namespace MixedRealityExtension.Core
                         if (runningMeshId != MeshId || runningGeneration != colliderGeneration) return;
                         SetCollider(colliderPatch);
                     });
-                    return null;
+                    return;
                 }
                 else
                 {
@@ -721,7 +721,7 @@ namespace MixedRealityExtension.Core
                     // We have a collider already of the same type as the desired new geometry.
                     // Update its values instead of removing and adding a new one.
                     colliderGeometry.Patch(_collider);
-                    return Collider;
+                    return;
                 }
                 else
                 {
@@ -750,6 +750,11 @@ namespace MixedRealityExtension.Core
                     colliderGeometry.Patch(capsuleCollider);
                     unityCollider = capsuleCollider;
                     break;
+                case ColliderType.Mesh:
+                    var meshCollider = gameObject.AddComponent<MeshCollider>();
+                    meshCollider.convex = true;
+                    meshCollider.sharedMesh = MREAPI.AppsAPI.AssetCache.GetAsset(MeshId) as Mesh;
+                    break;
                 default:
                     MREAPI.Logger.LogWarning("Cannot add the given collider type to the actor " +
                         $"during runtime.  Collider Type: {colliderPatch.Geometry.Shape}");
@@ -759,7 +764,7 @@ namespace MixedRealityExtension.Core
             _collider = unityCollider;
             Collider = (unityCollider != null) ? gameObject.AddComponent<Collider>() : null;
             Collider?.Initialize(_collider);
-            return Collider;
+            return;
         }
 
         private void PatchParent(Guid? parentId)

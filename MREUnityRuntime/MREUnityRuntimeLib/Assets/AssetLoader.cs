@@ -79,33 +79,6 @@ namespace MixedRealityExtension.Assets
             return new List<Actor>() { newGO.AddComponent<Actor>() };
         }
 
-        internal async Task<IList<Actor>> CreateFromGLTF(string resourceUrl, string assetName, Guid? parentId, ColliderType colliderType)
-        {
-            UtilMethods.GetUrlParts(resourceUrl, out string rootUrl, out string filename);
-            var loader = new WebRequestLoader(rootUrl);
-            var importer = MREAPI.AppsAPI.GLTFImporterFactory.CreateImporter(filename, loader, _asyncHelper);
-
-            var parent = _app.FindActor(parentId ?? Guid.Empty) as Actor;
-            importer.SceneParent = parent?.transform ?? _app.SceneRoot.transform;
-
-            importer.Collider = colliderType.ToGLTFColliderType();
-
-            await importer.LoadSceneAsync().ConfigureAwait(true);
-
-            // note: actor properties are set in App#ProcessCreatedActors
-            IList<Actor> actors = new List<Actor>();
-            importer.LastLoadedScene.name = assetName;
-            MWGOTreeWalker.VisitTree(importer.LastLoadedScene, (go) =>
-            {
-                go.layer = UnityConstants.ActorLayerIndex;
-                actors.Add(go.AddComponent<Actor>());
-            });
-
-            importer.Dispose();
-
-            return actors;
-        }
-
         internal IList<Actor> CreateFromPrefab(Guid prefabId, Guid? parentId)
         {
             GameObject prefab = MREAPI.AppsAPI.AssetCache.GetAsset(prefabId) as GameObject;

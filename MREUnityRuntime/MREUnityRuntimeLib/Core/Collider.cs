@@ -31,29 +31,29 @@ namespace MixedRealityExtension.Core
         None = 0,
 
         /// <summary>
+        /// Choose best collider shape for mesh
+        /// </summary>
+        Auto,
+
+        /// <summary>
         /// Box shaped collider.
         /// </summary>
-        Box = 1,
+        Box,
 
         /// <summary>
         /// Sphere shaped collider.
         /// </summary>
-        Sphere = 2,
-
-        /// <summary>
-        /// Mesh based collider.
-        /// </summary>
-        Mesh = 3,
+        Sphere,
 
         /// <summary>
         /// Capsule shaped collider.
         /// </summary>
-        Capsule = 4,
+        Capsule,
 
         /// <summary>
-        /// Choose best collider shape for mesh
+        /// Mesh collider.
         /// </summary>
-        Auto = 5
+        Mesh
     }
 
     internal class Collider : MonoBehaviour, ICollider
@@ -107,7 +107,12 @@ namespace MixedRealityExtension.Core
         {
             ColliderGeometry colliderGeo = null;
 
-            if (_collider is SphereCollider sphereCollider)
+            // Note: SDK has no "mesh" collider type
+            if (ColliderType == ColliderType.Auto || ColliderType == ColliderType.Mesh)
+            {
+                colliderGeo = new AutoColliderGeometry();
+            }
+            else if (_collider is SphereCollider sphereCollider)
             {
                 colliderGeo = new SphereColliderGeometry()
                 {
@@ -122,10 +127,6 @@ namespace MixedRealityExtension.Core
                     Size = boxCollider.size.CreateMWVector3(),
                     Center = boxCollider.center.CreateMWVector3()
                 };
-            }
-            else if (_collider is MeshCollider meshCollider)
-            {
-                colliderGeo = new MeshColliderGeometry();
             }
             else if (_collider is CapsuleCollider capsuleCollider)
             {
@@ -156,11 +157,11 @@ namespace MixedRealityExtension.Core
             }
 
             return colliderGeo == null ? null : new ColliderPatch()
-                {
-                    IsEnabled = _collider.enabled,
-                    IsTrigger = _collider.isTrigger,
-                    Geometry = colliderGeo
-                };
+            {
+                IsEnabled = _collider.enabled,
+                IsTrigger = _collider.isTrigger,
+                Geometry = colliderGeo
+            };
         }
 
         private void OnTriggerEnter(UnityCollider other)
