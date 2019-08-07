@@ -230,7 +230,7 @@ namespace MixedRealityExtension.Assets
                     assets.Add(asset);
 
                     meshColliderDescriptions[asset.Id] = colliderType == ColliderType.Mesh ?
-                        (ColliderGeometry) new MeshColliderGeometry() :
+                        (ColliderGeometry) new MeshColliderGeometry() { MeshId = asset.Id } :
                         (ColliderGeometry) new BoxColliderGeometry() { Size = (mesh.bounds.size * 0.8f).CreateMWVector3() };
                 }
             }
@@ -525,7 +525,7 @@ namespace MixedRealityExtension.Assets
                 case PrimitiveShape.Sphere:
                     return new SphereColliderGeometry()
                     {
-                        Radius = dims.LargestComponentValue()
+                        Radius = dims.SmallestComponentValue() / 2
                     };
 
                 case PrimitiveShape.Box:
@@ -541,7 +541,7 @@ namespace MixedRealityExtension.Assets
                     };
 
                 case PrimitiveShape.Cylinder:
-                    dims = dims ?? new MWVector3(0.1f, 1, 0.1f);
+                    dims = dims ?? new MWVector3(0.2f, 1, 0.2f);
                     return new CapsuleColliderGeometry()
                     {
                         Size = dims

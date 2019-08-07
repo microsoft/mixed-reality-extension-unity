@@ -753,7 +753,8 @@ namespace MixedRealityExtension.Core
                 case ColliderType.Mesh:
                     var meshCollider = gameObject.AddComponent<MeshCollider>();
                     meshCollider.convex = true;
-                    meshCollider.sharedMesh = MREAPI.AppsAPI.AssetCache.GetAsset(MeshId) as Mesh;
+                    colliderGeometry.Patch(meshCollider);
+                    unityCollider = meshCollider;
                     break;
                 default:
                     MREAPI.Logger.LogWarning("Cannot add the given collider type to the actor " +
@@ -859,15 +860,29 @@ namespace MixedRealityExtension.Core
                     {
                         if (!this || MeshId != updatedMeshId) return;
                         UnityMesh = (Mesh)sharedMesh;
+                        if (Collider != null && Collider.ColliderType == ColliderType.Auto)
+                        {
+                            SetCollider(new ColliderPatch()
+                            {
+                                Geometry = new AutoColliderGeometry()
+                            });
+                        }
                     });
 
                     // look up and assign material, or default if none assigned
-                    var updatedMaterialId = MaterialId;
-                    MREAPI.AppsAPI.AssetCache.OnCached(MaterialId, sharedMat =>
+                    if (MaterialId != Guid.Empty)
                     {
-                        if (!this || !Renderer || MaterialId != updatedMaterialId) return;
-                        Renderer.sharedMaterial = (Material)sharedMat ?? MREAPI.AppsAPI.DefaultMaterial;
-                    });
+                        var updatedMaterialId = MaterialId;
+                        MREAPI.AppsAPI.AssetCache.OnCached(MaterialId, sharedMat =>
+                        {
+                            if (!this || !Renderer || MaterialId != updatedMaterialId) return;
+                            Renderer.sharedMaterial = (Material)sharedMat ?? MREAPI.AppsAPI.DefaultMaterial;
+                        });
+                    }
+                    else
+                    {
+                        Renderer.sharedMaterial = MREAPI.AppsAPI.DefaultMaterial;
+                    }
                 }
                 // clean up unused components
                 else

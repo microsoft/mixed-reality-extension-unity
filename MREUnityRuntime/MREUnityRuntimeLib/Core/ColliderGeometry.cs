@@ -1,8 +1,10 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using MixedRealityExtension.API;
 using MixedRealityExtension.Core.Types;
 using MixedRealityExtension.Util.Unity;
+using System;
 using UnityEngine;
 
 using UnityCollider = UnityEngine.Collider;
@@ -61,7 +63,7 @@ namespace MixedRealityExtension.Core
 
             if (Radius != null)
             {
-                collider.radius = Mathf.Abs(Radius.Value);
+                collider.radius = Radius.Value;
             }
         }
     }
@@ -106,9 +108,9 @@ namespace MixedRealityExtension.Core
             if (Size != null)
             {
                 Vector3 newSize;
-                newSize.x = Mathf.Abs(Size.X);
-                newSize.y = Mathf.Abs(Size.Y);
-                newSize.z = Mathf.Abs(Size.Z);
+                newSize.x = Size.X;
+                newSize.y = Size.Y;
+                newSize.z = Size.Z;
                 collider.size = newSize;
             }
         }
@@ -122,9 +124,24 @@ namespace MixedRealityExtension.Core
         /// <inheritdoc />
         public override ColliderType Shape => ColliderType.Mesh;
 
+        public Guid MeshId { get; set; }
+
         internal override void Patch(UnityCollider collider)
         {
-            // We do not accept patching for mesh colliders from the app.
+            if (collider is MeshCollider meshCollider)
+            {
+                Patch(meshCollider);
+            }
+        }
+
+        private void Patch(MeshCollider collider)
+        {
+            var tempId = MeshId;
+            MREAPI.AppsAPI.AssetCache.OnCached(MeshId, asset =>
+            {
+                if (MeshId != tempId) return;
+                collider.sharedMesh = asset as Mesh;
+            });
         }
     }
 
@@ -177,8 +194,8 @@ namespace MixedRealityExtension.Core
 
             if (Size != null)
             {
-                collider.radius = Mathf.Abs(Radius.Value);
-                collider.height = Mathf.Abs(Height.Value);
+                collider.radius = Radius.Value;
+                collider.height = Height.Value;
                 collider.direction = Direction.Value;
             }
         }
