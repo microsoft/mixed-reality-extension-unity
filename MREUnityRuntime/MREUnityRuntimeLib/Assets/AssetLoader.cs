@@ -189,10 +189,17 @@ namespace MixedRealityExtension.Assets
             {
                 for (var i = 0; i < gltfRoot.Scenes.Count; i++)
                 {
-                    await importer.LoadSceneAsync(i);
+                    await importer.LoadSceneAsync(i).ConfigureAwait(true);
 
                     GameObject rootObject = importer.LastLoadedScene;
                     rootObject.name = gltfRoot.Scenes[i].Name ?? $"scene:{i}";
+
+                    var animation = rootObject.GetComponent<UnityEngine.Animation>();
+                    if (animation != null)
+                    {
+                        animation.playAutomatically = false;
+                    }
+
                     MWGOTreeWalker.VisitTree(rootObject, (go) =>
                     {
                         go.layer = UnityConstants.ActorLayerIndex;
