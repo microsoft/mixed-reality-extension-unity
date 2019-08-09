@@ -60,7 +60,7 @@ namespace MixedRealityExtension.Core
                     }
                     catch (Exception e)
                     {
-                        MREAPI.Logger.LogError(e.ToString());
+                        _app.Logger.LogError(e.ToString());
                     }
                     // Is there any other cleanup?  Do it here.
                 }

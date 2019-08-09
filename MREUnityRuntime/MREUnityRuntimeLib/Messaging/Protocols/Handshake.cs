@@ -46,7 +46,7 @@ namespace MixedRealityExtension.Messaging.Protocols
             }
             else
             {
-                MREAPI.Logger.LogDebug("Unexpected message");
+                App.Logger.LogDebug("Unexpected message");
             }
         }
     }

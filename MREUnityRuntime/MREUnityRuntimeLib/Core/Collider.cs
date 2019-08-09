@@ -152,7 +152,7 @@ namespace MixedRealityExtension.Core
             }
             else
             {
-                MREAPI.Logger.LogWarning($"MRE SDK does not support the following Unity collider and will not " +
+                _ownerActor.App.Logger.LogWarning($"MRE SDK does not support the following Unity collider and will not " +
                     $"be available in the MRE app.  Collider Type: {_collider.GetType()}");
             }
 

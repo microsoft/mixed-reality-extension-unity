@@ -3,6 +3,7 @@
 using MixedRealityExtension.Core.Interfaces;
 using MixedRealityExtension.IPC;
 using MixedRealityExtension.RPC;
+using MixedRealityExtension.PluginInterfaces;
 using System;
 using UnityEngine;
 
@@ -77,6 +78,11 @@ namespace MixedRealityExtension.App
         /// The RPC interface for registering handlers and invoking remote procedure calls.
         /// </summary>
         RPCInterface RPC { get; }
+
+        /// <summary>
+        /// Gets the logger to use within the MRE SDK.
+        /// </summary>
+        IMRELogger Logger { get; }
 
         /// <summary>
         /// Connect the mixed reality extension app to the given url with the given session id.
