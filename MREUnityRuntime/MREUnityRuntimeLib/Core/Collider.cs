@@ -59,32 +59,49 @@ namespace MixedRealityExtension.Core
     internal class Collider : MonoBehaviour, ICollider
     {
         private UnityCollider _collider;
-        private Actor _ownerActor;
         private ColliderEventType _colliderEventSubscriptions = ColliderEventType.None;
+        private int colliderGeneration = -1;
+
+        private Actor _actor;
+        private Actor Actor
+        {
+            get
+            {
+                if (_actor == null)
+                {
+                    _actor = gameObject.GetComponent<Actor>();
+                }
+                return _actor;
+            }
+        }
 
         /// <inheritdoc />
-        public bool IsEnabled => _collider.enabled;
+        public bool IsEnabled { get; private set; } = true;
 
         /// <inheritdoc />
-        public bool IsTrigger => _collider.isTrigger;
+        public bool IsTrigger { get; private set; } = false;
 
         // /// <inheritdoc />
         //public CollisionLayer CollisionLayer { get; set; }
 
         /// <inheritdoc />
-        public ColliderType ColliderType { get; private set; }
+        public ColliderType Shape { get; private set; }
 
-        internal void Initialize(UnityCollider unityCollider)
-        {
-            _ownerActor = unityCollider.gameObject.GetComponent<Actor>()
-                ?? throw new Exception("An MRE collider must be associated with a Unity game object that is an MRE actor.");
-            _collider = unityCollider;
-        }
+        // cannot be Auto
+        private ColliderType _actualShape;
 
         internal void ApplyPatch(ColliderPatch patch)
         {
-            _collider.enabled = _collider.enabled.GetPatchApplied(IsEnabled.ApplyPatch(patch.IsEnabled));
-            _collider.isTrigger = _collider.isTrigger.GetPatchApplied(IsTrigger.ApplyPatch(patch.IsTrigger));
+            IsEnabled = IsEnabled.GetPatchApplied(IsEnabled.ApplyPatch(patch.IsEnabled));
+            IsTrigger = IsTrigger.GetPatchApplied(IsTrigger.ApplyPatch(patch.IsTrigger));
+
+            PatchGeometry(patch);
+
+            if (_collider != null)
+            {
+                _collider.enabled = IsEnabled;
+                _collider.isTrigger = IsTrigger;
+            }
 
             if (patch.EventSubscriptions != null)
             {
@@ -103,12 +120,92 @@ namespace MixedRealityExtension.Core
             ApplyPatch(patch);
         }
 
+        private void PatchGeometry(ColliderPatch patch)
+        {
+            if (patch == null || patch.Geometry == null)
+            {
+                return;
+            }
+
+            colliderGeneration++;
+            Shape = patch.Geometry.Shape;
+
+            // must wait for mesh load before auto type will work
+            if (Shape == ColliderType.Auto)
+            {
+                if (Actor.App.AssetLoader.GetPreferredColliderShape(Actor.MeshId) == null)
+                {
+                    var runningGeneration = colliderGeneration;
+                    var runningMeshId = Actor.MeshId;
+                    MREAPI.AppsAPI.AssetCache.OnCached(runningMeshId, _ =>
+                    {
+                        if (runningMeshId != Actor.MeshId || runningGeneration != colliderGeneration) return;
+                        PatchGeometry(patch);
+                    });
+                    return;
+                }
+                else
+                {
+                    patch.Geometry = Actor.App.AssetLoader.GetPreferredColliderShape(Actor.MeshId);
+                }
+            }
+
+            if (_collider != null)
+            {
+                if (_actualShape == patch.Geometry.Shape)
+                {
+                    // We have a collider already of the same type as the desired new geometry.
+                    // Update its values instead of removing and adding a new one.
+                    patch.Geometry.Patch(_collider);
+                    return;
+                }
+                else
+                {
+                    Destroy(_collider);
+                    _collider = null;
+                }
+            }
+
+            switch (patch.Geometry.Shape)
+            {
+                case ColliderType.Box:
+                    var boxCollider = gameObject.AddComponent<BoxCollider>();
+                    patch.Geometry.Patch(boxCollider);
+                    _collider = boxCollider;
+                    break;
+                case ColliderType.Sphere:
+                    var sphereCollider = gameObject.AddComponent<SphereCollider>();
+                    patch.Geometry.Patch(sphereCollider);
+                    _collider = sphereCollider;
+                    break;
+                case ColliderType.Capsule:
+                    var capsuleCollider = gameObject.AddComponent<CapsuleCollider>();
+                    patch.Geometry.Patch(capsuleCollider);
+                    _collider = capsuleCollider;
+                    break;
+                case ColliderType.Mesh:
+                    var meshCollider = gameObject.AddComponent<MeshCollider>();
+                    meshCollider.convex = true;
+                    patch.Geometry.Patch(meshCollider);
+                    _collider = meshCollider;
+                    break;
+                default:
+                    Actor.App.Logger.LogWarning("Cannot add the given collider type to the actor " +
+                        $"during runtime.  Collider Type: {patch.Geometry.Shape}");
+                    break;
+            }
+
+            _actualShape = patch.Geometry.Shape;
+            _collider.enabled = IsEnabled;
+            _collider.isTrigger = IsTrigger;
+        }
+
         internal ColliderPatch GenerateInitialPatch()
         {
             ColliderGeometry colliderGeo = null;
 
             // Note: SDK has no "mesh" collider type
-            if (ColliderType == ColliderType.Auto || ColliderType == ColliderType.Mesh)
+            if (Shape == ColliderType.Auto || Shape == ColliderType.Mesh)
             {
                 colliderGeo = new AutoColliderGeometry();
             }
@@ -152,14 +249,14 @@ namespace MixedRealityExtension.Core
             }
             else
             {
-                _ownerActor.App.Logger.LogWarning($"MRE SDK does not support the following Unity collider and will not " +
+                Actor.App.Logger.LogWarning($"MRE SDK does not support the following Unity collider and will not " +
                     $"be available in the MRE app.  Collider Type: {_collider.GetType()}");
             }
 
             return colliderGeo == null ? null : new ColliderPatch()
             {
-                IsEnabled = _collider.enabled,
-                IsTrigger = _collider.isTrigger,
+                IsEnabled = IsEnabled,
+                IsTrigger = IsTrigger,
                 Geometry = colliderGeo
             };
         }
@@ -199,19 +296,19 @@ namespace MixedRealityExtension.Core
         private void SendTriggerEvent(ColliderEventType eventType, UnityCollider otherCollider)
         {
             var otherActor = otherCollider.gameObject.GetComponent<Actor>();
-            if (otherActor != null && otherActor.App.InstanceId == _ownerActor.App.InstanceId)
+            if (otherActor != null && otherActor.App.InstanceId == Actor.App.InstanceId)
             {
-                _ownerActor.App.EventManager.QueueEvent(
-                    new TriggerEvent(_ownerActor.Id, eventType, otherActor.Id));
+                Actor.App.EventManager.QueueEvent(
+                    new TriggerEvent(Actor.Id, eventType, otherActor.Id));
             }
         }
 
         private void SendCollisionEvent(ColliderEventType eventType, UnityCollision collision)
         {
             var otherActor = collision.collider.gameObject.GetComponent<Actor>();
-            if (otherActor != null && otherActor.App.InstanceId == _ownerActor.App.InstanceId)
+            if (otherActor != null && otherActor.App.InstanceId == Actor.App.InstanceId)
             {
-                var sceneRoot = _ownerActor.App.SceneRoot.transform;
+                var sceneRoot = Actor.App.SceneRoot.transform;
 
                 var contacts = collision.contacts.Select((contact) =>
                 {
@@ -231,8 +328,8 @@ namespace MixedRealityExtension.Core
                     RelativeVelocity = collision.relativeVelocity.CreateMWVector3()
                 };
 
-                _ownerActor.App.EventManager.QueueEvent(
-                    new CollisionEvent(_ownerActor.Id, eventType, collisionData));
+                Actor.App.EventManager.QueueEvent(
+                    new CollisionEvent(Actor.Id, eventType, collisionData));
             }
         }
     }
