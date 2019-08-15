@@ -8,22 +8,22 @@ namespace MixedRealityExtension.Patching.Types
     public class LightPatch : IPatchable
     {
         [PatchProperty]
-        public bool? Enabled { get; set; }
+        public PatchProperty<bool> Enabled { get; set; }
 
         [PatchProperty]
-        public LightType? Type { get; set; }
+        public PatchProperty<LightType> Type { get; set; }
 
         [PatchProperty]
-        public ColorPatch Color { get; set; }
+        public PatchProperty<ColorPatch> Color { get; set; }
 
         [PatchProperty]
-        public float? Range { get; set; }
+        public PatchProperty<float> Range { get; set; }
 
         [PatchProperty]
-        public float? Intensity { get; set; }
+        public PatchProperty<float> Intensity { get; set; }
 
         [PatchProperty]
-        public float? SpotAngle { get; set; }
+        public PatchProperty<float> SpotAngle { get; set; }
 
         public LightPatch()
         { }

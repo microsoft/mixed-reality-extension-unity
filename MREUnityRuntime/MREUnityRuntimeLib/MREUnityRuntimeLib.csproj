@@ -111,6 +111,8 @@
     <Compile Include="Messaging\Events\Types\ColliderEvent.cs" />
     <Compile Include="Messaging\Events\Types\TriggerEvent.cs" />
     <Compile Include="Messaging\Payloads\Converters\UnsignedConverter.cs" />
+    <Compile Include="Patching\Patch.cs" />
+    <Compile Include="Patching\PatchProperty.cs" />
     <Compile Include="Patching\Types\AppearancePatch.cs" />
     <Compile Include="Patching\Types\LookAtPatch.cs" />
     <Compile Include="PluginInterfaces\IUserInfoProvider.cs" />

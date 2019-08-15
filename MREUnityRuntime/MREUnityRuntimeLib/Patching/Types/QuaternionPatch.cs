@@ -6,19 +6,19 @@ using UnityEngine;
 
 namespace MixedRealityExtension.Patching.Types
 {
-    public class QuaternionPatch : IEquatable<QuaternionPatch>, IPatchable
+    public class QuaternionPatch : Patch, IEquatable<QuaternionPatch>
     {
         [PatchProperty]
-        public float? X { get; set; }
+        public PatchProperty<float> X { get; set; }
 
         [PatchProperty]
-        public float? Y { get; set; }
+        public PatchProperty<float> Y { get; set; }
 
         [PatchProperty]
-        public float? Z { get; set; }
+        public PatchProperty<float> Z { get; set; }
 
         [PatchProperty]
-        public float? W { get; set; }
+        public PatchProperty<float> W { get; set; }
 
         public QuaternionPatch()
         {
@@ -27,28 +27,28 @@ namespace MixedRealityExtension.Patching.Types
 
         internal QuaternionPatch(MWQuaternion quaternion)
         {
-            X = quaternion.X;
-            Y = quaternion.Y;
-            Z = quaternion.Z;
-            W = quaternion.W;
+            X.Value = quaternion.X;
+            Y.Value = quaternion.Y;
+            Z.Value = quaternion.Z;
+            W.Value = quaternion.W;
         }
 
         internal QuaternionPatch(Quaternion quaternion)
         {
-            X = quaternion.x;
-            Y = quaternion.y;
-            Z = quaternion.z;
-            W = quaternion.w;
+            X.Value = quaternion.x;
+            Y.Value = quaternion.y;
+            Z.Value = quaternion.z;
+            W.Value = quaternion.w;
         }
 
         internal QuaternionPatch(QuaternionPatch other)
         {
             if (other != null)
             {
-                X = other.X;
-                Y = other.Y;
-                Z = other.Z;
-                W = other.W;
+                X.Value = other.X.Value;
+                Y.Value = other.Y.Value;
+                Z.Value = other.Z.Value;
+                W.Value = other.W.Value;
             }
         }
 
@@ -77,6 +77,31 @@ namespace MixedRealityExtension.Patching.Types
                     Z.Equals(other.Z) &&
                     W.Equals(other.W);
             }
+        }
+
+        public override bool ShouldSerialize()
+        {
+            return ShouldSerializeW() || ShouldSerializeX() || ShouldSerializeY() || ShouldSerializeZ();
+        }
+
+        public bool ShouldSerializeW()
+        {
+            return W.Write;
+        }
+
+        public bool ShouldSerializeX()
+        {
+            return X.Write;
+        }
+
+        public bool ShouldSerializeY()
+        {
+            return Y.Write;
+        }
+
+        public bool ShouldSerializeZ()
+        {
+            return Z.Write;
         }
     }
 }

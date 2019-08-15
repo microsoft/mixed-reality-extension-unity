@@ -5,37 +5,37 @@ using System;
 
 namespace MixedRealityExtension.Patching.Types
 {
-    public class ColorPatch : IEquatable<ColorPatch>, IPatchable
+    public class ColorPatch : Patch, IEquatable<ColorPatch>
     {
         [PatchProperty]
-        public float? R { get; set; }
+        public PatchProperty<float> R { get; set; }
 
         [PatchProperty]
-        public float? G { get; set; }
+        public PatchProperty<float> G { get; set; }
 
         [PatchProperty]
-        public float? B { get; set; }
+        public PatchProperty<float> B { get; set; }
 
         [PatchProperty]
-        public float? A { get; set; }
+        public PatchProperty<float> A { get; set; }
 
         public ColorPatch()
         { }
 
         internal ColorPatch(MWColor color)
         {
-            R = color.R;
-            G = color.G;
-            B = color.B;
-            A = color.A;
+            R.Value = color.R;
+            G.Value = color.G;
+            B.Value = color.B;
+            A.Value = color.A;
         }
 
         internal ColorPatch(UnityEngine.Color color)
         {
-            R = color.r;
-            G = color.g;
-            B = color.b;
-            A = color.a;
+            R.Value = color.r;
+            G.Value = color.g;
+            B.Value = color.b;
+            A.Value = color.a;
         }
 
         public bool Equals(ColorPatch other)
@@ -52,6 +52,31 @@ namespace MixedRealityExtension.Patching.Types
                     B.Equals(other.B) &&
                     A.Equals(other.A);
             }
+        }
+
+        public override bool ShouldSerialize()
+        {
+            return ShouldSerializeR() || ShouldSerializeG() || ShouldSerializeB() || ShouldSerializeA();
+        }
+
+        public bool ShouldSerializeR()
+        {
+            return R.Write;
+        }
+
+        public bool ShouldSerializeG()
+        {
+            return G.Write;
+        }
+
+        public bool ShouldSerializeB()
+        {
+            return B.Write;
+        }
+
+        public bool ShouldSerializeA()
+        {
+            return A.Write;
         }
     }
 }

@@ -6,13 +6,13 @@ using UnityEngine;
 
 namespace MixedRealityExtension.Patching.Types
 {
-    public class Vector2Patch : IEquatable<Vector2Patch>, IPatchable
+    public class Vector2Patch : Patch, IEquatable<Vector2Patch>
     {
         [PatchProperty]
-        public float? X { get; set; }
+        public PatchProperty<float> X { get; set; }
 
         [PatchProperty]
-        public float? Y { get; set; }
+        public PatchProperty<float> Y { get; set; }
 
         public Vector2Patch()
         {
@@ -21,22 +21,22 @@ namespace MixedRealityExtension.Patching.Types
 
         public Vector2Patch(MWVector2 vector)
         {
-            X = vector.X;
-            Y = vector.Y;
+            X.Value = vector.X;
+            Y.Value = vector.Y;
         }
 
         public Vector2Patch(Vector2 vector2)
         {
-            X = vector2.x;
-            Y = vector2.y;
+            X.Value = vector2.x;
+            Y.Value = vector2.y;
         }
 
         public Vector2Patch(Vector2Patch other)
         {
             if (other != null)
             {
-                X = other.X;
-                Y = other.Y;
+                X.Value = other.X.Value;
+                Y.Value = other.Y.Value;
             }
         }
 
@@ -52,6 +52,21 @@ namespace MixedRealityExtension.Patching.Types
                     X.Equals(other.X) &&
                     Y.Equals(other.Y);
             }
+        }
+
+        public override bool ShouldSerialize()
+        {
+            return ShouldSerializeX() || ShouldSerializeY();
+        }
+
+        public bool ShouldSerializeX()
+        {
+            return X.Write;
+        }
+
+        public bool ShouldSerializeY()
+        {
+            return Y.Write;
         }
     }
 }
