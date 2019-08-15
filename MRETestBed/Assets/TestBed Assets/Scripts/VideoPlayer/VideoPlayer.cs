@@ -42,7 +42,7 @@ internal class VideoPlayer : MonoBehaviour, IVideoPlayer
         audioSource.minDistance = 1.0f;
         audioSource.maxDistance = 1000000.0f;
 
-        if (!options.Paused.HasValue)
+        if (options != null && !options.Paused.HasValue)
         {
             options.Paused = false;
         }
