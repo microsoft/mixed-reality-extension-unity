@@ -9,7 +9,7 @@ namespace MixedRealityExtension.Util.Logging
 {
     internal class UnityLogger : ConsoleLogger
     {
-        UnityLogger(MixedRealityExtensionApp app) : base(app)
+        public UnityLogger(MixedRealityExtensionApp app) : base(app)
         {
         }
 
