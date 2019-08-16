@@ -48,6 +48,15 @@ public class MREComponent : MonoBehaviour
 
     public string AppID;
 
+    [Serializable]
+    public class UserProperty
+    {
+        public string Name;
+        public string Value;
+    }
+
+    public UserProperty[] UserProperties;
+
     public bool AutoStart = false;
 
     public bool AutoJoin = true;
@@ -238,23 +247,6 @@ public class MREComponent : MonoBehaviour
             PlaceholderObject.gameObject.SetActive(false);
         }
 
-        // Below is work in progress: building up an informative platformId string.
-        /*
-        JObject j = new JObject
-        {
-            ["host"] = new JObject
-            {
-                ["name"] = "mre-testbed",
-                ["version"] = "1.0"
-            },
-            ["system"] = new JObject
-            {
-                ["deviceModel"] = SystemInfo.deviceModel,
-                ["operatingSystem"] = SystemInfo.operatingSystem
-            }
-        };
-        */
-
         Debug.Log("Connecting to MRE App.");
 
         try
@@ -286,6 +278,12 @@ public class MREComponent : MonoBehaviour
         {
             UserGO = UserGameObject
         };
+
+        foreach (var kv in UserProperties)
+        {
+            userInfo.Properties[kv.Name] = kv.Value;
+        }
+
         joinedUsers[userInfo.Id] = userInfo;
         MREApp?.UserJoin(UserGameObject, userInfo);
     }
