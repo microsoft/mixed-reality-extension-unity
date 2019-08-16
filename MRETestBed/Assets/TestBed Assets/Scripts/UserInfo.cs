@@ -18,7 +18,7 @@ internal class UserInfo : IUserInfo
 
     public string Name { get; private set; }
 
-    public Dictionary<string, string> Properties => new Dictionary<string, string>()
+    public Dictionary<string, string> Properties { get; } = new Dictionary<string, string>()
     {
         {"host", "MRETestBed" },
         {"engine", "Unity 2018.1.9f2" }
