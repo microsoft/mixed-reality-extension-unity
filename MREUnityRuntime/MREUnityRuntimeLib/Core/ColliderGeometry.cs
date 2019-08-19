@@ -125,6 +125,7 @@ namespace MixedRealityExtension.Core
         public override ColliderType Shape => ColliderType.Mesh;
 
         public Guid MeshId { get; set; }
+        public bool Convex { get; set; }
 
         internal override void Patch(UnityCollider collider)
         {
@@ -141,6 +142,7 @@ namespace MixedRealityExtension.Core
             {
                 if (MeshId != tempId) return;
                 collider.sharedMesh = asset as Mesh;
+                collider.convex = Convex;
             });
         }
     }

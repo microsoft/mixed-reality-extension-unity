@@ -72,13 +72,34 @@ namespace MixedRealityExtension.Core
         //public CollisionLayer CollisionLayer { get; set; }
 
         /// <inheritdoc />
-        public ColliderType ColliderType { get; private set; }
+        public ColliderType Shape { get; private set; }
 
-        internal void Initialize(UnityCollider unityCollider)
+        internal void Initialize(UnityCollider unityCollider, ColliderType? shape = null)
         {
             _ownerActor = unityCollider.gameObject.GetComponent<Actor>()
                 ?? throw new Exception("An MRE collider must be associated with a Unity game object that is an MRE actor.");
             _collider = unityCollider;
+
+            if (shape.HasValue)
+            {
+                Shape = shape.Value;
+            }
+            else if (unityCollider is SphereCollider)
+            {
+                Shape = ColliderType.Sphere;
+            }
+            else if (unityCollider is BoxCollider)
+            {
+                Shape = ColliderType.Box;
+            }
+            else if (unityCollider is CapsuleCollider)
+            {
+                Shape = ColliderType.Capsule;
+            }
+            else if (unityCollider is MeshCollider)
+            {
+                Shape = ColliderType.Mesh;
+            }
         }
 
         internal void ApplyPatch(ColliderPatch patch)
@@ -108,7 +129,7 @@ namespace MixedRealityExtension.Core
             ColliderGeometry colliderGeo = null;
 
             // Note: SDK has no "mesh" collider type
-            if (ColliderType == ColliderType.Auto || ColliderType == ColliderType.Mesh)
+            if (Shape == ColliderType.Auto || Shape == ColliderType.Mesh)
             {
                 colliderGeo = new AutoColliderGeometry();
             }
