@@ -91,6 +91,9 @@
     <Compile Include="Assets\AssetCache.cs" />
     <Compile Include="Assets\AssetGroup.cs" />
     <Compile Include="Assets\AssetSource.cs" />
+    <Compile Include="Behaviors\Handlers\ActionStateHandlers\IActionStateHandler.cs" />
+    <Compile Include="Behaviors\Handlers\ActionStateHandlers\PlayAnimationActionHandler.cs" />
+    <Compile Include="Behaviors\Handlers\ActionStateHandlers\PlaySoundActionHandler.cs" />
     <Compile Include="Core\ActorCommandQueue.cs" />
     <Compile Include="Core\Attachment.cs" />
     <Compile Include="Core\Collision\CollisionData.cs" />

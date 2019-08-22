@@ -2,10 +2,12 @@
 // Licensed under the MIT License.
 using MixedRealityExtension.App;
 using MixedRealityExtension.Behaviors.Actions;
+using MixedRealityExtension.Behaviors.Handlers.ActionStateHandlers;
 using MixedRealityExtension.Core.Interfaces;
 using MixedRealityExtension.Messaging.Events.Types;
 using MixedRealityExtension.Messaging.Payloads;
 using System;
+using System.Collections.Generic;
 
 namespace MixedRealityExtension.Behaviors
 {
@@ -15,6 +17,9 @@ namespace MixedRealityExtension.Behaviors
         private readonly BehaviorType _behaviorType;
         private readonly WeakReference<MixedRealityExtensionApp> _appRef;
         private readonly Guid _attachedActorId;
+
+        private List<IActionStateHandler> _actionStartedHandlers = new List<IActionStateHandler>();
+        private List<IActionStateHandler> _actionStoppedHandlers = new List<IActionStateHandler>();
 
         internal BehaviorActionHandler(
             BehaviorType behaviorType, 
@@ -36,6 +41,8 @@ namespace MixedRealityExtension.Behaviors
                 return;
             }
 
+            ProcessActionHandlers(user, newState);
+            
             var actionPerformed = new ActionPerformed()
             {
                 UserId = user.Id,
@@ -46,6 +53,28 @@ namespace MixedRealityExtension.Behaviors
             };
 
             app.EventManager.QueueLateEvent(new BehaviorEvent(actionPerformed));
+        }
+
+        public void AddActionHandler(ActionState actionState, IActionStateHandler actionStateHandler)
+        {
+            if (actionState == ActionState.Started)
+            {
+                _actionStartedHandlers.Add(actionStateHandler);
+            }
+            else
+            {
+                _actionStoppedHandlers.Add(actionStateHandler);
+            }
+        }
+
+        private void ProcessActionHandlers(IUser user, ActionState actionState)
+        {
+            var actionStateHandlers = (actionState == ActionState.Started) ? _actionStartedHandlers : _actionStoppedHandlers;
+
+            foreach (var handler in actionStateHandlers)
+            {
+                handler.OnActionStateTriggered(user, _attachedActorId);
+            }
         }
     }
 }

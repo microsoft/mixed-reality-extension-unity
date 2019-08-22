@@ -5,6 +5,7 @@ using MixedRealityExtension.Behaviors.Actions;
 using MixedRealityExtension.Core.Interfaces;
 using MixedRealityExtension.PluginInterfaces.Behaviors;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace MixedRealityExtension.Behaviors
@@ -15,6 +16,8 @@ namespace MixedRealityExtension.Behaviors
         private readonly Guid _attachedActorId;
 
         private BehaviorType? _behaviorType;
+        private Dictionary<string, BehaviorActionHandler> _actionHandlers =
+            new Dictionary<string, BehaviorActionHandler>();
 
         protected IBehavior Behavior { get; private set; }
 
@@ -45,6 +48,17 @@ namespace MixedRealityExtension.Behaviors
         {
             var handler = new BehaviorActionHandler(((IBehaviorHandler)this).BehaviorType, name, _appRef, _attachedActorId);
             action.Handler = handler;
+            _actionHandlers[name] = handler;
+        }
+
+        public BehaviorActionHandler GetActionHandler(string actionName)
+        {
+            if (_actionHandlers.ContainsKey(actionName))
+            {
+                return _actionHandlers[actionName];
+            }
+
+            return null;
         }
 
         public bool Equals(IBehaviorHandler other)
