@@ -53,7 +53,7 @@ namespace MixedRealityExtension.Behaviors
 
         public BehaviorActionHandler GetActionHandler(string actionName)
         {
-            if (_actionHandlers.ContainsKey(actionName.ToLower())
+            if (_actionHandlers.ContainsKey(actionName.ToLower()))
             {
                 return _actionHandlers[actionName.ToLower()];
             }
