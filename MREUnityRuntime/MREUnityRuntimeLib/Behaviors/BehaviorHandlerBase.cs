@@ -48,14 +48,14 @@ namespace MixedRealityExtension.Behaviors
         {
             var handler = new BehaviorActionHandler(((IBehaviorHandler)this).BehaviorType, name, _appRef, _attachedActorId);
             action.Handler = handler;
-            _actionHandlers[name] = handler;
+            _actionHandlers[name.ToLower()] = handler;
         }
 
         public BehaviorActionHandler GetActionHandler(string actionName)
         {
-            if (_actionHandlers.ContainsKey(actionName))
+            if (_actionHandlers.ContainsKey(actionName.ToLower())
             {
-                return _actionHandlers[actionName];
+                return _actionHandlers[actionName.ToLower()];
             }
 
             return null;
