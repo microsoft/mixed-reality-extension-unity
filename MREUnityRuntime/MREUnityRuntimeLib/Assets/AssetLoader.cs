@@ -524,7 +524,7 @@ namespace MixedRealityExtension.Assets
             }
         }
 
-        public ColliderGeometry ConvertPrimToCollider(PrimitiveDefinition prim, Guid meshId)
+        internal ColliderGeometry ConvertPrimToCollider(PrimitiveDefinition prim, Guid meshId)
         {
             MWVector3 dims = prim.Dimensions;
             switch (prim.Shape)

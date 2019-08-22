@@ -17,7 +17,7 @@ namespace MixedRealityExtension.Core
     public abstract class ColliderGeometry
     {
         /// <summary>
-        /// The type of the collider.  <see cref="Shape"/>
+        /// The shape of the collider. <see cref="ColliderType"/>
         /// </summary>
         public abstract ColliderType Shape { get; }
 
@@ -124,7 +124,14 @@ namespace MixedRealityExtension.Core
         /// <inheritdoc />
         public override ColliderType Shape => ColliderType.Mesh;
 
+        /// <summary>
+        /// The asset ID of the collider's mesh
+        /// </summary>
         public Guid MeshId { get; set; }
+
+        /// <summary>
+        /// Whether or not this collider should use a convex mesh
+        /// </summary>
         public bool Convex { get; set; }
 
         internal override void Patch(UnityCollider collider)
@@ -147,10 +154,17 @@ namespace MixedRealityExtension.Core
         }
     }
 
+    /// <summary>
+    /// Class that describes a capsule-shaped collision volume
+    /// </summary>
     public class CapsuleColliderGeometry : ColliderGeometry
     {
+        /// <inheritdoc />
         public override ColliderType Shape => ColliderType.Capsule;
 
+        /// <summary>
+        /// The centerpoint of the collider in local space
+        /// </summary>
         public MWVector3 Center { get; set; }
 
         /// <summary>
@@ -159,17 +173,26 @@ namespace MixedRealityExtension.Core
         /// </summary>
         public MWVector3 Size { get; set; }
 
+        /// <summary>
+        /// The primary axis of the capsule (x = 0, y = 1, z = 2)
+        /// </summary>
         public int? Direction
         {
             get => Size?.LargestComponentIndex();
 
         }
 
+        /// <summary>
+        /// The height of the capsule along its primary axis, including end caps
+        /// </summary>
         public float? Height
         {
             get => Size?.LargestComponentValue();
         }
 
+        /// <summary>
+        /// The radius of the capsule
+        /// </summary>
         public float? Radius
         {
             get => Size != null ? Size.SmallestComponentValue() / 2 : (float?) null;

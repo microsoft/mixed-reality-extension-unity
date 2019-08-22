@@ -151,6 +151,7 @@ namespace MixedRealityExtension.Core
             }
             else if (_collider is CapsuleCollider capsuleCollider)
             {
+                // The size vector describes the dimensions of the bounding box containing the collider
                 MWVector3 size;
                 if (capsuleCollider.direction == 0)
                 {
