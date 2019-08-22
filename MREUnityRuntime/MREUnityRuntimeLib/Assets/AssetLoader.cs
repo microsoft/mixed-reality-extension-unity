@@ -237,7 +237,7 @@ namespace MixedRealityExtension.Assets
                     assets.Add(asset);
 
                     meshColliderDescriptions[asset.Id] = colliderType == ColliderType.Mesh ?
-                        (ColliderGeometry) new MeshColliderGeometry() { MeshId = asset.Id, Convex = true } :
+                        (ColliderGeometry) new MeshColliderGeometry() { MeshId = asset.Id } :
                         (ColliderGeometry) new BoxColliderGeometry() { Size = (mesh.bounds.size * 0.8f).CreateMWVector3() };
                 }
             }
@@ -551,8 +551,7 @@ namespace MixedRealityExtension.Assets
                     dims = dims ?? new MWVector3(0.2f, 1, 0.2f);
                     return new MeshColliderGeometry()
                     {
-                        MeshId = meshId,
-                        Convex = true
+                        MeshId = meshId
                     };
 
                 case PrimitiveShape.Plane:

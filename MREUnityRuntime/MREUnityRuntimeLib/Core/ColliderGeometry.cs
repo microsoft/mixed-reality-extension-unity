@@ -129,11 +129,6 @@ namespace MixedRealityExtension.Core
         /// </summary>
         public Guid MeshId { get; set; }
 
-        /// <summary>
-        /// Whether or not this collider should use a convex mesh
-        /// </summary>
-        public bool Convex { get; set; }
-
         internal override void Patch(UnityCollider collider)
         {
             if (collider is MeshCollider meshCollider)
@@ -149,7 +144,7 @@ namespace MixedRealityExtension.Core
             {
                 if (MeshId != tempId) return;
                 collider.sharedMesh = asset as Mesh;
-                collider.convex = Convex;
+                collider.convex = true;
             });
         }
     }
