@@ -4,6 +4,7 @@ using MixedRealityExtension.Behaviors;
 using MixedRealityExtension.Behaviors.Actions;
 using MixedRealityExtension.Core.Collision;
 using MixedRealityExtension.Patching.Types;
+using MixedRealityExtension.Triggers.TriggeredActions;
 using System;
 using System.Collections.Generic;
 
@@ -257,6 +258,32 @@ namespace MixedRealityExtension.Messaging.Payloads
     }
 
     /// <summary>
+    /// Payload for setting a triggered action on an actor.
+    /// </summary>
+    public class SetTriggeredAction : NetworkCommandPayload
+    {
+        /// <summary>
+        /// The id of the actor that has the behavior for the triggered action to be attached to.
+        /// </summary>
+        public Guid ActorId;
+
+        /// <summary>
+        /// The name of the action to be attached to.
+        /// </summary>
+        public string ActionName;
+
+        /// <summary>
+        /// The state of that action to be triggered on.
+        /// </summary>
+        public ActionState ActionState;
+
+        /// <summary>
+        /// The triggered action to trigger when the action state is hit.
+        /// </summary>
+        public TriggeredActionBase TriggeredAction;
+    }
+
+    /// <summary>
     /// Engine => App
     /// Sends the collision event information to the app.
     /// </summary>
@@ -299,7 +326,6 @@ namespace MixedRealityExtension.Messaging.Payloads
         /// </summary>
         public Guid OtherActorId;
     }
-
 
     /// <summary>
     /// App => Engine, Engine => App
