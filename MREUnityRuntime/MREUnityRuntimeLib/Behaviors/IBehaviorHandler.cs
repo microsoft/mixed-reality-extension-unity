@@ -11,6 +11,8 @@ namespace MixedRealityExtension.Behaviors
 
         BehaviorType BehaviorType { get; }
 
+        BehaviorActionHandler GetActionHandler(string actionName);
+
         void CleanUp();
     }
 }

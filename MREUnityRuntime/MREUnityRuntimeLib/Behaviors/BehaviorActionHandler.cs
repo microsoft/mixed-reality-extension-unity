@@ -5,7 +5,9 @@ using MixedRealityExtension.Behaviors.Actions;
 using MixedRealityExtension.Core.Interfaces;
 using MixedRealityExtension.Messaging.Events.Types;
 using MixedRealityExtension.Messaging.Payloads;
+using MixedRealityExtension.Triggers.TriggeredActions;
 using System;
+using System.Collections.Generic;
 
 namespace MixedRealityExtension.Behaviors
 {
@@ -15,6 +17,9 @@ namespace MixedRealityExtension.Behaviors
         private readonly BehaviorType _behaviorType;
         private readonly WeakReference<MixedRealityExtensionApp> _appRef;
         private readonly Guid _attachedActorId;
+
+        private List<ITriggeredAction> _actionStartedTriggeredActions = new List<ITriggeredAction>();
+        private List<ITriggeredAction> _actionStoppedTriggeredActions = new List<ITriggeredAction>();
 
         internal BehaviorActionHandler(
             BehaviorType behaviorType, 
@@ -36,6 +41,8 @@ namespace MixedRealityExtension.Behaviors
                 return;
             }
 
+            ProcessActionHandlers(user, newState);
+            
             var actionPerformed = new ActionPerformed()
             {
                 UserId = user.Id,
@@ -46,6 +53,28 @@ namespace MixedRealityExtension.Behaviors
             };
 
             app.EventManager.QueueLateEvent(new BehaviorEvent(actionPerformed));
+        }
+
+        public void AddActionHandler(ActionState actionState, ITriggeredAction triggeredAction)
+        {
+            if (actionState == ActionState.Started)
+            {
+                _actionStartedTriggeredActions.Add(triggeredAction);
+            }
+            else
+            {
+                _actionStoppedTriggeredActions.Add(triggeredAction);
+            }
+        }
+
+        private void ProcessActionHandlers(IUser user, ActionState actionState)
+        {
+            var actionStateHandlers = (actionState == ActionState.Started) ? _actionStartedTriggeredActions : _actionStoppedTriggeredActions;
+
+            foreach (var handler in actionStateHandlers)
+            {
+                handler.OnTriggered(user, _attachedActorId);
+            }
         }
     }
 }

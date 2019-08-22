@@ -215,6 +215,12 @@ namespace MixedRealityExtension.Core
             ProcessActorCommand(payload.ActorId, payload, onCompleteCallback);
         }
 
+        [CommandHandler(typeof(SetTriggeredAction))]
+        private void OnSetTriggeredAction(SetTriggeredAction payload, Action onCompleteCallback)
+        {
+            ProcessActorCommand(payload.ActorId, payload, onCompleteCallback);
+        }
+
         #endregion
     }
 }

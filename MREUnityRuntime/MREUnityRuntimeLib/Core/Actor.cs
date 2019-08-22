@@ -1406,6 +1406,31 @@ namespace MixedRealityExtension.Core
             onCompleteCallback?.Invoke();
         }
 
+        [CommandHandler(typeof(SetTriggeredAction))]
+        private void OnSetTriggeredAction(SetTriggeredAction payload, Action onCompleteCallback)
+        {
+            var behaviorComponent = GetActorComponent<BehaviorComponent>();
+
+            if (behaviorComponent != null)
+            {
+                var actionHandler = behaviorComponent.GetBehaviorHandler().GetActionHandler(payload.ActionName);
+                if (actionHandler != null)
+                {
+                    actionHandler.AddActionHandler(payload.ActionState, payload.TriggeredAction);
+                }
+                else
+                {
+                    MREAPI.Logger.LogError($"Cannot set triggered action {payload.TriggeredAction.Type} on action of name {payload.ActionName}. Behavior does not contain the named action.");
+                }
+            }
+            else
+            {
+                MREAPI.Logger.LogError($"Cannot set triggered action {payload.TriggeredAction.Type}.  No behavior exists on this actor.");
+            }
+
+            onCompleteCallback?.Invoke();
+        }
+
         #endregion
 
         #region Command Handlers - Rigid Body Commands

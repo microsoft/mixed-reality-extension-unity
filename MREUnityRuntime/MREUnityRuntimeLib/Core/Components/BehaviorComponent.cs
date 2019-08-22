@@ -21,6 +21,11 @@ namespace MixedRealityExtension.Core.Components
             _behaviorHandler = behaviorHandler;
         }
 
+        internal IBehaviorHandler GetBehaviorHandler()
+        {
+            return _behaviorHandler;
+        }
+
         internal void ClearBehaviorHandler()
         {
             if (_behaviorHandler != null)
