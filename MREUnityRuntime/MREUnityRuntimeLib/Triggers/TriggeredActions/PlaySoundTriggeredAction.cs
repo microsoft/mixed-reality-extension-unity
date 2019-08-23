@@ -34,14 +34,17 @@ namespace MixedRealityExtension.Triggers.TriggeredActions
             Options = Options ?? new MediaStateOptions();
             Guid actorId = TargetId == Guid.Empty ? attachedActorId : TargetId;
             Actor actor = app.FindActor(actorId) as Actor;
-            SetMediaState payload = new SetMediaState
+            if (actor != null)
             {
-                Id = Guid.NewGuid(),
-                MediaAssetId = AssetId,
-                MediaCommand = MediaCommand.Start,
-                Options = Options,
-            };
-            actor.SetMediaState(payload);
+                SetMediaState payload = new SetMediaState
+                {
+                    Id = Guid.NewGuid(),
+                    MediaAssetId = AssetId,
+                    MediaCommand = MediaCommand.Start,
+                    Options = Options,
+                };
+                actor.SetMediaState(payload);
+            }
         }
     }
 }

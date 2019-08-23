@@ -28,17 +28,20 @@ namespace MixedRealityExtension.Triggers.TriggeredActions
         {
             Guid actorId = TargetId == Guid.Empty ? attachedActorId : TargetId;
             Actor actor = app.FindActor(actorId) as Actor;
-            SetAnimationState payload = new SetAnimationState
+            if (actor != null)
             {
-                AnimationName = AnimationName,
-                State = new Animation.MWSetAnimationStateOptions
+                SetAnimationState payload = new SetAnimationState
                 {
-                    Enabled = false,
-                    Time = 0,
-                    Speed = 1
-                }
-            };
-            actor.SetAnimationState(payload);
+                    AnimationName = AnimationName,
+                    State = new Animation.MWSetAnimationStateOptions
+                    {
+                        Enabled = false,
+                        Time = 0,
+                        Speed = 1
+                    }
+                };
+                actor.SetAnimationState(payload);
+            }
         }
     }
 }
