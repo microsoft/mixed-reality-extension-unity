@@ -4,10 +4,12 @@ using MixedRealityExtension.Animation;
 using MixedRealityExtension.Behaviors;
 using MixedRealityExtension.Core;
 using MixedRealityExtension.Patching.Types;
+using MixedRealityExtension.Triggers.TriggeredActions;
 using System;
 using System.Collections.Generic;
 using MixedRealityExtension.Core.Types;
 using Newtonsoft.Json.Linq;
+using MixedRealityExtension.Behaviors.Actions;
 
 namespace MixedRealityExtension.Messaging.Payloads
 {
@@ -387,6 +389,32 @@ namespace MixedRealityExtension.Messaging.Payloads
         /// The type of behavior to set as the primary behavior. See <see cref="BehaviorType"/>.
         /// </summary>
         public BehaviorType BehaviorType { get; set; }
+    }
+
+    /// <summary>
+    /// Payload for setting a triggered action on an actor.
+    /// </summary>
+    public class SetTriggeredAction : NetworkCommandPayload
+    {
+        /// <summary>
+        /// The id of the actor that has the behavior for the triggered action to be attached to.
+        /// </summary>
+        public Guid ActorId;
+
+        /// <summary>
+        /// The name of the action to be attached to.
+        /// </summary>
+        public string ActionName;
+
+        /// <summary>
+        /// The state of that action to be triggered on.
+        /// </summary>
+        public ActionState ActionState;
+
+        /// <summary>
+        /// The triggered action to trigger when the action state is hit.
+        /// </summary>
+        public TriggeredActionBase TriggeredAction;
     }
 
     /// <summary>
