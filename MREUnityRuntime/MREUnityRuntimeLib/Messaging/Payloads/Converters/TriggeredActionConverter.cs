@@ -33,6 +33,9 @@ namespace MixedRealityExtension.Messaging.Payloads.Converters
                     case "play-animation":
                         triggeredAction = new PlayAnimationTriggeredAction();
                         break;
+                    case "stop-animation":
+                        triggeredAction = new StopAnimationTriggeredAction();
+                        break;
                     case "play-sound":
                         triggeredAction = new PlaySoundTriggeredAction();
                         break;

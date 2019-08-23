@@ -11,7 +11,7 @@ namespace MixedRealityExtension.Triggers.TriggeredActions
     /// <summary>
     /// Class that plays an animation in response to a trigger being fired.
     /// </summary>
-    public class PlayAnimationTriggeredAction : TriggeredActionBase
+    public class StopAnimationTriggeredAction : TriggeredActionBase
     {
         /// <summary>
         /// The name of the animation to be played.
@@ -33,7 +33,7 @@ namespace MixedRealityExtension.Triggers.TriggeredActions
                 AnimationName = AnimationName,
                 State = new Animation.MWSetAnimationStateOptions
                 {
-                    Enabled = true,
+                    Enabled = false,
                     Time = 0,
                     Speed = 1
                 }

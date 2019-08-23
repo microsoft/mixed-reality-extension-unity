@@ -1250,11 +1250,16 @@ namespace MixedRealityExtension.Core
                     onCreatedCallback: () => onCompleteCallback?.Invoke());
         }
 
-        [CommandHandler(typeof(SetAnimationState))]
-        private void OnSetAnimationState(SetAnimationState payload, Action onCompleteCallback)
+        public void SetAnimationState(SetAnimationState payload)
         {
             GetOrCreateActorComponent<AnimationComponent>()
                 .SetAnimationState(payload.AnimationName, payload.State.Time, payload.State.Speed, payload.State.Enabled);
+        }
+
+        [CommandHandler(typeof(SetAnimationState))]
+        private void OnSetAnimationState(SetAnimationState payload, Action onCompleteCallback)
+        {
+            SetAnimationState(payload);
             onCompleteCallback?.Invoke();
         }
 
