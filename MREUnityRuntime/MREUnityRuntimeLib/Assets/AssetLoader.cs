@@ -145,13 +145,14 @@ namespace MixedRealityExtension.Assets
                 $"{containerId}:{source.ParsedUri.AbsoluteUri}"));
 
             // download file
-            UtilMethods.GetUrlParts(source.ParsedUri.AbsoluteUri, out string rootUrl, out string filename);
+            var rootUrl = URIHelper.GetDirectoryName(source.ParsedUri.AbsoluteUri);
             var loader = new WebRequestLoader(rootUrl);
-            await loader.LoadStream(filename);
+            await loader.LoadStream(URIHelper.GetFileFromUri(source.ParsedUri));
 
             // pre-parse glTF document so we can get a scene count
             // TODO: run this in thread
             GLTF.GLTFParser.ParseJson(loader.LoadedStream, out GLTF.Schema.GLTFRoot gltfRoot);
+            loader.LoadedStream.Position = 0;
 
             GLTFSceneImporter importer =
                 MREAPI.AppsAPI.GLTFImporterFactory.CreateImporter(gltfRoot, loader, _asyncHelper, loader.LoadedStream);
