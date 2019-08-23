@@ -1426,7 +1426,7 @@ namespace MixedRealityExtension.Core
                 var actionHandler = behaviorComponent.GetBehaviorHandler().GetActionHandler(payload.ActionName);
                 if (actionHandler != null)
                 {
-                    actionHandler.AddActionHandler(payload.ActionState, payload.TriggeredAction);
+                    actionHandler.SetActionHandler(payload.ActionState, payload.TriggeredAction);
                 }
                 else
                 {

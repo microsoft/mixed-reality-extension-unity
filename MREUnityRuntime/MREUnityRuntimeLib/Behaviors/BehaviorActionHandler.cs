@@ -18,8 +18,8 @@ namespace MixedRealityExtension.Behaviors
         private readonly WeakReference<MixedRealityExtensionApp> _appRef;
         private readonly Guid _attachedActorId;
 
-        private List<ITriggeredAction> _actionStartedTriggeredActions = new List<ITriggeredAction>();
-        private List<ITriggeredAction> _actionStoppedTriggeredActions = new List<ITriggeredAction>();
+        private ITriggeredAction _actionStartedTriggeredAction;
+        private ITriggeredAction _actionStoppedTriggeredAction;
 
         internal BehaviorActionHandler(
             BehaviorType behaviorType, 
@@ -35,8 +35,7 @@ namespace MixedRealityExtension.Behaviors
 
         void IActionHandler.HandleActionStateChanged(IUser user, ActionState oldState, ActionState newState)
         {
-            MixedRealityExtensionApp app;
-            if (!_appRef.TryGetTarget(out app))
+            if (!_appRef.TryGetTarget(out MixedRealityExtensionApp app))
             {
                 return;
             }
@@ -55,31 +54,30 @@ namespace MixedRealityExtension.Behaviors
             app.EventManager.QueueLateEvent(new BehaviorEvent(actionPerformed));
         }
 
-        public void AddActionHandler(ActionState actionState, ITriggeredAction triggeredAction)
+        public void SetActionHandler(ActionState actionState, ITriggeredAction triggeredAction)
         {
             if (actionState == ActionState.Started)
             {
-                _actionStartedTriggeredActions.Add(triggeredAction);
+                _actionStartedTriggeredAction = triggeredAction;
             }
             else
             {
-                _actionStoppedTriggeredActions.Add(triggeredAction);
+                _actionStoppedTriggeredAction = triggeredAction;
             }
         }
 
         private void ProcessActionHandlers(IUser user, ActionState actionState)
         {
-            MixedRealityExtensionApp app;
-            if (!_appRef.TryGetTarget(out app))
+            if (!_appRef.TryGetTarget(out MixedRealityExtensionApp app))
             {
                 return;
             }
 
-            var actionStateHandlers = (actionState == ActionState.Started) ? _actionStartedTriggeredActions : _actionStoppedTriggeredActions;
+            var actionStateHandler = (actionState == ActionState.Started) ? _actionStartedTriggeredAction : _actionStoppedTriggeredAction;
 
-            foreach (var handler in actionStateHandlers)
+            if (actionStateHandler != null)
             {
-                handler.OnTriggered(app, user, _attachedActorId);
+                actionStateHandler.OnTriggered(app, user, _attachedActorId);
             }
         }
     }
