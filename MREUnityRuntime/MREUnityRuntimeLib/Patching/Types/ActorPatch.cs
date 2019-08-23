@@ -53,7 +53,7 @@ namespace MixedRealityExtension.Patching.Types
         public bool? Grabbable { get; set; }
 
         [PatchProperty]
-        public IEnumerable<ActorComponentType> Subscriptions { get; set; }
+        public List<ActorComponentType> Subscriptions { get; set; }
 
         public ActorPatch()
         {
