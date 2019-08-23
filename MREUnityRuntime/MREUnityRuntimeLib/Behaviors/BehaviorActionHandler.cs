@@ -69,11 +69,17 @@ namespace MixedRealityExtension.Behaviors
 
         private void ProcessActionHandlers(IUser user, ActionState actionState)
         {
+            MixedRealityExtensionApp app;
+            if (!_appRef.TryGetTarget(out app))
+            {
+                return;
+            }
+
             var actionStateHandlers = (actionState == ActionState.Started) ? _actionStartedTriggeredActions : _actionStoppedTriggeredActions;
 
             foreach (var handler in actionStateHandlers)
             {
-                handler.OnTriggered(user, _attachedActorId);
+                handler.OnTriggered(app, user, _attachedActorId);
             }
         }
     }

@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 using System;
+using MixedRealityExtension.App;
 using MixedRealityExtension.Core.Interfaces;
 
 namespace MixedRealityExtension.Triggers.TriggeredActions
@@ -21,7 +22,7 @@ namespace MixedRealityExtension.Triggers.TriggeredActions
         public Guid TargetId { get; set; }
 
         /// <inheritdoc />
-        public override void OnTriggered(IUser user, Guid attachedActorId)
+        public override void OnTriggered(IMixedRealityExtensionApp app, IUser user, Guid attachedActorId)
         {
             // Play your animation here.
         }

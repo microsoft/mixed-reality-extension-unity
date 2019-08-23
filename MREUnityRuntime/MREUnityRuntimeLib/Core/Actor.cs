@@ -1258,8 +1258,7 @@ namespace MixedRealityExtension.Core
             onCompleteCallback?.Invoke();
         }
 
-        [CommandHandler(typeof(SetMediaState))]
-        private void OnSetMediaState(SetMediaState payload, Action onCompleteCallback)
+        public void SetMediaState(SetMediaState payload)
         {
             if (_mediaInstances == null)
             {
@@ -1337,6 +1336,12 @@ namespace MixedRealityExtension.Core
                     }
                     break;
             }
+        }
+
+        [CommandHandler(typeof(SetMediaState))]
+        private void OnSetMediaState(SetMediaState payload, Action onCompleteCallback)
+        {
+            SetMediaState(payload);
             onCompleteCallback?.Invoke();
         }
 

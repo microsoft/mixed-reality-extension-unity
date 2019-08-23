@@ -1,7 +1,10 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 using System;
+using MixedRealityExtension.App;
+using MixedRealityExtension.Core;
 using MixedRealityExtension.Core.Interfaces;
+using MixedRealityExtension.Messaging.Payloads;
 
 namespace MixedRealityExtension.Triggers.TriggeredActions
 {
@@ -26,9 +29,19 @@ namespace MixedRealityExtension.Triggers.TriggeredActions
         public MediaStateOptions Options { get; set; }
 
         /// <inheritdoc />
-        public override void OnTriggered(IUser user, Guid attachedActorId)
+        public override void OnTriggered(IMixedRealityExtensionApp app, IUser user, Guid attachedActorId)
         {
-            // Play your sound here.
+            Options = Options ?? new MediaStateOptions();
+            Guid actorId = TargetId == Guid.Empty ? attachedActorId : TargetId;
+            Actor actor = app.FindActor(actorId) as Actor;
+            SetMediaState payload = new SetMediaState
+            {
+                Id = Guid.NewGuid(),
+                MediaAssetId = AssetId,
+                MediaCommand = MediaCommand.Start,
+                Options = Options,
+            };
+            actor.SetMediaState(payload);
         }
     }
 }
