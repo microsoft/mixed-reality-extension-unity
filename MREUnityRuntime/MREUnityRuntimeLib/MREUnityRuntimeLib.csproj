@@ -150,6 +150,7 @@
     <Compile Include="Factories\MWTextFactory.cs" />
     <Compile Include="PluginInterfaces\IVideoPlayer.cs" />
     <Compile Include="PluginInterfaces\IVideoPlayerFactory.cs" />
+    <Compile Include="Triggers\TriggeredActions\StopAnimationTriggeredAction.cs" />
     <Compile Include="Triggers\TriggeredActions\TriggeredActionBase.cs" />
     <Compile Include="UnityConstants.cs" />
     <Compile Include="PluginInterfaces\Behaviors\IBehavior.cs" />
