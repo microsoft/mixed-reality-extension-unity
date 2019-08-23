@@ -159,6 +159,61 @@ namespace MixedRealityExtension.Assets
             importer.SceneParent = MREAPI.AppsAPI.AssetCache.CacheRootGO().transform;
             importer.Collider = colliderType.ToGLTFColliderType();
 
+            // load textures
+            if (gltfRoot.Textures != null)
+            {
+                for (var i = 0; i < gltfRoot.Textures.Count; i++)
+                {
+                    await importer.LoadTextureAsync(gltfRoot.Textures[i], i, true);
+                    var texture = importer.GetTexture(i);
+                    texture.name = gltfRoot.Textures[i].Name ?? $"texture:{i}";
+
+                    var asset = GenerateAssetPatch(texture, guidGenerator.Next());
+                    asset.Name = texture.name;
+                    asset.Source = new AssetSource(source.ContainerType, source.Uri, $"texture:{i}");
+                    MREAPI.AppsAPI.AssetCache.CacheAsset(texture, asset.Id, containerId, source);
+                    assets.Add(asset);
+                }
+            }
+
+            // load meshes
+            if (gltfRoot.Meshes != null)
+            {
+                var cancellationSource = new System.Threading.CancellationTokenSource();
+                for (var i = 0; i < gltfRoot.Meshes.Count; i++)
+                {
+                    var mesh = await importer.LoadMeshAsync(i, cancellationSource.Token);
+                    mesh.name = gltfRoot.Meshes[i].Name ?? $"mesh:{i}";
+
+                    var asset = GenerateAssetPatch(mesh, guidGenerator.Next());
+                    asset.Name = mesh.name;
+                    asset.Source = new AssetSource(source.ContainerType, source.Uri, $"mesh:{i}");
+                    MREAPI.AppsAPI.AssetCache.CacheAsset(mesh, asset.Id, containerId, source);
+                    assets.Add(asset);
+
+                    meshColliderDescriptions[asset.Id] = colliderType == ColliderType.Mesh ?
+                        (ColliderGeometry)new MeshColliderGeometry() { MeshId = asset.Id } :
+                        (ColliderGeometry)new BoxColliderGeometry() { Size = (mesh.bounds.size * 0.8f).CreateMWVector3() };
+                }
+            }
+
+            // load materials
+            if (gltfRoot.Materials != null)
+            {
+                for (var i = 0; i < gltfRoot.Materials.Count; i++)
+                {
+                    var matdef = gltfRoot.Materials[i];
+                    var material = await importer.LoadMaterialAsync(i);
+                    material.name = matdef.Name ?? $"material:{i}";
+
+                    var asset = GenerateAssetPatch(material, guidGenerator.Next());
+                    asset.Name = material.name;
+                    asset.Source = new AssetSource(source.ContainerType, source.Uri, $"material:{i}");
+                    MREAPI.AppsAPI.AssetCache.CacheAsset(material, asset.Id, containerId, source);
+                    assets.Add(asset);
+                }
+            }
+
             // load prefabs
             if (gltfRoot.Scenes != null)
             {
@@ -185,61 +240,6 @@ namespace MixedRealityExtension.Assets
                     def.Source = new AssetSource(source.ContainerType, source.Uri, $"scene:{i}");
                     MREAPI.AppsAPI.AssetCache.CacheAsset(rootObject, def.Id, containerId, source);
                     assets.Add(def);
-                }
-            }
-
-            // load textures
-            if (gltfRoot.Textures != null)
-            {
-                for (var i = 0; i < gltfRoot.Textures.Count; i++)
-                {
-                    await importer.LoadTextureAsync(gltfRoot.Textures[i], i, true);
-                    var texture = importer.GetTexture(i);
-                    texture.name = gltfRoot.Textures[i].Name ?? $"texture:{i}";
-
-                    var asset = GenerateAssetPatch(texture, guidGenerator.Next());
-                    asset.Name = texture.name;
-                    asset.Source = new AssetSource(source.ContainerType, source.Uri, $"texture:{i}");
-                    MREAPI.AppsAPI.AssetCache.CacheAsset(texture, asset.Id, containerId, source);
-                    assets.Add(asset);
-                }
-            }
-
-            // load materials
-            if (gltfRoot.Materials != null)
-            {
-                for (var i = 0; i < gltfRoot.Materials.Count; i++)
-                {
-                    var matdef = gltfRoot.Materials[i];
-                    var material = await importer.LoadMaterialAsync(i);
-                    material.name = matdef.Name ?? $"material:{i}";
-
-                    var asset = GenerateAssetPatch(material, guidGenerator.Next());
-                    asset.Name = material.name;
-                    asset.Source = new AssetSource(source.ContainerType, source.Uri, $"material:{i}");
-                    MREAPI.AppsAPI.AssetCache.CacheAsset(material, asset.Id, containerId, source);
-                    assets.Add(asset);
-                }
-            }
-
-            // load meshes
-            if (gltfRoot.Meshes != null)
-            {
-                var cancellationSource = new System.Threading.CancellationTokenSource();
-                for (var i = 0; i < gltfRoot.Meshes.Count; i++)
-                {
-                    var mesh = await importer.LoadMeshAsync(i, cancellationSource.Token);
-                    mesh.name = gltfRoot.Meshes[i].Name ?? $"mesh:{i}";
-
-                    var asset = GenerateAssetPatch(mesh, guidGenerator.Next());
-                    asset.Name = mesh.name;
-                    asset.Source = new AssetSource(source.ContainerType, source.Uri, $"mesh:{i}");
-                    MREAPI.AppsAPI.AssetCache.CacheAsset(mesh, asset.Id, containerId, source);
-                    assets.Add(asset);
-
-                    meshColliderDescriptions[asset.Id] = colliderType == ColliderType.Mesh ?
-                        (ColliderGeometry) new MeshColliderGeometry() { MeshId = asset.Id } :
-                        (ColliderGeometry) new BoxColliderGeometry() { Size = (mesh.bounds.size * 0.8f).CreateMWVector3() };
                 }
             }
 
