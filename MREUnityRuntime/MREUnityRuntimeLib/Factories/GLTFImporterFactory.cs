@@ -18,7 +18,11 @@ namespace MixedRealityExtension.Factories
             ILoader externalDataLoader,
             AsyncCoroutineHelper asyncCoroutineHelper)
         {
-            return new GLTFSceneImporter(gltfFileName, externalDataLoader, asyncCoroutineHelper);
+            return new GLTFSceneImporter(gltfFileName, new ImportOptions()
+            {
+                ExternalDataLoader = externalDataLoader,
+                AsyncCoroutineHelper = asyncCoroutineHelper
+            });
         }
 
         public GLTFSceneImporter CreateImporter(
@@ -27,7 +31,11 @@ namespace MixedRealityExtension.Factories
             AsyncCoroutineHelper asyncCoroutineHelper,
             Stream gltfStream = null)
         {
-            return new GLTFSceneImporter(rootNode, externalDataLoader, asyncCoroutineHelper, gltfStream);
+            return new GLTFSceneImporter(rootNode, gltfStream, new ImportOptions()
+            {
+                ExternalDataLoader = externalDataLoader,
+                AsyncCoroutineHelper = asyncCoroutineHelper
+            });
         }
     }
 }

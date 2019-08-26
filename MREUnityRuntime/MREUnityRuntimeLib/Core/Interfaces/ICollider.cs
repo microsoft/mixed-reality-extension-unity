@@ -28,8 +28,8 @@ namespace MixedRealityExtension.Core.Interfaces
         //CollisionLayer CollisionLayer { get; }
 
         /// <summary>
-        /// The type of the collider.  <see cref="ColliderType"/>
+        /// The shape of the collider.  <see cref="Shape"/>
         /// </summary>
-        ColliderType ColliderType { get; }
+        ColliderType Shape { get; }
     }
 }

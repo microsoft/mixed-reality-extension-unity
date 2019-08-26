@@ -13,12 +13,10 @@ namespace MixedRealityExtension.PluginInterfaces
     public interface IPrimitiveFactory
     {
         /// <summary>
-        /// Spawn a primitive
+        /// Create a new Unity mesh with a known shape
         /// </summary>
-        /// <param name="definition">The shape and size of the primitive to spawn</param>
-        /// <param name="parent">If provided, the prim actor will be spawned as a child of this game object. If not, the scene root.</param>
-        /// <param name="addCollider">If true, add a collider of a matching shape and size.</param>
-        /// <returns>The GameObject of the newly created primitive</returns>
-        GameObject CreatePrimitive(PrimitiveDefinition definition, GameObject parent, bool addCollider);
+        /// <param name="definition">The shape and size of the primitive to create</param>
+        /// <returns>The mesh of the newly created primitive</returns>
+        Mesh CreatePrimitive(PrimitiveDefinition definition);
     }
 }

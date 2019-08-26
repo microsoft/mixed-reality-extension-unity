@@ -45,7 +45,6 @@ namespace MixedRealityExtension.App
         private ISet<Guid> _interactingUserIds = new HashSet<Guid>();
         private IList<Action> _executionProtocolActionQueue = new List<Action>();
         private IList<GameObject> _ownedGameObjects = new List<GameObject>();
-        private Queue<CreateFromGLTF> _createFromGLTFQueue = new Queue<CreateFromGLTF>();
 
         private enum AppState
         {
@@ -125,6 +124,8 @@ namespace MixedRealityExtension.App
         internal IConnectionInternal Conn => _conn;
 
         internal SoundManager SoundManager { get; private set; }
+
+        internal AssetLoader AssetLoader => _assetLoader;
 
         #endregion
 
@@ -519,46 +520,12 @@ namespace MixedRealityExtension.App
             }
         }
 
-        [CommandHandler(typeof(CreateFromGLTF))]
-        private async Task OnCreateFromGLTF(CreateFromGLTF payload, Action onCompleteCallback)
-        {
-            IList<Actor> createdActors;
-            try
-            {
-                createdActors = await _assetLoader.CreateFromGLTF(payload.ResourceUrl, payload.AssetName,
-                    payload.Actor?.ParentId, payload.ColliderType);
-                ProcessCreatedActors(payload, createdActors, onCompleteCallback);
-            }
-            catch (Exception e)
-            {
-                SendCreateActorResponse(payload,
-                    failureMessage: $"An unexpected error occurred while loading glTF model [{payload.ResourceUrl}].\n{e.ToString()}",
-                    onCompleteCallback: onCompleteCallback);
-                Debug.LogException(e);
-            }
-        }
-
         [CommandHandler(typeof(CreateFromLibrary))]
         private async void OnCreateFromLibrary(CreateFromLibrary payload, Action onCompleteCallback)
         {
             try
             {
                 var actors = await _assetLoader.CreateFromLibrary(payload.ResourceId, payload.Actor?.ParentId);
-                ProcessCreatedActors(payload, actors, onCompleteCallback);
-            }
-            catch (Exception e)
-            {
-                SendCreateActorResponse(payload, failureMessage: e.ToString(), onCompleteCallback: onCompleteCallback);
-                Debug.LogException(e);
-            }
-        }
-
-        [CommandHandler(typeof(CreatePrimitive))]
-        private void OnCreatePrimitive(CreatePrimitive payload, Action onCompleteCallback)
-        {
-            try
-            {
-                var actors = _assetLoader.CreatePrimitive(payload.Definition, payload.Actor?.ParentId, payload.AddCollider);
                 ProcessCreatedActors(payload, actors, onCompleteCallback);
             }
             catch (Exception e)
@@ -655,6 +622,7 @@ namespace MixedRealityExtension.App
                 if (actor.Renderer != null)
                 {
                     actor.MaterialId = MREAPI.AppsAPI.AssetCache.GetId(actor.Renderer.sharedMaterial) ?? Guid.Empty;
+                    actor.MeshId = MREAPI.AppsAPI.AssetCache.GetId(actor.UnityMesh) ?? Guid.Empty;
                 }
 
                 foreach (Transform child in xfrm)

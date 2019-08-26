@@ -33,6 +33,7 @@ namespace MixedRealityExtension.Core
         private Rigidbody _rigidbody;
         private UnityLight _light;
         private UnityCollider _collider;
+        private ColliderPatch _pendingColliderPatch;
         private LookAtComponent _lookAt;
         class MediaInstance
         {
@@ -64,6 +65,8 @@ namespace MixedRealityExtension.Core
 
         private new Renderer renderer = null;
         internal Renderer Renderer => renderer = renderer ?? GetComponent<Renderer>();
+        private MeshFilter filter = null;
+        internal MeshFilter MeshFilter => filter = filter ?? GetComponent<MeshFilter>();
 
         #region IActor Properties - Public
 
@@ -142,6 +145,37 @@ namespace MixedRealityExtension.Core
         private Attachment _cachedAttachment = new Attachment();
 
         internal Guid MaterialId { get; set; } = Guid.Empty;
+        internal Guid MeshId { get; set; } = Guid.Empty;
+
+        internal Mesh UnityMesh
+        {
+            get
+            {
+                if (Renderer is SkinnedMeshRenderer skinned)
+                {
+                    return skinned.sharedMesh;
+                }
+                else if (MeshFilter != null)
+                {
+                    return MeshFilter.sharedMesh;
+                }
+                else
+                {
+                    return null;
+                }
+            }
+            set
+            {
+                if (Renderer is SkinnedMeshRenderer skinned)
+                {
+                    skinned.sharedMesh = value;
+                }
+                else
+                {
+                    MeshFilter.sharedMesh = value;
+                }
+            }
+        }
 
         internal bool Grabbable { get; private set; }
 
@@ -327,7 +361,10 @@ namespace MixedRealityExtension.Core
             _collider = gameObject.GetComponent<UnityCollider>();
             if (_collider != null)
             {
-                Collider = gameObject.AddComponent<Collider>();
+                if (Collider == null)
+                {
+                    Collider = gameObject.AddComponent<Collider>();
+                }
                 Collider.Initialize(_collider);
                 collider = Collider.GenerateInitialPatch();
             }
@@ -346,7 +383,8 @@ namespace MixedRealityExtension.Core
                 Appearance = new AppearancePatch()
                 {
                     Enabled = appearanceEnabled,
-                    MaterialId = MaterialId
+                    MaterialId = MaterialId,
+                    MeshId = MeshId
                 }
             };
 
@@ -660,30 +698,35 @@ namespace MixedRealityExtension.Core
             return RigidBody;
         }
 
-        private Collider SetCollider(ColliderPatch colliderPatch)
+        private void SetCollider(ColliderPatch colliderPatch)
         {
-            if (colliderPatch == null || colliderPatch.ColliderGeometry == null)
+            if (colliderPatch == null || colliderPatch.Geometry == null)
             {
-                return null;
+                return;
             }
 
-            var colliderGeometry = colliderPatch.ColliderGeometry;
-            var colliderType = colliderGeometry.ColliderType;
+            var colliderGeometry = colliderPatch.Geometry;
+            var colliderType = colliderGeometry.Shape;
+
+            if (colliderType == ColliderType.Auto)
+            {
+                colliderGeometry = App.AssetLoader.GetPreferredColliderShape(MeshId);
+                colliderType = colliderGeometry.Shape;
+            }
 
             if (_collider != null)
             {
-                if (Collider.ColliderType == colliderType)
+                if (Collider.Shape == colliderType)
                 {
                     // We have a collider already of the same type as the desired new geometry.
                     // Update its values instead of removing and adding a new one.
                     colliderGeometry.Patch(_collider);
-                    return Collider;
+                    return;
                 }
                 else
                 {
                     Destroy(_collider);
                     _collider = null;
-                    Collider = null;
                 }
             }
 
@@ -701,16 +744,29 @@ namespace MixedRealityExtension.Core
                     colliderGeometry.Patch(sphereCollider);
                     unityCollider = sphereCollider;
                     break;
+                case ColliderType.Capsule:
+                    var capsuleCollider = gameObject.AddComponent<CapsuleCollider>();
+                    colliderGeometry.Patch(capsuleCollider);
+                    unityCollider = capsuleCollider;
+                    break;
+                case ColliderType.Mesh:
+                    var meshCollider = gameObject.AddComponent<MeshCollider>();
+                    colliderGeometry.Patch(meshCollider);
+                    unityCollider = meshCollider;
+                    break;
                 default:
                     App.Logger.LogWarning("Cannot add the given collider type to the actor " +
-                        $"during runtime.  Collider Type: {colliderPatch.ColliderGeometry.ColliderType}");
+                        $"during runtime.  Collider Type: {colliderPatch.Geometry.Shape}");
                     break;
             }
 
             _collider = unityCollider;
-            Collider = (unityCollider != null) ? gameObject.AddComponent<Collider>() : null;
-            Collider?.Initialize(_collider);
-            return Collider;
+            if (Collider == null)
+            {
+                Collider = gameObject.AddComponent<Collider>();
+            }
+            Collider.Initialize(_collider, colliderPatch.Geometry.Shape);
+            return;
         }
 
         private void PatchParent(Guid? parentId)
@@ -767,29 +823,91 @@ namespace MixedRealityExtension.Core
                 return;
             }
 
-            if (appearance.Enabled != null)
-            {
-                appearanceEnabled = appearance.Enabled.Value;
-                ApplyVisibilityUpdate(this);
-            }
+            bool forceUpdateRenderer = false;
 
-            if (appearance.MaterialId == Guid.Empty)
+            // update renderers
+            if (appearance.MaterialId != null || appearance.MeshId != null)
             {
-                if (Renderer)
+                // patch material
+                if (appearance.MaterialId != null)
                 {
-                    Renderer.sharedMaterial = MREAPI.AppsAPI.DefaultMaterial;
+                    MaterialId = appearance.MaterialId.Value;
+                }
+                // patch mesh
+                if (appearance.MeshId != null)
+                {
+                    MeshId = appearance.MeshId.Value;
+                }
+
+                // apply mesh/material to game object
+                if (MeshId != Guid.Empty)
+                {
+                    // guarantee renderer component
+                    if (renderer == null)
+                    {
+                        renderer = gameObject.AddComponent<MeshRenderer>();
+                        renderer.sharedMaterial = MREAPI.AppsAPI.DefaultMaterial;
+                        forceUpdateRenderer = true;
+                    }
+                    // guarantee mesh filter (unless it has a skinned mesh renderer)
+                    if (renderer is MeshRenderer && filter == null)
+                    {
+                        filter = gameObject.AddComponent<MeshFilter>();
+                    }
+
+                    // look up and assign mesh
+                    var updatedMeshId = MeshId;
+                    MREAPI.AppsAPI.AssetCache.OnCached(MeshId, sharedMesh =>
+                    {
+                        if (!this || MeshId != updatedMeshId) return;
+                        UnityMesh = (Mesh)sharedMesh;
+                        if (Collider != null && Collider.Shape == ColliderType.Auto)
+                        {
+                            SetCollider(new ColliderPatch()
+                            {
+                                Geometry = new AutoColliderGeometry()
+                            });
+                        }
+                    });
+
+                    // look up and assign material, or default if none assigned
+                    if (MaterialId != Guid.Empty)
+                    {
+                        var updatedMaterialId = MaterialId;
+                        MREAPI.AppsAPI.AssetCache.OnCached(MaterialId, sharedMat =>
+                        {
+                            if (!this || !Renderer || MaterialId != updatedMaterialId) return;
+                            Renderer.sharedMaterial = (Material)sharedMat ?? MREAPI.AppsAPI.DefaultMaterial;
+                        });
+                    }
+                    else
+                    {
+                        Renderer.sharedMaterial = MREAPI.AppsAPI.DefaultMaterial;
+                    }
+                }
+                // clean up unused components
+                else
+                {
+                    Destroy(Renderer);
+                    Destroy(MeshFilter);
+                    if (Collider != null && Collider.Shape == ColliderType.Auto)
+                    {
+                        Destroy(_collider);
+                        Destroy(Collider);
+                        _collider = null;
+                        Collider = null;
+                    }
                 }
             }
-            else if (appearance.MaterialId != null)
+
+            // apply visibility after renderer updated
+            if (appearance.Enabled != null || forceUpdateRenderer)
             {
-                MaterialId = appearance.MaterialId.Value;
-                MREAPI.AppsAPI.AssetCache.OnCached(MaterialId, sharedMat =>
+                if (appearance.Enabled != null)
                 {
-                    if (this && Renderer && MaterialId == appearance.MaterialId.Value)
-                    {
-                        Renderer.sharedMaterial = (Material)sharedMat ?? MREAPI.AppsAPI.DefaultMaterial;
-                    }
-                });
+                    appearanceEnabled = appearance.Enabled.Value;
+                }
+                ApplyVisibilityUpdate(this);
             }
         }
 
@@ -1018,18 +1136,51 @@ namespace MixedRealityExtension.Core
             }
         }
 
+        private int colliderGeneration = 0;
         private void PatchCollider(ColliderPatch colliderPatch)
         {
             if (colliderPatch != null)
             {
                 // A collider patch that contains collider geometry signals that we need to update the
                 // collider to match the desired geometry.
-                if (colliderPatch.ColliderGeometry != null)
+                if (colliderPatch.Geometry != null)
                 {
-                    SetCollider(colliderPatch);
+                    var runningGeneration = ++colliderGeneration;
+
+                    // must wait for mesh load before auto type will work
+                    if (colliderPatch.Geometry.Shape == ColliderType.Auto && App.AssetLoader.GetPreferredColliderShape(MeshId) == null)
+                    {
+                        var runningMeshId = MeshId;
+                        _pendingColliderPatch = colliderPatch;
+                        MREAPI.AppsAPI.AssetCache.OnCached(MeshId, _ =>
+                        {
+                            if (runningMeshId != MeshId || runningGeneration != colliderGeneration) return;
+                            SetCollider(_pendingColliderPatch);
+                            Collider?.SynchronizeEngine(_pendingColliderPatch);
+                            _pendingColliderPatch = null;
+                        });
+                    }
+                    // every other kind of geo patch
+                    else
+                    {
+                        _pendingColliderPatch = null;
+                        SetCollider(colliderPatch);
+                    }
                 }
 
-                Collider?.SynchronizeEngine(colliderPatch);
+                // If we're waiting for the auto mesh, don't apply any patches until it completes.
+                // Instead, accumulate changes in the pending collider patch
+                if (_pendingColliderPatch != null && _pendingColliderPatch != colliderPatch)
+                {
+                    if (colliderPatch.IsEnabled.HasValue)
+                        _pendingColliderPatch.IsEnabled = colliderPatch.IsEnabled.Value;
+                    if (colliderPatch.IsTrigger.HasValue)
+                        _pendingColliderPatch.IsTrigger = colliderPatch.IsTrigger.Value;
+                }
+                else if (_pendingColliderPatch == null)
+                {
+                    Collider?.SynchronizeEngine(colliderPatch);
+                }
             }
         }
 

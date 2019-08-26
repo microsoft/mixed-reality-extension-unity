@@ -26,7 +26,7 @@ namespace MixedRealityExtension.Messaging.Payloads.Converters
             try
             {
                 JObject jObject = JObject.Load(reader);
-                var colliderType = jObject["colliderType"].ToObject<string>();
+                var colliderType = jObject["shape"].ToObject<string>();
 
                 ColliderGeometry colliderGeometry = null;
                 switch (colliderType)
@@ -36,6 +36,15 @@ namespace MixedRealityExtension.Messaging.Payloads.Converters
                         break;
                     case "box":
                         colliderGeometry = new BoxColliderGeometry();
+                        break;
+                    case "capsule":
+                        colliderGeometry = new CapsuleColliderGeometry();
+                        break;
+                    case "mesh":
+                        colliderGeometry = new MeshColliderGeometry();
+                        break;
+                    case "auto":
+                        colliderGeometry = new AutoColliderGeometry();
                         break;
                     default:
                         MREAPI.Logger.LogError($"Failed to deserialize collider geometry.  Invalid collider type <{colliderType}>.");

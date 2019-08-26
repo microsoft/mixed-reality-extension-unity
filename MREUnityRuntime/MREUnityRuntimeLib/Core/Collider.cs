@@ -31,24 +31,29 @@ namespace MixedRealityExtension.Core
         None = 0,
 
         /// <summary>
+        /// Choose best collider shape for mesh
+        /// </summary>
+        Auto,
+
+        /// <summary>
         /// Box shaped collider.
         /// </summary>
-        Box = 1,
+        Box,
 
         /// <summary>
         /// Sphere shaped collider.
         /// </summary>
-        Sphere = 2,
-
-        /// <summary>
-        /// Mesh based collider.
-        /// </summary>
-        Mesh = 3,
+        Sphere,
 
         /// <summary>
         /// Capsule shaped collider.
         /// </summary>
-        Capsule = 4
+        Capsule,
+
+        /// <summary>
+        /// Mesh collider.
+        /// </summary>
+        Mesh
     }
 
     internal class Collider : MonoBehaviour, ICollider
@@ -67,13 +72,34 @@ namespace MixedRealityExtension.Core
         //public CollisionLayer CollisionLayer { get; set; }
 
         /// <inheritdoc />
-        public ColliderType ColliderType { get; private set; }
+        public ColliderType Shape { get; private set; }
 
-        internal void Initialize(UnityCollider unityCollider)
+        internal void Initialize(UnityCollider unityCollider, ColliderType? shape = null)
         {
             _ownerActor = unityCollider.gameObject.GetComponent<Actor>()
                 ?? throw new Exception("An MRE collider must be associated with a Unity game object that is an MRE actor.");
             _collider = unityCollider;
+
+            if (shape.HasValue)
+            {
+                Shape = shape.Value;
+            }
+            else if (unityCollider is SphereCollider)
+            {
+                Shape = ColliderType.Sphere;
+            }
+            else if (unityCollider is BoxCollider)
+            {
+                Shape = ColliderType.Box;
+            }
+            else if (unityCollider is CapsuleCollider)
+            {
+                Shape = ColliderType.Capsule;
+            }
+            else if (unityCollider is MeshCollider)
+            {
+                Shape = ColliderType.Mesh;
+            }
         }
 
         internal void ApplyPatch(ColliderPatch patch)
@@ -102,7 +128,12 @@ namespace MixedRealityExtension.Core
         {
             ColliderGeometry colliderGeo = null;
 
-            if (_collider is SphereCollider sphereCollider)
+            // Note: SDK has no "mesh" collider type
+            if (Shape == ColliderType.Auto || Shape == ColliderType.Mesh)
+            {
+                colliderGeo = new AutoColliderGeometry();
+            }
+            else if (_collider is SphereCollider sphereCollider)
             {
                 colliderGeo = new SphereColliderGeometry()
                 {
@@ -118,13 +149,28 @@ namespace MixedRealityExtension.Core
                     Center = boxCollider.center.CreateMWVector3()
                 };
             }
-            else if (_collider is MeshCollider meshCollider)
-            {
-                colliderGeo = new MeshColliderGeometry();
-            }
             else if (_collider is CapsuleCollider capsuleCollider)
             {
-                colliderGeo = new CapsuleColliderGeometry();
+                // The size vector describes the dimensions of the bounding box containing the collider
+                MWVector3 size;
+                if (capsuleCollider.direction == 0)
+                {
+                    size = new MWVector3(capsuleCollider.height, 2 * capsuleCollider.radius, 2 * capsuleCollider.radius);
+                }
+                else if (capsuleCollider.direction == 1)
+                {
+                    size = new MWVector3(2 * capsuleCollider.radius, capsuleCollider.height, 2 * capsuleCollider.radius);
+                }
+                else
+                {
+                    size = new MWVector3(2 * capsuleCollider.radius, 2 * capsuleCollider.radius, capsuleCollider.height);
+                }
+
+                colliderGeo = new CapsuleColliderGeometry()
+                {
+                    Center = capsuleCollider.center.CreateMWVector3(),
+                    Size = size
+                };
             }
             else
             {
@@ -133,11 +179,11 @@ namespace MixedRealityExtension.Core
             }
 
             return colliderGeo == null ? null : new ColliderPatch()
-                {
-                    IsEnabled = _collider.enabled,
-                    IsTrigger = _collider.isTrigger,
-                    ColliderGeometry = colliderGeo
-                };
+            {
+                IsEnabled = _collider.enabled,
+                IsTrigger = _collider.isTrigger,
+                Geometry = colliderGeo
+            };
         }
 
         private void OnTriggerEnter(UnityCollider other)
