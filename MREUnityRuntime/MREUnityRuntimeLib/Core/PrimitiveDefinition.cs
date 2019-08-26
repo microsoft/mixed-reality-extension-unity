@@ -5,6 +5,7 @@ namespace MixedRealityExtension.Core.Types
 {
     /// <summary>
     /// Describes the general shape of a primitive. Specifics are described in a [[PrimitiveDefinition]] object.
+    /// Docs for shape-specific stuff are in the SDK: https://microsoft.github.io/mixed-reality-extension-sdk/enums/primitiveshape.html
     /// </summary>
     public enum PrimitiveShape
     {
