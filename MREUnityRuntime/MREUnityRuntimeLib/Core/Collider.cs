@@ -220,7 +220,7 @@ namespace MixedRealityExtension.Core
 
         private void SendTriggerEvent(ColliderEventType eventType, UnityCollider otherCollider)
         {
-            if (!_ownerActor.App.IsAuthoritativePeer)
+            if (!_ownerActor.App.IsAuthoritativePeer && !_ownerActor.IsGrabbed)
             {
                 return;
             }
@@ -235,7 +235,7 @@ namespace MixedRealityExtension.Core
 
         private void SendCollisionEvent(ColliderEventType eventType, UnityCollision collision)
         {
-            if (!_ownerActor.App.IsAuthoritativePeer)
+            if (!_ownerActor.App.IsAuthoritativePeer && !_ownerActor.IsGrabbed)
             {
                 return;
             }
