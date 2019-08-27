@@ -20,7 +20,7 @@ namespace MixedRealityExtension.Behaviors.Handlers
         internal static TargetHandler Create(IActor actor, WeakReference<MixedRealityExtensionApp> appRef)
         {
             var behaviorFactory = MREAPI.AppsAPI.BehaviorFactory;
-            var targetBehavior = behaviorFactory.CreateTargetBehavior(actor);
+            var targetBehavior = behaviorFactory.GetOrCreateTargetBehavior(actor);
             return new TargetHandler(targetBehavior, appRef, actor);
         }
     }

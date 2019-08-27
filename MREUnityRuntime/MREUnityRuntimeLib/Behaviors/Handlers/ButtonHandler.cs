@@ -21,7 +21,7 @@ namespace MixedRealityExtension.Behaviors.Handlers
         internal static new ButtonHandler Create(IActor actor, WeakReference<MixedRealityExtensionApp> appRef)
         {
             var behaviorFactory = MREAPI.AppsAPI.BehaviorFactory;
-            var buttonBehavior = behaviorFactory.CreateButtonBehavior(actor);
+            var buttonBehavior = behaviorFactory.GetOrCreateButtonBehavior(actor);
             return new ButtonHandler(buttonBehavior, appRef, actor);
         }
     }

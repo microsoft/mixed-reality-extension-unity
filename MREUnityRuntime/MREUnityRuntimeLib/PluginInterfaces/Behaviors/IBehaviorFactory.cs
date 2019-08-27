@@ -14,14 +14,14 @@ namespace MixedRealityExtension.PluginInterfaces.Behaviors
         /// </summary>
         /// <param name="actor">The actor that the behavior will be attached to.</param>
         /// <returns>The instance of the behavior implementing the <see cref="ITargetBehavior"/> interface.</returns>
-        ITargetBehavior CreateTargetBehavior(IActor actor);
+        ITargetBehavior GetOrCreateTargetBehavior(IActor actor);
 
         /// <summary>
         /// Create the concrete behavior that implements the <see cref="IButtonBehavior"/> interface.
         /// </summary>
         /// <param name="actor">The actor that the behavior will be attached to.</param>
         /// <returns>The instance of the behavior implementing the <see cref="IButtonBehavior"/> interface.</returns>
-        IButtonBehavior CreateButtonBehavior(IActor actor);
+        IButtonBehavior GetOrCreateButtonBehavior(IActor actor);
 
         // TODO @tombu - This will be added to allow for a more override model for high level behaviors.
         //BehaviorTypeT CreatePrimaryBehaviorOverride<BehaviorTypeT>(PrimaryBehaviorType type, IActor actor);

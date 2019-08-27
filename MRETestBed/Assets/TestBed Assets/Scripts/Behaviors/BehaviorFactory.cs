@@ -7,14 +7,14 @@ namespace Assets.Scripts.Behaviors
 {
     public class BehaviorFactory : IBehaviorFactory
     {
-        public IButtonBehavior CreateButtonBehavior(IActor actor)
+        public IButtonBehavior GetOrCreateButtonBehavior(IActor actor)
         {
-            return actor.GameObject.AddComponent<ButtonBehavior>();
+            return actor.GameObject.GetComponent<ButtonBehavior>() ?? actor.GameObject.AddComponent<ButtonBehavior>();
         }
 
-        public ITargetBehavior CreateTargetBehavior(IActor actor)
+        public ITargetBehavior GetOrCreateTargetBehavior(IActor actor)
         {
-            return actor.GameObject.AddComponent<TargetBehavior>();
+            return actor.GameObject.GetComponent<TargetBehavior>() ?? actor.GameObject.AddComponent<TargetBehavior>();
         }
     }
 }
