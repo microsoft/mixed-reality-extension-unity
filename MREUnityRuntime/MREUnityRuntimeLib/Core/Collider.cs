@@ -220,6 +220,11 @@ namespace MixedRealityExtension.Core
 
         private void SendTriggerEvent(ColliderEventType eventType, UnityCollider otherCollider)
         {
+            if (!_ownerActor.App.IsAuthoritativePeer)
+            {
+                return;
+            }
+
             var otherActor = otherCollider.gameObject.GetComponent<Actor>();
             if (otherActor != null && otherActor.App.InstanceId == _ownerActor.App.InstanceId)
             {
@@ -230,6 +235,11 @@ namespace MixedRealityExtension.Core
 
         private void SendCollisionEvent(ColliderEventType eventType, UnityCollision collision)
         {
+            if (!_ownerActor.App.IsAuthoritativePeer)
+            {
+                return;
+            }
+
             var otherActor = collision.collider.gameObject.GetComponent<Actor>();
             if (otherActor != null && otherActor.App.InstanceId == _ownerActor.App.InstanceId)
             {
