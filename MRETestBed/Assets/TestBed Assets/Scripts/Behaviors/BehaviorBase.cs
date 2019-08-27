@@ -23,7 +23,7 @@ namespace Assets.Scripts.Behaviors
 
         public void CleanUp()
         {
-            Destroy(this);
+            DestroyImmediate(this);
         }
     }
 }
