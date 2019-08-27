@@ -1545,14 +1545,18 @@ namespace MixedRealityExtension.Core
         {
             var behaviorComponent = GetOrCreateActorComponent<BehaviorComponent>();
 
-            if (payload.BehaviorType == BehaviorType.None && behaviorComponent.ContainsBehaviorHandler())
+            if (behaviorComponent.ContainsBehaviorHandler())
             {
                 behaviorComponent.ClearBehaviorHandler();
             }
-            else
+
+            if (payload.BehaviorType != BehaviorType.None)
             {
                 var handler = BehaviorHandlerFactory.CreateBehaviorHandler(payload.BehaviorType, this, new WeakReference<MixedRealityExtensionApp>(App));
                 behaviorComponent.SetBehaviorHandler(handler);
+
+                // We need to update the new behavior's grabbable flag from the actor so that it can be grabbed in the case we cleared the previous behavior.
+                ((ITargetBehavior)handler.Behavior).Grabbable = Grabbable;
             }
             onCompleteCallback?.Invoke();
         }
