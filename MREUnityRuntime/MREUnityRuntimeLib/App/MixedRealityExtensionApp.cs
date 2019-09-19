@@ -707,6 +707,30 @@ namespace MixedRealityExtension.App
 			onCompleteCallback?.Invoke();
 		}
 
+		[CommandHandler(typeof(ShowDialog))]
+		private void OnShowDialog(ShowDialog payload, Action onCompleteCallback)
+		{
+			if (MREAPI.AppsAPI.DialogFactory == null)
+			{
+				Protocol.Send(
+					new DialogResponse() { FailureMessage = "This client has not implemented dialogs" },
+					payload.MessageId
+				);
+				onCompleteCallback?.Invoke();
+			}
+			else
+			{
+				MREAPI.AppsAPI.DialogFactory.ShowDialog(payload.Text, payload.AllowInput, (submitted, text) =>
+				{
+					Protocol.Send(
+						new DialogResponse() { Submitted = submitted, Text = text },
+						payload.MessageId
+					);
+					onCompleteCallback?.Invoke();
+				});
+			}
+		}
+
 		#endregion
 	}
 }

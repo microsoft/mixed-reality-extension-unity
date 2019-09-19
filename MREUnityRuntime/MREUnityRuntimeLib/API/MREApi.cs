@@ -45,6 +45,7 @@ namespace MixedRealityExtension.API
 			IVideoPlayerFactory videoPlayerFactory = null,
 			IUserInfoProvider userInfoProvider = null,
 			IEngineConstants engineConstants = null,
+			IDialogFactory dialogFactory = null,
 			IMRELogger logger = null)
 		{
 			AppsAPI.DefaultMaterial = defaultMaterial;
@@ -58,6 +59,7 @@ namespace MixedRealityExtension.API
 			AppsAPI.MaterialPatcher = materialPatcher ?? new DefaultMaterialPatcher();
 			AppsAPI.UserInfoProvider = userInfoProvider ?? new NullUserInfoProvider();
 			AppsAPI.EngineConstants = engineConstants;
+			AppsAPI.DialogFactory = dialogFactory;
 
 #if ANDROID_DEBUG
 			Logger = logger ?? new UnityLogger(null);
@@ -117,6 +119,8 @@ namespace MixedRealityExtension.API
 		/// Provider of app/session scoped IUserInfo interfaces.
 		/// </summary>
 		public IUserInfoProvider UserInfoProvider { get; set; }
+
+		internal IDialogFactory DialogFactory { get; set; }
 
 		/// <summary>
 		/// Creates a new mixed reality extension app and adds it to the MRE runtime.
