@@ -8,20 +8,20 @@ using UnityEditor;
 [CustomEditor(typeof(MREComponent))]
 public class MREAppEditor : Editor {
 
-    private bool state;
-    public override void OnInspectorGUI()
-    {
-        base.OnInspectorGUI();
+	private bool state;
+	public override void OnInspectorGUI()
+	{
+		base.OnInspectorGUI();
 
-        EditorGUILayout.Space();
-        if (GUILayout.Button("Connect"))
-        {
-            (target as MREComponent)?.EnableApp();
-        }
+		EditorGUILayout.Space();
+		if (GUILayout.Button("Connect"))
+		{
+			(target as MREComponent)?.EnableApp();
+		}
 
-        if (GUILayout.Button("Disconnect"))
-        {
-            (target as MREComponent)?.DisableApp();
-        }
-    }
+		if (GUILayout.Button("Disconnect"))
+		{
+			(target as MREComponent)?.DisableApp();
+		}
+	}
 }

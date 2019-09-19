@@ -6,32 +6,32 @@ using System.Linq;
 
 namespace Assets.Scripts.Tools
 {
-    public static class ToolCache
-    {
-        public static Dictionary<Type, Tool> _cachedAvailableTools = new Dictionary<Type, Tool>();
+	public static class ToolCache
+	{
+		public static Dictionary<Type, Tool> _cachedAvailableTools = new Dictionary<Type, Tool>();
 
-        public static Tool GetOrCreateTool<ToolT>() where ToolT : Tool, new()
-        {
-            return GetOrCreateTool(typeof(ToolT));
-        }
+		public static Tool GetOrCreateTool<ToolT>() where ToolT : Tool, new()
+		{
+			return GetOrCreateTool(typeof(ToolT));
+		}
 
-        public static Tool GetOrCreateTool(Type toolType)
-        {
-            
-            if (_cachedAvailableTools.ContainsKey(toolType))
-            {
-                var cachedTool = _cachedAvailableTools[toolType];
-                _cachedAvailableTools.Remove(toolType);
-                return cachedTool;
-            }
+		public static Tool GetOrCreateTool(Type toolType)
+		{
+			
+			if (_cachedAvailableTools.ContainsKey(toolType))
+			{
+				var cachedTool = _cachedAvailableTools[toolType];
+				_cachedAvailableTools.Remove(toolType);
+				return cachedTool;
+			}
 
-            return (Tool)Activator.CreateInstance(toolType);
-        }
+			return (Tool)Activator.CreateInstance(toolType);
+		}
 
-        public static void StowTool(Tool tool)
-        {
-            tool.IsHeld = false;
-            _cachedAvailableTools[typeof(Tool)] = tool;
-        }
-    }
+		public static void StowTool(Tool tool)
+		{
+			tool.IsHeld = false;
+			_cachedAvailableTools[typeof(Tool)] = tool;
+		}
+	}
 }

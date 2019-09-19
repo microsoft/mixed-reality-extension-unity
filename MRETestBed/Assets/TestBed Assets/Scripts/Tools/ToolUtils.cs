@@ -6,12 +6,12 @@ using UnityEngine;
 
 namespace Assets.Scripts.Tools
 {
-    public static class ToolUtils
-    {
-        public static BehaviorT GetBehavior<BehaviorT>(this GameObject _this) 
-            where BehaviorT : IBehavior
-        {
-            return _this.GetComponents<BehaviorT>().FirstOrDefault();
-        }
-    }
+	public static class ToolUtils
+	{
+		public static BehaviorT GetBehavior<BehaviorT>(this GameObject _this) 
+			where BehaviorT : IBehavior
+		{
+			return _this.GetComponents<BehaviorT>().FirstOrDefault();
+		}
+	}
 }

@@ -6,35 +6,35 @@ using UnityEngine;
 
 public class AllTestRunner : MonoBehaviour
 {
-    void Start()
-    {
-    }
+	void Start()
+	{
+	}
 
-    // Update is called once per frame
-    void Update()
-    {
+	// Update is called once per frame
+	void Update()
+	{
 
-    }
+	}
 
-    private void OnTriggerEnter(Collider other)
-    {
-        if (other.gameObject.tag == "Player")
-        {
-            var apps = FindObjectsOfType<MREComponent>();
-            foreach (var app in apps)
-            {
-                app.EnableApp();
-                app.OnAppStarted += App_OnAppStarted;
-            }
-        }
-    }
+	private void OnTriggerEnter(Collider other)
+	{
+		if (other.gameObject.tag == "Player")
+		{
+			var apps = FindObjectsOfType<MREComponent>();
+			foreach (var app in apps)
+			{
+				app.EnableApp();
+				app.OnAppStarted += App_OnAppStarted;
+			}
+		}
+	}
 
-    private void App_OnAppStarted(MREComponent app)
-    {
-        app.OnAppStarted -= App_OnAppStarted;
-        if (!app.AutoJoin)
-        {
-            app.UserJoin();
-        }
-    }
+	private void App_OnAppStarted(MREComponent app)
+	{
+		app.OnAppStarted -= App_OnAppStarted;
+		if (!app.AutoJoin)
+		{
+			app.UserJoin();
+		}
+	}
 }

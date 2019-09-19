@@ -15,281 +15,281 @@ using UnityEngine;
 
 class TestLogMessage
 {
-    public string Message { get; set; }
+	public string Message { get; set; }
 
-    public bool TestBoolean { get; set; }
+	public bool TestBoolean { get; set; }
 }
 
 public class MRELogger : IMRELogger
 {
-    public void LogDebug(string message)
-    {
-        Debug.Log(message);
-    }
+	public void LogDebug(string message)
+	{
+		Debug.Log(message);
+	}
 
-    public void LogError(string message)
-    {
-        Debug.LogError(message);
-    }
+	public void LogError(string message)
+	{
+		Debug.LogError(message);
+	}
 
-    public void LogWarning(string message)
-    {
-        Debug.LogWarning(message);
-    }
+	public void LogWarning(string message)
+	{
+		Debug.LogWarning(message);
+	}
 }
 
 public class MREComponent : MonoBehaviour
 {
-    public delegate void AppEventHandler(MREComponent app);
+	public delegate void AppEventHandler(MREComponent app);
 
-    public string MREURL;
+	public string MREURL;
 
-    public string SessionID;
+	public string SessionID;
 
-    public string AppID;
+	public string AppID;
 
-    [Serializable]
-    public class UserProperty
-    {
-        public string Name;
-        public string Value;
-    }
+	[Serializable]
+	public class UserProperty
+	{
+		public string Name;
+		public string Value;
+	}
 
-    public UserProperty[] UserProperties;
+	public UserProperty[] UserProperties;
 
-    public bool AutoStart = false;
+	public bool AutoStart = false;
 
-    public bool AutoJoin = true;
+	public bool AutoJoin = true;
 
-    public Transform SceneRoot;
+	public Transform SceneRoot;
 
-    public GameObject PlaceholderObject;
+	public GameObject PlaceholderObject;
 
-    public GameObject UserGameObject;
+	public GameObject UserGameObject;
 
-    public IMixedRealityExtensionApp MREApp { get; private set; }
+	public IMixedRealityExtensionApp MREApp { get; private set; }
 
-    public event AppEventHandler OnConnecting;
+	public event AppEventHandler OnConnecting;
 
-    public event AppEventHandler OnConnected;
+	public event AppEventHandler OnConnected;
 
-    public event AppEventHandler OnDisconnected;
+	public event AppEventHandler OnDisconnected;
 
-    public event AppEventHandler OnAppStarted;
+	public event AppEventHandler OnAppStarted;
 
-    public event AppEventHandler OnAppShutdown;
+	public event AppEventHandler OnAppShutdown;
 
-    private Guid _appId;
+	private Guid _appId;
 
-    private static bool _apiInitialized = false;
+	private static bool _apiInitialized = false;
 
-    [SerializeField]
-    private Font SerifFont;
+	[SerializeField]
+	private Font SerifFont;
 
-    [SerializeField]
-    private Font SansSerifFont;
+	[SerializeField]
+	private Font SansSerifFont;
 
-    [SerializeField]
-    private UnityEngine.Material DefaultPrimMaterial;
+	[SerializeField]
+	private UnityEngine.Material DefaultPrimMaterial;
 
-    private static Dictionary<Guid, UserInfo> joinedUsers = new Dictionary<Guid, UserInfo>();
+	private static Dictionary<Guid, UserInfo> joinedUsers = new Dictionary<Guid, UserInfo>();
 
-    internal static UserInfo GetUserInfo(Guid userId)
-    {
-        UserInfo result;
-        if (joinedUsers.TryGetValue(userId, out result))
-        {
-            return result;
-        }
-        return null;
-    }
+	internal static UserInfo GetUserInfo(Guid userId)
+	{
+		UserInfo result;
+		if (joinedUsers.TryGetValue(userId, out result))
+		{
+			return result;
+		}
+		return null;
+	}
 
-    void Start()
-    {
-        if (!_apiInitialized)
-        {
-            MREAPI.InitializeAPI(
-                DefaultPrimMaterial,
-                behaviorFactory: new BehaviorFactory(),
-                textFactory: new MWTextFactory(SerifFont, SansSerifFont),
-                libraryFactory: new ResourceFactory(),
-                assetCache: new AssetCache(new GameObject("MRE Asset Cache")),
-                userInfoProvider: new UserInfoProvider(),
-                logger: new MRELogger());
-            _apiInitialized = true;
-        }
+	void Start()
+	{
+		if (!_apiInitialized)
+		{
+			MREAPI.InitializeAPI(
+				DefaultPrimMaterial,
+				behaviorFactory: new BehaviorFactory(),
+				textFactory: new MWTextFactory(SerifFont, SansSerifFont),
+				libraryFactory: new ResourceFactory(),
+				assetCache: new AssetCache(new GameObject("MRE Asset Cache")),
+				userInfoProvider: new UserInfoProvider(),
+				logger: new MRELogger());
+			_apiInitialized = true;
+		}
 
-        MREApp = MREAPI.AppsAPI.CreateMixedRealityExtensionApp(AppID, this);
+		MREApp = MREAPI.AppsAPI.CreateMixedRealityExtensionApp(AppID, this);
 
-        if (SceneRoot == null)
-        {
-            SceneRoot = transform;
-        }
+		if (SceneRoot == null)
+		{
+			SceneRoot = transform;
+		}
 
-        MREApp.SceneRoot = SceneRoot.gameObject;
+		MREApp.SceneRoot = SceneRoot.gameObject;
 
-        MREApp.OnConnecting += MREApp_OnConnecting;
-        MREApp.OnConnectFailed += MREApp_OnConnectFailed;
-        MREApp.OnConnected += MREApp_OnConnected;
-        MREApp.OnDisconnected += MREApp_OnDisconnected;
-        MREApp.OnAppStarted += MREApp_OnAppStarted;
-        MREApp.OnAppShutdown += MREApp_OnAppShutdown;
+		MREApp.OnConnecting += MREApp_OnConnecting;
+		MREApp.OnConnectFailed += MREApp_OnConnectFailed;
+		MREApp.OnConnected += MREApp_OnConnected;
+		MREApp.OnDisconnected += MREApp_OnDisconnected;
+		MREApp.OnAppStarted += MREApp_OnAppStarted;
+		MREApp.OnAppShutdown += MREApp_OnAppShutdown;
 
-        if (AutoStart)
-        {
-            EnableApp();
-        }
+		if (AutoStart)
+		{
+			EnableApp();
+		}
 
-        MREApp.RPC.OnReceive("log", new RPCHandler<TestLogMessage>(
-            (logMessage) => Debug.Log($"Log RPC of type {logMessage.GetType()} called with args [ {logMessage.Message}, {logMessage.TestBoolean} ]")
-        ));
+		MREApp.RPC.OnReceive("log", new RPCHandler<TestLogMessage>(
+			(logMessage) => Debug.Log($"Log RPC of type {logMessage.GetType()} called with args [ {logMessage.Message}, {logMessage.TestBoolean} ]")
+		));
 
-        // Functional test commands
-        MREApp.RPC.OnReceive("functional-test:test-started", new RPCHandler<string>((testName) =>
-        {
-            Debug.Log($"Test started: {testName}.");
-        }));
+		// Functional test commands
+		MREApp.RPC.OnReceive("functional-test:test-started", new RPCHandler<string>((testName) =>
+		{
+			Debug.Log($"Test started: {testName}.");
+		}));
 
-        MREApp.RPC.OnReceive("functional-test:test-complete", new RPCHandler<string, bool>((testName, success) =>
-        {
-            Debug.Log($"Test complete: {testName}. Success: {success}.");
-        }));
+		MREApp.RPC.OnReceive("functional-test:test-complete", new RPCHandler<string, bool>((testName, success) =>
+		{
+			Debug.Log($"Test complete: {testName}. Success: {success}.");
+		}));
 
-        MREApp.RPC.OnReceive("functional-test:close-connection", new RPCHandler(() =>
-        {
-            MREApp.Shutdown();
-        }));
+		MREApp.RPC.OnReceive("functional-test:close-connection", new RPCHandler(() =>
+		{
+			MREApp.Shutdown();
+		}));
 
-        MREApp.RPC.OnReceive("functional-test:trace-message", new RPCHandler<string, string>((testName, message) =>
-        {
-            Debug.Log($"{testName}: {message}");
-        }));
-    }
+		MREApp.RPC.OnReceive("functional-test:trace-message", new RPCHandler<string, string>((testName, message) =>
+		{
+			Debug.Log($"{testName}: {message}");
+		}));
+	}
 
-    private void MREApp_OnAppShutdown()
-    {
-        Debug.Log("AppShutdown");
-        OnAppShutdown?.Invoke(this);
-    }
+	private void MREApp_OnAppShutdown()
+	{
+		Debug.Log("AppShutdown");
+		OnAppShutdown?.Invoke(this);
+	}
 
-    private void MREApp_OnAppStarted()
-    {
-        Debug.Log("AppStarted");
-        OnAppStarted?.Invoke(this);
+	private void MREApp_OnAppStarted()
+	{
+		Debug.Log("AppStarted");
+		OnAppStarted?.Invoke(this);
 
-        if (AutoJoin)
-        {
-            UserJoin();
-        }
-    }
+		if (AutoJoin)
+		{
+			UserJoin();
+		}
+	}
 
-    private void MREApp_OnDisconnected()
-    {
-        Debug.Log("Disconnected");
-        OnDisconnected?.Invoke(this);
-    }
+	private void MREApp_OnDisconnected()
+	{
+		Debug.Log("Disconnected");
+		OnDisconnected?.Invoke(this);
+	}
 
-    private void MREApp_OnConnected()
-    {
-        Debug.Log("Connected");
-        OnConnected?.Invoke(this);
-    }
+	private void MREApp_OnConnected()
+	{
+		Debug.Log("Connected");
+		OnConnected?.Invoke(this);
+	}
 
-    private void MREApp_OnConnecting()
-    {
-        Debug.Log("Connecting");
-        OnConnecting?.Invoke(this);
-    }
+	private void MREApp_OnConnecting()
+	{
+		Debug.Log("Connecting");
+		OnConnecting?.Invoke(this);
+	}
 
-    private void MREApp_OnConnectFailed(MixedRealityExtension.IPC.ConnectFailedReason reason)
-    {
-        Debug.Log($"ConnectFailed. reason: {reason}");
-        if (reason == MixedRealityExtension.IPC.ConnectFailedReason.UnsupportedProtocol)
-        {
-            DisableApp();
-        }
-    }
+	private void MREApp_OnConnectFailed(MixedRealityExtension.IPC.ConnectFailedReason reason)
+	{
+		Debug.Log($"ConnectFailed. reason: {reason}");
+		if (reason == MixedRealityExtension.IPC.ConnectFailedReason.UnsupportedProtocol)
+		{
+			DisableApp();
+		}
+	}
 
-    void Update()
-    {
-        if (Input.GetButtonUp("Jump"))
-        {
-            MREApp?.RPC.SendRPC("button-up", "space", false);
-        }
-    }
+	void Update()
+	{
+		if (Input.GetButtonUp("Jump"))
+		{
+			MREApp?.RPC.SendRPC("button-up", "space", false);
+		}
+	}
 
-    void LateUpdate()
-    {
-        MREApp?.Update();
-    }
+	void LateUpdate()
+	{
+		MREApp?.Update();
+	}
 
-    void OnApplicationQuit()
-    {
-        DisableApp();
-    }
+	void OnApplicationQuit()
+	{
+		DisableApp();
+	}
 
-    public void ToggleApp()
-    {
-        if (MREApp.IsActive)
-        {
-            DisableApp();
-        }
-        else
-        {
-            EnableApp();
-        }
-    }
+	public void ToggleApp()
+	{
+		if (MREApp.IsActive)
+		{
+			DisableApp();
+		}
+		else
+		{
+			EnableApp();
+		}
+	}
 
-    public void EnableApp()
-    {
-        if (PlaceholderObject != null)
-        {
-            PlaceholderObject.gameObject.SetActive(false);
-        }
+	public void EnableApp()
+	{
+		if (PlaceholderObject != null)
+		{
+			PlaceholderObject.gameObject.SetActive(false);
+		}
 
-        Debug.Log("Connecting to MRE App.");
+		Debug.Log("Connecting to MRE App.");
 
-        try
-        {
-            MREApp?.Startup(MREURL, SessionID, "MRETestBed");
-        }
-        catch (Exception e)
-        {
-            Debug.Log($"Failed to connect to MRE App.  Exception thrown: {e.Message}\nStack trace: {e.StackTrace}");
-        }
-    }
+		try
+		{
+			MREApp?.Startup(MREURL, SessionID, "MRETestBed");
+		}
+		catch (Exception e)
+		{
+			Debug.Log($"Failed to connect to MRE App.  Exception thrown: {e.Message}\nStack trace: {e.StackTrace}");
+		}
+	}
 
-    public void DisableApp()
-    {
-        MREApp?.Shutdown();
+	public void DisableApp()
+	{
+		MREApp?.Shutdown();
 
-        if (PlaceholderObject != null)
-        {
-            PlaceholderObject.gameObject.SetActive(true);
-        }
-    }
+		if (PlaceholderObject != null)
+		{
+			PlaceholderObject.gameObject.SetActive(true);
+		}
+	}
 
-    public void UserJoin()
-    {
-        var rng = new System.Random();
-        var userId = rng.Next().ToString("X8");
-        string source = $"{userId}-{AppID}-{SessionID}-{gameObject.GetInstanceID()}";
-        UserInfo userInfo = new UserInfo(UtilMethods.StringToGuid(source), userId)
-        {
-            UserGO = UserGameObject
-        };
+	public void UserJoin()
+	{
+		var rng = new System.Random();
+		var userId = rng.Next().ToString("X8");
+		string source = $"{userId}-{AppID}-{SessionID}-{gameObject.GetInstanceID()}";
+		UserInfo userInfo = new UserInfo(UtilMethods.StringToGuid(source), userId)
+		{
+			UserGO = UserGameObject
+		};
 
-        foreach (var kv in UserProperties)
-        {
-            userInfo.Properties[kv.Name] = kv.Value;
-        }
+		foreach (var kv in UserProperties)
+		{
+			userInfo.Properties[kv.Name] = kv.Value;
+		}
 
-        joinedUsers[userInfo.Id] = userInfo;
-        MREApp?.UserJoin(UserGameObject, userInfo);
-    }
+		joinedUsers[userInfo.Id] = userInfo;
+		MREApp?.UserJoin(UserGameObject, userInfo);
+	}
 
-    public void UserLeave()
-    {
-        MREApp?.UserLeave(UserGameObject);
-    }
+	public void UserLeave()
+	{
+		MREApp?.UserLeave(UserGameObject);
+	}
 }
