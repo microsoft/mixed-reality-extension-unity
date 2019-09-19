@@ -57,8 +57,8 @@ if you are interested in helping out.
 To report issues and feature requests: [Github issues page](
 https://github.com/microsoft/mixed-reality-extension-sdk/issues).
 
-To chat with the team and other users: join [AltspaceVR SDK Slack channel](
-http://sdk-slackin.altvr.com/).
+To chat with the team and other users: join the [MRE SDK discord community](
+https://discord.gg/ypvBkWz).
 
 Or attend the biweekly [AltspaceVR developer meetups](
 https://account.altvr.com/channels/altspacevr).

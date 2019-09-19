@@ -19,8 +19,8 @@ test MRE to see if everything works. For more info, please see
 New features often require both a SDK side and Unity side set
 of changes. We usually implement both sides simultaneously, and add at least
 one functional test to verify the functionality. We highly recommend reaching
-out to the MRE team on slack to discuss any architecture before implementing,
-as we are always stronger together. 
+out to the [MRE SDK discord community](https://discord.gg/ypvBkWz) to discuss 
+any architecture before implementing, as we are always stronger together. 
 
 
 ## Write your own MRE Client library for another 3D engine
