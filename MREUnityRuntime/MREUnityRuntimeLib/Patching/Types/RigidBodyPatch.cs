@@ -10,106 +10,106 @@ using MRERigidBodyConstraints = MixedRealityExtension.Core.Interfaces.RigidBodyC
 
 namespace MixedRealityExtension.Patching.Types
 {
-    [JsonObject(MemberSerialization.OptOut)]
-    public class RigidBodyPatch : IPatchable
-    {
-        private MRERigidBodyConstraints? _constraintFlags;
-        private MRERigidBodyConstraints[] _constraints;
+	[JsonObject(MemberSerialization.OptOut)]
+	public class RigidBodyPatch : IPatchable
+	{
+		private MRERigidBodyConstraints? _constraintFlags;
+		private MRERigidBodyConstraints[] _constraints;
 
-        [PatchProperty]
-        public Vector3Patch Velocity { get; set; }
+		[PatchProperty]
+		public Vector3Patch Velocity { get; set; }
 
-        [PatchProperty]
-        public Vector3Patch AngularVelocity { get; set; }
+		[PatchProperty]
+		public Vector3Patch AngularVelocity { get; set; }
 
-        [PatchProperty]
-        public float? Mass { get; set; }
+		[PatchProperty]
+		public float? Mass { get; set; }
 
-        [PatchProperty]
-        public bool? DetectCollisions { get; set; }
+		[PatchProperty]
+		public bool? DetectCollisions { get; set; }
 
-        [PatchProperty]
-        public MRECollisionDetectionMode? CollisionDetectionMode { get; set; }
+		[PatchProperty]
+		public MRECollisionDetectionMode? CollisionDetectionMode { get; set; }
 
-        [PatchProperty]
-        public bool? UseGravity { get; set; }
+		[PatchProperty]
+		public bool? UseGravity { get; set; }
 
-        [PatchProperty]
-        public bool? IsKinematic { get; set; }
+		[PatchProperty]
+		public bool? IsKinematic { get; set; }
 
-        [PatchProperty]
-        public MRERigidBodyConstraints[] Constraints
-        {
-            get
-            {
-                return _constraints;
-            }
+		[PatchProperty]
+		public MRERigidBodyConstraints[] Constraints
+		{
+			get
+			{
+				return _constraints;
+			}
 
-            set
-            {
-                _constraints = value;
-                _constraintFlags = MRERigidBodyConstraints.None;
+			set
+			{
+				_constraints = value;
+				_constraintFlags = MRERigidBodyConstraints.None;
 
-                foreach (var constraint in _constraints)
-                {
-                    _constraintFlags |= constraint;
-                }
-            }
-        }
+				foreach (var constraint in _constraints)
+				{
+					_constraintFlags |= constraint;
+				}
+			}
+		}
 
-        [JsonIgnore]
-        [PatchProperty]
-        public MRERigidBodyConstraints? ConstraintFlags
-        {
-            get
-            {
-                return _constraintFlags;
-            }
+		[JsonIgnore]
+		[PatchProperty]
+		public MRERigidBodyConstraints? ConstraintFlags
+		{
+			get
+			{
+				return _constraintFlags;
+			}
 
-            set
-            {
-                if (value == null)
-                {
-                    _constraintFlags = null;
-                    _constraints = null;
-                    return;
-                }
+			set
+			{
+				if (value == null)
+				{
+					_constraintFlags = null;
+					_constraints = null;
+					return;
+				}
 
-                _constraintFlags = value;
+				_constraintFlags = value;
 
-                var constraints = new List<MRERigidBodyConstraints>();
-                if (_constraintFlags == MRERigidBodyConstraints.None)
-                {
-                    constraints.Add(MRERigidBodyConstraints.None);
-                }
-                else
-                {
-                    foreach (var constraintFlag in (MRERigidBodyConstraints[])Enum.GetValues(typeof(MRERigidBodyConstraints)))
-                    {
-                        if ((_constraintFlags & constraintFlag) != 0)
-                        {
-                            constraints.Add(constraintFlag);
-                        }
-                    }
-                }
+				var constraints = new List<MRERigidBodyConstraints>();
+				if (_constraintFlags == MRERigidBodyConstraints.None)
+				{
+					constraints.Add(MRERigidBodyConstraints.None);
+				}
+				else
+				{
+					foreach (var constraintFlag in (MRERigidBodyConstraints[])Enum.GetValues(typeof(MRERigidBodyConstraints)))
+					{
+						if ((_constraintFlags & constraintFlag) != 0)
+						{
+							constraints.Add(constraintFlag);
+						}
+					}
+				}
 
-                _constraints = constraints.ToArray();
-            }
-        }
+				_constraints = constraints.ToArray();
+			}
+		}
 
-        public RigidBodyPatch()
-        { }
+		public RigidBodyPatch()
+		{ }
 
-        internal RigidBodyPatch(Rigidbody rigidbody, Transform sceneRoot)
-        {
-            // Do not include Position or Rotation in the patch.
-            Velocity = new Vector3Patch(sceneRoot.InverseTransformDirection(rigidbody.velocity));
-            AngularVelocity = new Vector3Patch(sceneRoot.InverseTransformDirection(rigidbody.angularVelocity));
-            Mass = rigidbody.mass;
-            DetectCollisions = rigidbody.detectCollisions;
-            CollisionDetectionMode = (MRECollisionDetectionMode)Enum.Parse(typeof(MRECollisionDetectionMode), rigidbody.collisionDetectionMode.ToString());
-            UseGravity = rigidbody.useGravity;
-            ConstraintFlags = (MRERigidBodyConstraints)Enum.Parse(typeof(MRERigidBodyConstraints), rigidbody.constraints.ToString());
-        }
-    }
+		internal RigidBodyPatch(Rigidbody rigidbody, Transform sceneRoot)
+		{
+			// Do not include Position or Rotation in the patch.
+			Velocity = new Vector3Patch(sceneRoot.InverseTransformDirection(rigidbody.velocity));
+			AngularVelocity = new Vector3Patch(sceneRoot.InverseTransformDirection(rigidbody.angularVelocity));
+			Mass = rigidbody.mass;
+			DetectCollisions = rigidbody.detectCollisions;
+			CollisionDetectionMode = (MRECollisionDetectionMode)Enum.Parse(typeof(MRECollisionDetectionMode), rigidbody.collisionDetectionMode.ToString());
+			UseGravity = rigidbody.useGravity;
+			ConstraintFlags = (MRERigidBodyConstraints)Enum.Parse(typeof(MRERigidBodyConstraints), rigidbody.constraints.ToString());
+		}
+	}
 }

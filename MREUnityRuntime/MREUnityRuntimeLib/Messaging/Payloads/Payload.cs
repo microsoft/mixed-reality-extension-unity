@@ -7,30 +7,30 @@ using UnityEngine;
 
 namespace MixedRealityExtension.Messaging.Payloads
 {
-    public class Payload
-    {
-        public string Type { get; private set; }
+	public class Payload
+	{
+		public string Type { get; private set; }
 
-        public IList<Trace> Traces { get; set; }
+		public IList<Trace> Traces { get; set; }
 
-        public Payload()
-        {
-            Type = PayloadTypeRegistry.GetNetworkType(this.GetType());
+		public Payload()
+		{
+			Type = PayloadTypeRegistry.GetNetworkType(this.GetType());
 
 #if ANDROID_DEBUG
-            MREAPI.Logger.LogDebug($"Creating payload of type {Type} for the payload class type {this.GetType()}");
+			MREAPI.Logger.LogDebug($"Creating payload of type {Type} for the payload class type {this.GetType()}");
 #endif
-        }
+		}
 
-        public void AddTrace(Trace trace)
-        {
-            Traces = Traces ?? new List<Trace>();
-            Traces.Add(trace);
-        }
-    }
+		public void AddTrace(Trace trace)
+		{
+			Traces = Traces ?? new List<Trace>();
+			Traces.Add(trace);
+		}
+	}
 
-    public class NetworkCommandPayload : Payload, INetworkCommandPayload
-    {
-        public string MessageId { get; set; }
-    }
+	public class NetworkCommandPayload : Payload, INetworkCommandPayload
+	{
+		public string MessageId { get; set; }
+	}
 }

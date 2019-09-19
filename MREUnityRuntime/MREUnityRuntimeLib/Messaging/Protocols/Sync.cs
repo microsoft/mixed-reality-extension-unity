@@ -6,31 +6,31 @@ using MixedRealityExtension.App;
 
 namespace MixedRealityExtension.Messaging.Protocols
 {
-    internal class Sync : Protocol
-    {
-        internal Sync(MixedRealityExtensionApp app)
-           : base(app)
-        { }
+	internal class Sync : Protocol
+	{
+		internal Sync(MixedRealityExtensionApp app)
+		   : base(app)
+		{ }
 
-        protected override void InternalStart()
-        {
-            Send(new Payloads.SyncRequest());
-        }
+		protected override void InternalStart()
+		{
+			Send(new Payloads.SyncRequest());
+		}
 
-        protected override void InternalComplete()
-        {
-        }
+		protected override void InternalComplete()
+		{
+		}
 
-        protected override void InternalReceive(Message message)
-        {
-            if (message.Payload is Payloads.SyncComplete)
-            {
-                Complete();
-            }
-            else
-            {
-                Dispatch(message);
-            }
-        }
-    }
+		protected override void InternalReceive(Message message)
+		{
+			if (message.Payload is Payloads.SyncComplete)
+			{
+				Complete();
+			}
+			else
+			{
+				Dispatch(message);
+			}
+		}
+	}
 }

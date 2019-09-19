@@ -6,56 +6,56 @@ using UnityEngine;
 
 namespace Assets.Scripts.User
 {
-    public class InputSource : MonoBehaviour
-    {
-        private Tool _currentTool;
+	public class InputSource : MonoBehaviour
+	{
+		private Tool _currentTool;
 
-        public GameObject UserGameObject;
+		public GameObject UserGameObject;
 
-        public Tool CurrentTool => _currentTool;
+		public Tool CurrentTool => _currentTool;
 
-        public static readonly Guid UserId = new Guid();
+		public static readonly Guid UserId = new Guid();
 
-        private void Start()
-        {
-            _currentTool = ToolCache.GetOrCreateTool<TargetTool>();
-            _currentTool.IsHeld = true;
-        }
+		private void Start()
+		{
+			_currentTool = ToolCache.GetOrCreateTool<TargetTool>();
+			_currentTool.IsHeld = true;
+		}
 
-        public void HoldTool(Type toolType)
-        {
-            if (UserGameObject != null)
-            {
-                _currentTool.IsHeld = false;
-                ToolCache.StowTool(_currentTool);
-                _currentTool = ToolCache.GetOrCreateTool(toolType);
-                _currentTool.IsHeld = true;
-            }
-        }
+		public void HoldTool(Type toolType)
+		{
+			if (UserGameObject != null)
+			{
+				_currentTool.IsHeld = false;
+				ToolCache.StowTool(_currentTool);
+				_currentTool = ToolCache.GetOrCreateTool(toolType);
+				_currentTool.IsHeld = true;
+			}
+		}
 
-        public void DropTool()
-        {
-            // We only drop a tool is it isn't the default target tool.
-            if (UserGameObject != null && _currentTool.GetType() != typeof(TargetTool))
-            {
-                _currentTool.IsHeld = false;
-                ToolCache.StowTool(_currentTool);
-                _currentTool = ToolCache.GetOrCreateTool<TargetTool>();
-                _currentTool.IsHeld = true;
-            }
-        }
+		public void DropTool()
+		{
+			// We only drop a tool is it isn't the default target tool.
+			if (UserGameObject != null && _currentTool.GetType() != typeof(TargetTool))
+			{
+				_currentTool.IsHeld = false;
+				ToolCache.StowTool(_currentTool);
+				_currentTool = ToolCache.GetOrCreateTool<TargetTool>();
+				_currentTool.IsHeld = true;
+			}
+		}
 
-        private void Awake()
-        {
-            if (UserGameObject == null)
-            {
-                throw new Exception("Input source must have a MWUnityUser assigned to it.");
-            }
-        }
+		private void Awake()
+		{
+			if (UserGameObject == null)
+			{
+				throw new Exception("Input source must have a MWUnityUser assigned to it.");
+			}
+		}
 
-        private void Update()
-        {
-            _currentTool.Update(this);
-        }
-    }
+		private void Update()
+		{
+			_currentTool.Update(this);
+		}
+	}
 }

@@ -7,95 +7,95 @@ using MixedRealityExtension.Core;
 
 namespace MixedRealityExtension.Messaging.Payloads
 {
-    /// <summary>
-    /// App => Engine
-    /// Payload instructing the engine to preload the listed asset container.
-    /// </summary>
-    public class LoadAssets : NetworkCommandPayload
-    {
-        /// <summary>
-        /// The logical container that the new assets should be assigned to.
-        /// </summary>
-        public Guid ContainerId;
+	/// <summary>
+	/// App => Engine
+	/// Payload instructing the engine to preload the listed asset container.
+	/// </summary>
+	public class LoadAssets : NetworkCommandPayload
+	{
+		/// <summary>
+		/// The logical container that the new assets should be assigned to.
+		/// </summary>
+		public Guid ContainerId;
 
-        /// <summary>
-        /// The asset container to load.
-        /// </summary>
-        public AssetSource Source;
+		/// <summary>
+		/// The asset container to load.
+		/// </summary>
+		public AssetSource Source;
 
-        /// <summary>
-        /// The type of collider to add to the actor upon creation.
-        /// </summary>
-        public ColliderType ColliderType;
-    }
+		/// <summary>
+		/// The type of collider to add to the actor upon creation.
+		/// </summary>
+		public ColliderType ColliderType;
+	}
 
-    /// <summary>
-    /// Engine => App
-    /// Replies to LoadAssetRequests with the contents of the loaded bundle.
-    /// </summary>
-    public class AssetsLoaded : NetworkCommandPayload
-    {
-        /// <summary>
-        /// If the load failed, this string contains the reason why.
-        /// </summary>
-        public string FailureMessage;
+	/// <summary>
+	/// Engine => App
+	/// Replies to LoadAssetRequests with the contents of the loaded bundle.
+	/// </summary>
+	public class AssetsLoaded : NetworkCommandPayload
+	{
+		/// <summary>
+		/// If the load failed, this string contains the reason why.
+		/// </summary>
+		public string FailureMessage;
 
-        /// <summary>
-        /// The loaded assets.
-        /// </summary>
-        public IEnumerable<Asset> Assets;
-    }
+		/// <summary>
+		/// The loaded assets.
+		/// </summary>
+		public IEnumerable<Asset> Assets;
+	}
 
-    /// <summary>
-    /// App => Engine
-    /// An asset has updated.
-    /// </summary>
-    public class AssetUpdate : NetworkCommandPayload
-    {
-        /// <summary>
-        /// The asset that was updated
-        /// </summary>
-        public Asset Asset;
-    }
+	/// <summary>
+	/// App => Engine
+	/// An asset has updated.
+	/// </summary>
+	public class AssetUpdate : NetworkCommandPayload
+	{
+		/// <summary>
+		/// The asset that was updated
+		/// </summary>
+		public Asset Asset;
+	}
 
-    /// <summary>
-    /// App => Engine
-    /// Instructs the engine to instantiate the prefab with the given ID.
-    /// </summary>
-    public class CreateFromPrefab : CreateActor
-    {
-        /// <summary>
-        /// The ID of an already-loaded asset
-        /// </summary>
-        public Guid PrefabId;
-    }
+	/// <summary>
+	/// App => Engine
+	/// Instructs the engine to instantiate the prefab with the given ID.
+	/// </summary>
+	public class CreateFromPrefab : CreateActor
+	{
+		/// <summary>
+		/// The ID of an already-loaded asset
+		/// </summary>
+		public Guid PrefabId;
+	}
 
-    /// <summary>
-    /// App => Engine
-    /// Generate a new native asset with the included properties
-    /// </summary>
-    public class CreateAsset : NetworkCommandPayload
-    {
-        /// <summary>
-        /// The logical container that the new assets should be assigned to.
-        /// </summary>
-        public Guid ContainerId;
+	/// <summary>
+	/// App => Engine
+	/// Generate a new native asset with the included properties
+	/// </summary>
+	public class CreateAsset : NetworkCommandPayload
+	{
+		/// <summary>
+		/// The logical container that the new assets should be assigned to.
+		/// </summary>
+		public Guid ContainerId;
 
-        /// <summary>
-        /// Initial properties of the newly created asset
-        /// </summary>
-        public Asset Definition;
-    }
+		/// <summary>
+		/// Initial properties of the newly created asset
+		/// </summary>
+		public Asset Definition;
+	}
 
-    /// <summary>
-    /// App => Engine
-    /// Destroy all assets in the given container
-    /// </summary>
-    public class UnloadAssets : NetworkCommandPayload
-    {
-        /// <summary>
-        /// The container to unload
-        /// </summary>
-        public Guid ContainerId;
-    }
+	/// <summary>
+	/// App => Engine
+	/// Destroy all assets in the given container
+	/// </summary>
+	public class UnloadAssets : NetworkCommandPayload
+	{
+		/// <summary>
+		/// The container to unload
+		/// </summary>
+		public Guid ContainerId;
+	}
 }

@@ -5,20 +5,20 @@ using MixedRealityExtension.Messaging.Payloads;
 
 namespace MixedRealityExtension.Messaging.Protocols
 {
-    internal interface IProtocol
-    {
-        event MWEventHandler OnComplete;
+	internal interface IProtocol
+	{
+		event MWEventHandler OnComplete;
 
-        void Start();
+		void Start();
 
-        void Stop();
+		void Stop();
 
-        void Complete();
+		void Complete();
 
-        void Receive(Message message);
+		void Receive(Message message);
 
-        void Send(Message message);
+		void Send(Message message);
 
-        void Send(Payload payload, string replyToId = null);
-    }
+		void Send(Payload payload, string replyToId = null);
+	}
 }

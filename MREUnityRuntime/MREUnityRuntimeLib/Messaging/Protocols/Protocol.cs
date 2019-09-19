@@ -11,147 +11,147 @@ using UnityEngine;
 
 namespace MixedRealityExtension.Messaging.Protocols
 {
-    internal abstract class Protocol : IProtocol
-    {
-        protected MixedRealityExtensionApp App { get; }
+	internal abstract class Protocol : IProtocol
+	{
+		protected MixedRealityExtensionApp App { get; }
 
-        protected IConnectionInternal Conn => App.Conn;
+		protected IConnectionInternal Conn => App.Conn;
 
-        public event MWEventHandler OnComplete;
-        public event MWEventHandler<Message> OnReceive;
+		public event MWEventHandler OnComplete;
+		public event MWEventHandler<Message> OnReceive;
 
-        internal Protocol(MixedRealityExtensionApp app)
-        {
-            App = app;
-        }
+		internal Protocol(MixedRealityExtensionApp app)
+		{
+			App = app;
+		}
 
-        protected abstract void InternalReceive(Message message);
+		protected abstract void InternalReceive(Message message);
 
-        protected abstract void InternalStart();
+		protected abstract void InternalStart();
 
-        protected abstract void InternalComplete();
+		protected abstract void InternalComplete();
 
-        void IProtocol.Receive(Message message)
-        {
-            InternalReceive(message);
-        }
+		void IProtocol.Receive(Message message)
+		{
+			InternalReceive(message);
+		}
 
-        public void Start()
-        {
-            if (Conn != null)
-            {
-                Conn.OnReceive += Conn_OnReceive;
-                InternalStart();
-            }
-        }
+		public void Start()
+		{
+			if (Conn != null)
+			{
+				Conn.OnReceive += Conn_OnReceive;
+				InternalStart();
+			}
+		}
 
-        public void Stop()
-        {
-            if (Conn != null)
-            {
-                Conn.OnReceive -= Conn_OnReceive;
-            }
-        }
+		public void Stop()
+		{
+			if (Conn != null)
+			{
+				Conn.OnReceive -= Conn_OnReceive;
+			}
+		}
 
-        private void Conn_OnReceive(string json)
-        {
-            try
-            {
+		private void Conn_OnReceive(string json)
+		{
+			try
+			{
 #if ANDROID_DEBUG
-                App.Logger.LogDebug($"Recv: {json}");
+				App.Logger.LogDebug($"Recv: {json}");
 #endif
 
-                var message = JsonConvert.DeserializeObject<Message>(json, Constants.SerializerSettings);
+				var message = JsonConvert.DeserializeObject<Message>(json, Constants.SerializerSettings);
 
-                if (message.Payload is Payloads.Heartbeat payload)
-                {
-                    Send(new Payloads.HeartbeatReply(), message.Id);
-                }
-                else
-                {
-                    InternalReceive(message);
-                }
-            }
-            catch (Exception ex)
-            {
-                var message = $"Failed to process message: {json}\nError: {ex.Message}\nStackTrace: {ex.StackTrace}";
-                App.Logger.LogDebug(message);
-                try
-                {
-                    // In case of failure: make a best effort to send a reply message, so promises don't hang and the app can know something about what went wrong.
-                    var jtoken = JToken.Parse(json);
-                    var replyToId = jtoken["id"].ToString();
-                    Send(new OperationResult()
-                    {
-                        Message = message,
-                        ResultCode = OperationResultCode.Error
-                    }, replyToId);
-                }
-                catch
-                { }
-            }
-        }
+				if (message.Payload is Payloads.Heartbeat payload)
+				{
+					Send(new Payloads.HeartbeatReply(), message.Id);
+				}
+				else
+				{
+					InternalReceive(message);
+				}
+			}
+			catch (Exception ex)
+			{
+				var message = $"Failed to process message: {json}\nError: {ex.Message}\nStackTrace: {ex.StackTrace}";
+				App.Logger.LogDebug(message);
+				try
+				{
+					// In case of failure: make a best effort to send a reply message, so promises don't hang and the app can know something about what went wrong.
+					var jtoken = JToken.Parse(json);
+					var replyToId = jtoken["id"].ToString();
+					Send(new OperationResult()
+					{
+						Message = message,
+						ResultCode = OperationResultCode.Error
+					}, replyToId);
+				}
+				catch
+				{ }
+			}
+		}
 
-        public void Complete()
-        {
-            if (Conn != null)
-            {
-                Conn.OnReceive -= Conn_OnReceive;
-                OnComplete?.Invoke();
+		public void Complete()
+		{
+			if (Conn != null)
+			{
+				Conn.OnReceive -= Conn_OnReceive;
+				OnComplete?.Invoke();
 
-                foreach (var handler in OnReceive?.GetInvocationList())
-                {
-                    OnReceive -= (MWEventHandler<Message>)handler;
-                }
-                foreach (var handler in OnComplete?.GetInvocationList())
-                {
-                    OnComplete -= (MWEventHandler)handler;
-                }
+				foreach (var handler in OnReceive?.GetInvocationList())
+				{
+					OnReceive -= (MWEventHandler<Message>)handler;
+				}
+				foreach (var handler in OnComplete?.GetInvocationList())
+				{
+					OnComplete -= (MWEventHandler)handler;
+				}
 
-                InternalComplete();
-            }
-        }
+				InternalComplete();
+			}
+		}
 
-        public void Send(Message message)
-        {
-            if (Conn != null)
-            {
-                message.Id = Guid.NewGuid().ToString();
+		public void Send(Message message)
+		{
+			if (Conn != null)
+			{
+				message.Id = Guid.NewGuid().ToString();
 
-                try
-                {
-                    var json = JsonConvert.SerializeObject(message, Constants.SerializerSettings);
-                    try
-                    {
-                        Conn.Send(json);
-                    }
-                    catch (Exception e)
-                    {
-                        // Don't log to App.Logger here. The WebSocket might be disconnected.
-                        Debug.LogError($"Error sending message {json}\nException: {e.Message}\nStackTrace: {e.StackTrace}");
-                    }
-                }
-                catch (Exception e)
-                {
-                    App.Logger.LogDebug($"Error serializing message. Exception: {e.Message}\nStackTrace: {e.StackTrace}");
-                }
-            }
-        }
+				try
+				{
+					var json = JsonConvert.SerializeObject(message, Constants.SerializerSettings);
+					try
+					{
+						Conn.Send(json);
+					}
+					catch (Exception e)
+					{
+						// Don't log to App.Logger here. The WebSocket might be disconnected.
+						Debug.LogError($"Error sending message {json}\nException: {e.Message}\nStackTrace: {e.StackTrace}");
+					}
+				}
+				catch (Exception e)
+				{
+					App.Logger.LogDebug($"Error serializing message. Exception: {e.Message}\nStackTrace: {e.StackTrace}");
+				}
+			}
+		}
 
-        public void Send(Payloads.Payload payload, string replyToId = null)
-        {
-            var message = new Message()
-            {
-                ReplyToId = replyToId,
-                Payload = payload
-            };
+		public void Send(Payloads.Payload payload, string replyToId = null)
+		{
+			var message = new Message()
+			{
+				ReplyToId = replyToId,
+				Payload = payload
+			};
 
-            Send(message);
-        }
+			Send(message);
+		}
 
-        protected void Dispatch(Message message)
-        {
-            OnReceive?.Invoke(message);
-        }
-    }
+		protected void Dispatch(Message message)
+		{
+			OnReceive?.Invoke(message);
+		}
+	}
 }

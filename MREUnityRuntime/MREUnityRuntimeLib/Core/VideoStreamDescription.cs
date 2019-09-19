@@ -8,9 +8,9 @@ using System.Threading.Tasks;
 
 namespace MixedRealityExtension.Core
 {
-    public class VideoStreamDescription : UnityEngine.ScriptableObject
-    {
-        //Duration in seconds
-        public float Duration;
-    }
+	public class VideoStreamDescription : UnityEngine.ScriptableObject
+	{
+		//Duration in seconds
+		public float Duration;
+	}
 }

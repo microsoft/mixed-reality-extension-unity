@@ -6,19 +6,19 @@ using System;
 
 namespace MixedRealityExtension.Messaging.Events.Types
 {
-    internal class BehaviorEvent : MWEventBase
-    {
-        private readonly ActionPerformed _actionPerformed;
+	internal class BehaviorEvent : MWEventBase
+	{
+		private readonly ActionPerformed _actionPerformed;
 
-        public BehaviorEvent(ActionPerformed actionPerformed)
-            : base(actionPerformed.UserId)
-        {
-            _actionPerformed = actionPerformed;
-        }
+		public BehaviorEvent(ActionPerformed actionPerformed)
+			: base(actionPerformed.UserId)
+		{
+			_actionPerformed = actionPerformed;
+		}
 
-        internal override void SendEvent(MixedRealityExtensionApp app)
-        {
-            app.Protocol.Send(_actionPerformed);
-        }
-    }
+		internal override void SendEvent(MixedRealityExtensionApp app)
+		{
+			app.Protocol.Send(_actionPerformed);
+		}
+	}
 }

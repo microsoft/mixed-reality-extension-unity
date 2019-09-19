@@ -7,19 +7,19 @@ using System;
 
 namespace Assets.Scripts.Behaviors
 {
-    public class TargetBehavior : BehaviorBase, ITargetBehavior
-    {
-        public bool Grabbable { get; set; }
+	public class TargetBehavior : BehaviorBase, ITargetBehavior
+	{
+		public bool Grabbable { get; set; }
 
-        public bool IsGrabbed { get; set; }
+		public bool IsGrabbed { get; set; }
 
-        public MWAction Target { get; } = new MWAction();
+		public MWAction Target { get; } = new MWAction();
 
-        public MWAction Grab { get; } = new MWAction();
+		public MWAction Grab { get; } = new MWAction();
 
-        public override Type GetDesiredToolType()
-        {
-            return typeof(TargetTool);
-        }
-    }
+		public override Type GetDesiredToolType()
+		{
+			return typeof(TargetTool);
+		}
+	}
 }

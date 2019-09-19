@@ -8,24 +8,24 @@ using System.Threading.Tasks;
 
 namespace MixedRealityExtension.Animation
 {
-    /// <summary>
-    /// Class that represents the state of an animation.
-    /// </summary>
-    public class MWActorAnimationState
-    {
-        /// <summary>
-        /// The id of the actor of the animation.
-        /// </summary>
-        public Guid ActorId;
+	/// <summary>
+	/// Class that represents the state of an animation.
+	/// </summary>
+	public class MWActorAnimationState
+	{
+		/// <summary>
+		/// The id of the actor of the animation.
+		/// </summary>
+		public Guid ActorId;
 
-        /// <summary>
-        /// The name of the animation.
-        /// </summary>
-        public string AnimationName;
+		/// <summary>
+		/// The name of the animation.
+		/// </summary>
+		public string AnimationName;
 
-        /// <summary>
-        /// All the state options.
-        /// </summary>
-        public MWSetAnimationStateOptions State;
-    }
+		/// <summary>
+		/// All the state options.
+		/// </summary>
+		public MWSetAnimationStateOptions State;
+	}
 }

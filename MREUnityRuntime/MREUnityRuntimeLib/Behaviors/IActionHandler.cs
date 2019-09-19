@@ -5,8 +5,8 @@ using MixedRealityExtension.Core.Interfaces;
 
 namespace MixedRealityExtension.Behaviors
 {
-    internal interface IActionHandler
-    {
-        void HandleActionStateChanged(IUser user, ActionState oldState, ActionState newState);
-    }
+	internal interface IActionHandler
+	{
+		void HandleActionStateChanged(IUser user, ActionState oldState, ActionState newState);
+	}
 }

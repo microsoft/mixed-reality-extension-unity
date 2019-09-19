@@ -2,8 +2,8 @@
 // Licensed under the MIT License.
 namespace MixedRealityExtension
 {
-    internal static class UnityConstants
-    {
-        internal const int ActorLayerIndex = 31;
-    }
+	internal static class UnityConstants
+	{
+		internal const int ActorLayerIndex = 31;
+	}
 }

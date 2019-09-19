@@ -5,38 +5,38 @@ using System;
 
 namespace MixedRealityExtension.Behaviors
 {
-    /// <summary>
-    /// The type of behavior as a flag supported enum value.
-    /// </summary>
-    [Flags]
-    public enum BehaviorType
-    {
-        /// <summary>
-        /// None behavior.
-        /// </summary>
-        None = 0,
+	/// <summary>
+	/// The type of behavior as a flag supported enum value.
+	/// </summary>
+	[Flags]
+	public enum BehaviorType
+	{
+		/// <summary>
+		/// None behavior.
+		/// </summary>
+		None = 0,
 
-        /// <summary>
-        /// The target behavior type.
-        /// </summary>
-        [BehaviorHandlerType(typeof(TargetHandler))]
-        Target = 1,
+		/// <summary>
+		/// The target behavior type.
+		/// </summary>
+		[BehaviorHandlerType(typeof(TargetHandler))]
+		Target = 1,
 
-        /// <summary>
-        /// The button behavior type.
-        /// </summary>
-        [BehaviorHandlerType(typeof(ButtonHandler))]
-        Button = 4,
-    }
+		/// <summary>
+		/// The button behavior type.
+		/// </summary>
+		[BehaviorHandlerType(typeof(ButtonHandler))]
+		Button = 4,
+	}
 
-    [AttributeUsage(AttributeTargets.Field, AllowMultiple = false)]
-    internal class BehaviorHandlerType : Attribute
-    {
-        internal Type HandlerType { get; }
+	[AttributeUsage(AttributeTargets.Field, AllowMultiple = false)]
+	internal class BehaviorHandlerType : Attribute
+	{
+		internal Type HandlerType { get; }
 
-        public BehaviorHandlerType(Type behaviorHandlerType)
-        {
-            HandlerType = behaviorHandlerType;
-        }
-    }
+		public BehaviorHandlerType(Type behaviorHandlerType)
+		{
+			HandlerType = behaviorHandlerType;
+		}
+	}
 }

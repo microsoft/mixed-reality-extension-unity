@@ -7,17 +7,17 @@ using System;
 
 namespace Assets.Scripts.Behaviors
 {
-    public class ButtonBehavior : TargetBehavior, IButtonBehavior
-    {
-        public MWAction Hover { get; } = new MWAction();
+	public class ButtonBehavior : TargetBehavior, IButtonBehavior
+	{
+		public MWAction Hover { get; } = new MWAction();
 
-        public MWAction Click { get; } = new MWAction();
+		public MWAction Click { get; } = new MWAction();
 
-        public MWAction Button { get; } = new MWAction();
+		public MWAction Button { get; } = new MWAction();
 
-        public override Type GetDesiredToolType()
-        {
-            return typeof(ButtonTool);
-        }
-    }
+		public override Type GetDesiredToolType()
+		{
+			return typeof(ButtonTool);
+		}
+	}
 }

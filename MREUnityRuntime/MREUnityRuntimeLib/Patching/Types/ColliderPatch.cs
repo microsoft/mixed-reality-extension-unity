@@ -7,21 +7,21 @@ using System.Collections.Generic;
 
 namespace MixedRealityExtension.Patching.Types
 {
-    public class ColliderPatch : IPatchable
-    {
-        [PatchProperty]
-        public bool? IsEnabled { get; set; }
+	public class ColliderPatch : IPatchable
+	{
+		[PatchProperty]
+		public bool? IsEnabled { get; set; }
 
-        [PatchProperty]
-        public bool? IsTrigger { get; set; }
+		[PatchProperty]
+		public bool? IsTrigger { get; set; }
 
-        //[PatchProperty]
-        //public CollisionLayer? CollisionLayer { get; set; }
+		//[PatchProperty]
+		//public CollisionLayer? CollisionLayer { get; set; }
 
-        [PatchProperty]
-        public ColliderGeometry Geometry { get; set; }
+		[PatchProperty]
+		public ColliderGeometry Geometry { get; set; }
 
-        [PatchProperty]
-        public IEnumerable<ColliderEventType> EventSubscriptions { get; set; }
-    }
+		[PatchProperty]
+		public IEnumerable<ColliderEventType> EventSubscriptions { get; set; }
+	}
 }

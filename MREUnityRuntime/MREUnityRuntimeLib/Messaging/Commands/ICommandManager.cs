@@ -4,8 +4,8 @@ using System;
 
 namespace MixedRealityExtension.Messaging.Commands
 {
-    internal interface ICommandManager
-    {
-        void ExecuteCommandPayload(ICommandHandlerContext handlerContext, ICommandPayload commandPayload, Action onCompleteCallback);
-    }
+	internal interface ICommandManager
+	{
+		void ExecuteCommandPayload(ICommandHandlerContext handlerContext, ICommandPayload commandPayload, Action onCompleteCallback);
+	}
 }

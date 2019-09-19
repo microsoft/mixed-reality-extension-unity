@@ -4,41 +4,41 @@ using MixedRealityExtension.Core.Types;
 
 namespace MixedRealityExtension.Patching.Types
 {
-    public class TransformPatch : IPatchable
-    {
-        [PatchProperty]
-        public Vector3Patch Position { get; set; }
+	public class TransformPatch : IPatchable
+	{
+		[PatchProperty]
+		public Vector3Patch Position { get; set; }
 
-        [PatchProperty]
-        public QuaternionPatch Rotation { get; set; }
+		[PatchProperty]
+		public QuaternionPatch Rotation { get; set; }
 
-        public TransformPatch()
-        {
+		public TransformPatch()
+		{
 
-        }
+		}
 
-        internal TransformPatch(MWVector3 position, MWQuaternion rotation)
-        {
-            this.Position = new Vector3Patch(position);
-            this.Rotation = new QuaternionPatch(rotation);
-        }
-    }
+		internal TransformPatch(MWVector3 position, MWQuaternion rotation)
+		{
+			this.Position = new Vector3Patch(position);
+			this.Rotation = new QuaternionPatch(rotation);
+		}
+	}
 
-    public class ScaledTransformPatch: TransformPatch
-    {
-        [PatchProperty]
-        public Vector3Patch Scale { get; set; }
+	public class ScaledTransformPatch: TransformPatch
+	{
+		[PatchProperty]
+		public Vector3Patch Scale { get; set; }
 
-        public ScaledTransformPatch()
-            : base()
-        {
+		public ScaledTransformPatch()
+			: base()
+		{
 
-        }
+		}
 
-        internal ScaledTransformPatch(MWVector3 position, MWQuaternion rotation, MWVector3 scale)
-            : base(position, rotation)
-        {
-            this.Scale = new Vector3Patch(scale);
-        }
-    }
+		internal ScaledTransformPatch(MWVector3 position, MWQuaternion rotation, MWVector3 scale)
+			: base(position, rotation)
+		{
+			this.Scale = new Vector3Patch(scale);
+		}
+	}
 }

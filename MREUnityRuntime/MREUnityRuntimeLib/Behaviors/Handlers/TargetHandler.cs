@@ -8,20 +8,20 @@ using System;
 
 namespace MixedRealityExtension.Behaviors.Handlers
 {
-    internal class TargetHandler : BehaviorHandlerBase
-    {
-        internal TargetHandler(ITargetBehavior target, WeakReference<MixedRealityExtensionApp> appRef, IActor attachedActor)
-            : base(target, appRef, attachedActor)
-        {
-            RegisterActionHandler(target.Target, nameof(target.Target));
-            RegisterActionHandler(target.Grab, nameof(target.Grab));
-        }
+	internal class TargetHandler : BehaviorHandlerBase
+	{
+		internal TargetHandler(ITargetBehavior target, WeakReference<MixedRealityExtensionApp> appRef, IActor attachedActor)
+			: base(target, appRef, attachedActor)
+		{
+			RegisterActionHandler(target.Target, nameof(target.Target));
+			RegisterActionHandler(target.Grab, nameof(target.Grab));
+		}
 
-        internal static TargetHandler Create(IActor actor, WeakReference<MixedRealityExtensionApp> appRef)
-        {
-            var behaviorFactory = MREAPI.AppsAPI.BehaviorFactory;
-            var targetBehavior = behaviorFactory.GetOrCreateTargetBehavior(actor);
-            return new TargetHandler(targetBehavior, appRef, actor);
-        }
-    }
+		internal static TargetHandler Create(IActor actor, WeakReference<MixedRealityExtensionApp> appRef)
+		{
+			var behaviorFactory = MREAPI.AppsAPI.BehaviorFactory;
+			var targetBehavior = behaviorFactory.GetOrCreateTargetBehavior(actor);
+			return new TargetHandler(targetBehavior, appRef, actor);
+		}
+	}
 }

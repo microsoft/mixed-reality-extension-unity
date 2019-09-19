@@ -4,18 +4,18 @@ using Assets.Scripts.User;
 
 namespace Assets.Scripts.Tools
 {
-    public abstract class Tool
-    {
-        public bool IsHeld { get; set; }
+	public abstract class Tool
+	{
+		public bool IsHeld { get; set; }
 
-        public void Update(InputSource inputSource)
-        {
-            if (IsHeld)
-            {
-                UpdateTool(inputSource);
-            }
-        }
+		public void Update(InputSource inputSource)
+		{
+			if (IsHeld)
+			{
+				UpdateTool(inputSource);
+			}
+		}
 
-        protected abstract void UpdateTool(InputSource inputSource);
-    }
+		protected abstract void UpdateTool(InputSource inputSource);
+	}
 }

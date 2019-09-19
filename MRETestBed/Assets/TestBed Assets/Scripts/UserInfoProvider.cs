@@ -9,8 +9,8 @@ using System.Threading.Tasks;
 
 public class UserInfoProvider : IUserInfoProvider
 {
-    public IUserInfo GetUserInfo(IMixedRealityExtensionApp app, Guid userId)
-    {
-        return MREComponent.GetUserInfo(userId);
-    }
+	public IUserInfo GetUserInfo(IMixedRealityExtensionApp app, Guid userId)
+	{
+		return MREComponent.GetUserInfo(userId);
+	}
 }

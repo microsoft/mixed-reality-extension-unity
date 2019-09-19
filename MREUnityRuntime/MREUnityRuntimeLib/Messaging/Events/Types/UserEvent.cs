@@ -6,19 +6,19 @@ using System;
 
 namespace MixedRealityExtension.Messaging.Events.Types
 {
-    internal class UserEvent : MWEventBase
-    {
-        private Payload _payload;
+	internal class UserEvent : MWEventBase
+	{
+		private Payload _payload;
 
-        internal UserEvent(Guid userId, Payload payload)
-            : base(userId)
-        {
-            _payload = payload;
-        }
+		internal UserEvent(Guid userId, Payload payload)
+			: base(userId)
+		{
+			_payload = payload;
+		}
 
-        internal override void SendEvent(MixedRealityExtensionApp app)
-        {
-            app.Protocol.Send(_payload);
-        }
-    }
+		internal override void SendEvent(MixedRealityExtensionApp app)
+		{
+			app.Protocol.Send(_payload);
+		}
+	}
 }

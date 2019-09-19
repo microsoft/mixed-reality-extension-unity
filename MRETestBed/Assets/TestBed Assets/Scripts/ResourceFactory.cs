@@ -8,14 +8,14 @@ using MixedRealityExtension.PluginInterfaces;
 
 public class ResourceFactory : ILibraryResourceFactory
 {
-    public Task<GameObject> CreateFromLibrary(string resourceId, GameObject parent)
-    {
-        var prefab = Resources.Load<GameObject>($"Library/{resourceId}");
-        if (prefab == null)
-        {
-            return Task.FromException<GameObject>(new ArgumentException($"Resource with ID {resourceId} not found"));
-        }
+	public Task<GameObject> CreateFromLibrary(string resourceId, GameObject parent)
+	{
+		var prefab = Resources.Load<GameObject>($"Library/{resourceId}");
+		if (prefab == null)
+		{
+			return Task.FromException<GameObject>(new ArgumentException($"Resource with ID {resourceId} not found"));
+		}
 
-        return Task.FromResult<GameObject>(GameObject.Instantiate(prefab, parent?.transform, false));
-    }
+		return Task.FromResult<GameObject>(GameObject.Instantiate(prefab, parent?.transform, false));
+	}
 }

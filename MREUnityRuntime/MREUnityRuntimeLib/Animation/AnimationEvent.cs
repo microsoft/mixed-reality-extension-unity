@@ -8,24 +8,24 @@ using System.Threading.Tasks;
 
 namespace MixedRealityExtension.Animation
 {
-    /// <summary>
-    /// Animation Event
-    /// </summary>
-    public class MWAnimationEvent
-    {
-        /// <summary>
-        /// The animation event name
-        /// </summary>
-        public string Name;
+	/// <summary>
+	/// Animation Event
+	/// </summary>
+	public class MWAnimationEvent
+	{
+		/// <summary>
+		/// The animation event name
+		/// </summary>
+		public string Name;
 
-        /// <summary>
-        /// The animation event value
-        /// </summary>
-        public string Value;
+		/// <summary>
+		/// The animation event value
+		/// </summary>
+		public string Value;
 
-        /// <summary>
-        /// The time offset (in seconds) when the animation event should be raised
-        /// </summary>
-        public float Time;
-    }
+		/// <summary>
+		/// The time offset (in seconds) when the animation event should be raised
+		/// </summary>
+		public float Time;
+	}
 }

@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 namespace MixedRealityExtension.Messaging.Commands
 {
-    internal interface ICommandHandlerContext
-    {
-    }
+	internal interface ICommandHandlerContext
+	{
+	}
 }

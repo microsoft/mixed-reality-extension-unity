@@ -6,89 +6,89 @@ using UnityEngine;
 
 public class UserJoinApp : MonoBehaviour {
 
-    public MREComponent MREComponent;
+	public MREComponent MREComponent;
 
-    private const string UserId = "ReadyPlayerOne";
+	private const string UserId = "ReadyPlayerOne";
 
-    private bool appRunning;
-    private bool userJoined;
-    private bool userInVolume;
+	private bool appRunning;
+	private bool userJoined;
+	private bool userInVolume;
 
-    // Use this for initialization
-    void Start () {
+	// Use this for initialization
+	void Start () {
 		if (MREComponent != null)
-        {
-            MREComponent.OnAppStarted += MREComponent_OnAppStarted;
-            MREComponent.OnAppShutdown += MREComponent_OnAppShutdown;
-        }
+		{
+			MREComponent.OnAppStarted += MREComponent_OnAppStarted;
+			MREComponent.OnAppShutdown += MREComponent_OnAppShutdown;
+		}
 	}
 
-    private void MREComponent_OnAppStarted(MREComponent app)
-    {
-        appRunning = true;
-        ProcessJoin();
-    }
+	private void MREComponent_OnAppStarted(MREComponent app)
+	{
+		appRunning = true;
+		ProcessJoin();
+	}
 
-    private void MREComponent_OnAppShutdown(MREComponent app)
-    {
-        appRunning = false;
-        userJoined = false;
-    }
+	private void MREComponent_OnAppShutdown(MREComponent app)
+	{
+		appRunning = false;
+		userJoined = false;
+	}
 
-    // Update is called once per frame
-    void Update () {
+	// Update is called once per frame
+	void Update () {
 		
 	}
 
-    private void OnTriggerEnter(Collider other)
-    {
-        if (other.gameObject.tag == "Player")
-        {
-            userInVolume = true;
-            ProcessJoin();
-        }
-    }
+	private void OnTriggerEnter(Collider other)
+	{
+		if (other.gameObject.tag == "Player")
+		{
+			userInVolume = true;
+			ProcessJoin();
+		}
+	}
 
-    private void OnTriggerExit(Collider other)
-    {
-        if (other.gameObject.tag == "Player")
-        {
-            userInVolume = false;
-            ProcessLeave();
-        }
-    }
+	private void OnTriggerExit(Collider other)
+	{
+		if (other.gameObject.tag == "Player")
+		{
+			userInVolume = false;
+			ProcessLeave();
+		}
+	}
 
-    private void ProcessJoin()
-    {
-        if (!userJoined && appRunning && userInVolume)
-        {
-            Join();
-        }
-    }
+	private void ProcessJoin()
+	{
+		if (!userJoined && appRunning && userInVolume)
+		{
+			Join();
+		}
+	}
 
-    private void ProcessLeave()
-    {
-        if (userJoined && appRunning && !userInVolume)
-        {
-            Leave();
-        }
-    }
+	private void ProcessLeave()
+	{
+		if (userJoined && appRunning && !userInVolume)
+		{
+			Leave();
+		}
+	}
 
-    private void Join()
-    {
-        if (MREComponent != null)
-        {
-            MREComponent.UserJoin();
-            userJoined = true;
-        }
-    }
+	private void Join()
+	{
+		if (MREComponent != null)
+		{
+			MREComponent.UserJoin();
+			userJoined = true;
+		}
+	}
 
-    private void Leave()
-    {
-        if (MREComponent != null)
-        {
-            MREComponent.UserLeave();
-            userJoined = false;
-        }
-    }
+	private void Leave()
+	{
+		if (MREComponent != null)
+		{
+			MREComponent.UserLeave();
+			userJoined = false;
+		}
+	}
 }

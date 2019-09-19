@@ -5,10 +5,10 @@ using System;
 
 namespace MixedRealityExtension.Messaging.Events
 {
-    internal interface IMWEvent
-    {
-        Guid ActorId { get; }
+	internal interface IMWEvent
+	{
+		Guid ActorId { get; }
 
-        void SendEvent(MixedRealityExtensionApp app);
-    }
+		void SendEvent(MixedRealityExtensionApp app);
+	}
 }

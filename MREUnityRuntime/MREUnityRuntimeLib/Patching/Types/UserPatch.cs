@@ -9,34 +9,34 @@ using System.Collections.Generic;
 
 namespace MixedRealityExtension.Patching.Types
 {
-    public class UserPatch : IPatchable
-    {
-        public Guid Id { get; set; }
+	public class UserPatch : IPatchable
+	{
+		public Guid Id { get; set; }
 
-        [PatchProperty]
-        public string Name { get; set; }
+		[PatchProperty]
+		public string Name { get; set; }
 
-        [PatchProperty]
-        [JsonConverter(typeof(UnsignedConverter))]
-        public UInt32? Groups { get; set; }
+		[PatchProperty]
+		[JsonConverter(typeof(UnsignedConverter))]
+		public UInt32? Groups { get; set; }
 
-        public Dictionary<string, string> Properties { get; set; }
+		public Dictionary<string, string> Properties { get; set; }
 
-        public UserPatch()
-        {
-        }
+		public UserPatch()
+		{
+		}
 
-        internal UserPatch(Guid id)
-        {
-            Id = id;
-        }
+		internal UserPatch(Guid id)
+		{
+			Id = id;
+		}
 
-        internal UserPatch(User user)
-            : this(user.Id)
-        {
-            Name = user.Name;
-            Groups = user.Groups;
-            Properties = user.UserInfo.Properties;
-        }
-    }
+		internal UserPatch(User user)
+			: this(user.Id)
+		{
+			Name = user.Name;
+			Groups = user.Groups;
+			Properties = user.UserInfo.Properties;
+		}
+	}
 }

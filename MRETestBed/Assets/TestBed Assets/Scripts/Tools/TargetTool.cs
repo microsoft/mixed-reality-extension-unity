@@ -7,91 +7,91 @@ using UnityEngine;
 
 namespace Assets.Scripts.Tools
 {
-    public class TargetTool : Tool
-    {
-        private GrabTool _grabTool = new GrabTool();
-        private TargetBehavior _currentTargetBehavior;
+	public class TargetTool : Tool
+	{
+		private GrabTool _grabTool = new GrabTool();
+		private TargetBehavior _currentTargetBehavior;
 
-        public GameObject Target { get; private set; }
+		public GameObject Target { get; private set; }
 
-        protected override void UpdateTool(InputSource inputSource)
-        {
-            if (_currentTargetBehavior?.Grabbable ?? false)
-            {
-                _grabTool.Update(inputSource, Target);
-                if (_grabTool.GrabActive)
-                {
-                    // If a grab is active, nothing should change about the current target.
-                    return;
-                }
-            }
+		protected override void UpdateTool(InputSource inputSource)
+		{
+			if (_currentTargetBehavior?.Grabbable ?? false)
+			{
+				_grabTool.Update(inputSource, Target);
+				if (_grabTool.GrabActive)
+				{
+					// If a grab is active, nothing should change about the current target.
+					return;
+				}
+			}
 
-            var newTarget = FindTarget(inputSource);
-            if (Target == newTarget)
-            {
-                return;
-            }
+			var newTarget = FindTarget(inputSource);
+			if (Target == newTarget)
+			{
+				return;
+			}
 
-            if (Target != null && _currentTargetBehavior != null)
-            {
-                var mwUser = _currentTargetBehavior.GetMWUnityUser(inputSource.UserGameObject);
-                if (mwUser != null)
-                {
-                    _currentTargetBehavior.Target.StopAction(mwUser);
-                }
-            }
+			if (Target != null && _currentTargetBehavior != null)
+			{
+				var mwUser = _currentTargetBehavior.GetMWUnityUser(inputSource.UserGameObject);
+				if (mwUser != null)
+				{
+					_currentTargetBehavior.Target.StopAction(mwUser);
+				}
+			}
 
-            TargetBehavior newBehavior = null;
-            if (newTarget != null)
-            {
-                newBehavior = newTarget.GetBehavior<TargetBehavior>();
-                var mwUser = newBehavior.GetMWUnityUser(inputSource.UserGameObject);
-                if (mwUser != null)
-                {
-                    newBehavior.Target.StartAction(mwUser);
-                }
-            }
+			TargetBehavior newBehavior = null;
+			if (newTarget != null)
+			{
+				newBehavior = newTarget.GetBehavior<TargetBehavior>();
+				var mwUser = newBehavior.GetMWUnityUser(inputSource.UserGameObject);
+				if (mwUser != null)
+				{
+					newBehavior.Target.StartAction(mwUser);
+				}
+			}
 
-            OnTargetChanged(Target, newTarget, inputSource);
-            Target = newTarget;
+			OnTargetChanged(Target, newTarget, inputSource);
+			Target = newTarget;
 
-            if (newBehavior != null)
-            {
-                if (newBehavior.GetDesiredToolType() != inputSource.CurrentTool.GetType())
-                {
-                    inputSource.HoldTool(newBehavior.GetDesiredToolType());
-                }
+			if (newBehavior != null)
+			{
+				if (newBehavior.GetDesiredToolType() != inputSource.CurrentTool.GetType())
+				{
+					inputSource.HoldTool(newBehavior.GetDesiredToolType());
+				}
 
-                _currentTargetBehavior = newBehavior;
-            }
-        }
+				_currentTargetBehavior = newBehavior;
+			}
+		}
 
-        protected virtual void OnTargetChanged(GameObject oldTarget, GameObject newTarget, InputSource inputSource)
-        {
+		protected virtual void OnTargetChanged(GameObject oldTarget, GameObject newTarget, InputSource inputSource)
+		{
 
-        }
+		}
 
-        private GameObject FindTarget(InputSource inputSource)
-        {
-            RaycastHit hitInfo;
-            var gameObject = inputSource.gameObject;
-            if (Physics.Raycast(gameObject.transform.position, gameObject.transform.forward, out hitInfo, Mathf.Infinity))
-            {
-                for (var transform = hitInfo.transform; transform; transform = transform.parent)
-                {
-                    if (transform.GetComponents<TargetBehavior>().FirstOrDefault() != null)
-                    {
-                        return transform.gameObject;
-                    }
-                }
-            }
+		private GameObject FindTarget(InputSource inputSource)
+		{
+			RaycastHit hitInfo;
+			var gameObject = inputSource.gameObject;
+			if (Physics.Raycast(gameObject.transform.position, gameObject.transform.forward, out hitInfo, Mathf.Infinity))
+			{
+				for (var transform = hitInfo.transform; transform; transform = transform.parent)
+				{
+					if (transform.GetComponents<TargetBehavior>().FirstOrDefault() != null)
+					{
+						return transform.gameObject;
+					}
+				}
+			}
 
-            return null;
-        }
+			return null;
+		}
 
-        void OnDestroy()
-        {
-            _grabTool.Dispose();
-        }
-    }
+		void OnDestroy()
+		{
+			_grabTool.Dispose();
+		}
+	}
 }

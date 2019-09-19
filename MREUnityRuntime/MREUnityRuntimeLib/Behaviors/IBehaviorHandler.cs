@@ -5,12 +5,12 @@ using System;
 
 namespace MixedRealityExtension.Behaviors
 {
-    internal interface IBehaviorHandler : IEquatable<IBehaviorHandler>
-    {
-        IBehavior Behavior { get; }
+	internal interface IBehaviorHandler : IEquatable<IBehaviorHandler>
+	{
+		IBehavior Behavior { get; }
 
-        BehaviorType BehaviorType { get; }
+		BehaviorType BehaviorType { get; }
 
-        void CleanUp();
-    }
+		void CleanUp();
+	}
 }
