@@ -7,22 +7,22 @@ using MixedRealityExtension.IPC;
 
 namespace MixedRealityExtension.Messaging.Protocols
 {
-    internal class Idle : Protocol
-    {
-        internal Idle(MixedRealityExtensionApp app)
-           : base(app)
-        { }
+	internal class Idle : Protocol
+	{
+		internal Idle(MixedRealityExtensionApp app)
+		   : base(app)
+		{ }
 
-        protected override void InternalStart()
-        {
-        }
+		protected override void InternalStart()
+		{
+		}
 
-        protected override void InternalComplete()
-        {
-        }
+		protected override void InternalComplete()
+		{
+		}
 
-        protected override void InternalReceive(Message message)
-        {
-        }
-    }
+		protected override void InternalReceive(Message message)
+		{
+		}
+	}
 }

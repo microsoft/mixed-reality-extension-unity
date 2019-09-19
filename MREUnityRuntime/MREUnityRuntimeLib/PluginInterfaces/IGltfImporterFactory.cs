@@ -8,35 +8,35 @@ using UnityGLTF.Loader;
 
 namespace MixedRealityExtension.PluginInterfaces
 {
-    /// <summary>
-    /// Used to generate new GLTFSceneImporter instances. Primarily used for inserting custom subclasses of this type.
-    /// </summary>
-    public interface IGLTFImporterFactory
-    {
-        /// <summary>
-        /// Returns a new glTF importer to the MRE system. Will typically be a subclass instance, and not a direct instance.
-        /// </summary>
-        /// <param name="gltfFileName"></param>
-        /// <param name="externalDataLoader"></param>
-        /// <param name="asyncCoroutineHelper"></param>
-        /// <returns>A new importer instance.</returns>
-        GLTFSceneImporter CreateImporter(
-            string gltfFileName,
-            ILoader externalDataLoader,
-            AsyncCoroutineHelper asyncCoroutineHelper);
+	/// <summary>
+	/// Used to generate new GLTFSceneImporter instances. Primarily used for inserting custom subclasses of this type.
+	/// </summary>
+	public interface IGLTFImporterFactory
+	{
+		/// <summary>
+		/// Returns a new glTF importer to the MRE system. Will typically be a subclass instance, and not a direct instance.
+		/// </summary>
+		/// <param name="gltfFileName"></param>
+		/// <param name="externalDataLoader"></param>
+		/// <param name="asyncCoroutineHelper"></param>
+		/// <returns>A new importer instance.</returns>
+		GLTFSceneImporter CreateImporter(
+			string gltfFileName,
+			ILoader externalDataLoader,
+			AsyncCoroutineHelper asyncCoroutineHelper);
 
-        /// <summary>
-        /// Returns a new glTF importer to the MRE system. Will typically be a subclass instance, and not a direct instance.
-        /// </summary>
-        /// <param name="rootNode"></param>
-        /// <param name="externalDataLoader"></param>
-        /// <param name="asyncCoroutineHelper"></param>
-        /// <param name="gltfStream"></param>
-        /// <returns></returns>
-        GLTFSceneImporter CreateImporter(
-            GLTFRoot rootNode,
-            ILoader externalDataLoader,
-            AsyncCoroutineHelper asyncCoroutineHelper,
-            Stream gltfStream = null);
-    }
+		/// <summary>
+		/// Returns a new glTF importer to the MRE system. Will typically be a subclass instance, and not a direct instance.
+		/// </summary>
+		/// <param name="rootNode"></param>
+		/// <param name="externalDataLoader"></param>
+		/// <param name="asyncCoroutineHelper"></param>
+		/// <param name="gltfStream"></param>
+		/// <returns></returns>
+		GLTFSceneImporter CreateImporter(
+			GLTFRoot rootNode,
+			ILoader externalDataLoader,
+			AsyncCoroutineHelper asyncCoroutineHelper,
+			Stream gltfStream = null);
+	}
 }

@@ -5,23 +5,23 @@ using MixedRealityExtension.App;
 
 namespace MixedRealityExtension.Messaging.Protocols
 {
-    internal class Execution : Protocol
-    {
-        internal Execution(MixedRealityExtensionApp app)
-            : base(app)
-        { }
+	internal class Execution : Protocol
+	{
+		internal Execution(MixedRealityExtensionApp app)
+			: base(app)
+		{ }
 
-        protected override void InternalStart()
-        {
-        }
+		protected override void InternalStart()
+		{
+		}
 
-        protected override void InternalComplete()
-        {
-        }
+		protected override void InternalComplete()
+		{
+		}
 
-        protected override void InternalReceive(Message message)
-        {
-            Dispatch(message);
-        }
-    }
+		protected override void InternalReceive(Message message)
+		{
+			Dispatch(message);
+		}
+	}
 }

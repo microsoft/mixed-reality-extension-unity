@@ -2,15 +2,15 @@
 // Licensed under the MIT License.
 namespace MixedRealityExtension.PluginInterfaces
 {
-    public struct MRELayers
-    {
-        // int Object;
-        // int Environment;
-        // int Hologram;
-    }
+	public struct MRELayers
+	{
+		// int Object;
+		// int Environment;
+		// int Hologram;
+	}
 
-    public interface IEngineConstants
-    {
-        MRELayers Layers { get; }
-    }
+	public interface IEngineConstants
+	{
+		MRELayers Layers { get; }
+	}
 }

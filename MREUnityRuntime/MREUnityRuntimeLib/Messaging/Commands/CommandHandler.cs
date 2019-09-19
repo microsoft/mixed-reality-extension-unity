@@ -4,14 +4,14 @@ using System;
 
 namespace MixedRealityExtension.Messaging.Commands
 {
-    [AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
-    internal class CommandHandler : Attribute
-    {
-        public Type CommandType { get; }
+	[AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
+	internal class CommandHandler : Attribute
+	{
+		public Type CommandType { get; }
 
-        public CommandHandler(Type commandType)
-        {
-            CommandType = commandType;
-        }
-    }
+		public CommandHandler(Type commandType)
+		{
+			CommandType = commandType;
+		}
+	}
 }

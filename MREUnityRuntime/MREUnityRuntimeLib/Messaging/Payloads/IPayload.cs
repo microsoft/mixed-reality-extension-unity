@@ -4,13 +4,13 @@ using MixedRealityExtension.Messaging.Commands;
 
 namespace MixedRealityExtension.Messaging.Payloads
 {
-    public interface IPayload
-    {
-        string Type { get; }
-    }
+	public interface IPayload
+	{
+		string Type { get; }
+	}
 
-    public interface INetworkCommandPayload : IPayload, ICommandPayload
-    {
-        string MessageId { get; set; }
-    }
+	public interface INetworkCommandPayload : IPayload, ICommandPayload
+	{
+		string MessageId { get; set; }
+	}
 }

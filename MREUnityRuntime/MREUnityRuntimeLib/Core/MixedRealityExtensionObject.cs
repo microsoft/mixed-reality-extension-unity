@@ -11,79 +11,79 @@ using UnityEngine;
 
 namespace MixedRealityExtension.Core
 {
-    internal abstract class MixedRealityExtensionObject : MonoBehaviour, IMixedRealityExtensionObject
-    {
-        /// <inheritdoc />
-        public Guid Id { get; private set; }
+	internal abstract class MixedRealityExtensionObject : MonoBehaviour, IMixedRealityExtensionObject
+	{
+		/// <inheritdoc />
+		public Guid Id { get; private set; }
 
-        /// <inheritdoc />
-        public Guid AppInstanceId => App.InstanceId;
+		/// <inheritdoc />
+		public Guid AppInstanceId => App.InstanceId;
 
-        /// <inheritdoc />
-        public virtual string Name => gameObject.name;
+		/// <inheritdoc />
+		public virtual string Name => gameObject.name;
 
-        /// <inheritdoc />
-        public GameObject GameObject => this.gameObject;
+		/// <inheritdoc />
+		public GameObject GameObject => this.gameObject;
 
-        internal MixedRealityExtensionApp App { get; private set; }
+		internal MixedRealityExtensionApp App { get; private set; }
 
-        public IUser LocalUser => App.LocalUser;
+		public IUser LocalUser => App.LocalUser;
 
-        public void Initialize(Guid id, MixedRealityExtensionApp app)
-        {
-            Id = id;
-            App = app;
-        }
+		public void Initialize(Guid id, MixedRealityExtensionApp app)
+		{
+			Id = id;
+			App = app;
+		}
 
-        protected abstract void InternalUpdate();
+		protected abstract void InternalUpdate();
 
-        protected virtual void InternalFixedUpdate()
-        {
+		protected virtual void InternalFixedUpdate()
+		{
 
-        }
+		}
 
-        protected virtual void OnStart()
-        {
+		protected virtual void OnStart()
+		{
 
-        }
+		}
 
-        protected virtual void OnAwake()
-        {
-            
-        }
+		protected virtual void OnAwake()
+		{
+			
+		}
 
-        protected virtual void OnDestroyed()
-        {
+		protected virtual void OnDestroyed()
+		{
 
-        }
+		}
 
-        #region MonoBehaviour Methods
+		#region MonoBehaviour Methods
 
-        private void Start()
-        {
-            OnStart();
-        }
+		private void Start()
+		{
+			OnStart();
+		}
 
-        private void Awake()
-        {
-            OnAwake();
-        }
+		private void Awake()
+		{
+			OnAwake();
+		}
 
-        private void Update()
-        {
-            InternalUpdate();
-        }
+		private void Update()
+		{
+			InternalUpdate();
+		}
 
-        private void FixedUpdate()
-        {
-            InternalFixedUpdate();
-        }
+		private void FixedUpdate()
+		{
+			InternalFixedUpdate();
+		}
 
-        private void OnDestroy()
-        {
-            OnDestroyed();
-        }
+		private void OnDestroy()
+		{
+			OnDestroyed();
+		}
 
-        #endregion
-    }
+		#endregion
+	}
 }

@@ -8,10 +8,10 @@ using UnityEngine;
 using MixedRealityExtension.Core;
 namespace MixedRealityExtension.PluginInterfaces
 {
-    public interface IVideoPlayer
-    {
-        void Play(VideoStreamDescription description, MediaStateOptions options);
-        void Destroy();
-        void ApplyMediaStateOptions(MediaStateOptions options);
-    }
+	public interface IVideoPlayer
+	{
+		void Play(VideoStreamDescription description, MediaStateOptions options);
+		void Destroy();
+		void ApplyMediaStateOptions(MediaStateOptions options);
+	}
 }

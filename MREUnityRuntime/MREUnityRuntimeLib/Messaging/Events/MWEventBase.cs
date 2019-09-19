@@ -5,26 +5,26 @@ using System;
 
 namespace MixedRealityExtension.Messaging.Events
 {
-    internal abstract class MWEventBase : IMWEvent
-    {
-        internal Guid ActorId { get; }
+	internal abstract class MWEventBase : IMWEvent
+	{
+		internal Guid ActorId { get; }
 
-        internal MWEventBase(Guid actorId)
-        {
-            ActorId = actorId;
-        }
+		internal MWEventBase(Guid actorId)
+		{
+			ActorId = actorId;
+		}
 
-        internal abstract void SendEvent(MixedRealityExtensionApp app);
+		internal abstract void SendEvent(MixedRealityExtensionApp app);
 
-        #region IMWEvent
+		#region IMWEvent
 
-        Guid IMWEvent.ActorId => this.ActorId;
+		Guid IMWEvent.ActorId => this.ActorId;
 
-        void IMWEvent.SendEvent(MixedRealityExtensionApp app)
-        {
-            this.SendEvent(app);
-        }
+		void IMWEvent.SendEvent(MixedRealityExtensionApp app)
+		{
+			this.SendEvent(app);
+		}
 
-        #endregion
-    }
+		#endregion
+	}
 }

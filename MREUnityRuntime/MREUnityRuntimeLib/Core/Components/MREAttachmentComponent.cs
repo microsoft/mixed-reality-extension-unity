@@ -7,10 +7,10 @@ using UnityEngine;
 
 namespace MixedRealityExtension.Core.Components
 {
-    internal class MREAttachmentComponent : MonoBehaviour
-    {
-        public Guid UserId { get; set; }
+	internal class MREAttachmentComponent : MonoBehaviour
+	{
+		public Guid UserId { get; set; }
 
-        public Actor Actor { get; set; }
-    }
+		public Actor Actor { get; set; }
+	}
 }

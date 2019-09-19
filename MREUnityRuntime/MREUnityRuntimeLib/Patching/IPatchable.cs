@@ -2,8 +2,8 @@
 // Licensed under the MIT License.
 namespace MixedRealityExtension.Patching
 {
-    public interface IPatchable
-    {
+	public interface IPatchable
+	{
 
-    }
+	}
 }

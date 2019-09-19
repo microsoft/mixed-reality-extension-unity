@@ -2,17 +2,17 @@
 // Licensed under the MIT License.
 namespace MixedRealityExtension.Messaging
 {
-    public enum TraceSeverity
-    {
-        Debug,
-        Info,
-        Warning,
-        Error
-    }
+	public enum TraceSeverity
+	{
+		Debug,
+		Info,
+		Warning,
+		Error
+	}
 
-    public class Trace
-    {
-        public TraceSeverity Severity;
-        public string Message;
-    }
+	public class Trace
+	{
+		public TraceSeverity Severity;
+		public string Message;
+	}
 }

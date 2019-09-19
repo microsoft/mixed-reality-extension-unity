@@ -4,8 +4,8 @@ using System.Reflection;
 
 namespace MixedRealityExtension.Messaging.Commands
 {
-    internal interface ICommand
-    {
-        void Execute(ICommandHandlerContext handlerContext, MethodInfo handlerMethod);
-    }
+	internal interface ICommand
+	{
+		void Execute(ICommandHandlerContext handlerContext, MethodInfo handlerMethod);
+	}
 }

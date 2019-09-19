@@ -15,18 +15,18 @@ using MixedRealityExtension.Util.Unity;
 namespace MixedRealityExtension.PluginInterfaces
 {
 
-    public struct FetchResult
-    {
-        public VideoStreamDescription Asset;
-        public string FailureMessage;
-    }
+	public struct FetchResult
+	{
+		public VideoStreamDescription Asset;
+		public string FailureMessage;
+	}
 
-    /// <summary>
-    /// A factory class that instantiates a video player
-    /// </summary>
-    public interface IVideoPlayerFactory
-    {
-        IVideoPlayer CreateVideoPlayer(IActor parent);
-        FetchResult PreloadVideoAsset(string uri);
-    }
+	/// <summary>
+	/// A factory class that instantiates a video player
+	/// </summary>
+	public interface IVideoPlayerFactory
+	{
+		IVideoPlayer CreateVideoPlayer(IActor parent);
+		FetchResult PreloadVideoAsset(string uri);
+	}
 }
