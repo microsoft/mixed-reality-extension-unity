@@ -8,7 +8,6 @@ namespace Assets.Scripts.User
 {
 	public class InputSource : MonoBehaviour
 	{
-		[SerializeField] private UnityEngine.EventSystems.StandaloneInputModule unityInput;
 		private Tool _currentTool;
 
 		public GameObject UserGameObject;

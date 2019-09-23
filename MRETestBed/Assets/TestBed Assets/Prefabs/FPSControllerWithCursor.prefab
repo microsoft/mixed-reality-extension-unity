@@ -31,7 +31,6 @@ GameObject:
   - component: {fileID: 8100000}
   - component: {fileID: 12474086}
   - component: {fileID: 114927512063701160}
-  - component: {fileID: 114741108846578400}
   m_Layer: 2
   m_Name: FirstPersonCharacter
   m_TagString: MainCamera
@@ -296,6 +295,8 @@ GameObject:
   - component: {fileID: 114528043773775242}
   - component: {fileID: 114456142314881988}
   - component: {fileID: 114137362005849336}
+  - component: {fileID: 114662921187721606}
+  - component: {fileID: 114311328227279538}
   m_Layer: 5
   m_Name: MessageDialog
   m_TagString: Untagged
@@ -379,7 +380,7 @@ GameObject:
   - component: {fileID: 222231938224007222}
   - component: {fileID: 114148299713653256}
   m_Layer: 5
-  m_Name: Text
+  m_Name: Label
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -654,6 +655,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 38f0ea6bc3e3b904c89aeff92fa511ff, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  canvas: {fileID: 0}
 --- !u!114 &114148299713653256
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -667,7 +669,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
   m_Color: {r: 0.19607843, g: 0.19607843, b: 0.19607843, a: 1}
-  m_RaycastTarget: 1
+  m_RaycastTarget: 0
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
@@ -794,6 +796,17 @@ MonoBehaviour:
         m_CallState: 2
     m_TypeName: UnityEngine.UI.Button+ButtonClickedEvent, UnityEngine.UI, Version=1.0.0.0,
       Culture=neutral, PublicKeyToken=null
+--- !u!114 &114311328227279538
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1052808243506912}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 72b303356cabb614da858df429887108, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!114 &114456142314881988
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -901,12 +914,12 @@ MonoBehaviour:
   m_FillAmount: 1
   m_FillClockwise: 1
   m_FillOrigin: 0
---- !u!114 &114741108846578400
+--- !u!114 &114662921187721606
 MonoBehaviour:
   m_ObjectHideFlags: 1
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 100100000}
-  m_GameObject: {fileID: 100002}
+  m_GameObject: {fileID: 1052808243506912}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: -619905303, guid: f70555f144d8491a825f0804e09c671c, type: 3}
@@ -928,7 +941,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
   m_Color: {r: 0.19607843, g: 0.19607843, b: 0.19607843, a: 1}
-  m_RaycastTarget: 1
+  m_RaycastTarget: 0
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
@@ -986,7 +999,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 21a1775b0cd11da4fa138f0701709dac, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  unityInput: {fileID: 0}
   UserGameObject: {fileID: 100000}
 --- !u!114 &114932387408641054
 MonoBehaviour:
@@ -1001,7 +1013,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
   m_Color: {r: 0.19607843, g: 0.19607843, b: 0.19607843, a: 1}
-  m_RaycastTarget: 1
+  m_RaycastTarget: 0
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
@@ -1089,7 +1101,7 @@ Canvas:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1052808243506912}
-  m_Enabled: 1
+  m_Enabled: 0
   serializedVersion: 3
   m_RenderMode: 2
   m_Camera: {fileID: 0}
@@ -1110,8 +1122,8 @@ RectTransform:
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1052808243506912}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 142.09003}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 2.09}
+  m_LocalScale: {x: 0.01, y: 0.01, z: 0.01}
   m_Children:
   - {fileID: 224370763747018758}
   - {fileID: 224101512487921638}
@@ -1122,7 +1134,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: -9.98}
+  m_AnchoredPosition: {x: 0, y: 0.7}
   m_SizeDelta: {x: 200, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!224 &224101512487921638

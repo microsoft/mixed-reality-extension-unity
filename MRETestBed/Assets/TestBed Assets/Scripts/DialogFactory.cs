@@ -6,11 +6,8 @@ using System;
 
 public class DialogFactory : MonoBehaviour, IDialogFactory
 {
-	// Use this for initialization
-	private void Start () {
-		
-	}
-	
+	[SerializeField] private Canvas canvas;
+
 	public void ShowDialog(string text, bool allowInput, Action<bool, string> callback)
 	{
 		throw new NotImplementedException();
