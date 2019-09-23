@@ -400,7 +400,7 @@ namespace MixedRealityExtension.Messaging.Payloads
 		/// <summary>
 		/// Whether or not a text reply is allowed.
 		/// </summary>
-		public bool AllowInput;
+		public bool AcceptInput;
 	}
 
 	/// <summary>

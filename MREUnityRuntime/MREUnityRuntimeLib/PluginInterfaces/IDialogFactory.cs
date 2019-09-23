@@ -7,6 +7,6 @@ namespace MixedRealityExtension.PluginInterfaces
 {
 	public interface IDialogFactory
 	{
-		void ShowDialog(string text, bool allowInput, Action<bool, string> callback);
+		void ShowDialog(string text, bool acceptInput, Action<bool, string> callback);
 	}
 }
