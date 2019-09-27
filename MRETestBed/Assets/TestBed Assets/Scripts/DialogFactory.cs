@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using MixedRealityExtension.App;
 using MixedRealityExtension.PluginInterfaces;
 using System;
 
@@ -28,7 +29,7 @@ public class DialogFactory : MonoBehaviour, IDialogFactory
 		Hide();
 	}
 
-	public void ShowDialog(string text, bool acceptInput, Action<bool, string> callback)
+	public void ShowDialog(IMixedRealityExtensionApp app, string text, bool acceptInput, Action<bool, string> callback)
 	{
 		queue.Enqueue(new DialogQueueEntry() { text = text, allowInput = acceptInput, callback = callback });
 		ProcessQueue();

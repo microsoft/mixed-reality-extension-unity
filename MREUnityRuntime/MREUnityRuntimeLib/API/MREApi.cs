@@ -130,7 +130,6 @@ namespace MixedRealityExtension.API
 		/// <returns>Returns the newly created mixed reality extension app.</returns>
 		public IMixedRealityExtensionApp CreateMixedRealityExtensionApp(string globalAppId, MonoBehaviour ownerScript)
 		{
-
 			var mreApp = new MixedRealityExtensionApp(globalAppId, ownerScript)
 			{
 				InstanceId = Guid.NewGuid()

@@ -720,7 +720,7 @@ namespace MixedRealityExtension.App
 			}
 			else
 			{
-				MREAPI.AppsAPI.DialogFactory.ShowDialog(payload.Text, payload.AcceptInput, (submitted, text) =>
+				MREAPI.AppsAPI.DialogFactory.ShowDialog(this, payload.Text, payload.AcceptInput, (submitted, text) =>
 				{
 					Protocol.Send(
 						new DialogResponse() { Submitted = submitted, Text = text },
