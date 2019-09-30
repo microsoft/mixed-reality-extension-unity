@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.Linq;
 using MixedRealityExtension.App;
 using MixedRealityExtension.Messaging.Payloads;
-using Newtonsoft.Json;
 
 namespace MixedRealityExtension.RPC
 {
@@ -14,11 +13,11 @@ namespace MixedRealityExtension.RPC
 	/// </summary>
 	public sealed class RPCInterface
 	{
-		private readonly MixedRealityExtensionApp _app;
-
+		private readonly IMixedRealityExtensionApp _app;
+		private MixedRealityExtensionApp app => (MixedRealityExtensionApp)_app;
 		private Dictionary<string, RPCHandlerBase> _handlers = new Dictionary<string, RPCHandlerBase>();
 
-		internal RPCInterface(MixedRealityExtensionApp app) => _app = app;
+		public RPCInterface(IMixedRealityExtensionApp app) => _app = app;
 
 		/// <summary>
 		/// Registers and RPC handler for the specific procedure name
@@ -34,6 +33,17 @@ namespace MixedRealityExtension.RPC
 		{
 			if (_handlers.ContainsKey(payload.ProcName))
 			{
+				// Filter the message by userId, if present.
+				// Message is also filtered on the server, so
+				// this is just extra protection.
+				if (!string.IsNullOrEmpty(payload.UserId))
+				{
+					Guid userId = new Guid(payload.UserId);
+					if (app.FindUser(userId) == null)
+					{
+						return;
+					}
+				}
 				_handlers[payload.ProcName].Execute(payload.Args.Children().ToArray());
 			}
 		}
@@ -45,9 +55,27 @@ namespace MixedRealityExtension.RPC
 		/// <param name="args">The arguments for the remote procedure call.</param>
 		public void SendRPC(string procName, params object[] args)
 		{
-			_app.Protocol.Send(new EngineToAppRPC()
+			app.Protocol.Send(new EngineToAppRPC()
 			{
 				ProcName = procName,
+				Args = args.ToList()
+			});
+		}
+
+		/// <summary>
+		/// Sends an RPC message to the app with the given name and arguments.
+		/// </summary>
+		/// <param name="channelName">The name of the channel of this remote procedure call.</param>
+		/// <param name="procName">The name of the remote procedure call.</param>
+		/// <param name="userId">The id of the user this rpc call is targeting.</param>
+		/// <param name="args">The arguments for the remote procedure call.</param>
+		public void SendRPC(string channelName, string procName, string userId, params object[] args)
+		{
+			app.Protocol.Send(new EngineToAppRPC()
+			{
+				ChannelName = channelName,
+				ProcName = procName,
+				UserId = userId,
 				Args = args.ToList()
 			});
 		}

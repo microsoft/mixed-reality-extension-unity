@@ -107,6 +107,9 @@ namespace MixedRealityExtension.App
 		/// <inheritdoc />
 		public RPCInterface RPC { get; }
 
+		/// <inheritdoc />
+		public RPCChannelInterface RPCChannels { get; }
+
 		#endregion
 
 		#region Properties - Internal
@@ -152,6 +155,9 @@ namespace MixedRealityExtension.App
 			});
 
 			RPC = new RPCInterface(this);
+			RPCChannels = new RPCChannelInterface();
+			// RPC messages without a ChannelName will route to the "global" RPC handlers.
+			RPCChannels.SetChannelHandler(null, RPC);
 #if ANDROID_DEBUG
 			Logger = logger ?? new UnityLogger(this);
 #else
@@ -301,7 +307,6 @@ namespace MixedRealityExtension.App
 
 			if (user != null)
 			{
-				// TODO @tombu - Wait for app to send success that the user has left the app?
 				_userManager.RemoveUser(user);
 				_interactingUserIds.Remove(user.Id);
 
@@ -407,7 +412,7 @@ namespace MixedRealityExtension.App
 		}
 
 		internal bool IsInteractable(IUser user) => _interactingUserIds.Contains(user.Id);
-		
+
 		#endregion
 
 		#region Methods - Private
@@ -501,7 +506,7 @@ namespace MixedRealityExtension.App
 		[CommandHandler(typeof(AppToEngineRPC))]
 		private void OnRPCReceived(AppToEngineRPC payload, Action onCompleteCallback)
 		{
-			RPC.ReceiveRPC(payload);
+			RPCChannels.ReceiveRPC(payload);
 			onCompleteCallback?.Invoke();
 		}
 

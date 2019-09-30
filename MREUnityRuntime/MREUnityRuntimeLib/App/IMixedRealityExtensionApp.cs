@@ -80,6 +80,11 @@ namespace MixedRealityExtension.App
 		RPCInterface RPC { get; }
 
 		/// <summary>
+		/// The RPC interface for registering channel handlers for invoking remote procedure calls.
+		/// </summary>
+		RPCChannelInterface RPCChannels { get; }
+
+		/// <summary>
 		/// Gets the logger to use within the MRE SDK.
 		/// </summary>
 		IMRELogger Logger { get; }

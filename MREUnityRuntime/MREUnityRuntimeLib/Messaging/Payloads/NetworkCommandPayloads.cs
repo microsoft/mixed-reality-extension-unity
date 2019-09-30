@@ -18,9 +18,19 @@ namespace MixedRealityExtension.Messaging.Payloads
 	public class AppToEngineRPC : NetworkCommandPayload
 	{
 		/// <summary>
+		/// (Optional) The channel this message is targeting. If present, message will be routed to a matching channel handler.
+		/// </summary>
+		public string ChannelName { get; set; }
+
+		/// <summary>
 		/// The name of the remote procedure call.
 		/// </summary>
 		public string ProcName { get; set; }
+
+		/// <summary>
+		/// (Optional) The target user of this message.
+		/// </summary>
+		public string UserId { get; set; }
 
 		/// <summary>
 		/// The arguments to the remote procedure call.
