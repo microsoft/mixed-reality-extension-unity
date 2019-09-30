@@ -1,15 +1,15 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
-using MixedRealityExtension.Messaging.Payloads;
 using System;
 using System.Collections.Generic;
+using MixedRealityExtension.Messaging.Payloads;
 
 namespace MixedRealityExtension.RPC
 {
 	public sealed class RPCChannelInterface
 	{
-		private Dictionary<string, RPCInterface> channelHandlers = new Dictionary<string, RPCInterface>();
-		private RPCInterface globalHandler;
+		private readonly Dictionary<string, RPCInterface> _channelHandlers = new Dictionary<string, RPCInterface>();
+		private RPCInterface _globalHandler;
 
 		public void SetChannelHandler(string channelName, RPCInterface handler)
 		{
@@ -17,16 +17,16 @@ namespace MixedRealityExtension.RPC
 			{
 				if (handler != null)
 				{
-					channelHandlers.Add(channelName, handler);
+					_channelHandlers.Add(channelName, handler);
 				}
 				else
 				{
-					channelHandlers.Remove(channelName);
+					_channelHandlers.Remove(channelName);
 				}
 			}
 			else
 			{
-				globalHandler = handler;
+				_globalHandler = handler;
 			}
 		}
 
@@ -35,16 +35,14 @@ namespace MixedRealityExtension.RPC
 			RPCInterface handler;
 			if (!string.IsNullOrEmpty(payload.ChannelName))
 			{
-				channelHandlers.TryGetValue(payload.ChannelName, out handler);
+				_channelHandlers.TryGetValue(payload.ChannelName, out handler);
 			}
 			else
 			{
-				handler = globalHandler;
+				handler = _globalHandler;
 			}
-			if (handler != null)
-			{
-				handler.ReceiveRPC(payload);
-			}
+
+			handler?.ReceiveRPC(payload);
 		}
 	}
 }
