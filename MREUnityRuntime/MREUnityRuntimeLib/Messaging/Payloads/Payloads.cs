@@ -163,9 +163,19 @@ namespace MixedRealityExtension.Messaging.Payloads
 	public class EngineToAppRPC : Payload
 	{
 		/// <summary>
+		/// (Optional) The channel this message is targeting. If present, message will be routed to a matching channel handler.
+		/// </summary>
+		public string ChannelName { get; set; }
+
+		/// <summary>
 		/// The procedure name to be called.
 		/// </summary>
 		public string ProcName { get; set; }
+
+		/// <summary>
+		/// (Optional) The userId sending this message. If present, message will be received on the UserRPC interface.
+		/// </summary>
+		public string UserId { get; set; }
 
 		/// <summary>
 		/// The arguments to that procedure call.
