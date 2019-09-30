@@ -85,6 +85,12 @@ namespace MixedRealityExtension.App
 			remove { _actorManager.OnActorCreated -= value; }
 		}
 
+		/// <inheritdoc />
+		public event MWEventHandler<IUserInfo> OnUserJoined;
+
+		/// <inheritdoc />
+		public event MWEventHandler<IUserInfo> OnUserLeft;
+
 		#endregion
 
 		#region Properties - Public
@@ -287,6 +293,8 @@ namespace MixedRealityExtension.App
 
 				// TODO @tombu - Wait for the app to send back a success for join?
 				_userManager.AddUser(user);
+
+				OnUserJoined?.Invoke(userInfo);
 			}
 
 			if (Protocol is Execution)
@@ -314,6 +322,8 @@ namespace MixedRealityExtension.App
 				{
 					Protocol.Send(new UserLeft() { UserId = user.Id });
 				}
+
+				OnUserLeft?.Invoke(user.UserInfo);
 			}
 		}
 

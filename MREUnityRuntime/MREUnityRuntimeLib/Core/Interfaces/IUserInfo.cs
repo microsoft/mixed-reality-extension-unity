@@ -19,6 +19,11 @@ namespace MixedRealityExtension.Core.Interfaces
 		Guid Id { get; }
 
 		/// <summary>
+		/// The unobfuscated id of the user. Handle with care.
+		/// </summary>
+		string InvariantId { get; }
+
+		/// <summary>
 		/// The user's display name. Null if user not found.
 		/// </summary>
 		string Name { get; }
