@@ -272,9 +272,10 @@ public class MREComponent : MonoBehaviour
 	public void UserJoin()
 	{
 		var rng = new System.Random();
-		var userId = rng.Next().ToString("X8");
-		string source = $"{userId}-{AppID}-{SessionID}-{gameObject.GetInstanceID()}";
-		UserInfo userInfo = new UserInfo(UtilMethods.StringToGuid(source), userId)
+		string invariantId = rng.Next().ToString("X8");
+		string source = $"{invariantId}-{AppID}-{SessionID}-{gameObject.GetInstanceID()}";
+		Guid userId = UtilMethods.StringToGuid(source);
+		UserInfo userInfo = new UserInfo(userId, "TestBed User", invariantId)
 		{
 			UserGO = UserGameObject
 		};

@@ -6,28 +6,31 @@ using UnityEngine;
 
 internal class UserInfo : IUserInfo
 {
-	public UserInfo(Guid id, string name)
-	{
-		Id = id;
-		Name = name;
-	}
-
 	public GameObject UserGO { get; set; }
 
 	public Guid Id { get; }
+
+	public string InvariantId { get; }
 
 	public string Name { get; private set; }
 
 	public Dictionary<string, string> Properties { get; } = new Dictionary<string, string>()
 	{
 		{"host", "MRETestBed" },
-		{"engine", "Unity 2018.1.9f2" }
+		{"engine", Application.version }
 	};
 
 	public Vector3? LookAtPosition => UserGO.transform.position;
 
 	public event MWEventHandler BeforeAvatarDestroyed;
 	public event MWEventHandler AfterAvatarCreated;
+
+	public UserInfo(Guid id, string name, string invariantId)
+	{
+		Id = id;
+		Name = name;
+		InvariantId = invariantId;
+	}
 
 	private static Transform FindChildRecursive(Transform parent, string name)
 	{

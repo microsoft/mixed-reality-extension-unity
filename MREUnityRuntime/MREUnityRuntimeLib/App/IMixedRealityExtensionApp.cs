@@ -50,6 +50,16 @@ namespace MixedRealityExtension.App
 		event MWEventHandler<IActor> OnActorCreated;
 
 		/// <summary>
+		/// Event that is raised when the local user joins the MRE application.
+		/// </summary>
+		event MWEventHandler<IUserInfo> OnUserJoined;
+
+		/// <summary>
+		/// Event that is raised when the local user leaves the MRE application.
+		/// </summary>
+		event MWEventHandler<IUserInfo> OnUserLeft;
+
+		/// <summary>
 		/// Gets the global id of the mixed reality extension app.
 		/// </summary>
 		string GlobalAppId { get; }
