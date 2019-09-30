@@ -92,6 +92,9 @@ public class MREComponent : MonoBehaviour
 	[SerializeField]
 	private UnityEngine.Material DefaultPrimMaterial;
 
+	[SerializeField]
+	private DialogFactory DialogFactory;
+
 	private static Dictionary<Guid, UserInfo> joinedUsers = new Dictionary<Guid, UserInfo>();
 
 	internal static UserInfo GetUserInfo(Guid userId)
@@ -115,6 +118,7 @@ public class MREComponent : MonoBehaviour
 				libraryFactory: new ResourceFactory(),
 				assetCache: new AssetCache(new GameObject("MRE Asset Cache")),
 				userInfoProvider: new UserInfoProvider(),
+				dialogFactory: DialogFactory,
 				logger: new MRELogger());
 			_apiInitialized = true;
 		}

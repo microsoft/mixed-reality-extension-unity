@@ -395,4 +395,43 @@ namespace MixedRealityExtension.Messaging.Payloads
 		/// </summary>
 		public UserPatch User;
 	}
+
+	/// <summary>
+	/// App => Engine
+	/// Prompts the client to display a dialog box to the user.
+	/// </summary>
+	public class ShowDialog : NetworkCommandPayload
+	{
+		/// <summary>
+		/// The message presented to the user.
+		/// </summary>
+		public string Text;
+
+		/// <summary>
+		/// Whether or not a text reply is allowed.
+		/// </summary>
+		public bool AcceptInput;
+	}
+
+	/// <summary>
+	/// Engine => App
+	/// The response to a ShowDialog message.
+	/// </summary>
+	public class DialogResponse : NetworkCommandPayload
+	{
+		/// <summary>
+		/// If something goes wrong, fill this with the error message.
+		/// </summary>
+		public string FailureMessage;
+
+		/// <summary>
+		/// Whether OK or Cancel was chosen by the user.
+		/// </summary>
+		public bool Submitted;
+
+		/// <summary>
+		/// The text response.
+		/// </summary>
+		public string Text;
+	}
 }
