@@ -8,6 +8,7 @@ using MixedRealityExtension.Util;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
+using ColliderGeometry = MixedRealityExtension.Core.ColliderGeometry;
 using CacheCallback = System.Action<UnityEngine.Object>;
 
 namespace MixedRealityExtension.Assets
@@ -23,13 +24,15 @@ namespace MixedRealityExtension.Assets
 			public readonly Guid ContainerId;
 			public readonly AssetSource Source;
 			public readonly Object Asset;
+			public readonly ColliderGeometry ColliderGeometry;
 
-			public CacheEntry(Guid id, Guid containerId, AssetSource source, Object asset)
+			public CacheEntry(Guid id, Guid containerId, AssetSource source, Object asset, ColliderGeometry collider = null)
 			{
 				Id = id;
 				ContainerId = containerId;
 				Source = source;
 				Asset = asset;
+				ColliderGeometry = collider;
 			}
 		}
 
@@ -65,6 +68,12 @@ namespace MixedRealityExtension.Assets
 			return id != null ? cache.Find(c => c.Id == id).Asset : null;
 		}
 
+		/// <inheritdoc cref="GetColliderGeometry(Guid?)"/>
+		public ColliderGeometry GetColliderGeometry(Guid? id)
+		{
+			return id != null ? cache.Find(c => c.Id == id).ColliderGeometry : null;
+		}
+
 		/// <inheritdoc cref="GetId"/>
 		public Guid? GetId(Object asset)
 		{
@@ -93,11 +102,11 @@ namespace MixedRealityExtension.Assets
 		}
 
 		/// <inheritdoc cref="CacheAsset"/>
-		public void CacheAsset(Object asset, Guid id, Guid containerId, AssetSource source = null)
+		public void CacheAsset(Object asset, Guid id, Guid containerId, AssetSource source = null, ColliderGeometry colliderGeo = null)
 		{
 			if (!cache.Any(c => c.Id == id))
 			{
-				cache.Add(new CacheEntry(id, containerId, source, asset));
+				cache.Add(new CacheEntry(id, containerId, source, asset, colliderGeo));
 			}
 
 			if (cacheCallbacks.TryGetValue(id, out List<CacheCallback> callbacks))
