@@ -32,24 +32,12 @@ namespace MixedRealityExtension.Assets
 		private readonly MixedRealityExtensionApp _app;
 		private readonly AsyncCoroutineHelper _asyncHelper;
 
-		private readonly Dictionary<Guid, ColliderGeometry> meshColliderDescriptions = new Dictionary<Guid, ColliderGeometry>(10);
-
 		internal AssetLoader(MonoBehaviour owner, MixedRealityExtensionApp app)
 		{
 			_owner = owner ?? throw new ArgumentException("Asset loader requires an owner MonoBehaviour script to be assigned to it.");
 			_app = app ?? throw new ArgumentException("Asset loader requires a MixedRealityExtensionApp to be associated with.");
 			_asyncHelper = _owner.gameObject.GetComponent<AsyncCoroutineHelper>() ??
 						   _owner.gameObject.AddComponent<AsyncCoroutineHelper>();
-		}
-
-		internal ColliderGeometry GetPreferredColliderShape(Guid meshId)
-		{
-			if (meshColliderDescriptions.TryGetValue(meshId, out ColliderGeometry collider))
-			{
-				return collider;
-			}
-
-			return null;
 		}
 
 		internal GameObject GetGameObjectFromParentId(Guid? parentId)
@@ -188,12 +176,11 @@ namespace MixedRealityExtension.Assets
 					var asset = GenerateAssetPatch(mesh, guidGenerator.Next());
 					asset.Name = mesh.name;
 					asset.Source = new AssetSource(source.ContainerType, source.Uri, $"mesh:{i}");
-					MREAPI.AppsAPI.AssetCache.CacheAsset(mesh, asset.Id, containerId, source);
-					assets.Add(asset);
-
-					meshColliderDescriptions[asset.Id] = colliderType == ColliderType.Mesh ?
+					var colliderGeo = colliderType == ColliderType.Mesh ?
 						(ColliderGeometry)new MeshColliderGeometry() { MeshId = asset.Id } :
 						(ColliderGeometry)new BoxColliderGeometry() { Size = (mesh.bounds.size * 0.8f).CreateMWVector3() };
+					MREAPI.AppsAPI.AssetCache.CacheAsset(mesh, asset.Id, containerId, source, colliderGeo);
+					assets.Add(asset);
 				}
 			}
 
@@ -303,6 +290,7 @@ namespace MixedRealityExtension.Assets
 			var def = payload.Definition;
 			var response = new AssetsLoaded();
 			var unityAsset = MREAPI.AppsAPI.AssetCache.GetAsset(def.Id);
+			ColliderGeometry colliderGeo = null;
 
 			// create materials
 			if (unityAsset == null && def.Material != null)
@@ -330,7 +318,7 @@ namespace MixedRealityExtension.Assets
 					try
 					{
 						unityAsset = factory.CreatePrimitive(def.Mesh.Value.PrimitiveDefinition.Value);
-						meshColliderDescriptions[def.Id] = ConvertPrimToCollider(def.Mesh.Value.PrimitiveDefinition.Value, def.Id);
+						colliderGeo = ConvertPrimToCollider(def.Mesh.Value.PrimitiveDefinition.Value, def.Id);
 					}
 					catch(Exception e)
 					{
@@ -373,7 +361,7 @@ namespace MixedRealityExtension.Assets
 				}
 			}
 
-			MREAPI.AppsAPI.AssetCache.CacheAsset(unityAsset, def.Id, payload.ContainerId);
+			MREAPI.AppsAPI.AssetCache.CacheAsset(unityAsset, def.Id, payload.ContainerId, colliderGeometry: colliderGeo);
 
 			// verify creation and apply initial patch
 			if (unityAsset != null)

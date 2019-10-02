@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using MixedRealityExtension.Assets;
 using UnityEngine;
+using ColliderGeometry = MixedRealityExtension.Core.ColliderGeometry;
 
 namespace MixedRealityExtension.PluginInterfaces
 {
@@ -26,6 +27,13 @@ namespace MixedRealityExtension.PluginInterfaces
 		UnityEngine.Object GetAsset(Guid? id);
 
 		/// <summary>
+		/// Retrieve an asset's predetermined collider shape
+		/// </summary>
+		/// <param name="id">The ID of a loaded asset.</param>
+		/// <returns></returns>
+		ColliderGeometry GetColliderGeometry(Guid? id);
+
+		/// <summary>
 		/// If an asset is in the cache, return its ID. Otherwise return null.
 		/// </summary>
 		/// <param name="asset">The asset whose ID should be returned</param>
@@ -46,7 +54,7 @@ namespace MixedRealityExtension.PluginInterfaces
 		/// <param name="id">The ID of the asset.</param>
 		/// <param name="containerId">The container ID of the asset.</param>
 		/// <param name="source">The origin container.</param>
-		void CacheAsset(UnityEngine.Object asset, Guid id, Guid containerId, AssetSource source = null);
+		void CacheAsset(UnityEngine.Object asset, Guid id, Guid containerId, AssetSource source = null, ColliderGeometry colliderGeometry = null);
 
 		/// <summary>
 		/// Remove assets from the cache with the given container ID.

@@ -710,7 +710,7 @@ namespace MixedRealityExtension.Core
 
 			if (colliderType == ColliderType.Auto)
 			{
-				colliderGeometry = App.AssetLoader.GetPreferredColliderShape(MeshId);
+				colliderGeometry = MREAPI.AppsAPI.AssetCache.GetColliderGeometry(MeshId);
 				colliderType = colliderGeometry.Shape;
 			}
 
@@ -1148,7 +1148,7 @@ namespace MixedRealityExtension.Core
 					var runningGeneration = ++colliderGeneration;
 
 					// must wait for mesh load before auto type will work
-					if (colliderPatch.Geometry.Shape == ColliderType.Auto && App.AssetLoader.GetPreferredColliderShape(MeshId) == null)
+					if (colliderPatch.Geometry.Shape == ColliderType.Auto && MREAPI.AppsAPI.AssetCache.GetColliderGeometry(MeshId) == null)
 					{
 						var runningMeshId = MeshId;
 						_pendingColliderPatch = colliderPatch;
