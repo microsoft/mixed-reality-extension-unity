@@ -24,6 +24,8 @@ namespace UnityStandardAssets.Characters.FirstPerson
         private CharacterController m_CharacterController;
         private CollisionFlags m_CollisionFlags;
 
+		public MouseLook MouseLook => m_MouseLook;
+
         // Use this for initialization
         private void Start()
         {

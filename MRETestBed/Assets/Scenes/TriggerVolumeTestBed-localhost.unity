@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0.44657898, g: 0.4964133, b: 0.5748178, a: 1}
+  m_IndirectSpecularColor: {r: 0.44657892, g: 0.4964128, b: 0.5748173, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -273,6 +273,11 @@ Prefab:
       propertyPath: m_RootOrder
       value: 3
       objectReference: {fileID: 0}
+    - target: {fileID: 224157667028544564, guid: d67a625648c6fd743a7451d9b6d5357a,
+        type: 2}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_ParentPrefab: {fileID: 100100000, guid: d67a625648c6fd743a7451d9b6d5357a, type: 2}
   m_IsPrefabParent: 0
@@ -378,9 +383,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c08c6a44e83210c48bc797284376afc5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  MREURL: ws://localhost:3901
-  SessionID: Foo
-  AppID: Test App
+  MreUrl: ws://localhost:3901
+  SessionId: 1111
+  AppId: 2222
+  InvariantIdOverride: 
+  UserProperties: []
   AutoStart: 0
   AutoJoin: 1
   SceneRoot: {fileID: 18576793}
@@ -389,6 +396,49 @@ MonoBehaviour:
   SerifFont: {fileID: 12800000, guid: 70daac12c1ea27648bb12988a837e0a6, type: 3}
   SansSerifFont: {fileID: 12800000, guid: 7a83a8b8d6810db4aa50e3bde952e2c4, type: 3}
   DefaultPrimMaterial: {fileID: 2100000, guid: 265cb5b418966a64ea212597d469fa33, type: 2}
+  DialogFactory: {fileID: 0}
+--- !u!1001 &1751973005
+Prefab:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 4977018550221416, guid: fc1c1fd54dcded742ba710130cfea361, type: 2}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4977018550221416, guid: fc1c1fd54dcded742ba710130cfea361, type: 2}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4977018550221416, guid: fc1c1fd54dcded742ba710130cfea361, type: 2}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4977018550221416, guid: fc1c1fd54dcded742ba710130cfea361, type: 2}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4977018550221416, guid: fc1c1fd54dcded742ba710130cfea361, type: 2}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4977018550221416, guid: fc1c1fd54dcded742ba710130cfea361, type: 2}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4977018550221416, guid: fc1c1fd54dcded742ba710130cfea361, type: 2}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4977018550221416, guid: fc1c1fd54dcded742ba710130cfea361, type: 2}
+      propertyPath: m_RootOrder
+      value: 4
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+  m_ParentPrefab: {fileID: 100100000, guid: fc1c1fd54dcded742ba710130cfea361, type: 2}
+  m_IsPrefabParent: 0
 --- !u!1 &2044912625
 GameObject:
   m_ObjectHideFlags: 0

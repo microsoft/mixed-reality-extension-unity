@@ -272,9 +272,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c08c6a44e83210c48bc797284376afc5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  MREURL: ws://localhost:3901
-  SessionID: foo
-  AppID: solar-system-app
+  MreUrl: ws://localhost:3901
+  SessionId: 1111
+  AppId: 2222
+  InvariantIdOverride: 
+  UserProperties: []
   AutoStart: 0
   AutoJoin: 1
   SceneRoot: {fileID: 368773028}
@@ -283,6 +285,7 @@ MonoBehaviour:
   SerifFont: {fileID: 12800000, guid: 70daac12c1ea27648bb12988a837e0a6, type: 3}
   SansSerifFont: {fileID: 12800000, guid: 7a83a8b8d6810db4aa50e3bde952e2c4, type: 3}
   DefaultPrimMaterial: {fileID: 2100000, guid: 265cb5b418966a64ea212597d469fa33, type: 2}
+  DialogFactory: {fileID: 1868583470}
 --- !u!4 &368773028
 Transform:
   m_ObjectHideFlags: 0
@@ -418,6 +421,48 @@ Light:
   m_UseColorTemperature: 0
   m_ShadowRadius: 0
   m_ShadowAngle: 0
+--- !u!1001 &1135754146
+Prefab:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 4977018550221416, guid: fc1c1fd54dcded742ba710130cfea361, type: 2}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4977018550221416, guid: fc1c1fd54dcded742ba710130cfea361, type: 2}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4977018550221416, guid: fc1c1fd54dcded742ba710130cfea361, type: 2}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4977018550221416, guid: fc1c1fd54dcded742ba710130cfea361, type: 2}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4977018550221416, guid: fc1c1fd54dcded742ba710130cfea361, type: 2}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4977018550221416, guid: fc1c1fd54dcded742ba710130cfea361, type: 2}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4977018550221416, guid: fc1c1fd54dcded742ba710130cfea361, type: 2}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4977018550221416, guid: fc1c1fd54dcded742ba710130cfea361, type: 2}
+      propertyPath: m_RootOrder
+      value: 7
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+  m_ParentPrefab: {fileID: 100100000, guid: fc1c1fd54dcded742ba710130cfea361, type: 2}
+  m_IsPrefabParent: 0
 --- !u!1 &1141388989
 GameObject:
   m_ObjectHideFlags: 0
@@ -459,9 +504,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c08c6a44e83210c48bc797284376afc5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  MREURL: ws://localhost:3901
-  SessionID: foo
-  AppID: solar-system-app
+  MreUrl: ws://localhost:3901
+  SessionId: 1111
+  AppId: 2222
+  InvariantIdOverride: 
+  UserProperties: []
   AutoStart: 0
   AutoJoin: 1
   SceneRoot: {fileID: 1141388990}
@@ -470,6 +517,7 @@ MonoBehaviour:
   SerifFont: {fileID: 12800000, guid: 70daac12c1ea27648bb12988a837e0a6, type: 3}
   SansSerifFont: {fileID: 12800000, guid: 7a83a8b8d6810db4aa50e3bde952e2c4, type: 3}
   DefaultPrimMaterial: {fileID: 2100000, guid: 265cb5b418966a64ea212597d469fa33, type: 2}
+  DialogFactory: {fileID: 1868583470}
 --- !u!1 &1256608368
 GameObject:
   m_ObjectHideFlags: 0
@@ -674,9 +722,36 @@ Prefab:
       propertyPath: m_LocalPosition.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 114216171150294120, guid: d67a625648c6fd743a7451d9b6d5357a,
+        type: 2}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1499577121945228, guid: d67a625648c6fd743a7451d9b6d5357a, type: 2}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 11400000, guid: d67a625648c6fd743a7451d9b6d5357a, type: 2}
+      propertyPath: m_MouseLook.lockCursor
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 11400000, guid: d67a625648c6fd743a7451d9b6d5357a, type: 2}
+      propertyPath: m_MouseLook.smooth
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 11400000, guid: d67a625648c6fd743a7451d9b6d5357a, type: 2}
+      propertyPath: m_MouseLook.smoothTime
+      value: 10
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_ParentPrefab: {fileID: 100100000, guid: d67a625648c6fd743a7451d9b6d5357a, type: 2}
   m_IsPrefabParent: 0
+--- !u!114 &1868583470 stripped
+MonoBehaviour:
+  m_PrefabParentObject: {fileID: 114803015265122392, guid: d67a625648c6fd743a7451d9b6d5357a,
+    type: 2}
+  m_PrefabInternal: {fileID: 1868583469}
+  m_Script: {fileID: 11500000, guid: 38f0ea6bc3e3b904c89aeff92fa511ff, type: 3}
 --- !u!4 &1890110075 stripped
 Transform:
   m_PrefabParentObject: {fileID: 400004, guid: b166433f96c56ae4aa23e50a4950ba99, type: 2}

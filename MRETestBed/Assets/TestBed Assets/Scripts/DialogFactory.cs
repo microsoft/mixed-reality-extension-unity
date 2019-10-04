@@ -14,6 +14,9 @@ public class DialogFactory : MonoBehaviour, IDialogFactory
 	[SerializeField] private Text label;
 	[SerializeField] private InputField input;
 
+	private bool initialMouseVisible;
+	private CursorLockMode initialMouseLockState;
+
 	private class DialogQueueEntry
 	{
 		public string text;
@@ -26,6 +29,8 @@ public class DialogFactory : MonoBehaviour, IDialogFactory
 
 	private void Start()
 	{
+		initialMouseVisible = Cursor.visible;
+		initialMouseLockState = Cursor.lockState;
 		Hide();
 	}
 
@@ -92,8 +97,8 @@ public class DialogFactory : MonoBehaviour, IDialogFactory
 		canvas.enabled = false;
 		controller.enabled = true;
 		inputSource.enabled = true;
-		Cursor.lockState = CursorLockMode.Locked;
-		Cursor.visible = false;
+		Cursor.lockState = initialMouseLockState;
+		Cursor.visible = initialMouseVisible;
 
 		ProcessQueue();
 	}

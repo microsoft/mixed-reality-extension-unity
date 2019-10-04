@@ -42,11 +42,13 @@ public class MREComponent : MonoBehaviour
 {
 	public delegate void AppEventHandler(MREComponent app);
 
-	public string MREURL;
+	public string MreUrl;
 
-	public string SessionID;
+	public string SessionId;
 
-	public string AppID;
+	public string AppId;
+
+	public string InvariantIdOverride;
 
 	[Serializable]
 	public class UserProperty
@@ -97,6 +99,8 @@ public class MREComponent : MonoBehaviour
 
 	private static Dictionary<Guid, UserInfo> joinedUsers = new Dictionary<Guid, UserInfo>();
 
+	private WebProjectorRPC webProjectorRPC;
+
 	internal static UserInfo GetUserInfo(Guid userId)
 	{
 		UserInfo result;
@@ -123,7 +127,7 @@ public class MREComponent : MonoBehaviour
 			_apiInitialized = true;
 		}
 
-		MREApp = MREAPI.AppsAPI.CreateMixedRealityExtensionApp(AppID, this);
+		MREApp = MREAPI.AppsAPI.CreateMixedRealityExtensionApp(AppId, this);
 
 		if (SceneRoot == null)
 		{
@@ -138,6 +142,8 @@ public class MREComponent : MonoBehaviour
 		MREApp.OnDisconnected += MREApp_OnDisconnected;
 		MREApp.OnAppStarted += MREApp_OnAppStarted;
 		MREApp.OnAppShutdown += MREApp_OnAppShutdown;
+
+		webProjectorRPC = new WebProjectorRPC(MREApp);
 
 		if (AutoStart)
 		{
@@ -255,7 +261,7 @@ public class MREComponent : MonoBehaviour
 
 		try
 		{
-			MREApp?.Startup(MREURL, SessionID, "MRETestBed");
+			MREApp?.Startup(MreUrl, SessionId, "MRETestBed");
 		}
 		catch (Exception e)
 		{
@@ -276,8 +282,8 @@ public class MREComponent : MonoBehaviour
 	public void UserJoin()
 	{
 		var rng = new System.Random();
-		string invariantId = rng.Next().ToString("X8");
-		string source = $"{invariantId}-{AppID}-{SessionID}-{gameObject.GetInstanceID()}";
+		string invariantId = !string.IsNullOrEmpty(InvariantIdOverride) ? InvariantIdOverride : rng.Next().ToString("X8");
+		string source = $"{invariantId}-{AppId}-{SessionId}-{gameObject.GetInstanceID()}";
 		Guid userId = UtilMethods.StringToGuid(source);
 		UserInfo userInfo = new UserInfo(userId, "TestBed User", invariantId)
 		{
