@@ -1,4 +1,6 @@
-﻿using MWAssets = MixedRealityExtension.Assets;
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+using MWAssets = MixedRealityExtension.Assets;
 
 using UnityEngine;
 using UnityEngine.Rendering;

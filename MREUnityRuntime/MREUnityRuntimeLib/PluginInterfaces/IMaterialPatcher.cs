@@ -1,4 +1,6 @@
-﻿using Material = UnityEngine.Material;
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+using Material = UnityEngine.Material;
 using MWMaterial = MixedRealityExtension.Assets.Material;
 
 namespace MixedRealityExtension.PluginInterfaces

@@ -1,4 +1,6 @@
-﻿using MixedRealityExtension.Patching.Types;
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+using MixedRealityExtension.Patching.Types;
 using System;
 using System.Collections.Generic;
 using System.Linq;
