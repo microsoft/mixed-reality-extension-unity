@@ -1,4 +1,6 @@
-﻿using MixedRealityExtension.API;
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+using MixedRealityExtension.API;
 using MixedRealityExtension.Core.Types;
 using MixedRealityExtension.Patching;
 using MixedRealityExtension.Patching.Types;

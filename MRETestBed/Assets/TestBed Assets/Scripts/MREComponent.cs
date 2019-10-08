@@ -119,7 +119,10 @@ public class MREComponent : MonoBehaviour
 				assetCache: new AssetCache(new GameObject("MRE Asset Cache")),
 				userInfoProvider: new UserInfoProvider(),
 				dialogFactory: DialogFactory,
-				logger: new MRELogger());
+				logger: new MRELogger(),
+				materialPatcher: new VertexMaterialPatcher(),
+				gltfImporterFactory: new VertexShadedGltfImporterFactory()
+			);
 			_apiInitialized = true;
 		}
 
