@@ -105,6 +105,9 @@ namespace MixedRealityExtension.App
 		public bool IsActive => _conn?.IsActive ?? false;
 
 		/// <inheritdoc />
+		public string ServerUrl { get; private set; }
+
+		/// <inheritdoc />
 		public GameObject SceneRoot { get; set; }
 
 		/// <inheritdoc />
@@ -174,6 +177,8 @@ namespace MixedRealityExtension.App
 		/// <inheritdoc />
 		public void Startup(string url, string sessionId, string platformId)
 		{
+			ServerUrl = url;
+
 			if (_conn == null)
 			{
 				if (_appState == AppState.Stopped)

@@ -80,6 +80,11 @@ namespace MixedRealityExtension.App
 		bool IsActive { get; }
 
 		/// <summary>
+		/// The url of the MRE server. Only valid after `Startup` has been called.
+		/// </summary>
+		string ServerUrl { get; }
+
+		/// <summary>
 		/// The game object that serves as the scene root.
 		/// </summary>
 		GameObject SceneRoot { get; set; }
