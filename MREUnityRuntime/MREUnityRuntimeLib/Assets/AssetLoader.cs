@@ -52,7 +52,7 @@ namespace MixedRealityExtension.Assets
 				?? throw new ArgumentException("Cannot spawn resource from non-existent library.");
 
 			var spawnedGO = await factory.CreateFromLibrary(resourceId, GetGameObjectFromParentId(parentId));
-			spawnedGO.layer = UnityConstants.ActorLayerIndex;
+			spawnedGO.layer = MREAPI.AppsAPI.CollisionLayers.Default;
 			return new List<Actor>() { spawnedGO.AddComponent<Actor>() };
 		}
 
@@ -62,7 +62,7 @@ namespace MixedRealityExtension.Assets
 				MREAPI.AppsAPI.AssetCache.EmptyTemplate(),
 				GetGameObjectFromParentId(parentId).transform,
 				false);
-			newGO.layer = UnityConstants.ActorLayerIndex;
+			newGO.layer = MREAPI.AppsAPI.CollisionLayers.Default;
 
 			return new List<Actor>() { newGO.AddComponent<Actor>() };
 		}
@@ -78,7 +78,7 @@ namespace MixedRealityExtension.Assets
 			var actorList = new List<Actor>();
 			MWGOTreeWalker.VisitTree(instance, go =>
 			{
-				go.layer = UnityConstants.ActorLayerIndex;
+				go.layer = MREAPI.AppsAPI.CollisionLayers.Default;
 				actorList.Add(go.AddComponent<Actor>());
 			});
 
@@ -219,7 +219,7 @@ namespace MixedRealityExtension.Assets
 
 					MWGOTreeWalker.VisitTree(rootObject, (go) =>
 					{
-						go.layer = UnityConstants.ActorLayerIndex;
+						go.layer = MREAPI.AppsAPI.CollisionLayers.Default;
 					});
 
 					var def = GenerateAssetPatch(rootObject, guidGenerator.Next());

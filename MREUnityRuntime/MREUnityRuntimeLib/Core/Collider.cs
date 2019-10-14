@@ -104,8 +104,23 @@ namespace MixedRealityExtension.Core
 
 		internal void ApplyPatch(ColliderPatch patch)
 		{
-			_collider.enabled = _collider.enabled.GetPatchApplied(IsEnabled.ApplyPatch(patch.IsEnabled));
+			_collider.enabled = _collider.enabled.GetPatchApplied(IsEnabled.ApplyPatch(patch.Enabled));
 			_collider.isTrigger = _collider.isTrigger.GetPatchApplied(IsTrigger.ApplyPatch(patch.IsTrigger));
+			switch (patch.Layer)
+			{
+				case CollisionLayer.Default:
+					_collider.gameObject.layer = MREAPI.AppsAPI.CollisionLayers.Default;
+					break;
+				case CollisionLayer.Navigation:
+					_collider.gameObject.layer = MREAPI.AppsAPI.CollisionLayers.Navigation;
+					break;
+				case CollisionLayer.Hologram:
+					_collider.gameObject.layer = MREAPI.AppsAPI.CollisionLayers.Hologram;
+					break;
+				case CollisionLayer.UI:
+					_collider.gameObject.layer = MREAPI.AppsAPI.CollisionLayers.UI;
+					break;
+			}
 
 			if (patch.EventSubscriptions != null)
 			{
@@ -178,10 +193,25 @@ namespace MixedRealityExtension.Core
 					$"be available in the MRE app.  Collider Type: {_collider.GetType()}");
 			}
 
+			var layer = CollisionLayer.Default;
+			if (_collider.gameObject.layer == MREAPI.AppsAPI.CollisionLayers.Navigation)
+			{
+				layer = CollisionLayer.Navigation;
+			}
+			else if (_collider.gameObject.layer == MREAPI.AppsAPI.CollisionLayers.Hologram)
+			{
+				layer = CollisionLayer.Hologram;
+			}
+			else if (_collider.gameObject.layer == MREAPI.AppsAPI.CollisionLayers.UI)
+			{
+				layer = CollisionLayer.UI;
+			}
+
 			return colliderGeo == null ? null : new ColliderPatch()
 			{
-				IsEnabled = _collider.enabled,
+				Enabled = _collider.enabled,
 				IsTrigger = _collider.isTrigger,
+				Layer = layer,
 				Geometry = colliderGeo
 			};
 		}

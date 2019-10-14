@@ -4,6 +4,6 @@ namespace MixedRealityExtension
 {
 	internal static class UnityConstants
 	{
-		internal const int ActorLayerIndex = 31;
+		
 	}
 }

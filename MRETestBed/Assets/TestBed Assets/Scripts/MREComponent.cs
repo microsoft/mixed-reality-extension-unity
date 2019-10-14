@@ -112,7 +112,8 @@ public class MREComponent : MonoBehaviour
 		if (!_apiInitialized)
 		{
 			MREAPI.InitializeAPI(
-				DefaultPrimMaterial,
+				defaultMaterial: DefaultPrimMaterial,
+				collisionLayers: new MixedRealityExtension.Core.EngineCollisionLayers(),
 				behaviorFactory: new BehaviorFactory(),
 				textFactory: new MWTextFactory(SerifFont, SansSerifFont),
 				libraryFactory: new ResourceFactory(),

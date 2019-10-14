@@ -75,11 +75,17 @@ namespace Assets.Scripts.Tools
 		{
 			RaycastHit hitInfo;
 			var gameObject = inputSource.gameObject;
+
+			// Only target layers 0 (Default), 5 (UI), and 10 (Hologram).
+			// You still want to hit all layers, but only interact with these.
+			int layerMask = (1 << 0) | (1 << 5) | (1 << 10);
+
 			if (Physics.Raycast(gameObject.transform.position, gameObject.transform.forward, out hitInfo, Mathf.Infinity))
 			{
 				for (var transform = hitInfo.transform; transform; transform = transform.parent)
 				{
-					if (transform.GetComponents<TargetBehavior>().FirstOrDefault() != null)
+					if (transform.GetComponents<TargetBehavior>().FirstOrDefault() != null
+						&& ((1 << transform.gameObject.layer) | layerMask) != 0)
 					{
 						return transform.gameObject;
 					}
