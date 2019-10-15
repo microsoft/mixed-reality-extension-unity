@@ -21,7 +21,7 @@ namespace MixedRealityExtension.Core
 		public byte Hologram;
 		public byte UI;
 
-		public EngineCollisionLayers(byte Default = 0, byte Navigation = 9, byte Hologram = 10, byte UI = 5)
+		public EngineCollisionLayers(byte Default, byte Navigation, byte Hologram, byte UI)
 		{
 			this.Default = Default;
 			this.Navigation = Navigation;

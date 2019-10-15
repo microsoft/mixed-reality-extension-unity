@@ -106,20 +106,24 @@ namespace MixedRealityExtension.Core
 		{
 			_collider.enabled = _collider.enabled.GetPatchApplied(IsEnabled.ApplyPatch(patch.Enabled));
 			_collider.isTrigger = _collider.isTrigger.GetPatchApplied(IsTrigger.ApplyPatch(patch.IsTrigger));
-			switch (patch.Layer)
+
+			if (patch.Layer != null)
 			{
-				case CollisionLayer.Default:
-					_collider.gameObject.layer = MREAPI.AppsAPI.CollisionLayers.Default;
-					break;
-				case CollisionLayer.Navigation:
-					_collider.gameObject.layer = MREAPI.AppsAPI.CollisionLayers.Navigation;
-					break;
-				case CollisionLayer.Hologram:
-					_collider.gameObject.layer = MREAPI.AppsAPI.CollisionLayers.Hologram;
-					break;
-				case CollisionLayer.UI:
-					_collider.gameObject.layer = MREAPI.AppsAPI.CollisionLayers.UI;
-					break;
+				switch (patch.Layer)
+				{
+					case CollisionLayer.Default:
+						_collider.gameObject.layer = MREAPI.AppsAPI.CollisionLayers.Default;
+						break;
+					case CollisionLayer.Navigation:
+						_collider.gameObject.layer = MREAPI.AppsAPI.CollisionLayers.Navigation;
+						break;
+					case CollisionLayer.Hologram:
+						_collider.gameObject.layer = MREAPI.AppsAPI.CollisionLayers.Hologram;
+						break;
+					case CollisionLayer.UI:
+						_collider.gameObject.layer = MREAPI.AppsAPI.CollisionLayers.UI;
+						break;
+				}
 			}
 
 			if (patch.EventSubscriptions != null)
