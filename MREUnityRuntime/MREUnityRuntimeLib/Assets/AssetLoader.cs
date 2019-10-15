@@ -67,7 +67,7 @@ namespace MixedRealityExtension.Assets
 			return new List<Actor>() { newGO.AddComponent<Actor>() };
 		}
 
-		internal IList<Actor> CreateFromPrefab(Guid prefabId, Guid? parentId)
+		internal IList<Actor> CreateFromPrefab(Guid prefabId, Guid? parentId, CollisionLayer? collisionLayer)
 		{
 			GameObject prefab = MREAPI.AppsAPI.AssetCache.GetAsset(prefabId) as GameObject;
 
@@ -78,7 +78,29 @@ namespace MixedRealityExtension.Assets
 			var actorList = new List<Actor>();
 			MWGOTreeWalker.VisitTree(instance, go =>
 			{
-				go.layer = MREAPI.AppsAPI.CollisionLayers.Default;
+				if (go.GetComponent<UnityEngine.Collider>() != null && collisionLayer != null)
+				{
+					switch (collisionLayer)
+					{
+						case CollisionLayer.Default:
+							go.layer = MREAPI.AppsAPI.CollisionLayers.Default;
+							break;
+						case CollisionLayer.Navigation:
+							go.layer = MREAPI.AppsAPI.CollisionLayers.Navigation;
+							break;
+						case CollisionLayer.Hologram:
+							go.layer = MREAPI.AppsAPI.CollisionLayers.Hologram;
+							break;
+						case CollisionLayer.UI:
+							go.layer = MREAPI.AppsAPI.CollisionLayers.UI;
+							break;
+					}
+				}
+				else
+				{
+					go.layer = MREAPI.AppsAPI.CollisionLayers.Default;
+				}
+				
 				actorList.Add(go.AddComponent<Actor>());
 			});
 
