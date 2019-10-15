@@ -69,6 +69,9 @@ namespace MixedRealityExtension.Messaging.Payloads
 		/// </summary>
 		public Guid PrefabId;
 
+		/// <summary>
+		/// Assign all colliders in this prefab to this layer
+		/// </summary>
 		public CollisionLayer? CollisionLayer;
 	}
 

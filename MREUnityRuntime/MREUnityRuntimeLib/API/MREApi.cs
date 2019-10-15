@@ -24,6 +24,7 @@ namespace MixedRealityExtension.API
 		/// Initializes the Mixed Reality Extension SDK API.
 		/// </summary>
 		/// <param name="defaultMaterial">The material template used for all SDK-spawned meshes.</param>
+		/// <param name="collisionLayers">A struct describing what Unity layers are used for each MRE collision layer.</param>
 		/// <param name="behaviorFactory">The behavior factory to use within the runtime.</param>
 		/// <param name="textFactory">The text factory to use within the runtime.</param>
 		/// <param name="primitiveFactory">The primitive factory to use within the runtime.</param>
