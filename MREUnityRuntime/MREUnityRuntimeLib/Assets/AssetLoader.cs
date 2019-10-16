@@ -52,7 +52,7 @@ namespace MixedRealityExtension.Assets
 				?? throw new ArgumentException("Cannot spawn resource from non-existent library.");
 
 			var spawnedGO = await factory.CreateFromLibrary(resourceId, GetGameObjectFromParentId(parentId));
-			spawnedGO.layer = MREAPI.AppsAPI.CollisionLayers.Default;
+			spawnedGO.layer = MREAPI.AppsAPI.LayerApplicator.DefaultLayer;
 			return new List<Actor>() { spawnedGO.AddComponent<Actor>() };
 		}
 
@@ -62,7 +62,7 @@ namespace MixedRealityExtension.Assets
 				MREAPI.AppsAPI.AssetCache.EmptyTemplate(),
 				GetGameObjectFromParentId(parentId).transform,
 				false);
-			newGO.layer = MREAPI.AppsAPI.CollisionLayers.Default;
+			newGO.layer = MREAPI.AppsAPI.LayerApplicator.DefaultLayer;
 
 			return new List<Actor>() { newGO.AddComponent<Actor>() };
 		}
@@ -78,27 +78,14 @@ namespace MixedRealityExtension.Assets
 			var actorList = new List<Actor>();
 			MWGOTreeWalker.VisitTree(instance, go =>
 			{
-				if (go.GetComponent<UnityEngine.Collider>() != null && collisionLayer != null)
+				var collider = go.GetComponent<UnityEngine.Collider>();
+				if (collider != null)
 				{
-					switch (collisionLayer)
-					{
-						case CollisionLayer.Default:
-							go.layer = MREAPI.AppsAPI.CollisionLayers.Default;
-							break;
-						case CollisionLayer.Navigation:
-							go.layer = MREAPI.AppsAPI.CollisionLayers.Navigation;
-							break;
-						case CollisionLayer.Hologram:
-							go.layer = MREAPI.AppsAPI.CollisionLayers.Hologram;
-							break;
-						case CollisionLayer.UI:
-							go.layer = MREAPI.AppsAPI.CollisionLayers.UI;
-							break;
-					}
+					MREAPI.AppsAPI.LayerApplicator.ApplyLayerToCollider(collisionLayer, collider);
 				}
 				else
 				{
-					go.layer = MREAPI.AppsAPI.CollisionLayers.Default;
+					go.layer = MREAPI.AppsAPI.LayerApplicator.DefaultLayer;
 				}
 				
 				actorList.Add(go.AddComponent<Actor>());
@@ -241,7 +228,7 @@ namespace MixedRealityExtension.Assets
 
 					MWGOTreeWalker.VisitTree(rootObject, (go) =>
 					{
-						go.layer = MREAPI.AppsAPI.CollisionLayers.Default;
+						go.layer = MREAPI.AppsAPI.LayerApplicator.DefaultLayer;
 					});
 
 					var def = GenerateAssetPatch(rootObject, guidGenerator.Next());

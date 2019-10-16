@@ -108,6 +108,7 @@
     <Compile Include="Core\UserManager.cs" />
     <Compile Include="Core\VideoStreamDescription.cs" />
     <Compile Include="Factories\DefaultMaterialPatcher.cs" />
+    <Compile Include="Factories\SimpleLayerApplicator.cs" />
     <Compile Include="Messaging\Events\Types\ActorCorrectionEvent.cs" />
     <Compile Include="Messaging\Events\Types\ColliderEvent.cs" />
     <Compile Include="Messaging\Events\Types\TriggerEvent.cs" />
@@ -115,6 +116,7 @@
     <Compile Include="Patching\Types\AppearancePatch.cs" />
     <Compile Include="Patching\Types\LookAtPatch.cs" />
     <Compile Include="PluginInterfaces\IDialogFactory.cs" />
+    <Compile Include="PluginInterfaces\ILayerApplicator.cs" />
     <Compile Include="PluginInterfaces\IUserInfoProvider.cs" />
     <Compile Include="Messaging\Payloads\AssetCommandPayloads.cs" />
     <Compile Include="Patching\Types\AttachmentPatch.cs" />
@@ -148,7 +150,6 @@
     <Compile Include="PluginInterfaces\IVideoPlayer.cs" />
     <Compile Include="PluginInterfaces\IVideoPlayerFactory.cs" />
     <Compile Include="RPC\RPCChannelInterface.cs" />
-    <Compile Include="UnityConstants.cs" />
     <Compile Include="PluginInterfaces\Behaviors\IBehavior.cs" />
     <Compile Include="PluginInterfaces\Behaviors\IBehaviorFactory.cs" />
     <Compile Include="PluginInterfaces\Behaviors\IButtonBehavior.cs" />

@@ -24,7 +24,7 @@ namespace MixedRealityExtension.API
 		/// Initializes the Mixed Reality Extension SDK API.
 		/// </summary>
 		/// <param name="defaultMaterial">The material template used for all SDK-spawned meshes.</param>
-		/// <param name="collisionLayers">A struct describing what Unity layers are used for each MRE collision layer.</param>
+		/// <param name="layerApplicator">The class used to apply MRE layers to Unity colliders.</param>
 		/// <param name="behaviorFactory">The behavior factory to use within the runtime.</param>
 		/// <param name="textFactory">The text factory to use within the runtime.</param>
 		/// <param name="primitiveFactory">The primitive factory to use within the runtime.</param>
@@ -38,7 +38,7 @@ namespace MixedRealityExtension.API
 		/// <param name="logger">The logger to be used by the MRE SDK.</param>
 		public static void InitializeAPI(
 			UnityEngine.Material defaultMaterial,
-			EngineCollisionLayers collisionLayers,
+			ILayerApplicator layerApplicator,
 			IBehaviorFactory behaviorFactory = null,
 			ITextFactory textFactory = null,
 			IPrimitiveFactory primitiveFactory = null,
@@ -52,7 +52,7 @@ namespace MixedRealityExtension.API
 			IMRELogger logger = null)
 		{
 			AppsAPI.DefaultMaterial = defaultMaterial;
-			AppsAPI.CollisionLayers = collisionLayers;
+			AppsAPI.LayerApplicator = layerApplicator;
 			AppsAPI.BehaviorFactory = behaviorFactory;
 			AppsAPI.TextFactory = textFactory ?? throw new ArgumentException($"{nameof(textFactory)} cannot be null");
 			AppsAPI.PrimitiveFactory = primitiveFactory ?? new MWPrimitiveFactory();
@@ -97,7 +97,10 @@ namespace MixedRealityExtension.API
 		/// </summary>
 		public UnityEngine.Material DefaultMaterial { get; internal set; }
 
-		public EngineCollisionLayers CollisionLayers { get; internal set; }
+		/// <summary>
+		/// The class responsible for assigning layers to colliders.
+		/// </summary>
+		public ILayerApplicator LayerApplicator { get; internal set; }
 
 		/// <summary>
 		/// The pool of assets available to MREs
