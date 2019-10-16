@@ -12,10 +12,10 @@ namespace MixedRealityExtension.Factories
 	/// </summary>
 	public class SimpleLayerApplicator : ILayerApplicator
 	{
-		private readonly byte defaultLayer;
-		private readonly byte navigationLayer;
-		private readonly byte hologramLayer;
-		private readonly byte uiLayer;
+		protected readonly byte defaultLayer;
+		protected readonly byte navigationLayer;
+		protected readonly byte hologramLayer;
+		protected readonly byte uiLayer;
 
 		/// <inheritdoc />
 		public byte DefaultLayer => defaultLayer;
@@ -36,7 +36,7 @@ namespace MixedRealityExtension.Factories
 		}
 
 		/// <inheritdoc />
-		public void ApplyLayerToCollider(CollisionLayer? layer, Collider collider)
+		public virtual void ApplyLayerToCollider(CollisionLayer? layer, Collider collider)
 		{
 			if (!layer.HasValue) return;
 
@@ -58,7 +58,7 @@ namespace MixedRealityExtension.Factories
 		}
 
 		/// <inheritdoc />
-		public CollisionLayer DetermineLayerOfCollider(Collider collider)
+		public virtual CollisionLayer DetermineLayerOfCollider(Collider collider)
 		{
 			if (collider.gameObject.layer == navigationLayer)
 			{
