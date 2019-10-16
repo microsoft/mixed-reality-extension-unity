@@ -52,7 +52,7 @@ namespace MixedRealityExtension.Assets
 				?? throw new ArgumentException("Cannot spawn resource from non-existent library.");
 
 			var spawnedGO = await factory.CreateFromLibrary(resourceId, GetGameObjectFromParentId(parentId));
-			spawnedGO.layer = UnityConstants.ActorLayerIndex;
+			spawnedGO.layer = MREAPI.AppsAPI.LayerApplicator.DefaultLayer;
 			return new List<Actor>() { spawnedGO.AddComponent<Actor>() };
 		}
 
@@ -62,12 +62,12 @@ namespace MixedRealityExtension.Assets
 				MREAPI.AppsAPI.AssetCache.EmptyTemplate(),
 				GetGameObjectFromParentId(parentId).transform,
 				false);
-			newGO.layer = UnityConstants.ActorLayerIndex;
+			newGO.layer = MREAPI.AppsAPI.LayerApplicator.DefaultLayer;
 
 			return new List<Actor>() { newGO.AddComponent<Actor>() };
 		}
 
-		internal IList<Actor> CreateFromPrefab(Guid prefabId, Guid? parentId)
+		internal IList<Actor> CreateFromPrefab(Guid prefabId, Guid? parentId, CollisionLayer? collisionLayer)
 		{
 			GameObject prefab = MREAPI.AppsAPI.AssetCache.GetAsset(prefabId) as GameObject;
 
@@ -78,7 +78,16 @@ namespace MixedRealityExtension.Assets
 			var actorList = new List<Actor>();
 			MWGOTreeWalker.VisitTree(instance, go =>
 			{
-				go.layer = UnityConstants.ActorLayerIndex;
+				var collider = go.GetComponent<UnityEngine.Collider>();
+				if (collider != null)
+				{
+					MREAPI.AppsAPI.LayerApplicator.ApplyLayerToCollider(collisionLayer, collider);
+				}
+				else
+				{
+					go.layer = MREAPI.AppsAPI.LayerApplicator.DefaultLayer;
+				}
+				
 				actorList.Add(go.AddComponent<Actor>());
 			});
 
@@ -219,7 +228,7 @@ namespace MixedRealityExtension.Assets
 
 					MWGOTreeWalker.VisitTree(rootObject, (go) =>
 					{
-						go.layer = UnityConstants.ActorLayerIndex;
+						go.layer = MREAPI.AppsAPI.LayerApplicator.DefaultLayer;
 					});
 
 					var def = GenerateAssetPatch(rootObject, guidGenerator.Next());

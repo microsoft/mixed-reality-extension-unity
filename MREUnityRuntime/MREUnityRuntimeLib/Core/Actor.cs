@@ -920,6 +920,7 @@ namespace MixedRealityExtension.Core
 				{
 					actor.Renderer.enabled = actor.activeAndEnabled;
 				}
+
 				foreach (var child in actor.App.FindChildren(actor.Id))
 				{
 					ApplyVisibilityUpdate(child, force);
@@ -1172,8 +1173,8 @@ namespace MixedRealityExtension.Core
 				// Instead, accumulate changes in the pending collider patch
 				if (_pendingColliderPatch != null && _pendingColliderPatch != colliderPatch)
 				{
-					if (colliderPatch.IsEnabled.HasValue)
-						_pendingColliderPatch.IsEnabled = colliderPatch.IsEnabled.Value;
+					if (colliderPatch.Enabled.HasValue)
+						_pendingColliderPatch.Enabled = colliderPatch.Enabled.Value;
 					if (colliderPatch.IsTrigger.HasValue)
 						_pendingColliderPatch.IsTrigger = colliderPatch.IsTrigger.Value;
 				}

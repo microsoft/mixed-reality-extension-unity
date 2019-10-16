@@ -112,7 +112,8 @@ public class MREComponent : MonoBehaviour
 		if (!_apiInitialized)
 		{
 			MREAPI.InitializeAPI(
-				DefaultPrimMaterial,
+				defaultMaterial: DefaultPrimMaterial,
+				layerApplicator: new SimpleLayerApplicator(0, 9, 10, 5),
 				behaviorFactory: new BehaviorFactory(),
 				textFactory: new MWTextFactory(SerifFont, SansSerifFont),
 				libraryFactory: new ResourceFactory(),

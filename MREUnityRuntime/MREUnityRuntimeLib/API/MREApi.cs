@@ -4,6 +4,7 @@ using System;
 
 using MixedRealityExtension.App;
 using MixedRealityExtension.Assets;
+using MixedRealityExtension.Core;
 using MixedRealityExtension.Factories;
 using MixedRealityExtension.PluginInterfaces.Behaviors;
 using MixedRealityExtension.PluginInterfaces;
@@ -23,6 +24,7 @@ namespace MixedRealityExtension.API
 		/// Initializes the Mixed Reality Extension SDK API.
 		/// </summary>
 		/// <param name="defaultMaterial">The material template used for all SDK-spawned meshes.</param>
+		/// <param name="layerApplicator">The class used to apply MRE layers to Unity colliders.</param>
 		/// <param name="behaviorFactory">The behavior factory to use within the runtime.</param>
 		/// <param name="textFactory">The text factory to use within the runtime.</param>
 		/// <param name="primitiveFactory">The primitive factory to use within the runtime.</param>
@@ -30,11 +32,13 @@ namespace MixedRealityExtension.API
 		/// <param name="assetCache">The place for this MRE to cache its meshes, etc.</param>
 		/// <param name="gltfImporterFactory">The glTF loader factory. Uses default GLTFSceneImporter if omitted.</param>
 		/// <param name="materialPatcher">Overrides default material property map (color and mainTexture only).</param>
+		/// <param name="videoPlayerFactory"></param>
 		/// <param name="userInfoProvider">Provides appId/sessionId scoped IUserInfo instances.</param>
-		/// <param name="engineConstants">Engine constants supplied by the host app.</param>
+		/// <param name="dialogFactory"></param>
 		/// <param name="logger">The logger to be used by the MRE SDK.</param>
 		public static void InitializeAPI(
 			UnityEngine.Material defaultMaterial,
+			ILayerApplicator layerApplicator,
 			IBehaviorFactory behaviorFactory = null,
 			ITextFactory textFactory = null,
 			IPrimitiveFactory primitiveFactory = null,
@@ -44,11 +48,11 @@ namespace MixedRealityExtension.API
 			IMaterialPatcher materialPatcher = null,
 			IVideoPlayerFactory videoPlayerFactory = null,
 			IUserInfoProvider userInfoProvider = null,
-			IEngineConstants engineConstants = null,
 			IDialogFactory dialogFactory = null,
 			IMRELogger logger = null)
 		{
 			AppsAPI.DefaultMaterial = defaultMaterial;
+			AppsAPI.LayerApplicator = layerApplicator;
 			AppsAPI.BehaviorFactory = behaviorFactory;
 			AppsAPI.TextFactory = textFactory ?? throw new ArgumentException($"{nameof(textFactory)} cannot be null");
 			AppsAPI.PrimitiveFactory = primitiveFactory ?? new MWPrimitiveFactory();
@@ -58,7 +62,6 @@ namespace MixedRealityExtension.API
 			AppsAPI.GLTFImporterFactory = gltfImporterFactory ?? new GLTFImporterFactory();
 			AppsAPI.MaterialPatcher = materialPatcher ?? new DefaultMaterialPatcher();
 			AppsAPI.UserInfoProvider = userInfoProvider ?? new NullUserInfoProvider();
-			AppsAPI.EngineConstants = engineConstants;
 			AppsAPI.DialogFactory = dialogFactory;
 
 #if ANDROID_DEBUG
@@ -95,6 +98,11 @@ namespace MixedRealityExtension.API
 		public UnityEngine.Material DefaultMaterial { get; internal set; }
 
 		/// <summary>
+		/// The class responsible for assigning layers to colliders.
+		/// </summary>
+		public ILayerApplicator LayerApplicator { get; internal set; }
+
+		/// <summary>
 		/// The pool of assets available to MREs
 		/// </summary>
 		public IAssetCache AssetCache { get; internal set; }
@@ -112,8 +120,6 @@ namespace MixedRealityExtension.API
 		internal IGLTFImporterFactory GLTFImporterFactory { get; set; }
 
 		internal IMaterialPatcher MaterialPatcher { get; set; }
-
-		internal IEngineConstants EngineConstants { get; set; }
 
 		/// <summary>
 		/// Provider of app/session scoped IUserInfo interfaces.

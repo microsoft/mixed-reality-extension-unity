@@ -10,13 +10,13 @@ namespace MixedRealityExtension.Patching.Types
 	public class ColliderPatch : IPatchable
 	{
 		[PatchProperty]
-		public bool? IsEnabled { get; set; }
+		public bool? Enabled { get; set; }
 
 		[PatchProperty]
 		public bool? IsTrigger { get; set; }
 
-		//[PatchProperty]
-		//public CollisionLayer? CollisionLayer { get; set; }
+		[PatchProperty]
+		public CollisionLayer? Layer { get; set; }
 
 		[PatchProperty]
 		public ColliderGeometry Geometry { get; set; }

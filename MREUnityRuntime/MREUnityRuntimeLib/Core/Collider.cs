@@ -104,8 +104,9 @@ namespace MixedRealityExtension.Core
 
 		internal void ApplyPatch(ColliderPatch patch)
 		{
-			_collider.enabled = _collider.enabled.GetPatchApplied(IsEnabled.ApplyPatch(patch.IsEnabled));
+			_collider.enabled = _collider.enabled.GetPatchApplied(IsEnabled.ApplyPatch(patch.Enabled));
 			_collider.isTrigger = _collider.isTrigger.GetPatchApplied(IsTrigger.ApplyPatch(patch.IsTrigger));
+			MREAPI.AppsAPI.LayerApplicator.ApplyLayerToCollider(patch.Layer, _collider);
 
 			if (patch.EventSubscriptions != null)
 			{
@@ -180,8 +181,9 @@ namespace MixedRealityExtension.Core
 
 			return colliderGeo == null ? null : new ColliderPatch()
 			{
-				IsEnabled = _collider.enabled,
+				Enabled = _collider.enabled,
 				IsTrigger = _collider.isTrigger,
+				Layer = MREAPI.AppsAPI.LayerApplicator.DetermineLayerOfCollider(_collider),
 				Geometry = colliderGeo
 			};
 		}

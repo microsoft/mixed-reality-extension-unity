@@ -581,7 +581,7 @@ namespace MixedRealityExtension.App
 					if (this == null || _conn == null || !_conn.IsActive || generation != curGeneration) return;
 					if (prefab != null)
 					{
-						var createdActors = _assetLoader.CreateFromPrefab(payload.PrefabId, payload.Actor?.ParentId);
+						var createdActors = _assetLoader.CreateFromPrefab(payload.PrefabId, payload.Actor?.ParentId, payload.CollisionLayer);
 						ProcessCreatedActors(payload, createdActors, onCompleteCallback);
 					}
 					else
