@@ -94,6 +94,23 @@ namespace MixedRealityExtension.Messaging.Payloads
 	}
 
 	/// <summary>
+	/// Bidirectional
+	/// Payload to sync animation state between client and server.
+	/// </summary>
+	public class AnimationUpdate : NetworkCommandPayload
+	{
+		/// <summary>
+		///  The ID of the animation being updated.
+		/// </summary>
+		public Guid AnimationId { get; set; }
+
+		/// <summary>
+		/// The state delta of the animation.
+		/// </summary>
+		public AnimationPatch Animation { get; set; }
+	}
+
+	/// <summary>
 	/// App => Engine
 	/// Payload for when the app wants to destroy one or more actors.
 	/// </summary>

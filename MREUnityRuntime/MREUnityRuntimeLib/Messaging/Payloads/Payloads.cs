@@ -197,6 +197,11 @@ namespace MixedRealityExtension.Messaging.Payloads
 		/// The enumeration of actors created during the object spawn command operation.
 		/// </summary>
 		public IEnumerable<ActorPatch> Actors { get; set; }
+
+		/// <summary>
+		/// The enumeration of animations created during the object spawn.
+		/// </summary>
+		public IEnumerable<AnimationPatch> Animations { get; set; }
 	}
 
 	/// <summary>
