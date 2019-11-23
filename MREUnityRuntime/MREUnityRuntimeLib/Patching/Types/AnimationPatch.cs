@@ -23,7 +23,7 @@ namespace MixedRealityExtension.Patching.Types
 		/// </summary>
 		[PatchProperty]
 		[JsonConverter(typeof(UnsignedConverter))]
-		public uint? BasisTime { get; set; }
+		public long? BasisTime { get; set; }
 
 		/// <summary>
 		/// The current playback time, based on basis time and speed

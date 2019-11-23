@@ -12,9 +12,27 @@ namespace MixedRealityExtension.Animation
 	{
 		private AnimationState nativeAnimation;
 
-		public override uint BasisTime { get; protected set; }
+		public override long BasisTime
+		{
+			get => AnimationManager.UnixNow() - (long)Mathf.Floor(Time * 1000);
+			protected set
+			{
+				nativeAnimation.time = AnimationManager.UnixNow()
+			}
+		}
 
-		public override float Time { get; protected set; }
+		public override float Time
+		{
+			get => nativeAnimation.time;
+			protected set
+			{
+				nativeAnimation.time = value;
+				if (Speed == 0)
+				{
+					// sample animation at this frame
+				}
+			}
+		}
 
 		public override float Speed
 		{
@@ -32,7 +50,7 @@ namespace MixedRealityExtension.Animation
 		{
 			get
 			{
-				switch(nativeAnimation.wrapMode)
+				switch (nativeAnimation.wrapMode)
 				{
 					case UnityEngine.WrapMode.Loop:
 						return MWAnimationWrapMode.Loop;
@@ -44,7 +62,18 @@ namespace MixedRealityExtension.Animation
 			}
 			protected set
 			{
-
+				switch (value)
+				{
+					case MWAnimationWrapMode.Loop:
+						nativeAnimation.wrapMode = UnityEngine.WrapMode.Loop;
+						break;
+					case MWAnimationWrapMode.PingPong:
+						nativeAnimation.wrapMode = UnityEngine.WrapMode.PingPong;
+						break;
+					default:
+						nativeAnimation.wrapMode = UnityEngine.WrapMode.Once;
+						break;
+				}
 			}
 		}
 

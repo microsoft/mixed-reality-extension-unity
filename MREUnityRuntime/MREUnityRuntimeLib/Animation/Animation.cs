@@ -12,7 +12,7 @@ namespace MixedRealityExtension.Animation
 	internal class Animation
 	{
 		public Guid Id { get; protected set; }
-		public virtual uint BasisTime { get; protected set; }
+		public virtual long BasisTime { get; protected set; }
 		public virtual float Time { get; protected set; }
 		public virtual float Speed { get; protected set; }
 		public virtual float Weight { get; protected set; }
