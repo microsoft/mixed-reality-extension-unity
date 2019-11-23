@@ -37,6 +37,7 @@ namespace MixedRealityExtension.App
 		private readonly UserManager _userManager;
 		private readonly ActorManager _actorManager;
 		private readonly CommandManager _commandManager;
+		private readonly AnimationManager _animationManager;
 
 		private readonly MonoBehaviour _ownerScript;
 
@@ -162,6 +163,7 @@ namespace MixedRealityExtension.App
 				{ typeof(AssetLoader), _assetLoader },
 				{ typeof(ActorManager), _actorManager }
 			});
+			_animationManager = new AnimationManager(this);
 
 			RPC = new RPCInterface(this);
 			RPCChannels = new RPCChannelInterface();
@@ -273,6 +275,7 @@ namespace MixedRealityExtension.App
 			_actorManager.Update();
 			SoundManager.Update();
 			_commandManager.Update();
+			_animationManager.Update();
 		}
 
 		/// <inheritdoc />
@@ -377,6 +380,11 @@ namespace MixedRealityExtension.App
 		public IUser FindUser(Guid id)
 		{
 			return _userManager.FindUser(id);
+		}
+
+		public void UpdateServerTimeOffset(long currentServerTime)
+		{
+			_animationManager.UpdateServerTimeOffset(currentServerTime);
 		}
 
 		#region Methods - Internal

@@ -65,6 +65,7 @@ namespace MixedRealityExtension.Messaging.Protocols
 
 				if (message.Payload is Payloads.Heartbeat payload)
 				{
+					App.UpdateServerTimeOffset(payload.ServerTime);
 					Send(new Payloads.HeartbeatReply(), message.Id);
 				}
 				else

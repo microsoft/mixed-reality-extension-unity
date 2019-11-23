@@ -322,6 +322,10 @@ namespace MixedRealityExtension.Messaging.Payloads
 	/// </summary>
 	public class Heartbeat : Payload
 	{
+		/// <summary>
+		/// The current server clock time as ms since the Unix epoch.
+		/// </summary>
+		public long ServerTime;
 	}
 
 	/// <summary>
