@@ -21,6 +21,11 @@ namespace MixedRealityExtension.Animation
 			App = app;
 		}
 
+		public void RegisterAnimation(Animation anim)
+		{
+			Animations[anim.Id] = anim;
+		}
+
 		public void UpdateServerTimeOffset(long serverTime)
 		{
 			var latestOffset = serverTime - UnixNow();
@@ -36,6 +41,11 @@ namespace MixedRealityExtension.Animation
 			{
 				anim.Update();
 			}
+		}
+
+		public long ServerNow()
+		{
+			return UnixNow() + ServerTimeOffset;
 		}
 
 		public static long UnixNow()

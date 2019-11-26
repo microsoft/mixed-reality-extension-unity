@@ -10,47 +10,55 @@ namespace MixedRealityExtension.Animation
 {
 	internal class NativeAnimation : Animation
 	{
-		private AnimationState nativeAnimation;
+		private UnityEngine.Animation nativeAnimation;
+		private AnimationState nativeState;
+
+		public override string Name
+		{
+			get => nativeState.name;
+			protected set { nativeState.name = value; }
+		}
 
 		public override long BasisTime
 		{
 			get => AnimationManager.UnixNow() - (long)Mathf.Floor(Time * 1000);
 			protected set
 			{
-				nativeAnimation.time = AnimationManager.UnixNow()
+				Time = (AnimationManager.UnixNow() - value) / 1000.0f;
 			}
 		}
 
 		public override float Time
 		{
-			get => nativeAnimation.time;
-			protected set
-			{
-				nativeAnimation.time = value;
-				if (Speed == 0)
-				{
-					// sample animation at this frame
-				}
-			}
+			get => nativeState.time;
+			protected set { nativeState.time = value; }
 		}
 
 		public override float Speed
 		{
-			get => nativeAnimation.speed;
-			protected set { nativeAnimation.speed = value; }
+			get => nativeState.speed;
+			protected set
+			{
+				nativeState.speed = value;
+				nativeState.enabled = Speed != 0 && Weight > 0;
+			}
 		}
 
 		public override float Weight
 		{
-			get => nativeAnimation.weight;
-			protected set { nativeAnimation.weight = value; }
+			get => nativeState.weight;
+			protected set
+			{
+				nativeState.weight = value;
+				nativeState.enabled = Speed != 0 && Weight > 0;
+			}
 		}
 
 		public override MWAnimationWrapMode WrapMode
 		{
 			get
 			{
-				switch (nativeAnimation.wrapMode)
+				switch (nativeState.wrapMode)
 				{
 					case UnityEngine.WrapMode.Loop:
 						return MWAnimationWrapMode.Loop;
@@ -65,28 +73,29 @@ namespace MixedRealityExtension.Animation
 				switch (value)
 				{
 					case MWAnimationWrapMode.Loop:
-						nativeAnimation.wrapMode = UnityEngine.WrapMode.Loop;
+						nativeState.wrapMode = UnityEngine.WrapMode.Loop;
 						break;
 					case MWAnimationWrapMode.PingPong:
-						nativeAnimation.wrapMode = UnityEngine.WrapMode.PingPong;
+						nativeState.wrapMode = UnityEngine.WrapMode.PingPong;
 						break;
 					default:
-						nativeAnimation.wrapMode = UnityEngine.WrapMode.Once;
+						nativeState.wrapMode = UnityEngine.WrapMode.Once;
 						break;
 				}
 			}
 		}
 
-		internal NativeAnimation(Guid id, AnimationState nativeAnimation)
+		internal NativeAnimation(AnimationManager manager, Guid id, UnityEngine.Animation nativeAnimation, AnimationState nativeState) : base(manager, id)
 		{
-			Id = id;
 			this.nativeAnimation = nativeAnimation;
+			this.nativeState = nativeState;
+			targetActors.Add(nativeAnimation.gameObject.GetComponent<Actor>());
 		}
 
 		public override AnimationPatch GeneratePatch()
 		{
 			var patch = base.GeneratePatch();
-			patch.Duration = nativeAnimation.length;
+			patch.Duration = nativeState.length;
 			return patch;
 		}
 	}

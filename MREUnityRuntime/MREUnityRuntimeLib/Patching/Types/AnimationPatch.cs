@@ -19,6 +19,12 @@ namespace MixedRealityExtension.Patching.Types
 		public Guid Id;
 
 		/// <summary>
+		/// Non-unique name of this animation
+		/// </summary>
+		[PatchProperty]
+		public string Name { get; set; }
+
+		/// <summary>
 		/// The server time (milliseconds since the UNIX epoch) when the animation was started
 		/// </summary>
 		[PatchProperty]

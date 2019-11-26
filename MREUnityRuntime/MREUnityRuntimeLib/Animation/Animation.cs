@@ -11,17 +11,39 @@ namespace MixedRealityExtension.Animation
 {
 	internal class Animation
 	{
+		protected AnimationManager manager;
+
 		public Guid Id { get; protected set; }
+		public virtual string Name { get; protected set; }
 		public virtual long BasisTime { get; protected set; }
 		public virtual float Time { get; protected set; }
 		public virtual float Speed { get; protected set; }
 		public virtual float Weight { get; protected set; }
 		public virtual MWAnimationWrapMode WrapMode { get; protected set; }
 
-		internal List<Actor> targetActors = new List<Actor>(5);
+		internal List<Actor> targetActors = new List<Actor>(1);
+
+		internal Animation(AnimationManager manager, Guid id)
+		{
+			Id = id;
+			this.manager = manager;
+			manager.RegisterAnimation(this);
+		}
 
 		public virtual void ApplyPatch(AnimationPatch patch)
 		{
+			if (patch.Name != null)
+			{
+				Name = patch.Name;
+			}
+			if (patch.BasisTime.HasValue)
+			{
+				BasisTime = patch.BasisTime.Value;
+			}
+			if (patch.Time.HasValue)
+			{
+				Time = patch.Time.Value;
+			}
 			if (patch.Speed.HasValue)
 			{
 				Speed = patch.Speed.Value;
@@ -41,6 +63,7 @@ namespace MixedRealityExtension.Animation
 			return new AnimationPatch()
 			{
 				Id = Id,
+				Name = Name,
 				BasisTime = BasisTime,
 				Time = Time,
 				Speed = Speed,

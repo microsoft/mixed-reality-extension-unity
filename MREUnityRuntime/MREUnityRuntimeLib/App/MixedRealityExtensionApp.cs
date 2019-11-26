@@ -610,6 +610,7 @@ namespace MixedRealityExtension.App
 		{
 			var guids = new DeterministicGuids(originalMessage.Actor?.Id);
 			var rootActor = createdActors.FirstOrDefault();
+			var createdAnims = new List<Animation.Animation>(5);
 
 			if (rootActor.transform.parent == null)
 			{
@@ -634,7 +635,7 @@ namespace MixedRealityExtension.App
 			Actor.ApplyVisibilityUpdate(rootActor);
 
 			_actorManager.UponStable(
-				() => SendCreateActorResponse(originalMessage, actors: createdActors, onCompleteCallback: onCompleteCallback));
+				() => SendCreateActorResponse(originalMessage, actors: createdActors, anims: createdAnims, onCompleteCallback: onCompleteCallback));
 
 			void ProcessActors(Transform xfrm, Actor parent)
 			{
@@ -653,6 +654,16 @@ namespace MixedRealityExtension.App
 					actor.MeshId = MREAPI.AppsAPI.AssetCache.GetId(actor.UnityMesh) ?? Guid.Empty;
 				}
 
+				var nativeAnim = xfrm.gameObject.GetComponent<UnityEngine.Animation>();
+				if (nativeAnim != null && createdActors.Contains(actor))
+				{
+					foreach (AnimationState state in nativeAnim)
+					{
+						var anim = new NativeAnimation(_animationManager, guids.Next(), nativeAnim, state);
+						createdAnims.Add(anim);
+					}
+				}
+
 				foreach (Transform child in xfrm)
 				{
 					ProcessActors(child, actor);
@@ -660,7 +671,12 @@ namespace MixedRealityExtension.App
 			}
 		}
 
-		private void SendCreateActorResponse(CreateActor originalMessage, IList<Actor> actors = null, string failureMessage = null, Action onCompleteCallback = null)
+		private void SendCreateActorResponse(
+			CreateActor originalMessage,
+			IList<Actor> actors = null,
+			IList<Animation.Animation> anims = null,
+			string failureMessage = null,
+			Action onCompleteCallback = null)
 		{
 			Trace trace = new Trace()
 			{
@@ -670,18 +686,20 @@ namespace MixedRealityExtension.App
 					failureMessage
 			};
 
-			Protocol.Send(new ObjectSpawned()
-			{
-				Result = new OperationResult()
+			Protocol.Send(
+				new ObjectSpawned()
 				{
-					ResultCode = (actors != null) ? OperationResultCode.Success : OperationResultCode.Error,
-					Message = trace.Message
+					Result = new OperationResult()
+					{
+						ResultCode = (actors != null) ? OperationResultCode.Success : OperationResultCode.Error,
+						Message = trace.Message
+					},
+					Traces = new List<Trace>() { trace },
+					Actors = actors?.Select((actor) => actor.GenerateInitialPatch()) ?? new ActorPatch[] { },
+					Animations = anims?.Select(anim => anim.GeneratePatch()) ?? new AnimationPatch[] { }
 				},
-
-				Traces = new List<Trace>() { trace },
-				Actors = actors?.Select((actor) => actor.GenerateInitialPatch()) ?? new ActorPatch[] { }
-			},
-				originalMessage.MessageId);
+				originalMessage.MessageId
+			);
 
 			onCompleteCallback?.Invoke();
 		}
