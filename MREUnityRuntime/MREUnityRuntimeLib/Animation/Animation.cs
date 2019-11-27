@@ -23,6 +23,8 @@ namespace MixedRealityExtension.Animation
 
 		internal List<Actor> targetActors = new List<Actor>(1);
 
+		public bool isPlaying => Weight > 0 && Speed != 0;
+
 		internal Animation(AnimationManager manager, Guid id)
 		{
 			Id = id;
@@ -60,17 +62,26 @@ namespace MixedRealityExtension.Animation
 
 		public virtual AnimationPatch GeneratePatch()
 		{
-			return new AnimationPatch()
+			var patch = new AnimationPatch()
 			{
 				Id = Id,
 				Name = Name,
-				BasisTime = BasisTime,
-				Time = Time,
 				Speed = Speed,
 				Weight = Weight,
 				WrapMode = WrapMode,
 				TargetActors = targetActors.Select(actor => actor.Id)
 			};
+
+			if (isPlaying)
+			{
+				patch.BasisTime = BasisTime;
+			}
+			else
+			{
+				patch.Time = Time;
+			}
+
+			return patch;
 		}
 
 		public virtual void Update()
