@@ -1,13 +1,17 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
+using MixedRealityExtension.Animation;
 using MixedRealityExtension.App;
 using MixedRealityExtension.Core;
+using MixedRealityExtension.Messaging.Commands;
+using MixedRealityExtension.Messaging.Payloads;
+using MixedRealityExtension.Patching.Types;
 using System;
 using System.Collections.Generic;
 
 namespace MixedRealityExtension.Animation
 {
-	internal class AnimationManager
+	internal class AnimationManager : ICommandHandlerContext
 	{
 		private static DateTime Epoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 		private readonly long OffsetUpdateThreshold = 50;
@@ -46,6 +50,18 @@ namespace MixedRealityExtension.Animation
 		public long ServerNow()
 		{
 			return UnixNow() + ServerTimeOffset;
+		}
+
+		[CommandHandler(typeof(AnimationUpdate))]
+		private void OnAnimationUpdate(AnimationUpdate message, Action onCompleteCallback)
+		{
+			Animation anim;
+			if (Animations.TryGetValue(message.Animation.Id, out anim))
+			{
+				anim.ApplyPatch(message.Animation);
+			}
+
+			onCompleteCallback?.Invoke();
 		}
 
 		public static long UnixNow()

@@ -156,14 +156,15 @@ namespace MixedRealityExtension.App
 			_userManager = new UserManager(this);
 			_actorManager = new ActorManager(this);
 			SoundManager = new SoundManager(this);
+			_animationManager = new AnimationManager(this);
 			_commandManager = new CommandManager(new Dictionary<Type, ICommandHandlerContext>()
 			{
 				{ typeof(MixedRealityExtensionApp), this },
 				{ typeof(Actor), null },
 				{ typeof(AssetLoader), _assetLoader },
-				{ typeof(ActorManager), _actorManager }
+				{ typeof(ActorManager), _actorManager },
+				{ typeof(AnimationManager), _animationManager }
 			});
-			_animationManager = new AnimationManager(this);
 
 			RPC = new RPCInterface(this);
 			RPCChannels = new RPCChannelInterface();

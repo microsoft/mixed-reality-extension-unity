@@ -28,7 +28,6 @@ namespace MixedRealityExtension.Patching.Types
 		/// The server time (milliseconds since the UNIX epoch) when the animation was started
 		/// </summary>
 		[PatchProperty]
-		[JsonConverter(typeof(UnsignedConverter))]
 		public long? BasisTime { get; set; }
 
 		/// <summary>
@@ -59,7 +58,7 @@ namespace MixedRealityExtension.Patching.Types
 		/// What runtime objects are being animated
 		/// </summary>
 		[PatchProperty]
-		public IEnumerable<Guid> TargetIds { get; set; }
+		public IEnumerable<Guid> TargetActors { get; set; }
 
 		/// <summary>
 		/// The length in seconds of the animation

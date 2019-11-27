@@ -100,12 +100,7 @@ namespace MixedRealityExtension.Messaging.Payloads
 	public class AnimationUpdate : NetworkCommandPayload
 	{
 		/// <summary>
-		///  The ID of the animation being updated.
-		/// </summary>
-		public Guid AnimationId { get; set; }
-
-		/// <summary>
-		/// The state delta of the animation.
+		/// The ID and state delta of the animation.
 		/// </summary>
 		public AnimationPatch Animation { get; set; }
 	}

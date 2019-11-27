@@ -69,7 +69,7 @@ namespace MixedRealityExtension.Animation
 				Speed = Speed,
 				Weight = Weight,
 				WrapMode = WrapMode,
-				TargetIds = targetActors.Select(actor => actor.Id)
+				TargetActors = targetActors.Select(actor => actor.Id)
 			};
 		}
 
