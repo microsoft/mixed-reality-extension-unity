@@ -23,7 +23,7 @@ namespace MixedRealityExtension.Animation
 
 		internal List<Actor> targetActors = new List<Actor>(1);
 
-		public bool isPlaying => Weight > 0 && Speed != 0;
+		public bool isPlaying => Speed > 0;
 
 		internal Animation(AnimationManager manager, Guid id)
 		{

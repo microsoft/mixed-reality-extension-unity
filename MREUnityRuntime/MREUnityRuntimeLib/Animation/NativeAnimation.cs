@@ -40,7 +40,7 @@ namespace MixedRealityExtension.Animation
 			protected set
 			{
 				nativeState.speed = value;
-				nativeState.enabled = Speed != 0 && Weight > 0;
+				nativeState.enabled = isPlaying;
 			}
 		}
 
@@ -50,7 +50,7 @@ namespace MixedRealityExtension.Animation
 			protected set
 			{
 				nativeState.weight = value;
-				nativeState.enabled = Speed != 0 && Weight > 0;
+				nativeState.enabled = isPlaying;
 			}
 		}
 
