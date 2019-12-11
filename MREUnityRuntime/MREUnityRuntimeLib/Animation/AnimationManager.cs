@@ -18,6 +18,7 @@ namespace MixedRealityExtension.Animation
 
 		private MixedRealityExtensionApp App;
 		private readonly Dictionary<Guid, Animation> Animations = new Dictionary<Guid, Animation>(10);
+		private readonly Dictionary<Guid, AnimationPatch> PendingPatches = new Dictionary<Guid, AnimationPatch>(10);
 		private long ServerTimeOffset = 0;
 
 		public AnimationManager(MixedRealityExtensionApp app)
@@ -28,6 +29,11 @@ namespace MixedRealityExtension.Animation
 		public void RegisterAnimation(Animation anim)
 		{
 			Animations[anim.Id] = anim;
+			if (PendingPatches.TryGetValue(anim.Id, out AnimationPatch patch))
+			{
+				anim.ApplyPatch(patch);
+				PendingPatches.Remove(anim.Id);
+			}
 		}
 
 		public void UpdateServerTimeOffset(long serverTime)
@@ -55,10 +61,19 @@ namespace MixedRealityExtension.Animation
 		[CommandHandler(typeof(AnimationUpdate))]
 		private void OnAnimationUpdate(AnimationUpdate message, Action onCompleteCallback)
 		{
-			Animation anim;
-			if (Animations.TryGetValue(message.Animation.Id, out anim))
+			if (Animations.TryGetValue(message.Animation.Id, out Animation anim))
 			{
 				anim.ApplyPatch(message.Animation);
+			}
+			else if (PendingPatches.TryGetValue(message.Animation.Id, out AnimationPatch oldPatch))
+			{
+				// merge patches
+				oldPatch.Merge(message.Animation);
+			}
+			else
+			{
+				// just write pending patch
+				PendingPatches[message.Animation.Id] = message.Animation;
 			}
 
 			onCompleteCallback?.Invoke();

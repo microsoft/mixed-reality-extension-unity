@@ -64,5 +64,15 @@ namespace MixedRealityExtension.Patching.Types
 		/// The length in seconds of the animation
 		/// </summary>
 		public float? Duration { get; set; }
+
+		public void Merge(AnimationPatch other)
+		{
+			if (other.Name != null) Name = other.Name;
+			if (other.BasisTime.HasValue) BasisTime = other.BasisTime;
+			if (other.Time.HasValue) Time = other.Time;
+			if (other.Speed.HasValue) Speed = other.Speed;
+			if (other.Weight.HasValue) Weight = other.Weight;
+			if (other.WrapMode.HasValue) WrapMode = other.WrapMode;
+		}
 	}
 }
