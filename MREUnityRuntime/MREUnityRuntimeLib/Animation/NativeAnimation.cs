@@ -21,10 +21,10 @@ namespace MixedRealityExtension.Animation
 
 		public override long BasisTime
 		{
-			get => AnimationManager.UnixNow() - (long)Mathf.Floor(Time * 1000);
+			get => manager.ServerNow() - (long)Mathf.Floor(Time * 1000);
 			protected set
 			{
-				Time = (AnimationManager.UnixNow() - value) / 1000.0f;
+				Time = (manager.ServerNow() - value) / 1000.0f;
 			}
 		}
 
@@ -40,7 +40,7 @@ namespace MixedRealityExtension.Animation
 			protected set
 			{
 				nativeState.speed = value;
-				nativeState.enabled = isPlaying;
+				nativeState.enabled = isPlaying && Speed != 0;
 			}
 		}
 
@@ -50,7 +50,7 @@ namespace MixedRealityExtension.Animation
 			protected set
 			{
 				nativeState.weight = value;
-				nativeState.enabled = isPlaying;
+				nativeState.enabled = isPlaying && Speed != 0;
 			}
 		}
 

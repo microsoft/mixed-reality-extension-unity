@@ -32,7 +32,7 @@ namespace MixedRealityExtension.Animation
 
 		public void UpdateServerTimeOffset(long serverTime)
 		{
-			var latestOffset = serverTime - UnixNow();
+			var latestOffset = serverTime - LocalUnixNow();
 			if (Math.Abs(latestOffset - ServerTimeOffset) > OffsetUpdateThreshold)
 			{
 				ServerTimeOffset = latestOffset;
@@ -49,7 +49,7 @@ namespace MixedRealityExtension.Animation
 
 		public long ServerNow()
 		{
-			return UnixNow() + ServerTimeOffset;
+			return LocalUnixNow() + ServerTimeOffset;
 		}
 
 		[CommandHandler(typeof(AnimationUpdate))]
@@ -64,7 +64,7 @@ namespace MixedRealityExtension.Animation
 			onCompleteCallback?.Invoke();
 		}
 
-		public static long UnixNow()
+		public static long LocalUnixNow()
 		{
 			return (DateTime.UtcNow - Epoch).Ticks / 10_000;
 		}
