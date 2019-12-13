@@ -29,7 +29,6 @@ namespace MixedRealityExtension.Animation
 		{
 			Id = id;
 			this.manager = manager;
-			manager.RegisterAnimation(this);
 		}
 
 		public virtual void ApplyPatch(AnimationPatch patch)

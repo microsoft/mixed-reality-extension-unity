@@ -661,6 +661,7 @@ namespace MixedRealityExtension.App
 					foreach (AnimationState state in nativeAnim)
 					{
 						var anim = new NativeAnimation(_animationManager, guids.Next(), nativeAnim, state);
+						_animationManager.RegisterAnimation(anim);
 						createdAnims.Add(anim);
 					}
 				}
