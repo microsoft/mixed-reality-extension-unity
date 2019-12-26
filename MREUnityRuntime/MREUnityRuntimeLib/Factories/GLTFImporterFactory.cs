@@ -12,28 +12,29 @@ namespace MixedRealityExtension.Factories
 	/// <inheritdoc cref="IGLTFImporterFactory"/>
 	internal class GLTFImporterFactory : IGLTFImporterFactory
 	{
-		/// <inheritdoc cref="CreateImporter(string, ILoader, AsyncCoroutineHelper)"/>
+		/// <inheritdoc cref="CreateImporter(string, IDataLoader, AsyncCoroutineHelper)"/>
 		public GLTFSceneImporter CreateImporter(
 			string gltfFileName,
-			ILoader externalDataLoader,
+			IDataLoader dataLoader,
 			AsyncCoroutineHelper asyncCoroutineHelper)
 		{
 			return new GLTFSceneImporter(gltfFileName, new ImportOptions()
 			{
-				ExternalDataLoader = externalDataLoader,
+				DataLoader = dataLoader,
 				AsyncCoroutineHelper = asyncCoroutineHelper
 			});
 		}
 
+		/// <inheritdoc cref="CreateImporter(GLTFRoot, IDataLoader, AsyncCoroutineHelper, Stream)"/>
 		public GLTFSceneImporter CreateImporter(
 			GLTFRoot rootNode,
-			ILoader externalDataLoader,
+			IDataLoader dataLoader,
 			AsyncCoroutineHelper asyncCoroutineHelper,
 			Stream gltfStream = null)
 		{
 			return new GLTFSceneImporter(rootNode, gltfStream, new ImportOptions()
 			{
-				ExternalDataLoader = externalDataLoader,
+				DataLoader = dataLoader,
 				AsyncCoroutineHelper = asyncCoroutineHelper
 			});
 		}

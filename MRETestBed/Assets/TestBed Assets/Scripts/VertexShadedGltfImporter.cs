@@ -170,20 +170,20 @@ public class VertexShadedGltfImporter : GLTFSceneImporter
 
 public class VertexShadedGltfImporterFactory : IGLTFImporterFactory
 {
-	public GLTFSceneImporter CreateImporter(string filename, ILoader loader, AsyncCoroutineHelper asyncCoroutineHelper)
+	public GLTFSceneImporter CreateImporter(string filename, IDataLoader loader, AsyncCoroutineHelper asyncCoroutineHelper)
 	{
 		return new VertexShadedGltfImporter(MixedRealityExtension.API.MREAPI.AppsAPI.DefaultMaterial, filename, new ImportOptions()
 		{
-			ExternalDataLoader = loader,
+			DataLoader = loader,
 			AsyncCoroutineHelper = asyncCoroutineHelper
 		});
 	}
 
-	public GLTFSceneImporter CreateImporter(GLTFRoot gltfRoot, ILoader loader, AsyncCoroutineHelper helper, Stream stream = null)
+	public GLTFSceneImporter CreateImporter(GLTFRoot gltfRoot, IDataLoader loader, AsyncCoroutineHelper helper, Stream stream = null)
 	{
 		return new VertexShadedGltfImporter(MixedRealityExtension.API.MREAPI.AppsAPI.DefaultMaterial, gltfRoot, stream, new ImportOptions()
 		{
-			ExternalDataLoader = loader,
+			DataLoader = loader,
 			AsyncCoroutineHelper = helper
 		});
 	}

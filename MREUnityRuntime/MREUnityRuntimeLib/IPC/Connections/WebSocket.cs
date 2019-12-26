@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.Networking;
 
 namespace MixedRealityExtension.IPC.Connections
 {
@@ -143,7 +144,7 @@ namespace MixedRealityExtension.IPC.Connections
 			_ws.Options.KeepAliveInterval = TimeSpan.FromSeconds(60);
 			foreach (var item in Headers)
 			{
-				_ws.Options.SetRequestHeader(item.Key, WWW.EscapeURL(item.Value));
+				_ws.Options.SetRequestHeader(item.Key, UnityWebRequest.EscapeURL(item.Value));
 			}
 
 			try
