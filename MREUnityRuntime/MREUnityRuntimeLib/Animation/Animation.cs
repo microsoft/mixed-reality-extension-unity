@@ -33,6 +33,8 @@ namespace MixedRealityExtension.Animation
 
 		public virtual void ApplyPatch(AnimationPatch patch)
 		{
+			var wasMoving = IsPlaying && Speed != 0;
+
 			if (patch.Name != null)
 			{
 				Name = patch.Name;
@@ -58,6 +60,16 @@ namespace MixedRealityExtension.Animation
 			else if (patch.Time.HasValue)
 			{
 				Time = patch.Time.Value;
+			}
+
+			var isMoving = IsPlaying && Speed != 0;
+			// send one transform update when the anim stops
+			if (wasMoving && !isMoving)
+			{
+				foreach (var actor in targetActors)
+				{
+					actor.SendActorUpdate(Messaging.Payloads.ActorComponentType.Transform);
+				}
 			}
 		}
 
@@ -85,7 +97,7 @@ namespace MixedRealityExtension.Animation
 			return patch;
 		}
 
-		public virtual void Update()
+		internal virtual void Update()
 		{
 
 		}
