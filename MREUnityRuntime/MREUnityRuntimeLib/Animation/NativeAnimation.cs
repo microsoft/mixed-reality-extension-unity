@@ -40,7 +40,6 @@ namespace MixedRealityExtension.Animation
 			protected set
 			{
 				nativeState.time = value;
-				if (!IsPlaying) nativeAnimation.Sample();
 			}
 		}
 
@@ -50,7 +49,6 @@ namespace MixedRealityExtension.Animation
 			protected set
 			{
 				nativeState.speed = value;
-				nativeState.enabled = IsPlaying && Speed != 0;
 			}
 		}
 
@@ -60,8 +58,7 @@ namespace MixedRealityExtension.Animation
 			protected set
 			{
 				nativeState.weight = value;
-				nativeState.enabled = IsPlaying && Speed != 0;
-				if (!IsPlaying) nativeAnimation.Sample();
+				nativeState.enabled = IsPlaying;
 			}
 		}
 
