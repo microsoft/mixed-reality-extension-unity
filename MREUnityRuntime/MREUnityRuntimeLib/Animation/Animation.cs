@@ -23,7 +23,7 @@ namespace MixedRealityExtension.Animation
 
 		internal List<Actor> targetActors = new List<Actor>(1);
 
-		public bool isPlaying => Weight > 0;
+		public bool IsPlaying => Weight > 0;
 
 		internal Animation(AnimationManager manager, Guid id)
 		{
@@ -37,14 +37,6 @@ namespace MixedRealityExtension.Animation
 			{
 				Name = patch.Name;
 			}
-			if (patch.BasisTime.HasValue)
-			{
-				BasisTime = patch.BasisTime.Value;
-			}
-			if (patch.Time.HasValue)
-			{
-				Time = patch.Time.Value;
-			}
 			if (patch.Speed.HasValue)
 			{
 				Speed = patch.Speed.Value;
@@ -56,6 +48,16 @@ namespace MixedRealityExtension.Animation
 			if (patch.WrapMode.HasValue)
 			{
 				WrapMode = patch.WrapMode.Value;
+			}
+
+			// only patch one of BasisTime and Time, based on play state
+			if ((IsPlaying && Speed != 0 || !patch.Time.HasValue) && patch.BasisTime.HasValue)
+			{
+				BasisTime = patch.BasisTime.Value;
+			}
+			else if (patch.Time.HasValue)
+			{
+				Time = patch.Time.Value;
 			}
 		}
 
@@ -71,7 +73,7 @@ namespace MixedRealityExtension.Animation
 				TargetActors = targetActors.Select(actor => actor.Id)
 			};
 
-			if (isPlaying)
+			if (IsPlaying)
 			{
 				patch.BasisTime = BasisTime;
 			}
