@@ -97,7 +97,6 @@ namespace MixedRealityExtension.Animation
 		{
 			this.nativeAnimation = nativeAnimation;
 			this.nativeState = nativeState;
-			targetActors.Add(nativeAnimation.gameObject.GetComponent<Actor>());
 		}
 
 		public override AnimationPatch GeneratePatch()

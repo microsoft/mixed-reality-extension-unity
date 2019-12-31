@@ -21,7 +21,7 @@ namespace MixedRealityExtension.Animation
 		public virtual float Weight { get; protected set; }
 		public virtual MWAnimationWrapMode WrapMode { get; protected set; }
 
-		internal List<Actor> targetActors = new List<Actor>(1);
+		internal List<Actor> targetActors;
 
 		public bool IsPlaying => Weight > 0;
 
@@ -82,7 +82,7 @@ namespace MixedRealityExtension.Animation
 				Speed = Speed,
 				Weight = Weight,
 				WrapMode = WrapMode,
-				TargetActors = targetActors.Select(actor => actor.Id)
+				TargetActorIds = targetActors.Select(actor => actor.Id)
 			};
 
 			if (IsPlaying)

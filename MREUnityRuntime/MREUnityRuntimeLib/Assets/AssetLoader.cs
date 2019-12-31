@@ -74,6 +74,14 @@ namespace MixedRealityExtension.Assets
 			GameObject instance = UnityEngine.Object.Instantiate(
 				prefab, GetGameObjectFromParentId(parentId).transform, false);
 
+			// copy animation target mapping
+			var sourceMap = prefab.GetComponent<PrefabAnimationTargets>();
+			var destMap = instance.GetComponent<PrefabAnimationTargets>();
+			if (sourceMap != null && destMap != null)
+			{
+				destMap.AnimationTargets = sourceMap.AnimationTargets;
+			}
+
 			// note: actor properties are set in App#ProcessCreatedActors
 			var actorList = new List<Actor>();
 			MWGOTreeWalker.VisitTree(instance, go =>
@@ -224,6 +232,10 @@ namespace MixedRealityExtension.Assets
 					if (animation != null)
 					{
 						animation.playAutomatically = false;
+
+						// initialize mapping so we know which gameobjects are targeted by which animation clips
+						var mapping = rootObject.AddComponent<PrefabAnimationTargets>();
+						mapping.Initialize(gltfRoot, i);
 					}
 
 					MWGOTreeWalker.VisitTree(rootObject, (go) =>

@@ -658,9 +658,12 @@ namespace MixedRealityExtension.App
 				var nativeAnim = xfrm.gameObject.GetComponent<UnityEngine.Animation>();
 				if (nativeAnim != null && createdActors.Contains(actor))
 				{
+					var animTargets = xfrm.gameObject.GetComponent<PrefabAnimationTargets>();
+					int stateIndex = 0;
 					foreach (AnimationState state in nativeAnim)
 					{
 						var anim = new NativeAnimation(_animationManager, guids.Next(), nativeAnim, state);
+						anim.targetActors = animTargets != null ? animTargets.GetTargets(xfrm, stateIndex) : new List<Actor>() { actor };
 						_animationManager.RegisterAnimation(anim);
 						createdAnims.Add(anim);
 					}

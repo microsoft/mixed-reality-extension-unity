@@ -91,6 +91,7 @@
     <Compile Include="Animation\AnimationWrapMode.cs" />
     <Compile Include="Animation\MWSetAnimationStateOptions.cs" />
     <Compile Include="Animation\NativeAnimation.cs" />
+    <Compile Include="Assets\PrefabAnimationTargets.cs" />
     <Compile Include="Core\CollisionLayers.cs" />
     <Compile Include="Assets\AssetCache.cs" />
     <Compile Include="Assets\AssetGroup.cs" />
