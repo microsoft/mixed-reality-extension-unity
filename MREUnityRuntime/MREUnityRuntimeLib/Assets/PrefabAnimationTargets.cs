@@ -20,7 +20,7 @@ namespace MixedRealityExtension.Assets
 		public int[][] AnimationTargets;
 
 		/// <summary>
-		/// Populate the animation target maps from 
+		/// Populate the animation target maps from a glTF document.
 		/// </summary>
 		/// <param name="root">The parsed glTF document this prefab was created from</param>
 		/// <param name="sceneIndex">Which scene in the glTF this prefab is based on</param>
@@ -60,12 +60,30 @@ namespace MixedRealityExtension.Assets
 			}
 		}
 
-		internal List<Actor> GetTargets(Transform root, int animationIndex)
+		/// <summary>
+		/// Compare the prefab transform hierarchy with the real transform hierarchy, and grab the real actor references.
+		/// </summary>
+		/// <param name="root">The instantiated prefab root transform.</param>
+		/// <param name="animationIndex">The map index that you want the targets of.</param>
+		/// <param name="addRootToTargets">Should the root actor be included in targets?</param>
+		/// <returns></returns>
+		internal List<Actor> GetTargets(Transform root, int animationIndex, bool addRootToTargets = false)
 		{
 			var treePositions = new Dictionary<int, Transform>(AnimationTargets[animationIndex].Max());
 			int xfrmIndex = 0;
 			WalkTree(root, true);
-			return AnimationTargets[animationIndex].Select(i => treePositions[i].GetComponent<Actor>()).ToList();
+
+			var targets = AnimationTargets[animationIndex].Select(i => treePositions[i].GetComponent<Actor>()).ToList();
+			if (addRootToTargets)
+			{
+				var rootActor = root.gameObject.GetComponent<Actor>();
+				if (rootActor != null && !targets.Contains(rootActor))
+				{
+					targets.Add(rootActor);
+				}
+			}
+
+			return targets;
 
 			void WalkTree(Transform transform, bool skip = false)
 			{
