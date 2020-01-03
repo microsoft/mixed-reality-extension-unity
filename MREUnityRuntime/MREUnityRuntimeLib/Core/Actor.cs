@@ -1396,37 +1396,42 @@ namespace MixedRealityExtension.Core
 			var animComponent = GetOrCreateActorComponent<AnimationComponent>();
 			animComponent.CreateAnimation(payload.AnimationName, payload.Keyframes, payload.Events, payload.WrapMode, payload.InitialState,
 				isInternal: false,
+				managed: payload.AnimationId.HasValue,
 				onCreatedCallback: () =>
 				{
-					var unityAnim = GetComponent<UnityEngine.Animation>();
-					var unityState = unityAnim[payload.AnimationName];
-					var nativeAnim = new NativeAnimation(
-						App.AnimationManager,
-						UtilMethods.StringToGuid($"{payload.ActorId}+{payload.AnimationName}"),
-						unityAnim,
-						unityState);
-					nativeAnim.targetActors = new List<Actor>() { this };
-					App.AnimationManager.RegisterAnimation(nativeAnim);
-
-					Trace trace = new Trace()
+					if (payload.AnimationId.HasValue)
 					{
-						Severity = TraceSeverity.Info,
-						Message = $"Successfully created animation named {nativeAnim.Name}"
-					};
+						var unityAnim = GetComponent<UnityEngine.Animation>();
+						var unityState = unityAnim[payload.AnimationName];
+						var nativeAnim = new NativeAnimation(
+							App.AnimationManager,
+							payload.AnimationId.Value,
+							unityAnim,
+							unityState);
+						nativeAnim.targetActors = new List<Actor>() { this };
+						App.AnimationManager.RegisterAnimation(nativeAnim);
 
-					App.Protocol.Send(
-						new ObjectSpawned()
+						Trace trace = new Trace()
 						{
-							Result = new OperationResult()
+							Severity = TraceSeverity.Info,
+							Message = $"Successfully created animation named {nativeAnim.Name}"
+						};
+
+						App.Protocol.Send(
+							new ObjectSpawned()
 							{
-								ResultCode = OperationResultCode.Success,
-								Message = trace.Message
+								Result = new OperationResult()
+								{
+									ResultCode = OperationResultCode.Success,
+									Message = trace.Message
+								},
+								Traces = new List<Trace>() { trace },
+								Animations = new AnimationPatch[] { nativeAnim.GeneratePatch() }
 							},
-							Traces = new List<Trace>() { trace },
-							Animations = new AnimationPatch[] { nativeAnim.GeneratePatch() }
-						},
-						payload.MessageId
-					);
+							payload.MessageId
+						);
+					}
+					onCompleteCallback?.Invoke();
 				}
 			);
 		}

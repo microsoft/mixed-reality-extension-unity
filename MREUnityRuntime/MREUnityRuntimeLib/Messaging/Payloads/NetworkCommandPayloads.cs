@@ -234,6 +234,11 @@ namespace MixedRealityExtension.Messaging.Payloads
 		public Guid ActorId { get; set; }
 
 		/// <summary>
+		/// If supplied, indicates this should be created as a "new" animation.
+		/// </summary>
+		public Guid? AnimationId { get; set; }
+
+		/// <summary>
 		/// The name of the animation to create.
 		/// </summary>
 		public string AnimationName { get; set; }

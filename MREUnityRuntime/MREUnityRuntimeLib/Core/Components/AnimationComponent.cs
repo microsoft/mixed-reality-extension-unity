@@ -24,6 +24,7 @@ namespace MixedRealityExtension.Core.Components
 		{
 			public bool Enabled;
 			public bool IsInternal;
+			public bool Managed;
 		}
 
 		private Dictionary<string, AnimationData> _animationData = new Dictionary<string, AnimationData>();
@@ -39,7 +40,7 @@ namespace MixedRealityExtension.Core.Components
 			foreach (AnimationState animationState in animation)
 			{
 				if (!GetAnimationData(animationState.name, out AnimationData animationData)
-					|| !animationData.IsInternal
+					|| animationData.Managed
 					|| animationData.Enabled == animationState.enabled
 				)
 					continue;
@@ -75,6 +76,7 @@ namespace MixedRealityExtension.Core.Components
 			MWAnimationWrapMode wrapMode,
 			MWSetAnimationStateOptions initialState,
 			bool isInternal,
+			bool managed,
 			Action onCreatedCallback)
 		{
 			var continuation = new MWContinuation(AttachedActor, null, (result) =>
@@ -175,7 +177,8 @@ namespace MixedRealityExtension.Core.Components
 
 				_animationData[animationName] = new AnimationData()
 				{
-					IsInternal = isInternal
+					IsInternal = isInternal,
+					Managed = managed
 				};
 
 				float initialTime = 0f;
@@ -303,6 +306,7 @@ namespace MixedRealityExtension.Core.Components
 				wrapMode: MWAnimationWrapMode.Once,
 				initialState: new MWSetAnimationStateOptions { Enabled = enabled },
 				isInternal: true,
+				managed: false,
 				onCreatedCallback: null);
 
 			bool LerpFloat(out float dest, float start, float? end, float t)
