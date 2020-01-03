@@ -34,41 +34,36 @@ namespace MixedRealityExtension.Core.Components
 		{
 			// Check for changes to an animation's enabled state and notify the server when a change is detected.
 			var animation = GetUnityAnimationComponent();
-			if (animation)
+			if (animation == null) return;
+			
+			foreach (AnimationState animationState in animation)
 			{
-				foreach (var item in animation)
+				if (!GetAnimationData(animationState.name, out AnimationData animationData)
+					|| !animationData.IsInternal
+					|| animationData.Enabled == animationState.enabled
+				)
+					continue;
+				
+				animationData.Enabled = animationState.enabled;
+
+				// Let the app know this animation (or interpolation) changed state.
+				NotifySetAnimationStateEvent(
+					animationState.name,
+					animationTime: null,
+					animationSpeed: null,
+					animationEnabled: animationData.Enabled);
+
+				// If the animation stopped, sync the actor's final transform.
+				if (!animationData.Enabled)
 				{
-					if (item is AnimationState)
-					{
-						var animationState = item as AnimationState;
-						if (GetAnimationData(animationState.name, out AnimationData animationData))
-						{
-							if (animationData.Enabled != animationState.enabled)
-							{
-								animationData.Enabled = animationState.enabled;
+					AttachedActor.SynchronizeApp(ActorComponentType.Transform);
+				}
 
-								// Let the app know this animation (or interpolation) changed state.
-								NotifySetAnimationStateEvent(
-									animationState.name,
-									animationTime: null,
-									animationSpeed: null,
-									animationEnabled: animationData.Enabled);
-
-								// If the animation stopped, sync the actor's final transform.
-								if (!animationData.Enabled)
-								{
-									AttachedActor.SynchronizeApp(ActorComponentType.Transform);
-								}
-
-								// If this was an internal one-shot animation (aka an interpolation), remove it.
-								if (!animationData.Enabled && animationData.IsInternal)
-								{
-									_animationData.Remove(animationState.name);
-									animation.RemoveClip(animationState.clip);
-								}
-							}
-						}
-					}
+				// If this was an internal one-shot animation (aka an interpolation), remove it.
+				if (!animationData.Enabled && animationData.IsInternal)
+				{
+					_animationData.Remove(animationState.name);
+					animation.RemoveClip(animationState.clip);
 				}
 			}
 		}

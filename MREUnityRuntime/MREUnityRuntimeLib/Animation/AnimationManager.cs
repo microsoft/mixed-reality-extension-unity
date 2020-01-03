@@ -1,11 +1,13 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
-using MixedRealityExtension.Animation;
 using MixedRealityExtension.App;
 using MixedRealityExtension.Core;
+using MixedRealityExtension.Core.Components;
+using MixedRealityExtension.Messaging;
 using MixedRealityExtension.Messaging.Commands;
 using MixedRealityExtension.Messaging.Payloads;
 using MixedRealityExtension.Patching.Types;
+using MixedRealityExtension.Util;
 using System;
 using System.Collections.Generic;
 

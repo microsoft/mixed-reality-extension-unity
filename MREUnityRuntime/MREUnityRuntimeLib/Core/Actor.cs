@@ -1,12 +1,14 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using MixedRealityExtension.Animation;
 using MixedRealityExtension.API;
 using MixedRealityExtension.App;
 using MixedRealityExtension.Behaviors;
 using MixedRealityExtension.Core.Components;
 using MixedRealityExtension.Core.Interfaces;
 using MixedRealityExtension.Core.Types;
+using MixedRealityExtension.Messaging;
 using MixedRealityExtension.Messaging.Commands;
 using MixedRealityExtension.Messaging.Events.Types;
 using MixedRealityExtension.Messaging.Payloads;
@@ -1391,21 +1393,50 @@ namespace MixedRealityExtension.Core
 		[CommandHandler(typeof(CreateAnimation))]
 		private void OnCreateAnimation(CreateAnimation payload, Action onCompleteCallback)
 		{
-			GetOrCreateActorComponent<AnimationComponent>()
-				.CreateAnimation(
-					payload.AnimationName,
-					payload.Keyframes,
-					payload.Events,
-					payload.WrapMode,
-					payload.InitialState,
-					isInternal: false,
-					onCreatedCallback: () => onCompleteCallback?.Invoke());
+			var animComponent = GetOrCreateActorComponent<AnimationComponent>();
+			animComponent.CreateAnimation(payload.AnimationName, payload.Keyframes, payload.Events, payload.WrapMode, payload.InitialState,
+				isInternal: false,
+				onCreatedCallback: () =>
+				{
+					var unityAnim = GetComponent<UnityEngine.Animation>();
+					var unityState = unityAnim[payload.AnimationName];
+					var nativeAnim = new NativeAnimation(
+						App.AnimationManager,
+						UtilMethods.StringToGuid($"{payload.ActorId}+{payload.AnimationName}"),
+						unityAnim,
+						unityState);
+					nativeAnim.targetActors = new List<Actor>() { this };
+					App.AnimationManager.RegisterAnimation(nativeAnim);
+
+					Trace trace = new Trace()
+					{
+						Severity = TraceSeverity.Info,
+						Message = $"Successfully created animation named {nativeAnim.Name}"
+					};
+
+					App.Protocol.Send(
+						new ObjectSpawned()
+						{
+							Result = new OperationResult()
+							{
+								ResultCode = OperationResultCode.Success,
+								Message = trace.Message
+							},
+							Traces = new List<Trace>() { trace },
+							Animations = new AnimationPatch[] { nativeAnim.GeneratePatch() }
+						},
+						payload.MessageId
+					);
+				}
+			);
 		}
 
+		[Obsolete]
 		[CommandHandler(typeof(SetAnimationState))]
 		private void OnSetAnimationState(SetAnimationState payload, Action onCompleteCallback)
 		{
-			GetOrCreateActorComponent<AnimationComponent>()
+			var actor = (Actor)App.FindActor(payload.ActorId);
+			actor.GetOrCreateActorComponent<AnimationComponent>()
 				.SetAnimationState(payload.AnimationName, payload.State.Time, payload.State.Speed, payload.State.Enabled);
 			onCompleteCallback?.Invoke();
 		}

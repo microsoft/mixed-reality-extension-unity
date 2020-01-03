@@ -37,7 +37,7 @@ namespace MixedRealityExtension.App
 		private readonly UserManager _userManager;
 		private readonly ActorManager _actorManager;
 		private readonly CommandManager _commandManager;
-		private readonly AnimationManager _animationManager;
+		internal readonly AnimationManager AnimationManager;
 
 		private readonly MonoBehaviour _ownerScript;
 
@@ -156,14 +156,14 @@ namespace MixedRealityExtension.App
 			_userManager = new UserManager(this);
 			_actorManager = new ActorManager(this);
 			SoundManager = new SoundManager(this);
-			_animationManager = new AnimationManager(this);
+			AnimationManager = new AnimationManager(this);
 			_commandManager = new CommandManager(new Dictionary<Type, ICommandHandlerContext>()
 			{
 				{ typeof(MixedRealityExtensionApp), this },
 				{ typeof(Actor), null },
 				{ typeof(AssetLoader), _assetLoader },
 				{ typeof(ActorManager), _actorManager },
-				{ typeof(AnimationManager), _animationManager }
+				{ typeof(AnimationManager), AnimationManager }
 			});
 
 			RPC = new RPCInterface(this);
@@ -276,7 +276,7 @@ namespace MixedRealityExtension.App
 			_actorManager.Update();
 			SoundManager.Update();
 			_commandManager.Update();
-			_animationManager.Update();
+			AnimationManager.Update();
 		}
 
 		/// <inheritdoc />
@@ -385,7 +385,7 @@ namespace MixedRealityExtension.App
 
 		public void UpdateServerTimeOffset(long currentServerTime)
 		{
-			_animationManager.UpdateServerTimeOffset(currentServerTime);
+			AnimationManager.UpdateServerTimeOffset(currentServerTime);
 		}
 
 		#region Methods - Internal
@@ -662,11 +662,11 @@ namespace MixedRealityExtension.App
 					int stateIndex = 0;
 					foreach (AnimationState state in nativeAnim)
 					{
-						var anim = new NativeAnimation(_animationManager, guids.Next(), nativeAnim, state);
+						var anim = new NativeAnimation(AnimationManager, guids.Next(), nativeAnim, state);
 						anim.targetActors = animTargets != null
 							? animTargets.GetTargets(xfrm, stateIndex, addRootToTargets: true)
 							: new List<Actor>() { actor };
-						_animationManager.RegisterAnimation(anim);
+						AnimationManager.RegisterAnimation(anim);
 						createdAnims.Add(anim);
 					}
 				}
