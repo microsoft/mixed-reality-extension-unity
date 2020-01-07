@@ -503,7 +503,10 @@ namespace MixedRealityExtension.Core.Components
 					}
 				}
 
-				return animationStates;
+				if (animationStates.Count > 0)
+				{
+					return animationStates;
+				}
 			}
 
 			return null;
