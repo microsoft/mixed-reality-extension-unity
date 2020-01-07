@@ -493,6 +493,12 @@ namespace MixedRealityExtension.Core.Components
 					{
 						var animationState = item as AnimationState;
 
+						// don't report sync state of managed animations here
+						if (_animationData.TryGetValue(animationState.name, out var data) && data.Managed)
+						{
+							continue;
+						}
+
 						animationStates.Add(GetAnimationState(animationState));
 					}
 				}
