@@ -37,6 +37,7 @@ namespace MixedRealityExtension.App
 		private readonly UserManager _userManager;
 		private readonly ActorManager _actorManager;
 		private readonly CommandManager _commandManager;
+		internal readonly AnimationManager AnimationManager;
 
 		private readonly MonoBehaviour _ownerScript;
 
@@ -155,12 +156,14 @@ namespace MixedRealityExtension.App
 			_userManager = new UserManager(this);
 			_actorManager = new ActorManager(this);
 			SoundManager = new SoundManager(this);
+			AnimationManager = new AnimationManager(this);
 			_commandManager = new CommandManager(new Dictionary<Type, ICommandHandlerContext>()
 			{
 				{ typeof(MixedRealityExtensionApp), this },
 				{ typeof(Actor), null },
 				{ typeof(AssetLoader), _assetLoader },
-				{ typeof(ActorManager), _actorManager }
+				{ typeof(ActorManager), _actorManager },
+				{ typeof(AnimationManager), AnimationManager }
 			});
 
 			RPC = new RPCInterface(this);
@@ -273,6 +276,7 @@ namespace MixedRealityExtension.App
 			_actorManager.Update();
 			SoundManager.Update();
 			_commandManager.Update();
+			AnimationManager.Update();
 		}
 
 		/// <inheritdoc />
@@ -377,6 +381,11 @@ namespace MixedRealityExtension.App
 		public IUser FindUser(Guid id)
 		{
 			return _userManager.FindUser(id);
+		}
+
+		public void UpdateServerTimeOffset(long currentServerTime)
+		{
+			AnimationManager.UpdateServerTimeOffset(currentServerTime);
 		}
 
 		#region Methods - Internal
@@ -602,6 +611,7 @@ namespace MixedRealityExtension.App
 		{
 			var guids = new DeterministicGuids(originalMessage.Actor?.Id);
 			var rootActor = createdActors.FirstOrDefault();
+			var createdAnims = new List<Animation.Animation>(5);
 
 			if (rootActor.transform.parent == null)
 			{
@@ -626,7 +636,7 @@ namespace MixedRealityExtension.App
 			Actor.ApplyVisibilityUpdate(rootActor);
 
 			_actorManager.UponStable(
-				() => SendCreateActorResponse(originalMessage, actors: createdActors, onCompleteCallback: onCompleteCallback));
+				() => SendCreateActorResponse(originalMessage, actors: createdActors, anims: createdAnims, onCompleteCallback: onCompleteCallback));
 
 			void ProcessActors(Transform xfrm, Actor parent)
 			{
@@ -645,6 +655,22 @@ namespace MixedRealityExtension.App
 					actor.MeshId = MREAPI.AppsAPI.AssetCache.GetId(actor.UnityMesh) ?? Guid.Empty;
 				}
 
+				var nativeAnim = xfrm.gameObject.GetComponent<UnityEngine.Animation>();
+				if (nativeAnim != null && createdActors.Contains(actor))
+				{
+					var animTargets = xfrm.gameObject.GetComponent<PrefabAnimationTargets>();
+					int stateIndex = 0;
+					foreach (AnimationState state in nativeAnim)
+					{
+						var anim = new NativeAnimation(AnimationManager, guids.Next(), nativeAnim, state);
+						anim.targetActors = animTargets != null
+							? animTargets.GetTargets(xfrm, stateIndex, addRootToTargets: true)
+							: new List<Actor>() { actor };
+						AnimationManager.RegisterAnimation(anim);
+						createdAnims.Add(anim);
+					}
+				}
+
 				foreach (Transform child in xfrm)
 				{
 					ProcessActors(child, actor);
@@ -652,7 +678,12 @@ namespace MixedRealityExtension.App
 			}
 		}
 
-		private void SendCreateActorResponse(CreateActor originalMessage, IList<Actor> actors = null, string failureMessage = null, Action onCompleteCallback = null)
+		private void SendCreateActorResponse(
+			CreateActor originalMessage,
+			IList<Actor> actors = null,
+			IList<Animation.Animation> anims = null,
+			string failureMessage = null,
+			Action onCompleteCallback = null)
 		{
 			Trace trace = new Trace()
 			{
@@ -662,18 +693,20 @@ namespace MixedRealityExtension.App
 					failureMessage
 			};
 
-			Protocol.Send(new ObjectSpawned()
-			{
-				Result = new OperationResult()
+			Protocol.Send(
+				new ObjectSpawned()
 				{
-					ResultCode = (actors != null) ? OperationResultCode.Success : OperationResultCode.Error,
-					Message = trace.Message
+					Result = new OperationResult()
+					{
+						ResultCode = (actors != null) ? OperationResultCode.Success : OperationResultCode.Error,
+						Message = trace.Message
+					},
+					Traces = new List<Trace>() { trace },
+					Actors = actors?.Select((actor) => actor.GenerateInitialPatch()) ?? new ActorPatch[] { },
+					Animations = anims?.Select(anim => anim.GeneratePatch()) ?? new AnimationPatch[] { }
 				},
-
-				Traces = new List<Trace>() { trace },
-				Actors = actors?.Select((actor) => actor.GenerateInitialPatch()) ?? new ActorPatch[] { }
-			},
-				originalMessage.MessageId);
+				originalMessage.MessageId
+			);
 
 			onCompleteCallback?.Invoke();
 		}

@@ -10,7 +10,7 @@ namespace MixedRealityExtension.Patching.Types
 	{
 		[PatchProperty]
 		[JsonConverter(typeof(UnsignedConverter))]
-		public UInt32? Enabled { get; set; }
+		public uint? Enabled { get; set; }
 
 		[PatchProperty]
 		public Guid? MaterialId { get; set; }

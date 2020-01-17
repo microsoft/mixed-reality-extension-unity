@@ -17,25 +17,25 @@ namespace MixedRealityExtension.PluginInterfaces
 		/// Returns a new glTF importer to the MRE system. Will typically be a subclass instance, and not a direct instance.
 		/// </summary>
 		/// <param name="gltfFileName"></param>
-		/// <param name="externalDataLoader"></param>
+		/// <param name="dataLoader"></param>
 		/// <param name="asyncCoroutineHelper"></param>
 		/// <returns>A new importer instance.</returns>
 		GLTFSceneImporter CreateImporter(
 			string gltfFileName,
-			ILoader externalDataLoader,
+			IDataLoader dataLoader,
 			AsyncCoroutineHelper asyncCoroutineHelper);
 
 		/// <summary>
 		/// Returns a new glTF importer to the MRE system. Will typically be a subclass instance, and not a direct instance.
 		/// </summary>
 		/// <param name="rootNode"></param>
-		/// <param name="externalDataLoader"></param>
+		/// <param name="dataLoader"></param>
 		/// <param name="asyncCoroutineHelper"></param>
 		/// <param name="gltfStream"></param>
 		/// <returns></returns>
 		GLTFSceneImporter CreateImporter(
 			GLTFRoot rootNode,
-			ILoader externalDataLoader,
+			IDataLoader dataLoader,
 			AsyncCoroutineHelper asyncCoroutineHelper,
 			Stream gltfStream = null);
 	}

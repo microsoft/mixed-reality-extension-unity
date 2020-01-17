@@ -74,6 +74,14 @@ namespace MixedRealityExtension.Assets
 			GameObject instance = UnityEngine.Object.Instantiate(
 				prefab, GetGameObjectFromParentId(parentId).transform, false);
 
+			// copy animation target mapping
+			var sourceMap = prefab.GetComponent<PrefabAnimationTargets>();
+			var destMap = instance.GetComponent<PrefabAnimationTargets>();
+			if (sourceMap != null && destMap != null)
+			{
+				destMap.AnimationTargets = sourceMap.AnimationTargets;
+			}
+
 			// note: actor properties are set in App#ProcessCreatedActors
 			var actorList = new List<Actor>();
 			MWGOTreeWalker.VisitTree(instance, go =>
@@ -144,15 +152,15 @@ namespace MixedRealityExtension.Assets
 			// download file
 			var rootUrl = URIHelper.GetDirectoryName(source.ParsedUri.AbsoluteUri);
 			var loader = new WebRequestLoader(rootUrl);
-			await loader.LoadStream(URIHelper.GetFileFromUri(source.ParsedUri));
+			var stream = await loader.LoadStreamAsync(URIHelper.GetFileFromUri(source.ParsedUri));
 
 			// pre-parse glTF document so we can get a scene count
 			// TODO: run this in thread
-			GLTF.GLTFParser.ParseJson(loader.LoadedStream, out GLTF.Schema.GLTFRoot gltfRoot);
-			loader.LoadedStream.Position = 0;
+			GLTF.GLTFParser.ParseJson(stream, out GLTF.Schema.GLTFRoot gltfRoot);
+			stream.Position = 0;
 
 			GLTFSceneImporter importer =
-				MREAPI.AppsAPI.GLTFImporterFactory.CreateImporter(gltfRoot, loader, _asyncHelper, loader.LoadedStream);
+				MREAPI.AppsAPI.GLTFImporterFactory.CreateImporter(gltfRoot, loader, _asyncHelper, stream);
 			importer.SceneParent = MREAPI.AppsAPI.AssetCache.CacheRootGO().transform;
 			importer.Collider = colliderType.ToGLTFColliderType();
 
@@ -224,6 +232,10 @@ namespace MixedRealityExtension.Assets
 					if (animation != null)
 					{
 						animation.playAutomatically = false;
+
+						// initialize mapping so we know which gameobjects are targeted by which animation clips
+						var mapping = rootObject.AddComponent<PrefabAnimationTargets>();
+						mapping.Initialize(gltfRoot, i);
 					}
 
 					MWGOTreeWalker.VisitTree(rootObject, (go) =>

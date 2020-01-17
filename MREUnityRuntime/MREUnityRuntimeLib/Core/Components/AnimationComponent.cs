@@ -24,6 +24,7 @@ namespace MixedRealityExtension.Core.Components
 		{
 			public bool Enabled;
 			public bool IsInternal;
+			public bool Managed;
 		}
 
 		private Dictionary<string, AnimationData> _animationData = new Dictionary<string, AnimationData>();
@@ -34,41 +35,36 @@ namespace MixedRealityExtension.Core.Components
 		{
 			// Check for changes to an animation's enabled state and notify the server when a change is detected.
 			var animation = GetUnityAnimationComponent();
-			if (animation)
+			if (animation == null) return;
+			
+			foreach (AnimationState animationState in animation)
 			{
-				foreach (var item in animation)
+				if (!GetAnimationData(animationState.name, out AnimationData animationData)
+					|| animationData.Managed
+					|| animationData.Enabled == animationState.enabled
+				)
+					continue;
+				
+				animationData.Enabled = animationState.enabled;
+
+				// Let the app know this animation (or interpolation) changed state.
+				NotifySetAnimationStateEvent(
+					animationState.name,
+					animationTime: null,
+					animationSpeed: null,
+					animationEnabled: animationData.Enabled);
+
+				// If the animation stopped, sync the actor's final transform.
+				if (!animationData.Enabled)
 				{
-					if (item is AnimationState)
-					{
-						var animationState = item as AnimationState;
-						if (GetAnimationData(animationState.name, out AnimationData animationData))
-						{
-							if (animationData.Enabled != animationState.enabled)
-							{
-								animationData.Enabled = animationState.enabled;
+					AttachedActor.SynchronizeApp(ActorComponentType.Transform);
+				}
 
-								// Let the app know this animation (or interpolation) changed state.
-								NotifySetAnimationStateEvent(
-									animationState.name,
-									animationTime: null,
-									animationSpeed: null,
-									animationEnabled: animationData.Enabled);
-
-								// If the animation stopped, sync the actor's final transform.
-								if (!animationData.Enabled)
-								{
-									AttachedActor.SynchronizeApp(ActorComponentType.Transform);
-								}
-
-								// If this was an internal one-shot animation (aka an interpolation), remove it.
-								if (!animationData.Enabled && animationData.IsInternal)
-								{
-									_animationData.Remove(animationState.name);
-									animation.RemoveClip(animationState.clip);
-								}
-							}
-						}
-					}
+				// If this was an internal one-shot animation (aka an interpolation), remove it.
+				if (!animationData.Enabled && animationData.IsInternal)
+				{
+					_animationData.Remove(animationState.name);
+					animation.RemoveClip(animationState.clip);
 				}
 			}
 		}
@@ -80,6 +76,7 @@ namespace MixedRealityExtension.Core.Components
 			MWAnimationWrapMode wrapMode,
 			MWSetAnimationStateOptions initialState,
 			bool isInternal,
+			bool managed,
 			Action onCreatedCallback)
 		{
 			var continuation = new MWContinuation(AttachedActor, null, (result) =>
@@ -180,7 +177,8 @@ namespace MixedRealityExtension.Core.Components
 
 				_animationData[animationName] = new AnimationData()
 				{
-					IsInternal = isInternal
+					IsInternal = isInternal,
+					Managed = managed
 				};
 
 				float initialTime = 0f;
@@ -308,6 +306,7 @@ namespace MixedRealityExtension.Core.Components
 				wrapMode: MWAnimationWrapMode.Once,
 				initialState: new MWSetAnimationStateOptions { Enabled = enabled },
 				isInternal: true,
+				managed: false,
 				onCreatedCallback: null);
 
 			bool LerpFloat(out float dest, float start, float? end, float t)
@@ -494,11 +493,20 @@ namespace MixedRealityExtension.Core.Components
 					{
 						var animationState = item as AnimationState;
 
+						// don't report sync state of managed animations here
+						if (_animationData.TryGetValue(animationState.name, out var data) && data.Managed)
+						{
+							continue;
+						}
+
 						animationStates.Add(GetAnimationState(animationState));
 					}
 				}
 
-				return animationStates;
+				if (animationStates.Count > 0)
+				{
+					return animationStates;
+				}
 			}
 
 			return null;
