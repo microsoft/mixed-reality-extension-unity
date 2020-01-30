@@ -582,98 +582,6 @@ namespace MixedRealityExtension.Core
 			return FindAttachmentRecursive(this);
 		}
 
-		private void DetachFromAttachPointParent()
-		{
-			try
-			{
-				if (transform != null)
-				{
-					var attachmentComponent = transform.parent.GetComponents<MREAttachmentComponent>()
-						.FirstOrDefault(component =>
-							component.Actor != null &&
-							component.Actor.Id == Id &&
-							component.Actor.AppInstanceId == AppInstanceId &&
-							component.UserId == _cachedAttachment.UserId);
-
-					if (attachmentComponent != null)
-					{
-						attachmentComponent.Actor = null;
-						Destroy(attachmentComponent);
-					}
-
-					transform.SetParent(App.SceneRoot.transform, true);
-				}
-			}
-			catch (Exception e)
-			{
-				App.Logger.LogError($"Exception: {e.Message}\nStackTrace: {e.StackTrace}");
-			}
-		}
-
-		private bool PerformAttach()
-		{
-			// Assumption: Attachment state has changed and we need to (potentially) detach and (potentially) reattach.
-			try
-			{
-				DetachFromAttachPointParent();
-
-				IUserInfo userInfo = MREAPI.AppsAPI.UserInfoProvider.GetUserInfo(App, Attachment.UserId);
-				if (userInfo != null)
-				{
-					userInfo.BeforeAvatarDestroyed -= UserInfo_BeforeAvatarDestroyed;
-
-					Transform attachPoint = userInfo.GetAttachPoint(Attachment.AttachPoint);
-					if (attachPoint != null)
-					{
-						var attachmentComponent = attachPoint.gameObject.AddComponent<MREAttachmentComponent>();
-						attachmentComponent.Actor = this;
-						attachmentComponent.UserId = Attachment.UserId;
-						transform.SetParent(attachPoint, false);
-						userInfo.BeforeAvatarDestroyed += UserInfo_BeforeAvatarDestroyed;
-						return true;
-					}
-				}
-			}
-			catch (Exception e)
-			{
-				App.Logger.LogError($"Exception: {e.Message}\nStackTrace: {e.StackTrace}");
-			}
-
-			return false;
-		}
-
-		private void UserInfo_BeforeAvatarDestroyed()
-		{
-			// Remember the original local transform.
-			MWScaledTransform cachedTransform = LocalTransform;
-
-			// Detach from parent. This will preserve the world transform (changing the local transform).
-			// This is desired so that the actor doesn't change position, but we must restore the local
-			// transform when reattaching.
-			DetachFromAttachPointParent();
-
-			IUserInfo userInfo = MREAPI.AppsAPI.UserInfoProvider.GetUserInfo(App, Attachment.UserId);
-			if (userInfo != null)
-			{
-				void Reattach()
-				{
-					// Restore the local transform and reattach.
-					userInfo.AfterAvatarCreated -= Reattach;
-					// In the interim time this actor might have been destroyed.
-					if (transform != null)
-					{
-						transform.localPosition = cachedTransform.Position.ToVector3();
-						transform.localRotation = cachedTransform.Rotation.ToQuaternion();
-						transform.localScale = cachedTransform.Scale.ToVector3();
-						PerformAttach();
-					}
-				}
-
-				// Register for a callback once the avatar is recreated.
-				userInfo.AfterAvatarCreated += Reattach;
-			}
-		}
-
 		private IText AddText()
 		{
 			Text = MREAPI.AppsAPI.TextFactory.CreateText(this);
@@ -1198,6 +1106,110 @@ namespace MixedRealityExtension.Core
 				}
 			}
 		}
+
+		private bool PerformAttach()
+		{
+			try
+			{
+
+			}
+			catch (Exception e)
+			{
+				App.Logger.LogError($"Exception: {e.Message}\nStackTrace: {e.StackTrace}");
+			}
+
+			return false;
+		}
+		/* private bool PerformAttach()
+		{
+			// Assumption: Attachment state has changed and we need to (potentially) detach and (potentially) reattach.
+			try
+			{
+				DetachFromAttachPointParent();
+
+				IUserInfo userInfo = MREAPI.AppsAPI.UserInfoProvider.GetUserInfo(App, Attachment.UserId);
+				if (userInfo != null)
+				{
+					userInfo.BeforeAvatarDestroyed -= UserInfo_BeforeAvatarDestroyed;
+
+					Transform attachPoint = userInfo.GetAttachPoint(Attachment.AttachPoint);
+					if (attachPoint != null)
+					{
+						var attachmentComponent = attachPoint.gameObject.AddComponent<MREAttachmentComponent>();
+						attachmentComponent.Actor = this;
+						attachmentComponent.UserId = Attachment.UserId;
+						transform.SetParent(attachPoint, false);
+						userInfo.BeforeAvatarDestroyed += UserInfo_BeforeAvatarDestroyed;
+						return true;
+					}
+				}
+			}
+			catch (Exception e)
+			{
+				App.Logger.LogError($"Exception: {e.Message}\nStackTrace: {e.StackTrace}");
+			}
+
+			return false;
+		}
+
+		private void DetachFromAttachPointParent()
+		{
+			try
+			{
+				if (transform != null)
+				{
+					var attachmentComponent = transform.parent.GetComponents<MREAttachmentComponent>()
+						.FirstOrDefault(component =>
+							component.Actor?.Id == Id &&
+							component.Actor.AppInstanceId == AppInstanceId &&
+							component.UserId == _cachedAttachment.UserId);
+
+					if (attachmentComponent != null)
+					{
+						attachmentComponent.Actor = null;
+						Destroy(attachmentComponent);
+					}
+
+					transform.SetParent(App.SceneRoot.transform, true);
+				}
+			}
+			catch (Exception e)
+			{
+				App.Logger.LogError($"Exception: {e.Message}\nStackTrace: {e.StackTrace}");
+			}
+		}
+
+		private void UserInfo_BeforeAvatarDestroyed()
+		{
+			// Remember the original local transform.
+			MWScaledTransform cachedTransform = LocalTransform;
+
+			// Detach from parent. This will preserve the world transform (changing the local transform).
+			// This is desired so that the actor doesn't change position, but we must restore the local
+			// transform when reattaching.
+			DetachFromAttachPointParent();
+
+			IUserInfo userInfo = MREAPI.AppsAPI.UserInfoProvider.GetUserInfo(App, Attachment.UserId);
+			if (userInfo != null)
+			{
+				void Reattach()
+				{
+					// Restore the local transform and reattach.
+					userInfo.AfterAvatarCreated -= Reattach;
+					// In the interim time this actor might have been destroyed.
+					if (transform != null)
+					{
+						transform.localPosition = cachedTransform.Position.ToVector3();
+						transform.localRotation = cachedTransform.Rotation.ToQuaternion();
+						transform.localScale = cachedTransform.Scale.ToVector3();
+						PerformAttach();
+					}
+				}
+
+				// Register for a callback once the avatar is recreated.
+				userInfo.AfterAvatarCreated += Reattach;
+			}
+		} */
 
 		private void PatchLookAt(LookAtPatch lookAtPatch)
 		{
