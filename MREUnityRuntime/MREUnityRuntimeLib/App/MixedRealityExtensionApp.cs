@@ -388,6 +388,48 @@ namespace MixedRealityExtension.App
 			AnimationManager.UpdateServerTimeOffset(currentServerTime);
 		}
 
+		public void DeclarePreallocatedActors(GameObject[] objects, string guidSeed)
+		{
+			// identify gameobjects whose ancestors are not also flagged to be actors
+			var goIds = new HashSet<int>(objects.Select(go => go.GetInstanceID()));
+			var rootGos = new List<GameObject>(objects.Length);
+			foreach (var go in objects)
+			{
+				if (!ancestorInList(go))
+				{
+					rootGos.Add(go);
+				}
+			}
+
+			// add actor components to all gos beneath a tagged go
+			var taggedActors = new List<Actor>(objects.Length);
+			foreach (var root in rootGos)
+			{
+				addActors(root);
+			}
+
+			ProcessCreatedActors(null, taggedActors, null, guidSeed);
+
+			bool ancestorInList(GameObject go)
+			{
+				return go != null && (goIds.Contains(go.GetInstanceID()) || ancestorInList(go.transform.parent.gameObject));
+			}
+
+			void addActors(GameObject go)
+			{
+				var actor = go.AddComponent<Actor>();
+				if (goIds.Contains(go.GetInstanceID()))
+				{
+					taggedActors.Add(actor);
+				}
+
+				foreach (Transform child in go.transform)
+				{
+					addActors(child.gameObject);
+				}
+			}
+		}
+
 		#region Methods - Internal
 
 		internal void OnReceive(Message message)
@@ -607,9 +649,19 @@ namespace MixedRealityExtension.App
 			}
 		}
 
-		private void ProcessCreatedActors(CreateActor originalMessage, IList<Actor> createdActors, Action onCompleteCallback)
+		private void ProcessCreatedActors(CreateActor originalMessage, IList<Actor> createdActors, Action onCompleteCallback, string guidSeed = null)
 		{
-			var guids = new DeterministicGuids(originalMessage.Actor?.Id);
+			Guid guidGenSeed;
+			if (originalMessage != null)
+			{
+				guidGenSeed = originalMessage.Actor.Id;
+			}
+			else
+			{
+				guidGenSeed = new Guid()
+			}
+
+			var guids = new DeterministicGuids(guidGenSeed);
 			var rootActor = createdActors.FirstOrDefault();
 			var createdAnims = new List<Animation.Animation>(5);
 

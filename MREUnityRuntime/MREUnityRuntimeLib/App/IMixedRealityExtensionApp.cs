@@ -5,6 +5,7 @@ using MixedRealityExtension.IPC;
 using MixedRealityExtension.RPC;
 using MixedRealityExtension.PluginInterfaces;
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace MixedRealityExtension.App
@@ -159,5 +160,11 @@ namespace MixedRealityExtension.App
 		/// </summary>
 		/// <param name="actorId"></param>
 		void OnActorDestroyed(Guid actorId);
+
+		/// <summary>
+		/// Declare pre-allocated game objects as MRE actors
+		/// </summary>
+		/// <param name="objects"></param>
+		void DeclarePreallocatedActors(GameObject[] objects, string guidSeed);
 	}
 }
