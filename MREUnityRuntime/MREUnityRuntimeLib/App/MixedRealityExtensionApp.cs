@@ -569,7 +569,9 @@ namespace MixedRealityExtension.App
 
 			bool ancestorInList(GameObject go)
 			{
-				return go != null && (goIds.Contains(go.GetInstanceID()) || ancestorInList(go.transform.parent.gameObject));
+				return go != null && go.transform.parent != null && (
+					goIds.Contains(go.transform.parent.gameObject.GetInstanceID()) ||
+					ancestorInList(go.transform.parent.gameObject));
 			}
 		}
 
@@ -666,7 +668,7 @@ namespace MixedRealityExtension.App
 			}
 			else
 			{
-				var hasher = new System.Security.Cryptography.SHA1Managed();
+				var hasher = new System.Security.Cryptography.MD5Cng();
 				var bytes = hasher.ComputeHash(System.Text.UTF8Encoding.UTF8.GetBytes(guidSeed));
 				guidGenSeed = new Guid(bytes);
 			}
@@ -676,6 +678,7 @@ namespace MixedRealityExtension.App
 			var rootActors = GetDistinctTreeRoots(
 				createdActors.Select(a => a.gameObject).ToArray()
 			).Select(go => go.GetComponent<Actor>()).ToArray();
+
 			var rootActor = createdActors.FirstOrDefault();
 			var createdAnims = new List<Animation.Animation>(5);
 
@@ -697,7 +700,7 @@ namespace MixedRealityExtension.App
 			}
 
 			foreach (var root in rootActors) {
-				ProcessActors(root.transform, root.transform.parent.GetComponent<Actor>());
+				ProcessActors(root.transform, root.transform.parent != null ? root.transform.parent.GetComponent<Actor>() : null);
 			}
 
 			if (originalMessage != null && rootActors.Length == 1)
@@ -763,7 +766,6 @@ namespace MixedRealityExtension.App
 					$"Successfully created {actors?.Count ?? 0} objects." :
 					failureMessage
 			};
-
 			Protocol.Send(
 				new ObjectSpawned()
 				{
