@@ -668,7 +668,7 @@ namespace MixedRealityExtension.App
 			}
 			else
 			{
-				var hasher = new System.Security.Cryptography.MD5Cng();
+				var hasher = new System.Security.Cryptography.MD5CryptoServiceProvider();
 				var bytes = hasher.ComputeHash(System.Text.UTF8Encoding.UTF8.GetBytes(guidSeed));
 				guidGenSeed = new Guid(bytes);
 			}
