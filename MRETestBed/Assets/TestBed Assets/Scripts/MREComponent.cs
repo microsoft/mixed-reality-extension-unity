@@ -9,6 +9,7 @@ using MixedRealityExtension.Assets;
 using MixedRealityExtension.Core.Interfaces;
 using MixedRealityExtension.Factories;
 using MixedRealityExtension.PluginInterfaces;
+using MixedRealityExtension.PluginInterfaces.Behaviors;
 using MixedRealityExtension.RPC;
 using Newtonsoft.Json.Linq;
 using UnityEngine;
@@ -95,6 +96,9 @@ public class MREComponent : MonoBehaviour
 	[SerializeField]
 	private DialogFactory DialogFactory;
 
+	[SerializeField]
+	private bool EnableMRTK = false;
+
 	private static Dictionary<Guid, UserInfo> joinedUsers = new Dictionary<Guid, UserInfo>();
 
 	internal static UserInfo GetUserInfo(Guid userId)
@@ -111,10 +115,12 @@ public class MREComponent : MonoBehaviour
 	{
 		if (!_apiInitialized)
 		{
+			var behaviorFactory = (EnableMRTK) ? new MRTKBehaviorFactory() as IBehaviorFactory : new BehaviorFactory();
+
 			MREAPI.InitializeAPI(
 				defaultMaterial: DefaultPrimMaterial,
 				layerApplicator: new SimpleLayerApplicator(0, 9, 10, 5),
-				behaviorFactory: new BehaviorFactory(),
+				behaviorFactory: behaviorFactory,
 				textFactory: new MWTextFactory(SerifFont, SansSerifFont),
 				libraryFactory: new ResourceFactory(),
 				assetCache: new AssetCache(new GameObject("MRE Asset Cache")),
