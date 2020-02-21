@@ -12,7 +12,7 @@ public class DialogFactory : MonoBehaviour, IDialogFactory
 {
 	[SerializeField] private Canvas canvas;
 	[SerializeField] private UnityStandardAssets.Characters.FirstPerson.FirstPersonController controller;
-	[SerializeField] private Assets.Scripts.User.InputSource inputSource;
+	[SerializeField] private Assets.Scripts.User.InputSourceBase inputSource;
 	[SerializeField] private Text label;
 	[SerializeField] private InputField input;
 

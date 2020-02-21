@@ -6,11 +6,9 @@ using UnityEngine;
 
 namespace Assets.Scripts.User
 {
-	public class InputSource : MonoBehaviour
+	public class InputSource : InputSourceBase
 	{
 		private Tool _currentTool;
-
-		public GameObject UserGameObject;
 
 		public Tool CurrentTool => _currentTool;
 
