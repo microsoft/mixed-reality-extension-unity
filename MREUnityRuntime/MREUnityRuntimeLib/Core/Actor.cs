@@ -531,6 +531,12 @@ namespace MixedRealityExtension.Core
 				{
 					_nextUpdateTime = Time.time + 0.2f + UnityEngine.Random.Range(-0.1f, 0.1f);
 					SynchronizeApp();
+
+					// Give components the opportunity to synchronize the app.
+					foreach (var component in _components.Values)
+					{
+						component.SynchronizeComponent();
+					}
 				}
 			}
 			catch (Exception e)
