@@ -7,7 +7,7 @@ namespace MixedRealityExtension.PluginInterfaces.Behaviors
 	/// <summary>
 	/// Interface that represents a pen behavior in the MRE runtime.
 	/// </summary>
-	public interface IPenBehavior : IToolBehavior<PenToolData>
+	public interface IPenBehavior : IToolBehavior<PenData>
 	{
 
 	}

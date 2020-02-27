@@ -94,7 +94,7 @@
     <Compile Include="Assets\PrefabAnimationTargets.cs" />
     <Compile Include="Behaviors\ActionData\BaseActionData.cs" />
     <Compile Include="Behaviors\ActionData\BaseToolData.cs" />
-    <Compile Include="Behaviors\ActionData\PenToolData.cs" />
+    <Compile Include="Behaviors\ActionData\PenData.cs" />
     <Compile Include="Behaviors\Handlers\PenHandler.cs" />
     <Compile Include="Behaviors\Handlers\ToolHandler.cs" />
     <Compile Include="Core\CollisionLayers.cs" />

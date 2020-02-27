@@ -19,7 +19,7 @@ namespace MixedRealityExtension.Behaviors.ActionData
 	/// <summary>
 	/// Class that represents the pen tool action data.
 	/// </summary>
-	public class PenToolData : BaseToolData
+	public class PenData : BaseToolData
 	{
 		/// <summary>
 		/// The list of draw data entries from the pen tool.

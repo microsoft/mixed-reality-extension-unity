@@ -3,26 +3,26 @@
 using MixedRealityExtension.API;
 using MixedRealityExtension.App;
 using MixedRealityExtension.Behaviors.ActionData;
-using MixedRealityExtension.Behaviors.Actions;
 using MixedRealityExtension.Core.Interfaces;
 using MixedRealityExtension.PluginInterfaces.Behaviors;
 using System;
 
 namespace MixedRealityExtension.Behaviors.Handlers
 {
-	internal class PenToolHandler : ToolHandler<PenToolData>
+	internal class PenHandler : ToolHandler<PenData>
 	{
-		internal PenToolHandler(IPenBehavior tool, WeakReference<MixedRealityExtensionApp> appRef, IActor attachedActor)
+		internal PenHandler(IPenBehavior tool, WeakReference<MixedRealityExtensionApp> appRef, IActor attachedActor)
 			: base(tool, appRef, attachedActor)
 		{
 			
 		}
 
-		internal static PenToolHandler Create(IActor actor, WeakReference<MixedRealityExtensionApp> appRef)
+		internal static PenHandler Create(IActor actor, WeakReference<MixedRealityExtensionApp> appRef)
 		{
 			var behaviorFactory = MREAPI.AppsAPI.BehaviorFactory;
 			var penBehavior = behaviorFactory.GetOrCreatePenBehavior(actor);
-			return new PenToolHandler(penBehavior, appRef, actor);
+			if (penBehavior == null) throw new NullReferenceException("Application failed to create a pen behavior for the MRE runtime.");
+			return new PenHandler(penBehavior, appRef, actor);
 		}
 
 		protected override void FixedUpdate()
