@@ -27,28 +27,42 @@ namespace MixedRealityExtension.Behaviors.Handlers
 			RegisterActionHandler(tool.Using, nameof(tool.Using));
 
 			_toolBehavior = tool;
-			_toolBehavior.Using.ActionStateChanged += OnUsingStateChanged;
+			_toolBehavior.Using.ActionStateChanging += OnUsingStateChanging;
 
 			ToolData = new ToolDataT();
 		}
 
 		protected override sealed void SynchronizeBehavior()
 		{
-			_queuedToolData = ToolData;
-			ToolData = new ToolDataT();
-			_toolBehavior.Using.PerformActionUpdate(_queuedToolData);
+			if (IsUsing)
+			{
+				PerformUsingAction();
+			}
 		}
 
 		protected override void CleanUp()
 		{
 			// Clean up our action listeners first then let the base handler cleanup the behavior.
-			_toolBehavior.Using.ActionStateChanged -= OnUsingStateChanged;
+			_toolBehavior.Using.ActionStateChanging -= OnUsingStateChanging;
 			base.CleanUp();
 		}
 
-		private void OnUsingStateChanged(object sender, ActionStateChangedArgs args)
+		private void OnUsingStateChanging(object sender, ActionStateChangedArgs args)
 		{
+			var wasUsing = IsUsing;
 			IsUsing = args.NewState == ActionState.Started || args.NewState == ActionState.Performing;
+			if (!IsUsing && wasUsing)
+			{
+				// We are stopping use and should send the remaining tool data up the remaining tool data from the last bit of use.
+				PerformUsingAction();
+			}
+		}
+
+		private void PerformUsingAction()
+		{
+			_queuedToolData = ToolData;
+			ToolData = new ToolDataT();
+			_toolBehavior.Using.PerformActionUpdate(_queuedToolData);
 		}
 	}
 }

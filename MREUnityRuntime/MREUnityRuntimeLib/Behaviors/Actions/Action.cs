@@ -71,6 +71,8 @@ namespace MixedRealityExtension.Behaviors.Actions
 
 		internal IActionHandler Handler { get; set; }
 
+		internal EventHandler<ActionStateChangedArgs> ActionStateChanging { get; set; }
+
 		internal EventHandler<ActionStateChangedArgs> ActionStateChanged { get; set; }
 
 		protected void ChangeState(IUser user, ActionState newState, BaseActionData actionData)
@@ -90,6 +92,7 @@ namespace MixedRealityExtension.Behaviors.Actions
 				_userActionStates.Add(user, newState);
 			}
 
+			ActionStateChanging?.Invoke(this, new ActionStateChangedArgs(user.Id, oldState, newState));
 			Handler?.HandleActionStateChanged(user, oldState, newState, actionData);
 			ActionStateChanged?.Invoke(this, new ActionStateChangedArgs(user.Id, oldState, newState));
 		}
