@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 using Assets.Scripts.Behaviors;
 using Assets.Scripts.User;
+using System;
 using System.Linq;
 using UnityEngine;
 
@@ -13,6 +14,18 @@ namespace Assets.Scripts.Tools
 		private TargetBehavior _currentTargetBehavior;
 
 		public GameObject Target { get; private set; }
+
+		public bool TargetGrabbed => _grabTool.GrabActive;
+
+		public TargetTool()
+		{
+			_grabTool.GrabStateChanged += OnGrabStateChanged;
+		}
+
+		public override void CleanUp()
+		{
+			_grabTool.GrabStateChanged -= OnGrabStateChanged;
+		}
 
 		protected override void UpdateTool(InputSource inputSource)
 		{
@@ -69,6 +82,16 @@ namespace Assets.Scripts.Tools
 		protected virtual void OnTargetChanged(GameObject oldTarget, GameObject newTarget, InputSource inputSource)
 		{
 
+		}
+
+		protected virtual void OnGrabStateChanged(GrabState oldGrabState, GrabState newGrabState, InputSource inputSource)
+		{
+
+		}
+
+		private void OnGrabStateChanged(object sender, GrabStateChangedArgs args)
+		{
+			OnGrabStateChanged(args.OldGrabState, args.NewGrabState, args.InputSource);
 		}
 
 		private GameObject FindTarget(InputSource inputSource)
