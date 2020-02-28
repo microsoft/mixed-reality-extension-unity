@@ -60,9 +60,12 @@ namespace MixedRealityExtension.Behaviors.Handlers
 
 		private void PerformUsingAction()
 		{
-			_queuedToolData = ToolData;
-			ToolData = new ToolDataT();
-			_toolBehavior.Using.PerformActionUpdate(_queuedToolData);
+			if (!ToolData.IsEmpty)
+			{
+				_queuedToolData = ToolData;
+				ToolData = new ToolDataT();
+				_toolBehavior.Using.PerformActionUpdate(_queuedToolData);
+			}
 		}
 	}
 }

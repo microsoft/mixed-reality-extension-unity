@@ -9,6 +9,11 @@ namespace MixedRealityExtension.Behaviors.ActionData
 	public abstract class BaseToolData : BaseActionData
 	{
 		/// <summary>
+		/// Gets whether the tool data is empty and shouldn't be synchronized.
+		/// </summary>
+		public abstract bool IsEmpty { get; }
+
+		/// <summary>
 		/// Reset the action data to a initial state.
 		/// </summary>
 		public abstract void Reset();

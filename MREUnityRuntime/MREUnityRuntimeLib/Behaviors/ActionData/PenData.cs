@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 using MixedRealityExtension.Core.Types;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace MixedRealityExtension.Behaviors.ActionData
 {
@@ -21,6 +22,8 @@ namespace MixedRealityExtension.Behaviors.ActionData
 	/// </summary>
 	public class PenData : BaseToolData
 	{
+		public override bool IsEmpty => !DrawData.Any();
+
 		/// <summary>
 		/// The list of draw data entries from the pen tool.
 		/// </summary>
