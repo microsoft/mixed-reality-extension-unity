@@ -531,6 +531,12 @@ namespace MixedRealityExtension.Core
 				{
 					_nextUpdateTime = Time.time + 0.2f + UnityEngine.Random.Range(-0.1f, 0.1f);
 					SynchronizeApp();
+
+					// Give components the opportunity to synchronize the app.
+					foreach (var component in _components.Values)
+					{
+						component.SynchronizeComponent();
+					}
 				}
 			}
 			catch (Exception e)
@@ -1224,6 +1230,13 @@ namespace MixedRealityExtension.Core
 					// update host apps to handle button conflicts.
 					behaviorComponent = GetOrCreateActorComponent<BehaviorComponent>();
 					var handler = BehaviorHandlerFactory.CreateBehaviorHandler(BehaviorType.Button, this, new WeakReference<MixedRealityExtensionApp>(App));
+
+					if (handler == null)
+					{
+						Debug.LogError("Failed to create a behavior handler.  Grab will not work without one.");
+						return;
+					}
+
 					behaviorComponent.SetBehaviorHandler(handler);
 				}
 
@@ -1590,6 +1603,14 @@ namespace MixedRealityExtension.Core
 			if (payload.BehaviorType != BehaviorType.None)
 			{
 				var handler = BehaviorHandlerFactory.CreateBehaviorHandler(payload.BehaviorType, this, new WeakReference<MixedRealityExtensionApp>(App));
+
+				if (handler == null)
+				{
+					Debug.LogError($"Failed to create behavior for behavior type {payload.BehaviorType.ToString()}");
+					onCompleteCallback?.Invoke();
+					return;
+				}
+
 				behaviorComponent.SetBehaviorHandler(handler);
 
 				// We need to update the new behavior's grabbable flag from the actor so that it can be grabbed in the case we cleared the previous behavior.

@@ -21,6 +21,7 @@ namespace MixedRealityExtension.Behaviors.Handlers
 		{
 			var behaviorFactory = MREAPI.AppsAPI.BehaviorFactory;
 			var targetBehavior = behaviorFactory.GetOrCreateTargetBehavior(actor);
+			if (targetBehavior == null) throw new NullReferenceException("Application failed to create a target behavior for the MRE runtime.");
 			return new TargetHandler(targetBehavior, appRef, actor);
 		}
 	}
