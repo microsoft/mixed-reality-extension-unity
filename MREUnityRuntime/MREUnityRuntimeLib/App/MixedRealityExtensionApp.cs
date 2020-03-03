@@ -388,9 +388,18 @@ namespace MixedRealityExtension.App
 			AnimationManager.UpdateServerTimeOffset(currentServerTime);
 		}
 
+		private HashSet<string> usedPreallocSeeds = new HashSet<string>();
 		/// <inheritdoc />
 		public void DeclarePreallocatedActors(GameObject[] objects, string guidSeed)
 		{
+			// guarantee a given seed is only used once per session
+			if (usedPreallocSeeds.Contains(guidSeed))
+			{
+				throw new ArgumentOutOfRangeException(nameof(guidSeed),
+					$"Preallocated actor seed [{guidSeed}] has already been used this session, choose a different one!");
+			}
+			usedPreallocSeeds.Add(guidSeed);
+
 			var goIds = new HashSet<int>(objects.Select(go => go.GetInstanceID()));
 			var rootGos = GetDistinctTreeRoots(objects);
 
@@ -405,6 +414,13 @@ namespace MixedRealityExtension.App
 
 			void addActors(GameObject go)
 			{
+				var oldActor = go.GetComponent<Actor>();
+				if (oldActor != null)
+				{
+					MREAPI.Logger.LogError($"GameObject {go.name} is already in use by another MRE session, skipping.");
+					return;
+				}
+
 				var actor = go.AddComponent<Actor>();
 				if (goIds.Contains(go.GetInstanceID()))
 				{
@@ -669,9 +685,7 @@ namespace MixedRealityExtension.App
 			}
 			else
 			{
-				var hasher = new System.Security.Cryptography.MD5CryptoServiceProvider();
-				var bytes = hasher.ComputeHash(System.Text.UTF8Encoding.UTF8.GetBytes(guidSeed));
-				guidGenSeed = new Guid(bytes);
+				guidGenSeed = UtilMethods.StringToGuid(guidSeed);
 			}
 			var guids = new DeterministicGuids(guidGenSeed);
 
