@@ -162,9 +162,12 @@ namespace MixedRealityExtension.App
 		void OnActorDestroyed(Guid actorId);
 
 		/// <summary>
-		/// Declare pre-allocated game objects as MRE actors
+		/// Declare pre-allocated game objects as MRE actors. Call this method only once per MRE instance.
 		/// </summary>
-		/// <param name="objects"></param>
+		/// <param name="objects">An array of GameObjects that this MRE should be aware of. GameObjects should not already be owned by an MRE.</param>
+		/// <param name="guidSeed">The seed for generating the new actors' IDs. Must be the same value across all clients
+		/// in the session for this batch of actors, or the preallocated actors will not synchronize correctly.
+		/// </param>
 		void DeclarePreallocatedActors(GameObject[] objects, string guidSeed);
 	}
 }

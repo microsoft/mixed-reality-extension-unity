@@ -388,6 +388,7 @@ namespace MixedRealityExtension.App
 			AnimationManager.UpdateServerTimeOffset(currentServerTime);
 		}
 
+		/// <inheritdoc />
 		public void DeclarePreallocatedActors(GameObject[] objects, string guidSeed)
 		{
 			var goIds = new HashSet<int>(objects.Select(go => go.GetInstanceID()));
