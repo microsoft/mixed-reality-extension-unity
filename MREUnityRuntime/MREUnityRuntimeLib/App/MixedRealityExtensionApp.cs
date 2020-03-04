@@ -388,6 +388,57 @@ namespace MixedRealityExtension.App
 			AnimationManager.UpdateServerTimeOffset(currentServerTime);
 		}
 
+		private HashSet<string> usedPreallocSeeds = new HashSet<string>();
+		/// <inheritdoc />
+		public void DeclarePreallocatedActors(GameObject[] objects, string guidSeed)
+		{
+			if (!(Protocol is Execution))
+			{
+				throw new Exception($"Preallocated actors can only be declared after the app is Started");
+			}
+
+			// guarantee a given seed is only used once per session
+			if (usedPreallocSeeds.Contains(guidSeed))
+			{
+				throw new ArgumentOutOfRangeException(nameof(guidSeed),
+					$"Preallocated actor seed [{guidSeed}] has already been used this session, choose a different one!");
+			}
+			usedPreallocSeeds.Add(guidSeed);
+
+			var goIds = new HashSet<int>(objects.Select(go => go.GetInstanceID()));
+			var rootGos = GetDistinctTreeRoots(objects);
+
+			// add actor components to all gos beneath a tagged go
+			var taggedActors = new List<Actor>(objects.Length);
+			foreach (var root in rootGos)
+			{
+				addActors(root);
+			}
+
+			ProcessCreatedActors(null, taggedActors, null, guidSeed);
+
+			void addActors(GameObject go)
+			{
+				var oldActor = go.GetComponent<Actor>();
+				if (oldActor != null)
+				{
+					MREAPI.Logger.LogError($"GameObject {go.name} is already in use by another MRE session, skipping.");
+					return;
+				}
+
+				var actor = go.AddComponent<Actor>();
+				if (goIds.Contains(go.GetInstanceID()))
+				{
+					taggedActors.Add(actor);
+				}
+
+				foreach (Transform child in go.transform)
+				{
+					addActors(child.gameObject);
+				}
+			}
+		}
+
 		#region Methods - Internal
 
 		internal void OnReceive(Message message)
@@ -523,6 +574,29 @@ namespace MixedRealityExtension.App
 			}
 		}
 
+		private GameObject[] GetDistinctTreeRoots(GameObject[] gos)
+		{
+			// identify gameobjects whose ancestors are not also flagged to be actors
+			var goIds = new HashSet<int>(gos.Select(go => go.GetInstanceID()));
+			var rootGos = new List<GameObject>(gos.Length);
+			foreach (var go in gos)
+			{
+				if (!ancestorInList(go))
+				{
+					rootGos.Add(go);
+				}
+			}
+
+			return rootGos.ToArray();
+
+			bool ancestorInList(GameObject go)
+			{
+				return go != null && go.transform.parent != null && (
+					goIds.Contains(go.transform.parent.gameObject.GetInstanceID()) ||
+					ancestorInList(go.transform.parent.gameObject));
+			}
+		}
+
 		#endregion
 
 		#region Command Handlers
@@ -607,13 +681,28 @@ namespace MixedRealityExtension.App
 			}
 		}
 
-		private void ProcessCreatedActors(CreateActor originalMessage, IList<Actor> createdActors, Action onCompleteCallback)
+		private void ProcessCreatedActors(CreateActor originalMessage, IList<Actor> createdActors, Action onCompleteCallback, string guidSeed = null)
 		{
-			var guids = new DeterministicGuids(originalMessage.Actor?.Id);
+			Guid guidGenSeed;
+			if (originalMessage != null)
+			{
+				guidGenSeed = originalMessage.Actor.Id;
+			}
+			else
+			{
+				guidGenSeed = UtilMethods.StringToGuid(guidSeed);
+			}
+			var guids = new DeterministicGuids(guidGenSeed);
+
+			// find the actors with no actor parents
+			var rootActors = GetDistinctTreeRoots(
+				createdActors.Select(a => a.gameObject).ToArray()
+			).Select(go => go.GetComponent<Actor>()).ToArray();
+
 			var rootActor = createdActors.FirstOrDefault();
 			var createdAnims = new List<Animation.Animation>(5);
 
-			if (rootActor.transform.parent == null)
+			if (rootActors.Length == 1 && rootActor.transform.parent == null)
 			{
 				// Delete entire hierarchy as we no longer have a valid parent actor for the root of this hierarchy.  It was likely
 				// destroyed in the process of the async operation before this callback was called.
@@ -630,9 +719,14 @@ namespace MixedRealityExtension.App
 				return;
 			}
 
-			ProcessActors(rootActor.transform, rootActor.transform.parent.GetComponent<Actor>());
+			foreach (var root in rootActors) {
+				ProcessActors(root.transform, root.transform.parent != null ? root.transform.parent.GetComponent<Actor>() : null);
+			}
 
-			rootActor?.ApplyPatch(originalMessage.Actor);
+			if (originalMessage != null && rootActors.Length == 1)
+			{
+				rootActor?.ApplyPatch(originalMessage.Actor);
+			}
 			Actor.ApplyVisibilityUpdate(rootActor);
 
 			_actorManager.UponStable(
@@ -692,7 +786,6 @@ namespace MixedRealityExtension.App
 					$"Successfully created {actors?.Count ?? 0} objects." :
 					failureMessage
 			};
-
 			Protocol.Send(
 				new ObjectSpawned()
 				{
@@ -705,7 +798,7 @@ namespace MixedRealityExtension.App
 					Actors = actors?.Select((actor) => actor.GenerateInitialPatch()) ?? new ActorPatch[] { },
 					Animations = anims?.Select(anim => anim.GeneratePatch()) ?? new AnimationPatch[] { }
 				},
-				originalMessage.MessageId
+				originalMessage?.MessageId
 			);
 
 			onCompleteCallback?.Invoke();

@@ -541,7 +541,7 @@ namespace MixedRealityExtension.Core
 			}
 			catch (Exception e)
 			{
-				App.Logger.LogError($"Failed to synchronize app.  Exception: {e.Message}\nStackTrace: {e.StackTrace}");
+				App?.Logger.LogError($"Failed to synchronize app.  Exception: {e.Message}\nStackTrace: {e.StackTrace}");
 			}
 
 			_transformLerper?.Update();
