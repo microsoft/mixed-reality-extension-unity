@@ -117,6 +117,11 @@ namespace MixedRealityExtension.Assets
 		public ColorPatch Color;
 
 		/// <summary>
+		/// The lighting-independent color
+		/// </summary>
+		public ColorPatch EmissiveColor;
+
+		/// <summary>
 		/// The ID of the main texture asset
 		/// </summary>
 		public Guid? MainTextureId;
