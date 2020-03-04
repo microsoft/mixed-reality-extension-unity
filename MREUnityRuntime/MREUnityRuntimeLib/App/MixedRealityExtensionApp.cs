@@ -392,6 +392,11 @@ namespace MixedRealityExtension.App
 		/// <inheritdoc />
 		public void DeclarePreallocatedActors(GameObject[] objects, string guidSeed)
 		{
+			if (!(Protocol is Execution))
+			{
+				throw new Exception($"Preallocated actors can only be declared after the app is Started");
+			}
+
 			// guarantee a given seed is only used once per session
 			if (usedPreallocSeeds.Contains(guidSeed))
 			{

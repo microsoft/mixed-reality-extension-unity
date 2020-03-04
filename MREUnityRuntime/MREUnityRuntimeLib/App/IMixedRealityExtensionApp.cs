@@ -168,6 +168,8 @@ namespace MixedRealityExtension.App
 		/// <param name="guidSeed">The seed for generating the new actors' IDs. Must be the same value across all clients
 		/// in the session for this batch of actors, or the preallocated actors will not synchronize correctly. Must be unique for this MRE session.
 		/// </param>
+		/// <exception cref="Exception">Thrown when the app is not in the Started state.</exception>
+		/// <exception cref="ArgumentOutOfRangeException">Thrown when the value of the guidSeed argument has already been used this session.</exception>
 		void DeclarePreallocatedActors(GameObject[] objects, string guidSeed);
 	}
 }
