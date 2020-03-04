@@ -30,28 +30,6 @@ public class VertexShadedGltfImporter : GLTFSceneImporter
 		_templateMaterial = templateMaterial;
 	}
 
-	protected override async Task ConstructScene(GLTFScene scene, bool showSceneObj, CancellationToken cancellationToken)
-	{
-		// calc total vert/poly count
-		int vertCount = 0, polyCount = 0;
-		foreach (var mesh in _gltfRoot.Meshes)
-		{
-			foreach (var prim in mesh.Primitives)
-			{
-				var localVertCount = (int) prim.Attributes[SemanticProperties.POSITION].Value.Count;
-				vertCount += localVertCount;
-				polyCount += ((int?)prim.Indices?.Value.Count ?? localVertCount) / 3;
-			}
-		}
-
-		await base.ConstructScene(scene, showSceneObj, cancellationToken);
-
-		foreach(var skin in CreatedObject.GetComponentsInChildren<SkinnedMeshRenderer>(true))
-		{
-			skin.quality = SkinQuality.Bone2;
-		}
-	}
-
 	protected override async Task ConstructMaterialImageBuffers(GLTFMaterial def)
 	{
 		if (def.PbrMetallicRoughness?.BaseColorTexture == null) return;
