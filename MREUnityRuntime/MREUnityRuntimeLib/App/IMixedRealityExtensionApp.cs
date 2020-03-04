@@ -162,7 +162,8 @@ namespace MixedRealityExtension.App
 		void OnActorDestroyed(Guid actorId);
 
 		/// <summary>
-		/// Declare pre-allocated game objects as MRE actors.
+		/// Declare pre-allocated game objects as MRE actors. Note: Since these actors are not created via an MRE message, the app has
+		/// no means to create them on clients that have not preallocated them. Thus cross-host compatibility will be reduced for these actors.
 		/// </summary>
 		/// <param name="objects">An array of GameObjects that this MRE should be aware of. GameObjects cannot already be owned by an MRE.</param>
 		/// <param name="guidSeed">The seed for generating the new actors' IDs. Must be the same value across all clients
