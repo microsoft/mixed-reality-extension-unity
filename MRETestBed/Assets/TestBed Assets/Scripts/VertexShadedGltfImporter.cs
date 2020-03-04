@@ -1,6 +1,4 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
-// Licensed under the MIT License.
-using GLTF.Schema;
+﻿using GLTF.Schema;
 using UnityGLTF;
 using UnityGLTF.Loader;
 using System;
@@ -35,7 +33,7 @@ public class VertexShadedGltfImporter : GLTFSceneImporter
 	protected override async Task ConstructScene(GLTFScene scene, bool showSceneObj, CancellationToken cancellationToken)
 	{
 		// calc total vert/poly count
-		/* int vertCount = 0, polyCount = 0;
+		int vertCount = 0, polyCount = 0;
 		foreach (var mesh in _gltfRoot.Meshes)
 		{
 			foreach (var prim in mesh.Primitives)
@@ -45,16 +43,6 @@ public class VertexShadedGltfImporter : GLTFSceneImporter
 				polyCount += ((int?)prim.Indices?.Value.Count ?? localVertCount) / 3;
 			}
 		}
-
-		if (vertCount > VERTEX_LIMIT)
-		{
-			throw new Exception($"Requested glTF {_gltfFileName} has too many vertices ({vertCount:N} > {VERTEX_LIMIT:N})");
-		}
-
-		if (polyCount > POLYGON_LIMIT)
-		{
-			throw new Exception($"Requested glTF {_gltfFileName} has too many polygons ({polyCount:N} > {POLYGON_LIMIT:N})");
-		} */
 
 		await base.ConstructScene(scene, showSceneObj, cancellationToken);
 
@@ -120,6 +108,8 @@ public class VertexShadedGltfImporter : GLTFSceneImporter
 				}
 			}
 		}
+
+		material.SetColor("_Emissive", def.EmissiveFactor.ToUnityColorRaw());
 
 		material.SetFloat("_AlphaCutoff", (float)def.AlphaCutoff);
 		switch (def.AlphaMode)

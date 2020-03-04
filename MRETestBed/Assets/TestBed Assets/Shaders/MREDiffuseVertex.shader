@@ -1,8 +1,7 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
-// Licensed under the MIT License.
-Shader "MRE/DiffuseVertex" {
+Shader "Altspace/MREDiffuseVertex" {
 	Properties {
 		_Color ("Color", Color) = (1, 1, 1, 1) // Tint
+		_Emissive ("Emissive Color", Color) = (0, 0, 0, 1)
 		_MainTex ("Texture", 2D) = "white" {}
 
 		// Blend settings
@@ -33,6 +32,7 @@ Shader "MRE/DiffuseVertex" {
 			float4 _MainTex_ST;
 
 			uniform float4 _Color;
+			uniform float4 _Emissive;
 			uniform float _ShouldCutout;
 			uniform float _AlphaCutoff;
 
@@ -108,7 +108,7 @@ Shader "MRE/DiffuseVertex" {
 			fixed4 frag(v2f i) : COLOR
 			{
 				UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
-				float4 color = i.diffuse * tex2D(_MainTex, i.uv);
+				float4 color = fixed4(_Emissive.rgb, 0.0) + i.diffuse * tex2D(_MainTex, i.uv);
 				UNITY_APPLY_FOG(i.fogCoord, color);
 				clip(lerp(1, color.a - _AlphaCutoff, _ShouldCutout));
 				return color;

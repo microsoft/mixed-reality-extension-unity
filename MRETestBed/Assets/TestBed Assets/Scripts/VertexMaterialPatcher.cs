@@ -1,15 +1,27 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
-// Licensed under the MIT License.
-using MWAssets = MixedRealityExtension.Assets;
+﻿using MWAssets = MixedRealityExtension.Assets;
+using MixedRealityExtension.Core.Types;
+using ColorPatch = MixedRealityExtension.Patching.Types.ColorPatch;
 
 using UnityEngine;
 using UnityEngine.Rendering;
 
 public class VertexMaterialPatcher : MixedRealityExtension.Factories.DefaultMaterialPatcher
 {
+	private static int EmissiveProp = Shader.PropertyToID("_Emissive");
+
 	public override void ApplyMaterialPatch(Material material, MWAssets.Material patch)
 	{
 		base.ApplyMaterialPatch(material, patch);
+
+		if (patch.EmissiveColor != null)
+		{
+			var color = material.GetColor(EmissiveProp);
+			color.r = patch.EmissiveColor.R ?? color.r;
+			color.g = patch.EmissiveColor.G ?? color.g;
+			color.b = patch.EmissiveColor.B ?? color.b;
+			color.a = patch.EmissiveColor.A ?? color.a;
+			material.SetColor(EmissiveProp, color);
+		}
 
 		if (patch.AlphaCutoff != null)
 		{
@@ -49,11 +61,22 @@ public class VertexMaterialPatcher : MixedRealityExtension.Factories.DefaultMate
 	public override MWAssets.Material GeneratePatch(Material material)
 	{
 		var patch = base.GeneratePatch(material);
+
+		var unityColor = material.GetColor(EmissiveProp);
+		patch.EmissiveColor = new ColorPatch()
+		{
+			R = unityColor.r,
+			G = unityColor.g,
+			B = unityColor.b,
+			A = unityColor.a
+		};
+
 		patch.AlphaCutoff = material.GetFloat("_AlphaCutoff");
 		patch.AlphaMode =
 			material.renderQueue == (int)RenderQueue.Transparent ? MWAssets.AlphaMode.Blend :
 			material.renderQueue == (int)RenderQueue.AlphaTest ? MWAssets.AlphaMode.Mask :
 			MWAssets.AlphaMode.Opaque;
+
 		return patch;
 	}
 }
