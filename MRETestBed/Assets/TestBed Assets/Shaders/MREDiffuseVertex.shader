@@ -1,4 +1,6 @@
-Shader "Altspace/MREDiffuseVertex" {
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+Shader "MRE/DiffuseVertex" {
 	Properties {
 		_Color ("Color", Color) = (1, 1, 1, 1) // Tint
 		_Emissive ("Emissive Color", Color) = (0, 0, 0, 1)

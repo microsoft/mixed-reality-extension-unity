@@ -1,4 +1,6 @@
-﻿using GLTF.Schema;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.	using GLTF.Schema;
+// Licensed under the MIT License.
+using GLTF.Schema;
 using UnityGLTF;
 using UnityGLTF.Loader;
 using System;
