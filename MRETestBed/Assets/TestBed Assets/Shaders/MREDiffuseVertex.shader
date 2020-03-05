@@ -3,8 +3,9 @@
 Shader "MRE/DiffuseVertex" {
 	Properties {
 		_Color ("Color", Color) = (1, 1, 1, 1) // Tint
-		_Emissive ("Emissive Color", Color) = (0, 0, 0, 1)
 		_MainTex ("Texture", 2D) = "white" {}
+		_EmissiveColor ("Emissive Color", Color) = (0, 0, 0, 1)
+		_EmissiveTex ("Emissive Texture", 2D) = "white" {}
 
 		// Blend settings
 		_AlphaCutoff("Alpha Cutoff", Range(0,1)) = 0.5
@@ -32,9 +33,11 @@ Shader "MRE/DiffuseVertex" {
 
 			sampler2D _MainTex;
 			float4 _MainTex_ST;
+			sampler2D _EmissiveTex;
+			float4 _EmissiveTex_ST;
 
 			uniform float4 _Color;
-			uniform float4 _Emissive;
+			uniform float4 _EmissiveColor;
 			uniform float _ShouldCutout;
 			uniform float _AlphaCutoff;
 
@@ -98,7 +101,7 @@ Shader "MRE/DiffuseVertex" {
 				UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
 
 				o.pos = UnityObjectToClipPos(v.vertex);
-				o.uv = TRANSFORM_TEX(v.uv, _MainTex);
+				o.uv = v.uv;
 
 				float3 diffuseShade;
 				computeShadingFull(v.vertex, v.normal, float3(1, 1, 1), diffuseShade);
@@ -110,7 +113,9 @@ Shader "MRE/DiffuseVertex" {
 			fixed4 frag(v2f i) : COLOR
 			{
 				UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
-				float4 color = fixed4(_Emissive.rgb, 0.0) + i.diffuse * tex2D(_MainTex, i.uv);
+				float4 color =
+					fixed4(_EmissiveColor.rgb, 0.0) * tex2D(_EmissiveTex, TRANSFORM_TEX(i.uv, _EmissiveTex)) +
+					i.diffuse * tex2D(_MainTex, TRANSFORM_TEX(i.uv, _MainTex));
 				UNITY_APPLY_FOG(i.fogCoord, color);
 				clip(lerp(1, color.a - _AlphaCutoff, _ShouldCutout));
 				return color;
