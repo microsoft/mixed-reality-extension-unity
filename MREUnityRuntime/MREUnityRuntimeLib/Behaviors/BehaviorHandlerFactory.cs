@@ -1,12 +1,12 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
-using MixedRealityExtension.API;
 using MixedRealityExtension.App;
 using MixedRealityExtension.Behaviors.Handlers;
 using MixedRealityExtension.Core.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using UnityEngine;
 
 namespace MixedRealityExtension.Behaviors
 {
@@ -27,7 +27,15 @@ namespace MixedRealityExtension.Behaviors
 				var methodInfo = s_behaviorHandlerTypeLookup[behaviorType].GetMethod("Create", BindingFlags.Static | BindingFlags.NonPublic);
 				if (methodInfo != null)
 				{
-					return (IBehaviorHandler)methodInfo.Invoke(null, new object[] { actor, appRef });
+					try
+					{
+						return (IBehaviorHandler)methodInfo.Invoke(null, new object[] { actor, appRef });
+					}
+					catch (Exception e)
+					{
+						Debug.LogException(e);
+						return null;
+					}
 				}
 				else
 				{
