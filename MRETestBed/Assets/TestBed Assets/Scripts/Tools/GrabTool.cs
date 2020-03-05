@@ -7,26 +7,6 @@ using UnityEngine;
 
 namespace Assets.Scripts.Tools
 {
-	public enum GrabState
-	{
-		Grabbed,
-		Released
-	}
-
-	public class GrabStateChangedArgs
-	{
-		public GrabState OldGrabState { get; }
-		public GrabState NewGrabState { get; }
-		public InputSource InputSource { get; }
-
-		public GrabStateChangedArgs(GrabState oldGrabState, GrabState newGrabState, InputSource inputSource)
-		{
-			OldGrabState = oldGrabState;
-			NewGrabState = newGrabState;
-			InputSource = inputSource;
-		}
-	}
-
 	public class GrabTool: IDisposable
 	{
 		private Transform _manipulator;
@@ -39,8 +19,6 @@ namespace Assets.Scripts.Tools
 		public bool GrabActive => CurrentGrabbedTarget != null;
 
 		public GameObject CurrentGrabbedTarget { get; private set; }
-
-		public EventHandler<GrabStateChangedArgs> GrabStateChanged { get; set; }
 
 		public void Update(InputSource inputSource, GameObject target)
 		{
@@ -63,7 +41,6 @@ namespace Assets.Scripts.Tools
 				}
 
 				StartGrab(inputSource, target);
-				GrabStateChanged?.Invoke(this, new GrabStateChangedArgs(GrabState.Released, GrabState.Grabbed, inputSource));
 			}
 			else if (Input.GetButtonUp("Fire2"))
 			{
@@ -79,7 +56,6 @@ namespace Assets.Scripts.Tools
 				}
 
 				EndGrab();
-				GrabStateChanged?.Invoke(this, new GrabStateChangedArgs(GrabState.Grabbed, GrabState.Released, inputSource));
 			}
 
 			if (GrabActive)
