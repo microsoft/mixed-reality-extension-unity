@@ -18,7 +18,7 @@ namespace MixedRealityExtension.Animation
 		private static DateTime Epoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 		private readonly long OffsetUpdateThreshold = 50;
 
-		private MixedRealityExtensionApp App;
+		public MixedRealityExtensionApp App;
 		private readonly Dictionary<Guid, Animation> Animations = new Dictionary<Guid, Animation>(10);
 		private readonly Dictionary<Guid, AnimationPatch> PendingPatches = new Dictionary<Guid, AnimationPatch>(10);
 		private long ServerTimeOffset = 0;

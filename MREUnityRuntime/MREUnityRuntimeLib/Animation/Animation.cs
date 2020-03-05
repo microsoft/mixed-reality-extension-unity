@@ -21,7 +21,8 @@ namespace MixedRealityExtension.Animation
 		public virtual float Weight { get; protected set; }
 		public virtual MWAnimationWrapMode WrapMode { get; protected set; }
 
-		internal List<Actor> targetActors;
+		public virtual List<Guid> TargetIds { get; set; }
+		protected List<Actor> TargetActors => TargetIds.Select(id => manager.App.FindActor(id) as Actor).ToList();
 
 		public bool IsPlaying => Weight > 0;
 
@@ -66,7 +67,7 @@ namespace MixedRealityExtension.Animation
 			// send one transform update when the anim stops
 			if (wasMoving && !isMoving)
 			{
-				foreach (var actor in targetActors)
+				foreach (var actor in TargetActors)
 				{
 					actor.SendActorUpdate(Messaging.Payloads.ActorComponentType.Transform);
 				}
@@ -82,7 +83,7 @@ namespace MixedRealityExtension.Animation
 				Speed = Speed,
 				Weight = Weight,
 				WrapMode = WrapMode,
-				TargetActorIds = targetActors.Select(actor => actor.Id)
+				TargetIds = TargetIds
 			};
 
 			if (IsPlaying)

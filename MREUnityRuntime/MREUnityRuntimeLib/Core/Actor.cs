@@ -1421,7 +1421,7 @@ namespace MixedRealityExtension.Core
 							payload.AnimationId.Value,
 							unityAnim,
 							unityState);
-						nativeAnim.targetActors = new List<Actor>() { this };
+						nativeAnim.TargetIds = new List<Guid>() { Id };
 						App.AnimationManager.RegisterAnimation(nativeAnim);
 
 						Trace trace = new Trace()
