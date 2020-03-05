@@ -34,10 +34,17 @@ public class VertexShadedGltfImporter : GLTFSceneImporter
 
 	protected override async Task ConstructMaterialImageBuffers(GLTFMaterial def)
 	{
-		if (def.PbrMetallicRoughness?.BaseColorTexture == null) return;
+		if (def.EmissiveTexture != null)
+		{
+			var textureId = def.EmissiveTexture.Index;
+			await ConstructImageBuffer(textureId.Value, textureId.Id);
+		}
 
-		var textureId = def.PbrMetallicRoughness?.BaseColorTexture.Index;
-		await ConstructImageBuffer(textureId.Value, textureId.Id);
+		if (def.PbrMetallicRoughness?.BaseColorTexture != null)
+		{
+			var textureId = def.PbrMetallicRoughness.BaseColorTexture.Index;
+			await ConstructImageBuffer(textureId.Value, textureId.Id);
+		}
 	}
 
 	protected override async Task ConstructMaterial(GLTFMaterial def, int materialIndex)
@@ -89,7 +96,20 @@ public class VertexShadedGltfImporter : GLTFSceneImporter
 			}
 		}
 
-		material.SetColor("_Emissive", def.EmissiveFactor.ToUnityColorRaw());
+		material.SetColor("_EmissiveColor", def.EmissiveFactor.ToUnityColorRaw());
+		if (def.EmissiveTexture != null)
+		{
+			TextureId textureId = def.EmissiveTexture.Index;
+			await ConstructTexture(textureId.Value, textureId.Id, false, false);
+			material.SetTexture("_EmissiveTex", _assetCache.TextureCache[textureId.Id].Texture);
+
+			var ext = GetTextureTransform(def.EmissiveTexture);
+			if (ext != null)
+			{
+				material.SetTextureOffset("_EmissiveTex", new Vector2(ext.Offset.X, 1 - ext.Scale.Y - ext.Offset.Y));
+				material.SetTextureScale("_EmissiveTex", new Vector2(ext.Scale.X, ext.Scale.Y));
+			}
+		}
 
 		material.SetFloat("_AlphaCutoff", (float)def.AlphaCutoff);
 		switch (def.AlphaMode)
