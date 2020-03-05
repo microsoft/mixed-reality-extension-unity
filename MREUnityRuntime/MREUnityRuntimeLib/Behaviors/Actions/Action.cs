@@ -1,6 +1,5 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
-using MixedRealityExtension.Behaviors.ActionData;
 using MixedRealityExtension.Core.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -20,18 +19,13 @@ namespace MixedRealityExtension.Behaviors.Actions
 		/// <summary>
 		/// The action is stopped.
 		/// </summary>
-		Stopped,
-
-		/// <summary>
-		/// The action is currently being performed.
-		/// </summary>
-		Performing
+		Stopped
 	}
 
 	/// <summary>
 	/// The event argument class to provide information about the action state change event.
 	/// </summary>
-	internal sealed class ActionStateChangedArgs
+	public sealed class ActionStateChangedArgs
 	{
 		/// <summary>
 		/// The id of the user that has cause a state change for the action.
@@ -63,19 +57,33 @@ namespace MixedRealityExtension.Behaviors.Actions
 	}
 
 	/// <summary>
-	/// Abstract base class for an action within the MRE behavior system.
+	/// The class that serves as the basic actions that are a part of a behavior.
 	/// </summary>
-	public abstract class MWActionBase
+	public sealed class MWAction
 	{
 		private Dictionary<IUser, ActionState> _userActionStates = new Dictionary<IUser, ActionState>();
 
 		internal IActionHandler Handler { get; set; }
 
-		internal EventHandler<ActionStateChangedArgs> ActionStateChanging { get; set; }
+		/// <summary>
+		/// Signals the start of this action for the given user.
+		/// </summary>
+		/// <param name="user">The user starting the action.</param>
+		public void StartAction(IUser user)
+		{
+			UpdateAction(user, ActionState.Started);
+		}
 
-		internal EventHandler<ActionStateChangedArgs> ActionStateChanged { get; set; }
+		/// <summary>
+		/// Signals the stop of this action for the given user.
+		/// </summary>
+		/// <param name="user">The user stopping the action.</param>
+		public void StopAction(IUser user)
+		{
+			UpdateAction(user, ActionState.Stopped);
+		}
 
-		protected void ChangeState(IUser user, ActionState newState, BaseActionData actionData)
+		private void UpdateAction(IUser user, ActionState newState)
 		{
 			if (user == null)
 			{
@@ -92,90 +100,7 @@ namespace MixedRealityExtension.Behaviors.Actions
 				_userActionStates.Add(user, newState);
 			}
 
-			ActionStateChanging?.Invoke(this, new ActionStateChangedArgs(user.Id, oldState, newState));
-			Handler?.HandleActionStateChanged(user, oldState, newState, actionData);
-			ActionStateChanged?.Invoke(this, new ActionStateChangedArgs(user.Id, oldState, newState));
-		}
-
-		protected void UpdateAction(BaseActionData actionData)
-		{
-			foreach (var userActionState in _userActionStates)
-			{
-				if (userActionState.Value != ActionState.Stopped)
-				{
-					Handler?.HandleActionPerforming(userActionState.Key, actionData);
-				}
-			}
-		}
-	}
-
-	/// <summary>
-	/// The class that serves as the basic actions that are a part of a behavior.
-	/// </summary>
-	public sealed class MWAction : MWActionBase
-	{
-		/// <summary>
-		/// Signals the start of this action for the given user.
-		/// </summary>
-		/// <param name="user">The user starting the action.</param>
-		public void StartAction(IUser user)
-		{
-			ChangeState(user, ActionState.Started, null);
-		}
-
-		/// <summary>
-		/// Signals the stop of this action for the given user.
-		/// </summary>
-		/// <param name="user">The user stopping the action.</param>
-		public void StopAction(IUser user)
-		{
-			ChangeState(user, ActionState.Stopped, null);
-		}
-
-		/// <summary>
-		/// Provides an action update while the action is being performed.
-		/// </summary>
-		/// <param name="user">The user performing the action.</param>
-		public void PerformActionUpdate()
-		{
-			UpdateAction(null);
-		}
-	}
-
-	/// <summary>
-	/// The class that serves as the basic actions with action data that are a part of a behavior.
-	/// </summary>
-	/// <typeparam name="ActionDataT">The action data type associated with the action events.</typeparam>
-	public sealed class MWAction<ActionDataT> : MWActionBase
-		where ActionDataT : BaseActionData
-	{
-		/// <summary>
-		/// Signals the start of this action for the given user.
-		/// </summary>
-		/// <param name="user">The user starting the action.</param>
-		/// <param name="actionData">The optional data to pass along.</param>
-		public void StartAction(IUser user, ActionDataT actionData = null)
-		{
-			ChangeState(user, ActionState.Started, actionData);
-		}
-
-		/// <summary>
-		/// Signals the stop of this action for the given user.
-		/// </summary>
-		/// <param name="user">The user stopping the action.</param>
-		/// <param name="actionData">The optional data to pass along.</param>
-		public void StopAction(IUser user, ActionDataT actionData = null)
-		{
-			ChangeState(user, ActionState.Stopped, actionData);
-		}
-
-		/// <summary>
-		/// Provides an action update while the action is being performed.
-		/// </summary>
-		/// <param name="actionData">The optional data to pass along.</param>
-		public void PerformActionUpdate(ActionDataT actionData = null)
-		{
-			UpdateAction(actionData);
+			Handler?.HandleActionStateChanged(user, oldState, newState);
 		}
 	}
 }

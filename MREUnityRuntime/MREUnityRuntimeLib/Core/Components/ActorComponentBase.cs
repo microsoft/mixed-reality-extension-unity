@@ -14,11 +14,6 @@ namespace MixedRealityExtension.Core.Components
 
 		}
 
-		internal virtual void SynchronizeComponent()
-		{
-
-		}
-
 		private void Start()
 		{
 			if (AttachedActor == null)

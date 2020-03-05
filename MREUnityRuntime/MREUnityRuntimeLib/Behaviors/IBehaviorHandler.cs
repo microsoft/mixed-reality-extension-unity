@@ -12,9 +12,5 @@ namespace MixedRealityExtension.Behaviors
 		BehaviorType BehaviorType { get; }
 
 		void CleanUp();
-
-		void FixedUpdate();
-
-		void SynchronizeBehavior();
 	}
 }
