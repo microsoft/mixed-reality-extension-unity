@@ -12,13 +12,6 @@ namespace Assets.Scripts.Behaviors
 			return actor.GameObject.GetComponent<ButtonBehavior>() ?? actor.GameObject.AddComponent<ButtonBehavior>();
 		}
 
-		public IPenBehavior GetOrCreatePenBehavior(IActor actor)
-		{
-			var penBehavior = actor.GameObject.GetComponent<PenBehavior>() ?? actor.GameObject.AddComponent<PenBehavior>();
-			penBehavior.Grabbable = true;
-			return penBehavior;
-		}
-
 		public ITargetBehavior GetOrCreateTargetBehavior(IActor actor)
 		{
 			return actor.GameObject.GetComponent<TargetBehavior>() ?? actor.GameObject.AddComponent<TargetBehavior>();

@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 using MixedRealityExtension.App;
-using MixedRealityExtension.Behaviors.ActionData;
 using MixedRealityExtension.Behaviors.Actions;
 using MixedRealityExtension.Core.Interfaces;
 using MixedRealityExtension.Messaging.Events.Types;
@@ -29,16 +28,7 @@ namespace MixedRealityExtension.Behaviors
 			_attachedActorId = attachedActorId;
 		}
 
-		void IActionHandler.HandleActionPerforming(IUser user, BaseActionData actionData)
-		{
-			((IActionHandler)this).HandleActionStateChanged(user, ActionState.Performing, ActionState.Performing, actionData);
-		}
-
-		void IActionHandler.HandleActionStateChanged(
-			IUser user,
-			ActionState oldState,
-			ActionState newState,
-			BaseActionData actionData)
+		void IActionHandler.HandleActionStateChanged(IUser user, ActionState oldState, ActionState newState)
 		{
 			MixedRealityExtensionApp app;
 			if (!_appRef.TryGetTarget(out app))
@@ -52,8 +42,7 @@ namespace MixedRealityExtension.Behaviors
 				TargetId = _attachedActorId,
 				BehaviorType = _behaviorType,
 				ActionName = _actionName,
-				ActionState = newState,
-				ActionData = actionData
+				ActionState = newState
 			};
 
 			app.EventManager.QueueLateEvent(new BehaviorEvent(actionPerformed));
