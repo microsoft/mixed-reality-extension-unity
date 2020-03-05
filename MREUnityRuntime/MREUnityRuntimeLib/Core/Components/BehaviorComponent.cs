@@ -40,15 +40,5 @@ namespace MixedRealityExtension.Core.Components
 			base.CleanUp();
 			ClearBehaviorHandler();
 		}
-
-		internal override void SynchronizeComponent()
-		{
-			_behaviorHandler?.SynchronizeBehavior();
-		}
-
-		private void FixedUpdate()
-		{
-			_behaviorHandler?.FixedUpdate();
-		}
 	}
 }

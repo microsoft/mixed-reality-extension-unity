@@ -22,7 +22,6 @@ namespace MixedRealityExtension.Behaviors.Handlers
 		{
 			var behaviorFactory = MREAPI.AppsAPI.BehaviorFactory;
 			var buttonBehavior = behaviorFactory.GetOrCreateButtonBehavior(actor);
-			if (buttonBehavior == null) throw new NullReferenceException("Application failed to create a button behavior for the MRE runtime.");
 			return new ButtonHandler(buttonBehavior, appRef, actor);
 		}
 	}
