@@ -1310,7 +1310,7 @@ namespace MixedRealityExtension.Core
 
 			Attachment attachmentInHierarchy = FindAttachmentInHierarchy();
 			bool inAttachmentHeirarchy = (attachmentInHierarchy != null);
-			bool inOwnedAttachmentHierarchy = (inAttachmentHeirarchy && attachmentInHierarchy.UserId == LocalUser.Id);
+			bool inOwnedAttachmentHierarchy = (inAttachmentHeirarchy && LocalUser != null && attachmentInHierarchy.UserId == LocalUser.Id);
 
 			// Don't sync anything if the actor is in an attachment hierarchy on a remote avatar.
 			if (inAttachmentHeirarchy && !inOwnedAttachmentHierarchy)
@@ -1341,7 +1341,7 @@ namespace MixedRealityExtension.Core
 
 			Attachment attachmentInHierarchy = FindAttachmentInHierarchy();
 			bool inAttachmentHeirarchy = (attachmentInHierarchy != null);
-			bool inOwnedAttachmentHierarchy = (inAttachmentHeirarchy && attachmentInHierarchy.UserId == LocalUser.Id);
+			bool inOwnedAttachmentHierarchy = (inAttachmentHeirarchy && LocalUser != null && attachmentInHierarchy.UserId == LocalUser.Id);
 
 			// We can send actor updates to the app if we're operating in a server-authoritative model,
 			// or if we're in a peer-authoritative model and we've been designated the authoritative peer.
