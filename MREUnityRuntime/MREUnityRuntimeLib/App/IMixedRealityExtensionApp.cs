@@ -71,7 +71,7 @@ namespace MixedRealityExtension.App
 		string SessionId { get; }
 
 		/// <summary>
-		/// Gets the local user
+		/// Gets the local user. Will be null if the local client has not joined as a user.
 		/// </summary>
 		IUser LocalUser { get; }
 
