@@ -84,6 +84,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Animation\Animation.cs" />
+    <Compile Include="Animation\AnimationDataPatch.cs" />
     <Compile Include="Animation\AnimationEvent.cs" />
     <Compile Include="Animation\AnimationKeyframe.cs" />
     <Compile Include="Animation\AnimationManager.cs" />

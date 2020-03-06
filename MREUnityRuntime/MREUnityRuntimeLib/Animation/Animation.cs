@@ -22,7 +22,10 @@ namespace MixedRealityExtension.Animation
 		public virtual MWAnimationWrapMode WrapMode { get; protected set; }
 
 		public virtual List<Guid> TargetIds { get; set; }
-		protected List<Actor> TargetActors => TargetIds.Select(id => manager.App.FindActor(id) as Actor).ToList();
+		protected List<Actor> TargetActors => TargetIds
+			.Select(id => manager.App.FindActor(id) as Actor)
+			.Where(a => a != null)
+			.ToList();
 
 		public bool IsPlaying => Weight > 0;
 
