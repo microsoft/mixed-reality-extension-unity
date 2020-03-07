@@ -27,6 +27,9 @@ namespace MixedRealityExtension.Core
 
 		internal MixedRealityExtensionApp App { get; private set; }
 
+		/// <summary>
+		/// Gets the local user. Will be null if the local client has not joined as a user.
+		/// </summary>
 		public IUser LocalUser => App.LocalUser;
 
 		public void Initialize(Guid id, MixedRealityExtensionApp app)
