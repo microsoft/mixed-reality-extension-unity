@@ -14,6 +14,7 @@ namespace MixedRealityExtension.Messaging.Payloads
 	[PayloadType(typeof(AssetsLoaded), "assets-loaded")]
 	[PayloadType(typeof(AssetUpdate), "asset-update")]
 	[PayloadType(typeof(CreateAnimation), "create-animation")]
+	[PayloadType(typeof(CreateAnimation2), "create-animation-2")]
 	[PayloadType(typeof(CreateAsset), "create-asset")]
 	[PayloadType(typeof(CreateEmpty), "create-empty")]
 	[PayloadType(typeof(CreateFromLibrary), "create-from-library")]

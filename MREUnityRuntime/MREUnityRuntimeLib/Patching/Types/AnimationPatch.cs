@@ -60,6 +60,11 @@ namespace MixedRealityExtension.Patching.Types
 		public IEnumerable<Guid> TargetIds { get; set; }
 
 		/// <summary>
+		/// The ID of the AnimationData bound to this animation
+		/// </summary>
+		public Guid DataId { get; set; }
+
+		/// <summary>
 		/// The length in seconds of the animation
 		/// </summary>
 		public float? Duration { get; set; }

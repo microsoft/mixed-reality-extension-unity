@@ -265,6 +265,23 @@ namespace MixedRealityExtension.Messaging.Payloads
 	}
 
 	/// <summary>
+	/// App => Engine
+	/// Payload to bind animation data to targets.
+	/// </summary>
+	public class CreateAnimation2 : NetworkCommandPayload
+	{
+		/// <summary>
+		/// The initialization state of the animation.
+		/// </summary>
+		public AnimationPatch Animation { get; set; }
+
+		/// <summary>
+		/// Mapping of placeholder names to target GUIDs.
+		/// </summary>
+		public Dictionary<string, Guid> Targets { get; set; }
+	}
+
+	/// <summary>
 	/// Bidirectional
 	/// Payload to sync animation states between peers.
 	/// </summary>

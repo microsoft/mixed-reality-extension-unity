@@ -62,7 +62,7 @@ namespace MixedRealityExtension.Assets
 		/// <summary>
 		/// Only populated when this asset is animation data. An asset will only have one of these types specified.
 		/// </summary>
-		public AnimationDataPatch? AnimationData;
+		public AnimationData? AnimationData;
 	}
 
 	/// <summary>

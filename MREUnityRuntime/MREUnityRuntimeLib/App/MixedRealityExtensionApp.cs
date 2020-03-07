@@ -700,7 +700,7 @@ namespace MixedRealityExtension.App
 			).Select(go => go.GetComponent<Actor>()).ToArray();
 
 			var rootActor = createdActors.FirstOrDefault();
-			var createdAnims = new List<Animation.Animation>(5);
+			var createdAnims = new List<Animation.BaseAnimation>(5);
 
 			if (rootActors.Length == 1 && rootActor.transform.parent == null)
 			{
@@ -775,7 +775,7 @@ namespace MixedRealityExtension.App
 		private void SendCreateActorResponse(
 			CreateActor originalMessage,
 			IList<Actor> actors = null,
-			IList<Animation.Animation> anims = null,
+			IList<Animation.BaseAnimation> anims = null,
 			string failureMessage = null,
 			Action onCompleteCallback = null)
 		{

@@ -10,6 +10,7 @@ using MixedRealityExtension.Patching.Types;
 using MixedRealityExtension.Util;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace MixedRealityExtension.Animation
 {
@@ -19,7 +20,7 @@ namespace MixedRealityExtension.Animation
 		private readonly long OffsetUpdateThreshold = 50;
 
 		public MixedRealityExtensionApp App;
-		private readonly Dictionary<Guid, Animation> Animations = new Dictionary<Guid, Animation>(10);
+		private readonly Dictionary<Guid, BaseAnimation> Animations = new Dictionary<Guid, BaseAnimation>(10);
 		private readonly Dictionary<Guid, AnimationPatch> PendingPatches = new Dictionary<Guid, AnimationPatch>(10);
 		private long ServerTimeOffset = 0;
 
@@ -28,7 +29,7 @@ namespace MixedRealityExtension.Animation
 			App = app;
 		}
 
-		public void RegisterAnimation(Animation anim)
+		public void RegisterAnimation(BaseAnimation anim)
 		{
 			Animations[anim.Id] = anim;
 			if (PendingPatches.TryGetValue(anim.Id, out AnimationPatch patch))
@@ -60,10 +61,49 @@ namespace MixedRealityExtension.Animation
 			return LocalUnixNow() + ServerTimeOffset;
 		}
 
+		[CommandHandler(typeof(CreateAnimation2))]
+		private void OnCreateAnimation(CreateAnimation2 message, Action onCompleteCallback)
+		{
+			// the animation already exists, no-op
+			if (Animations.ContainsKey(message.Animation.Id)) {
+				onCompleteCallback?.Invoke();
+				return;
+			}
+
+			// create the anim
+			var anim = new Animation(this, message.Animation.Id, message.Animation.DataId, message.Targets);
+			anim.TargetIds = message.Animation.TargetIds.ToList();
+			anim.ApplyPatch(message.Animation);
+
+			RegisterAnimation(anim);
+
+			Trace trace = new Trace()
+			{
+				Severity = TraceSeverity.Info,
+				Message = $"Successfully created animation named {anim.Name}"
+			};
+
+			App.Protocol.Send(
+				new ObjectSpawned()
+				{
+					Result = new OperationResult()
+					{
+						ResultCode = OperationResultCode.Success,
+						Message = trace.Message
+					},
+					Traces = new List<Trace>() { trace },
+					Animations = new AnimationPatch[] { anim.GeneratePatch() }
+				},
+				message.MessageId
+			);
+
+			onCompleteCallback?.Invoke();
+		}
+
 		[CommandHandler(typeof(AnimationUpdate))]
 		private void OnAnimationUpdate(AnimationUpdate message, Action onCompleteCallback)
 		{
-			if (Animations.TryGetValue(message.Animation.Id, out Animation anim))
+			if (Animations.TryGetValue(message.Animation.Id, out BaseAnimation anim))
 			{
 				anim.ApplyPatch(message.Animation);
 			}

@@ -5,9 +5,20 @@ using Newtonsoft.Json.Linq;
 namespace MixedRealityExtension.Animation
 {
 	/// <summary>
+	/// Keyframe data for an animation (cacheable version)
+	/// </summary>
+	public class AnimationDataCached : UnityEngine.ScriptableObject
+	{
+		/// <summary>
+		/// The animation keyframe data
+		/// </summary>
+		public Track[] Tracks;
+	}
+
+	/// <summary>
 	/// Keyframe data for an animation
 	/// </summary>
-	public struct AnimationDataPatch
+	public struct AnimationData
 	{
 		/// <summary>
 		/// The animation keyframe data

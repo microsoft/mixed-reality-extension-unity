@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace MixedRealityExtension.Animation
 {
-	internal class NativeAnimation : Animation
+	internal class NativeAnimation : BaseAnimation
 	{
 		private UnityEngine.Animation nativeAnimation;
 		private AnimationState nativeState;

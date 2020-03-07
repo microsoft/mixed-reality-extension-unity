@@ -3,107 +3,35 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
-using MixedRealityExtension.Core;
-using MixedRealityExtension.Patching.Types;
+using MixedRealityExtension.API;
 
 namespace MixedRealityExtension.Animation
 {
-	internal class Animation
+	internal class Animation : BaseAnimation
 	{
-		protected AnimationManager manager;
+		public Guid DataId { get; }
 
-		public Guid Id { get; protected set; }
-		public virtual string Name { get; protected set; }
-		public virtual long BasisTime { get; protected set; }
-		public virtual float Time { get; protected set; }
-		public virtual float Speed { get; protected set; }
-		public virtual float Weight { get; protected set; }
-		public virtual MWAnimationWrapMode WrapMode { get; protected set; }
+		public AnimationDataCached Data { get; private set; }
 
-		public virtual List<Guid> TargetIds { get; set; }
-		protected List<Actor> TargetActors => TargetIds
-			.Select(id => manager.App.FindActor(id) as Actor)
-			.Where(a => a != null)
-			.ToList();
+		private Dictionary<string, Guid> TargetMap;
 
-		public bool IsPlaying => Weight > 0;
-
-		internal Animation(AnimationManager manager, Guid id)
+		public Animation(AnimationManager manager, Guid id, Guid dataId, Dictionary<string, Guid> targetMap) : base(manager, id)
 		{
-			Id = id;
-			this.manager = manager;
+			DataId = dataId;
+			TargetMap = targetMap;
+
+			MREAPI.AppsAPI.AssetCache.OnCached(dataId, cacheData =>
+			{
+				Data = (AnimationDataCached)cacheData;
+			});
 		}
 
-		public virtual void ApplyPatch(AnimationPatch patch)
+		internal override void Update()
 		{
-			var wasMoving = IsPlaying && Speed != 0;
-
-			if (patch.Name != null)
-			{
-				Name = patch.Name;
-			}
-			if (patch.Speed.HasValue)
-			{
-				Speed = patch.Speed.Value;
-			}
-			if (patch.Weight.HasValue)
-			{
-				Weight = patch.Weight.Value;
-			}
-			if (patch.WrapMode.HasValue)
-			{
-				WrapMode = patch.WrapMode.Value;
-			}
-
-			// only patch one of BasisTime and Time, based on play state
-			if ((IsPlaying && Speed != 0 || !patch.Time.HasValue) && patch.BasisTime.HasValue)
-			{
-				BasisTime = patch.BasisTime.Value;
-			}
-			else if (patch.Time.HasValue)
-			{
-				Time = patch.Time.Value;
-			}
-
-			var isMoving = IsPlaying && Speed != 0;
-			// send one transform update when the anim stops
-			if (wasMoving && !isMoving)
-			{
-				foreach (var actor in TargetActors)
-				{
-					actor.SendActorUpdate(Messaging.Payloads.ActorComponentType.Transform);
-				}
-			}
-		}
-
-		public virtual AnimationPatch GeneratePatch()
-		{
-			var patch = new AnimationPatch()
-			{
-				Id = Id,
-				Name = Name,
-				Speed = Speed,
-				Weight = Weight,
-				WrapMode = WrapMode,
-				TargetIds = TargetIds
-			};
-
-			if (IsPlaying)
-			{
-				patch.BasisTime = BasisTime;
-			}
-			else
-			{
-				patch.Time = Time;
-			}
-
-			return patch;
-		}
-
-		internal virtual void Update()
-		{
-
+			if (Weight <= 0 || Data == null) return;
 		}
 	}
 }
