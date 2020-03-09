@@ -132,6 +132,26 @@ namespace MixedRealityExtension.Assets
 		public Vector2Patch MainTextureScale;
 
 		/// <summary>
+		/// The lighting-independent color
+		/// </summary>
+		public ColorPatch EmissiveColor;
+
+		/// <summary>
+		/// The ID of the main texture asset
+		/// </summary>
+		public Guid? EmissiveTextureId;
+
+		/// <summary>
+		/// Offset the texture by this amount as a fraction of the resolution
+		/// </summary>
+		public Vector2Patch EmissiveTextureOffset;
+
+		/// <summary>
+		/// Scale the texture by this amount in each axis
+		/// </summary>
+		public Vector2Patch EmissiveTextureScale;
+
+		/// <summary>
 		/// How this material should treat the color/texture alpha channel
 		/// </summary>
 		public AlphaMode? AlphaMode;
