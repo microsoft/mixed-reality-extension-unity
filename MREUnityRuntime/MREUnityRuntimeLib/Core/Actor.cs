@@ -339,7 +339,7 @@ namespace MixedRealityExtension.Core
 			Destroy(gameObject);
 		}
 
-		internal ActorPatch GenerateInitialPatch()
+		internal ActorPatch GeneratePatch(TargetPath path = null)
 		{
 			LocalTransform.ToLocalTransform(transform);
 			AppTransform.ToAppTransform(transform, App.SceneRoot.transform);
