@@ -42,7 +42,7 @@ namespace MixedRealityExtension.Patching.Types
 			}
 		}
 
-		void IPatchable.WriteToPath(TargetPath path, JObject value, int depth = 0)
+		void IPatchable.WriteToPath(TargetPath path, JToken value, int depth = 0)
 		{
 
 		}
@@ -117,7 +117,7 @@ namespace MixedRealityExtension.Patching.Types
 			Id = id;
 		}
 
-		void IPatchable.WriteToPath(TargetPath path, JObject value, int depth = 0)
+		void IPatchable.WriteToPath(TargetPath path, JToken value, int depth = 0)
 		{
 
 		}

@@ -38,7 +38,7 @@ namespace MixedRealityExtension.Animation
 	/// <summary>
 	/// The timeline of values for an animation target property
 	/// </summary>
-	public struct Track
+	public class Track
 	{
 		/// <summary>
 		/// A path to the property to animate
@@ -72,7 +72,7 @@ namespace MixedRealityExtension.Animation
 	/// <summary>
 	/// The value of an animation property at a moment in time
 	/// </summary>
-	public struct Keyframe
+	public class Keyframe
 	{
 		/// <summary>
 		/// The time in seconds from the start of the animation.
@@ -82,7 +82,7 @@ namespace MixedRealityExtension.Animation
 		/// <summary>
 		/// The property's value at this instant, or a reference to another property.
 		/// </summary>
-		public JObject Value;
+		public JToken Value;
 
 		/// <summary>
 		/// How the value approaches this frame's value. Defaults to linear (0, 0, 1, 1).

@@ -46,7 +46,7 @@ namespace MixedRealityExtension.Patching.Types
 			Color = new ColorPatch(text.Color);
 		}
 
-		void IPatchable.WriteToPath(TargetPath path, JObject value, int depth = 0)
+		void IPatchable.WriteToPath(TargetPath path, JToken value, int depth = 0)
 		{
 
 		}

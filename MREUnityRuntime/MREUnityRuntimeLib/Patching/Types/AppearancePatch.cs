@@ -20,7 +20,7 @@ namespace MixedRealityExtension.Patching.Types
 		[PatchProperty]
 		public Guid? MeshId { get; set; }
 
-		void IPatchable.WriteToPath(TargetPath path, JObject value, int depth = 0)
+		void IPatchable.WriteToPath(TargetPath path, JToken value, int depth = 0)
 		{
 
 		}

@@ -85,6 +85,7 @@
   <ItemGroup>
     <Compile Include="Animation\Animation.cs" />
     <Compile Include="Animation\BaseAnimation.cs" />
+    <Compile Include="Animation\Interpolations.cs" />
     <Compile Include="Animation\Definitions.cs" />
     <Compile Include="Animation\AnimationEvent.cs" />
     <Compile Include="Animation\AnimationKeyframe.cs" />

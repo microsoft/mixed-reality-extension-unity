@@ -1,14 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
-
-// Copyright (c) Microsoft Corporation. All rights reserved.
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 using MixedRealityExtension.Core;
 using MixedRealityExtension.Patching;
 using MixedRealityExtension.Patching.Types;
+using System.Text.RegularExpressions;
 using UnityEngine;
 
 namespace MixedRealityExtension.Animation
@@ -19,7 +14,7 @@ namespace MixedRealityExtension.Animation
 
 		public string PathString { get; }
 
-		public string Type { get; }
+		public string AnimatibleType { get; }
 
 		public string Placeholder { get; }
 
@@ -33,7 +28,7 @@ namespace MixedRealityExtension.Animation
 			var match = PathRegex.Match(PathString);
 			if (match.Success)
 			{
-				Type = match.Captures[0].ToString();
+				AnimatibleType = match.Captures[0].ToString();
 				Placeholder = match.Captures[1].ToString();
 				Path = match.Captures[2].ToString();
 				PathParts = Path.Split('/');
