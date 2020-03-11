@@ -1,6 +1,8 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
+using MixedRealityExtension.Animation;
 using MixedRealityExtension.Core.Types;
+using Newtonsoft.Json.Linq;
 using System;
 using UnityEngine;
 
@@ -52,6 +54,16 @@ namespace MixedRealityExtension.Patching.Types
 					X.Equals(other.X) &&
 					Y.Equals(other.Y);
 			}
+		}
+
+		void IPatchable.WriteToPath(TargetPath path, JObject value, int depth = 0)
+		{
+
+		}
+
+		public void Clear()
+		{
+
 		}
 	}
 }

@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
+using MixedRealityExtension.Animation;
 using MixedRealityExtension.Core.Types;
+using Newtonsoft.Json.Linq;
 using System;
 using UnityEngine;
 
@@ -8,17 +10,69 @@ namespace MixedRealityExtension.Patching.Types
 {
 	public class QuaternionPatch : IEquatable<QuaternionPatch>, IPatchable
 	{
+		private float? x;
+		private float? savedX;
 		[PatchProperty]
-		public float? X { get; set; }
+		public float? X
+		{
+			get => x;
+			set
+			{
+				if (value == null && x != null)
+				{
+					savedX = x;
+				}
+				x = value;
+			}
+		}
 
+		private float? y;
+		private float? savedY;
 		[PatchProperty]
-		public float? Y { get; set; }
+		public float? Y
+		{
+			get => y;
+			set
+			{
+				if (value == null && y != null)
+				{
+					savedY = y;
+				}
+				y = value;
+			}
+		}
 
+		private float? z;
+		private float? savedZ;
 		[PatchProperty]
-		public float? Z { get; set; }
+		public float? Z
+		{
+			get => z;
+			set
+			{
+				if (value == null && z != null)
+				{
+					savedZ = z;
+				}
+				z = value;
+			}
+		}
 
+		private float? w;
+		private float? savedW;
 		[PatchProperty]
-		public float? W { get; set; }
+		public float? W
+		{
+			get => w;
+			set
+			{
+				if (value == null && w != null)
+				{
+					savedW = w;
+				}
+				w = value;
+			}
+		}
 
 		public QuaternionPatch()
 		{
@@ -77,6 +131,19 @@ namespace MixedRealityExtension.Patching.Types
 					Z.Equals(other.Z) &&
 					W.Equals(other.W);
 			}
+		}
+
+		void IPatchable.WriteToPath(TargetPath path, JObject value, int depth = 0)
+		{
+
+		}
+
+		public void Clear()
+		{
+			X = null;
+			Y = null;
+			Z = null;
+			W = null;
 		}
 	}
 }

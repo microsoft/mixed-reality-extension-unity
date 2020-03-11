@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 using Newtonsoft.Json.Linq;
+using System.Linq;
 
 namespace MixedRealityExtension.Animation
 {
@@ -13,6 +14,14 @@ namespace MixedRealityExtension.Animation
 		/// The animation keyframe data
 		/// </summary>
 		public Track[] Tracks;
+
+		public float Duration
+		{
+			get
+			{
+				return Tracks.Select(t => t.Keyframes[t.Keyframes.Length - 1].Time).Max();
+			}
+		}
 	}
 
 	/// <summary>
@@ -35,6 +44,19 @@ namespace MixedRealityExtension.Animation
 		/// A path to the property to animate
 		/// </summary>
 		public string Target;
+
+		private TargetPath targetPath;
+		internal TargetPath TargetPath
+		{
+			get
+			{
+				if (targetPath == null)
+				{
+					targetPath = new TargetPath(Target);
+				}
+				return targetPath;
+			}
+		}
 
 		/// <summary>
 		/// The values to animate the target through

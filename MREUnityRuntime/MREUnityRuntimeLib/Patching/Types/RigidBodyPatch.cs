@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
+using MixedRealityExtension.Animation;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -110,6 +112,16 @@ namespace MixedRealityExtension.Patching.Types
 			CollisionDetectionMode = (MRECollisionDetectionMode)Enum.Parse(typeof(MRECollisionDetectionMode), rigidbody.collisionDetectionMode.ToString());
 			UseGravity = rigidbody.useGravity;
 			ConstraintFlags = (MRERigidBodyConstraints)Enum.Parse(typeof(MRERigidBodyConstraints), rigidbody.constraints.ToString());
+		}
+
+		void IPatchable.WriteToPath(TargetPath path, JObject value, int depth = 0)
+		{
+
+		}
+
+		public void Clear()
+		{
+
 		}
 	}
 }

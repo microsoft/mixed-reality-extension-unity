@@ -16,7 +16,7 @@ namespace MixedRealityExtension.Animation
 {
 	internal class AnimationManager : ICommandHandlerContext
 	{
-		private static DateTime Epoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+		private static DateTimeOffset Epoch = new DateTimeOffset(1970, 1, 1, 0, 0, 0, TimeSpan.Zero);
 		private readonly long OffsetUpdateThreshold = 50;
 
 		public MixedRealityExtensionApp App;
@@ -123,7 +123,7 @@ namespace MixedRealityExtension.Animation
 
 		public static long LocalUnixNow()
 		{
-			return (DateTime.UtcNow - Epoch).Ticks / 10_000;
+			return (DateTimeOffset.UtcNow - Epoch).Ticks / 10_000;
 		}
 	}
 }

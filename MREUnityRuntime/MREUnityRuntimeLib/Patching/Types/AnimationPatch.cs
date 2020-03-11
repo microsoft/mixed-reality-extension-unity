@@ -4,7 +4,7 @@ using MixedRealityExtension.Animation;
 using MixedRealityExtension.Messaging.Payloads.Converters;
 using System;
 using System.Collections.Generic;
-using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace MixedRealityExtension.Patching.Types
 {
@@ -77,6 +77,16 @@ namespace MixedRealityExtension.Patching.Types
 			if (other.Speed.HasValue) Speed = other.Speed;
 			if (other.Weight.HasValue) Weight = other.Weight;
 			if (other.WrapMode.HasValue) WrapMode = other.WrapMode;
+		}
+
+		void IPatchable.WriteToPath(TargetPath path, JObject value, int depth = 0)
+		{
+
+		}
+
+		public void Clear()
+		{
+			
 		}
 	}
 }
