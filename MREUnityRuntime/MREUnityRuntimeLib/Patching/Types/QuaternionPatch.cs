@@ -10,69 +10,17 @@ namespace MixedRealityExtension.Patching.Types
 {
 	public class QuaternionPatch : IEquatable<QuaternionPatch>, IPatchable
 	{
-		private float? x;
-		private float? savedX;
 		[PatchProperty]
-		public float? X
-		{
-			get => x;
-			set
-			{
-				if (value == null && x != null)
-				{
-					savedX = x;
-				}
-				x = value;
-			}
-		}
+		public float? X { get; set; }
 
-		private float? y;
-		private float? savedY;
 		[PatchProperty]
-		public float? Y
-		{
-			get => y;
-			set
-			{
-				if (value == null && y != null)
-				{
-					savedY = y;
-				}
-				y = value;
-			}
-		}
+		public float? Y { get; set; }
 
-		private float? z;
-		private float? savedZ;
 		[PatchProperty]
-		public float? Z
-		{
-			get => z;
-			set
-			{
-				if (value == null && z != null)
-				{
-					savedZ = z;
-				}
-				z = value;
-			}
-		}
-
-		private float? w;
-		private float? savedW;
+		public float? Z { get; set; }
+		
 		[PatchProperty]
-		public float? W
-		{
-			get => w;
-			set
-			{
-				if (value == null && w != null)
-				{
-					savedW = w;
-				}
-				w = value;
-			}
-		}
+		public float? W { get; set; }
 
 		public QuaternionPatch()
 		{
@@ -133,9 +81,17 @@ namespace MixedRealityExtension.Patching.Types
 			}
 		}
 
-		void IPatchable.WriteToPath(TargetPath path, JToken value, int depth = 0)
+		void IPatchable.WriteToPath(TargetPath path, JToken value, int depth)
 		{
-
+			if (depth == path.PathParts.Length)
+			{
+				X = value.Value<float>("x");
+				Y = value.Value<float>("y");
+				Z = value.Value<float>("z");
+				W = value.Value<float>("w");
+			}
+			// else
+				// an unrecognized path, do nothing
 		}
 
 		public void Clear()

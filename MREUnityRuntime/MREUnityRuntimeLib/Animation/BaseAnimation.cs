@@ -55,13 +55,13 @@ namespace MixedRealityExtension.Animation
 			{
 				WrapMode = patch.WrapMode.Value;
 			}
-
 			// only patch one of BasisTime and Time, based on play state
-			if ((IsPlaying && Speed != 0 || !patch.Time.HasValue) && patch.BasisTime.HasValue)
+			if (patch.BasisTime.HasValue)
 			{
 				BasisTime = patch.BasisTime.Value;
+				UnityEngine.Debug.LogFormat("Name: {0}, Patch: {1}, Basis: {2}", Name, patch.BasisTime, BasisTime);
 			}
-			else if (patch.Time.HasValue)
+			if (patch.Time.HasValue)
 			{
 				Time = patch.Time.Value;
 			}

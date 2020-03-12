@@ -39,9 +39,26 @@ namespace MixedRealityExtension.Patching.Types
 			this.Rotation = new QuaternionPatch(rotation);
 		}
 
-		void IPatchable.WriteToPath(TargetPath path, JToken value, int depth = 0)
+		void IPatchable.WriteToPath(TargetPath path, JToken value, int depth)
 		{
-
+			if (depth == path.PathParts.Length)
+			{
+				// transforms are not directly patchable, do nothing
+			}
+			else if (path.PathParts[depth] == "rotation")
+			{
+				if (Rotation == null)
+				{
+					if (savedRotation == null)
+					{
+						savedRotation = new QuaternionPatch();
+					}
+					rotation = savedRotation;
+				}
+				Rotation.WriteToPath(path, value, depth + 1);
+			}
+			// else
+				// an unrecognized path, do nothing
 		}
 
 		public void Clear()

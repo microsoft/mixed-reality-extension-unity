@@ -46,6 +46,20 @@ namespace MixedRealityExtension.Animation
 			 * Normalize time to animation length based on wrap settings
 			 *************************************************/
 
+			// From the documentation:
+			//   For the float and double operands, the result of x % y for the finite x and y is the value z such that:
+			//     The sign of z, if non-zero, is the same as the sign of x.
+			//     The absolute value of z is the value produced by |x| - n * |y|
+			//       where n is the largest possible integer that is less than or equal to |x| / |y|
+			//       and |x| and |y| are the absolute values of x and y, respectively.
+			//
+			// We want the result to always be non-negative, so we're using the extended formula
+			//   currentTime - rep * Data.Duration
+			// everywhere instead of currentTime % Data.Duration.
+			var rep = (int)Math.Floor(currentTime / Data.Duration);
+			// UnityEngine.Debug.LogFormat("Now: {0}, Basis: {1}", AnimationManager.LocalUnixNow(), BasisTime);
+			// UnityEngine.Debug.LogFormat("Time: {0}, Rep: {1}", currentTime, rep);
+
 			if (WrapMode == MWAnimationWrapMode.Loop)
 			{
 				/*** Loop mode: seamlessly join anim end to the beginning
@@ -55,7 +69,7 @@ namespace MixedRealityExtension.Animation
 				 *  ---------+---------
 				 * -3 -2 -1  0  1  2  3
 				 */
-				currentTime = currentTime % Data.Duration;
+				currentTime = currentTime - rep * Data.Duration;
 			}
 			else if (WrapMode == MWAnimationWrapMode.PingPong)
 			{
@@ -66,16 +80,15 @@ namespace MixedRealityExtension.Animation
 				 *  ---------+---------
 				 * -3 -2 -1  0  1  2  3
 				 */
-				var rep = (int)Math.Floor(currentTime / Data.Duration);
 				if (rep % 2 == 0)
 				{
 					// forward case
-					currentTime = currentTime % Data.Duration;
+					currentTime = currentTime - rep * Data.Duration;
 				}
 				else
 				{
 					// backward case
-					currentTime = Data.Duration - currentTime % Data.Duration;
+					currentTime = Data.Duration - (currentTime - rep * Data.Duration);
 				}
 			}
 			else if (WrapMode == MWAnimationWrapMode.Once)

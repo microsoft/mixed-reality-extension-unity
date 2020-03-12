@@ -7,7 +7,7 @@ namespace MixedRealityExtension.Patching
 {
 	internal interface IPatchable
 	{
-		void WriteToPath(TargetPath path, JToken value, int depth = 0);
+		void WriteToPath(TargetPath path, JToken value, int depth);
 		void Clear();
 	}
 

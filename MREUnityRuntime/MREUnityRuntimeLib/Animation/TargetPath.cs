@@ -28,10 +28,19 @@ namespace MixedRealityExtension.Animation
 			var match = PathRegex.Match(PathString);
 			if (match.Success)
 			{
-				AnimatibleType = match.Captures[0].ToString();
-				Placeholder = match.Captures[1].ToString();
-				Path = match.Captures[2].ToString();
-				PathParts = Path.Split('/');
+				try
+				{
+
+					AnimatibleType = match.Groups[0].ToString();
+					Placeholder = match.Groups[1].ToString();
+					Path = match.Groups[2].ToString();
+					PathParts = Path.Split('/');
+				}
+				catch (System.Exception e)
+				{
+					Debug.LogFormat("Error parsing target path {0}", PathString);
+					Debug.LogException(e);
+				}
 			}
 		}
 	}

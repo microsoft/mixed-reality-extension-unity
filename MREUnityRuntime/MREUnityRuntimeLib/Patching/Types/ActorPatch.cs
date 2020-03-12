@@ -42,9 +42,38 @@ namespace MixedRealityExtension.Patching.Types
 			}
 		}
 
-		void IPatchable.WriteToPath(TargetPath path, JToken value, int depth = 0)
+		void IPatchable.WriteToPath(TargetPath path, JToken value, int depth)
 		{
-
+			if (depth == path.PathParts.Length)
+			{
+				// actor transforms are not directly patchable, do nothing
+			}
+			else if (path.PathParts[depth] == "local")
+			{
+				if (local == null)
+				{
+					if (savedLocal == null)
+					{
+						savedLocal = new ScaledTransformPatch();
+					}
+					local = savedLocal;
+				}
+				Local.WriteToPath(path, value, depth + 1);
+			}
+			else if (path.PathParts[depth] == "app")
+			{
+				if (app == null)
+				{
+					if (savedApp == null)
+					{
+						savedApp = new TransformPatch();
+					}
+					app = savedApp;
+				}
+				App.WriteToPath(path, value, depth + 1);
+			}
+			// else
+				// an unrecognized path, do nothing
 		}
 
 		public void Clear()
@@ -117,9 +146,26 @@ namespace MixedRealityExtension.Patching.Types
 			Id = id;
 		}
 
-		void IPatchable.WriteToPath(TargetPath path, JToken value, int depth = 0)
+		void IPatchable.WriteToPath(TargetPath path, JToken value, int depth)
 		{
-
+			if (depth == path.PathParts.Length)
+			{
+				// actors are not directly patchable, do nothing
+			}
+			else if (path.PathParts[depth] == "transform")
+			{
+				if (Transform == null)
+				{
+					if (savedTransform == null)
+					{
+						savedTransform = new ActorTransformPatch();
+					}
+					transform = savedTransform;
+				}
+				Transform.WriteToPath(path, value, depth + 1);
+			}
+			// else
+				// an unrecognized path, do nothing
 		}
 
 		public void Clear()

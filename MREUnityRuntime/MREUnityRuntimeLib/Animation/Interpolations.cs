@@ -20,11 +20,24 @@ namespace MixedRealityExtension.Animation
 				JObject A = (JObject)a;
 				JObject B = (JObject)b;
 				JObject Mix = (JObject)mix;
+				Mix.RemoveAll();
 
-				// quaternion
-				if (A.ContainsKey("x") && A.ContainsKey("y") && A.ContainsKey("z") && A.ContainsKey("w"))
+				if (A.ContainsKey("x") && A.ContainsKey("y"))
 				{
-					UnityEngine.Quaternion.Slerp()
+					if (A.ContainsKey("z"))
+					{
+						// quaternion
+						if (A.ContainsKey("w"))
+						{
+							UnityEngine.Quaternion q1 = new UnityEngine.Quaternion(A.Value<float>("x"), A.Value<float>("y"), A.Value<float>("z"), A.Value<float>("w"));
+							UnityEngine.Quaternion q2 = new UnityEngine.Quaternion(B.Value<float>("x"), B.Value<float>("y"), B.Value<float>("z"), B.Value<float>("w"));
+							var qMix = UnityEngine.Quaternion.Slerp(q1, q2, ratio);
+							Mix.Add("x", qMix.x);
+							Mix.Add("y", qMix.y);
+							Mix.Add("z", qMix.z);
+							Mix.Add("w", qMix.w);
+						}
+					}
 				}
 			}
 		}
