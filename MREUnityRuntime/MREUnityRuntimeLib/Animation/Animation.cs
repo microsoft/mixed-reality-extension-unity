@@ -25,6 +25,8 @@ namespace MixedRealityExtension.Animation
 		/// </summary>
 		private Dictionary<Guid, ActorPatch> TargetPatches = new Dictionary<Guid, ActorPatch>(2);
 
+		private bool ZeroSpeedSet = false;
+
 		public Animation(AnimationManager manager, Guid id, Guid dataId, Dictionary<string, Guid> targetMap) : base(manager, id)
 		{
 			DataId = dataId;
@@ -40,11 +42,25 @@ namespace MixedRealityExtension.Animation
 		{
 			if (Weight <= 0 || Data == null) return;
 
-			var currentTime = (float)(AnimationManager.LocalUnixNow() - BasisTime) / 1000;
-
 			/*************************************************
 			 * Normalize time to animation length based on wrap settings
 			 *************************************************/
+
+			float currentTime;
+			if (Speed != 0)
+			{
+				currentTime = (AnimationManager.LocalUnixNow() - BasisTime) * Speed / 1000;
+				ZeroSpeedSet = false;
+			}
+			else if (!ZeroSpeedSet)
+			{
+				currentTime = Time;
+				ZeroSpeedSet = true;
+			}
+			else
+			{
+				return;
+			}
 
 			// From the documentation:
 			//   For the float and double operands, the result of x % y for the finite x and y is the value z such that:

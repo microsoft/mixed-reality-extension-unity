@@ -31,9 +31,9 @@ namespace MixedRealityExtension.Animation
 				try
 				{
 
-					AnimatibleType = match.Groups[0].ToString();
-					Placeholder = match.Groups[1].ToString();
-					Path = match.Groups[2].ToString();
+					AnimatibleType = match.Groups["type"].ToString();
+					Placeholder = match.Groups["placeholder"].ToString();
+					Path = match.Groups["path"].ToString();
 					PathParts = Path.Split('/');
 				}
 				catch (System.Exception e)
