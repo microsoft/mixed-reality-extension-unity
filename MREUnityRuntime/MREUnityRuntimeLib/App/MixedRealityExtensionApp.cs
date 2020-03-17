@@ -758,8 +758,13 @@ namespace MixedRealityExtension.App
 					{
 						var anim = new NativeAnimation(AnimationManager, guids.Next(), nativeAnim, state);
 						anim.TargetIds = animTargets != null
-							? animTargets.GetTargets(xfrm, stateIndex, addRootToTargets: true).Select(a => a.Id).ToList()
+							? animTargets.GetTargets(xfrm, stateIndex++, addRootToTargets: true).Select(a => a.Id).ToList()
 							: new List<Guid>() { actor.Id };
+						foreach (var guid in anim.TargetIds)
+						{
+							Debug.LogFormat("Anim {0} targets {1} ({2})", anim.Id, guid, FindActor(guid)?.Name);
+						}
+						Debug.Log("Done");
 						AnimationManager.RegisterAnimation(anim);
 						createdAnims.Add(anim);
 					}

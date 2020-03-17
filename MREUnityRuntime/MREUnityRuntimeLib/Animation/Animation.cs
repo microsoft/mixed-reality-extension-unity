@@ -25,7 +25,11 @@ namespace MixedRealityExtension.Animation
 		/// </summary>
 		private Dictionary<Guid, ActorPatch> TargetPatches = new Dictionary<Guid, ActorPatch>(2);
 
-		private bool ZeroSpeedSet = false;
+		/// <summary>
+		/// When an animation is stopping (by weight == 0 || speed == 0), this flag indicates
+		/// we should update one last time before stopping
+		/// </summary>
+		private bool StopUpdating = true;
 
 		public Animation(AnimationManager manager, Guid id, Guid dataId, Dictionary<string, Guid> targetMap) : base(manager, id)
 		{
@@ -38,27 +42,37 @@ namespace MixedRealityExtension.Animation
 			});
 		}
 
+		public override AnimationPatch GeneratePatch()
+		{
+			var patch = base.GeneratePatch();
+			patch.DataId = DataId;
+			return patch;
+		}
+
 		internal override void Update()
 		{
-			if (Weight <= 0 || Data == null) return;
+			if (Data == null) return;
 
 			/*************************************************
 			 * Normalize time to animation length based on wrap settings
 			 *************************************************/
 
 			float currentTime;
-			if (Speed != 0)
+			if (Weight > 0 && Speed != 0)
 			{
+				// normal operation
 				currentTime = (AnimationManager.LocalUnixNow() - BasisTime) * Speed / 1000;
-				ZeroSpeedSet = false;
+				StopUpdating = false;
 			}
-			else if (!ZeroSpeedSet)
+			else if (!StopUpdating)
 			{
+				// supposed to stop, but run one last update
 				currentTime = Time;
-				ZeroSpeedSet = true;
+				StopUpdating = true;
 			}
 			else
 			{
+				// don't update
 				return;
 			}
 
