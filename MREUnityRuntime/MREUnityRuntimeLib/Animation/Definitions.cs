@@ -67,6 +67,11 @@ namespace MixedRealityExtension.Animation
 		/// Whether the keyframe values are relative to 0 or to the target's current property value. Defaults to false.
 		/// </summary>
 		public bool? Relative;
+
+		/// <summary>
+		/// Controls between-frame interpolation. If not provided, frames will not interpolate.
+		/// </summary>
+		public float[] Easing;
 	}
 
 	/// <summary>
@@ -87,6 +92,6 @@ namespace MixedRealityExtension.Animation
 		/// <summary>
 		/// How the value approaches this frame's value. Defaults to linear (0, 0, 1, 1).
 		/// </summary>
-		public (float, float, float, float)? Easing;
+		public float[] Easing;
 	}
 }

@@ -42,6 +42,16 @@ namespace MixedRealityExtension.Animation
 			});
 		}
 
+		public override void ApplyPatch(AnimationPatch patch)
+		{
+			base.ApplyPatch(patch);
+			if (IsPlaying)
+			{
+				// Exec the update at least once, even if Speed == 0
+				StopUpdating = false;
+			}
+		}
+
 		public override AnimationPatch GeneratePatch()
 		{
 			var patch = base.GeneratePatch();
@@ -160,18 +170,18 @@ namespace MixedRealityExtension.Animation
 					UnityEngine.Debug.LogFormat("Keyframe not found for time {0}", currentTime);
 					continue;
 				}
-				var timeFraction = (currentTime - prevFrame.Time) / (nextFrame.Time - prevFrame.Time);
+				var linearT = (currentTime - prevFrame.Time) / (nextFrame.Time - prevFrame.Time);
 
 				// compute new value for targeted field
 				if (prevFrame.Value.Type == JTokenType.Object)
 				{
 					jToken = jObject;
-					Interpolations.Interpolate(prevFrame.Value, nextFrame.Value, timeFraction, ref jToken, nextFrame.Easing);
+					Interpolations.Interpolate(prevFrame.Value, nextFrame.Value, linearT, ref jToken, nextFrame.Easing ?? track.Easing);
 				}
 				else
 				{
 					jToken = jValue;
-					Interpolations.Interpolate(prevFrame.Value, nextFrame.Value, timeFraction, ref jToken, nextFrame.Easing);
+					Interpolations.Interpolate(prevFrame.Value, nextFrame.Value, linearT, ref jToken, nextFrame.Easing ?? track.Easing);
 				}
 
 				var targetId = TargetMap[track.TargetPath.Placeholder];

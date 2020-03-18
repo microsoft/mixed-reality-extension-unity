@@ -719,8 +719,14 @@ namespace MixedRealityExtension.App
 				return;
 			}
 
-			foreach (var root in rootActors) {
+			var pass2Xfrms = new List<Transform>(2);
+			foreach (var root in rootActors)
+			{
 				ProcessActors(root.transform, root.transform.parent != null ? root.transform.parent.GetComponent<Actor>() : null);
+			}
+			foreach (var pass2 in pass2Xfrms)
+			{
+				ProcessActors2(pass2);
 			}
 
 			if (originalMessage != null && rootActors.Length == 1)
@@ -752,6 +758,21 @@ namespace MixedRealityExtension.App
 				var nativeAnim = xfrm.gameObject.GetComponent<UnityEngine.Animation>();
 				if (nativeAnim != null && createdActors.Contains(actor))
 				{
+					pass2Xfrms.Add(xfrm);
+				}
+
+				foreach (Transform child in xfrm)
+				{
+					ProcessActors(child, actor);
+				}
+			}
+
+			void ProcessActors2(Transform xfrm)
+			{
+				var actor = xfrm.gameObject.GetComponent<Actor>();
+				var nativeAnim = xfrm.gameObject.GetComponent<UnityEngine.Animation>();
+				if (nativeAnim != null && createdActors.Contains(actor))
+				{
 					var animTargets = xfrm.gameObject.GetComponent<PrefabAnimationTargets>();
 					int stateIndex = 0;
 					foreach (AnimationState state in nativeAnim)
@@ -760,19 +781,10 @@ namespace MixedRealityExtension.App
 						anim.TargetIds = animTargets != null
 							? animTargets.GetTargets(xfrm, stateIndex++, addRootToTargets: true).Select(a => a.Id).ToList()
 							: new List<Guid>() { actor.Id };
-						foreach (var guid in anim.TargetIds)
-						{
-							Debug.LogFormat("Anim {0} targets {1} ({2})", anim.Id, guid, FindActor(guid)?.Name);
-						}
-						Debug.Log("Done");
+
 						AnimationManager.RegisterAnimation(anim);
 						createdAnims.Add(anim);
 					}
-				}
-
-				foreach (Transform child in xfrm)
-				{
-					ProcessActors(child, actor);
 				}
 			}
 		}

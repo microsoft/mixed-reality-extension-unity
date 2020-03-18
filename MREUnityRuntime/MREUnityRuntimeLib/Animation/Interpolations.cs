@@ -2,18 +2,14 @@
 // Licensed under the MIT License.
 using Newtonsoft.Json.Linq;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace MixedRealityExtension.Animation
 {
 	internal static class Interpolations
 	{
-		internal static void Interpolate(JToken a, JToken b, float t, ref JToken mix, (float, float, float, float)? easing)
+		internal static void Interpolate(JToken a, JToken b, float linearT, ref JToken mix, float[] easing)
 		{
-			var ratio = GetEasing(t, easing);
+			var easedT = GetEasing(linearT, easing);
 
 			if (a.Type == JTokenType.Object)
 			{
@@ -31,7 +27,7 @@ namespace MixedRealityExtension.Animation
 						{
 							UnityEngine.Quaternion q1 = new UnityEngine.Quaternion(A.Value<float>("x"), A.Value<float>("y"), A.Value<float>("z"), A.Value<float>("w"));
 							UnityEngine.Quaternion q2 = new UnityEngine.Quaternion(B.Value<float>("x"), B.Value<float>("y"), B.Value<float>("z"), B.Value<float>("w"));
-							var qMix = UnityEngine.Quaternion.Slerp(q1, q2, ratio);
+							var qMix = UnityEngine.Quaternion.Slerp(q1, q2, easedT);
 							Mix.Add("x", qMix.x);
 							Mix.Add("y", qMix.y);
 							Mix.Add("z", qMix.z);
@@ -42,13 +38,19 @@ namespace MixedRealityExtension.Animation
 			}
 		}
 
-		private static float GetEasing(float t, (float, float, float, float)? easing)
+		private static float GetEasing(float t, float[] easing)
 		{
-			if (easing == null)
+			// special case step
+			if (easing == null || easing.Length != 4)
 			{
-				easing = (0f, 0f, 1f, 1f);
+				return 0;
 			}
-			float x1 = easing.Value.Item1, y1 = easing.Value.Item2, x2 = easing.Value.Item3, y2 = easing.Value.Item4;
+			// special case linear: skip all the math
+			else if (easing[0] == 0 && easing[1] == 0 && easing[2] == 1 && easing[3] == 1)
+			{
+				return t;
+			}
+			float x1 = easing[0], y1 = easing[1], x2 = easing[2], y2 = easing[3];
 
 			// cubic bezier solver borrowed from Babylon.js's Bezier curve implementation
 			double f0 = 1 - 3 * x2 + 3 * x1;

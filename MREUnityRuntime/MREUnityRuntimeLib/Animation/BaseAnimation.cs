@@ -59,7 +59,6 @@ namespace MixedRealityExtension.Animation
 			if (patch.BasisTime.HasValue)
 			{
 				BasisTime = patch.BasisTime.Value;
-				UnityEngine.Debug.LogFormat("Name: {0}, Patch: {1}, Basis: {2}", Name, patch.BasisTime, BasisTime);
 			}
 			if (patch.Time.HasValue)
 			{
