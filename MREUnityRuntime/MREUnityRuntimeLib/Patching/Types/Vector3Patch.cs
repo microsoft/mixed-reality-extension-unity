@@ -63,14 +63,35 @@ namespace MixedRealityExtension.Patching.Types
 			}
 		}
 
-		void IPatchable.WriteToPath(TargetPath path, JToken value, int depth = 0)
+		void IPatchable.WriteToPath(TargetPath path, JToken value, int depth)
 		{
-
+			if (depth == path.PathParts.Length)
+			{
+				X = value.Value<float>("x");
+				Y = value.Value<float>("y");
+				Z = value.Value<float>("z");
+			}
+			else if (path.PathParts[depth] == "x")
+			{
+				X = value.Value<float>();
+			}
+			else if (path.PathParts[depth] == "y")
+			{
+				Y = value.Value<float>();
+			}
+			else if (path.PathParts[depth] == "z")
+			{
+				Z = value.Value<float>();
+			}
+			// else
+				// an unrecognized path, do nothing
 		}
 
 		public void Clear()
 		{
-
+			X = null;
+			Y = null;
+			Z = null;
 		}
 	}
 }

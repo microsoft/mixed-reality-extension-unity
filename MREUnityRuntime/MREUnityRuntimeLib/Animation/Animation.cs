@@ -165,11 +165,12 @@ namespace MixedRealityExtension.Animation
 						break;
 					}
 				}
+				// either no keyframes, or time out of range
 				if (prevFrame == null)
 				{
-					UnityEngine.Debug.LogFormat("Keyframe not found for time {0}", currentTime);
 					continue;
 				}
+
 				var linearT = (currentTime - prevFrame.Time) / (nextFrame.Time - prevFrame.Time);
 
 				// compute new value for targeted field

@@ -33,6 +33,19 @@ namespace MixedRealityExtension.Animation
 							Mix.Add("z", qMix.z);
 							Mix.Add("w", qMix.w);
 						}
+						// Vector3
+						else
+						{
+							Mix.Add("x", (1 - easedT) * A.Value<float>("x") + easedT * B.Value<float>("x"));
+							Mix.Add("y", (1 - easedT) * A.Value<float>("y") + easedT * B.Value<float>("y"));
+							Mix.Add("z", (1 - easedT) * A.Value<float>("z") + easedT * B.Value<float>("z"));
+						}
+					}
+					// Vector2
+					else
+					{
+						Mix.Add("x", (1 - easedT) * A.Value<float>("x") + easedT * B.Value<float>("x"));
+						Mix.Add("y", (1 - easedT) * A.Value<float>("y") + easedT * B.Value<float>("y"));
 					}
 				}
 			}
@@ -50,9 +63,9 @@ namespace MixedRealityExtension.Animation
 			{
 				return t;
 			}
-			float x1 = easing[0], y1 = easing[1], x2 = easing[2], y2 = easing[3];
 
 			// cubic bezier solver borrowed from Babylon.js's Bezier curve implementation
+			float x1 = easing[0], y1 = easing[1], x2 = easing[2], y2 = easing[3];
 			double f0 = 1 - 3 * x2 + 3 * x1;
 			double f1 = 3 * x2 - 6 * x1;
 			double f2 = 3 * x1;

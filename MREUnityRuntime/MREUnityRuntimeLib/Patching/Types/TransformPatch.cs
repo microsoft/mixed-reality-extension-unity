@@ -8,8 +8,22 @@ namespace MixedRealityExtension.Patching.Types
 {
 	public class TransformPatch : IPatchable
 	{
+		private Vector3Patch position;
+		private Vector3Patch savedPosition;
 		[PatchProperty]
-		public Vector3Patch Position { get; set; }
+		public Vector3Patch Position
+		{
+			get => position;
+			set
+			{
+				if (value == null && position != null)
+				{
+					savedPosition = position;
+					savedPosition.Clear();
+				}
+				position = value;
+			}
+		}
 
 		private QuaternionPatch rotation;
 		private QuaternionPatch savedRotation;
@@ -35,8 +49,8 @@ namespace MixedRealityExtension.Patching.Types
 
 		internal TransformPatch(MWVector3 position, MWQuaternion rotation)
 		{
-			this.Position = new Vector3Patch(position);
-			this.Rotation = new QuaternionPatch(rotation);
+			Position = new Vector3Patch(position);
+			Rotation = new QuaternionPatch(rotation);
 		}
 
 		void IPatchable.WriteToPath(TargetPath path, JToken value, int depth)
@@ -44,6 +58,29 @@ namespace MixedRealityExtension.Patching.Types
 			if (depth == path.PathParts.Length)
 			{
 				// transforms are not directly patchable, do nothing
+			}
+			else if (_WriteToPath(path, value, depth))
+			{
+				// handled
+			}
+			// else
+				// an unrecognized path, do nothing
+		}
+
+		internal bool _WriteToPath(TargetPath path, JToken value, int depth)
+		{
+			if (path.PathParts[depth] == "position")
+			{
+				if (Position == null)
+				{
+					if (savedPosition == null)
+					{
+						savedPosition = new Vector3Patch();
+					}
+					position = savedPosition;
+				}
+				Position.WriteToPath(path, value, depth + 1);
+				return true;
 			}
 			else if (path.PathParts[depth] == "rotation")
 			{
@@ -56,21 +93,36 @@ namespace MixedRealityExtension.Patching.Types
 					rotation = savedRotation;
 				}
 				Rotation.WriteToPath(path, value, depth + 1);
+				return true;
 			}
-			// else
-				// an unrecognized path, do nothing
+			return false;
 		}
 
-		public void Clear()
+		public virtual void Clear()
 		{
+			Position = null;
 			Rotation = null;
 		}
 	}
 
-	public class ScaledTransformPatch : TransformPatch
+	public class ScaledTransformPatch : TransformPatch, IPatchable
 	{
+		private Vector3Patch scale;
+		private Vector3Patch savedScale;
 		[PatchProperty]
-		public Vector3Patch Scale { get; set; }
+		public Vector3Patch Scale
+		{
+			get => scale;
+			set
+			{
+				if (value == null && scale != null)
+				{
+					savedScale = scale;
+					savedScale.Clear();
+				}
+				scale = value;
+			}
+		}
 
 		public ScaledTransformPatch()
 			: base()
@@ -81,7 +133,39 @@ namespace MixedRealityExtension.Patching.Types
 		internal ScaledTransformPatch(MWVector3 position, MWQuaternion rotation, MWVector3 scale)
 			: base(position, rotation)
 		{
-			this.Scale = new Vector3Patch(scale);
+			Scale = new Vector3Patch(scale);
+		}
+
+		void IPatchable.WriteToPath(TargetPath path, JToken value, int depth)
+		{
+			if (depth == path.PathParts.Length)
+			{
+				// transforms are not directly patchable, do nothing
+			}
+			else if (base._WriteToPath(path, value, depth))
+			{
+				// handled by superclass
+			}
+			else if (path.PathParts[depth] == "scale")
+			{
+				if (Scale == null)
+				{
+					if (savedScale == null)
+					{
+						savedScale = new Vector3Patch();
+					}
+					scale = savedScale;
+				}
+				scale.WriteToPath(path, value, depth + 1);
+			}
+			// else
+				// an unrecognized path, do nothing
+		}
+
+		public override void Clear()
+		{
+			base.Clear();
+			Scale = null;
 		}
 	}
 }
