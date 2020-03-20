@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 using Newtonsoft.Json.Linq;
 using System.Linq;
+using CubicBezier = MixedRealityExtension.Util.CubicBezier;
 
 namespace MixedRealityExtension.Animation
 {
@@ -72,6 +73,22 @@ namespace MixedRealityExtension.Animation
 		/// Controls between-frame interpolation. If not provided, frames will not interpolate.
 		/// </summary>
 		public float[] Easing;
+
+		private CubicBezier cubicBezier;
+		/// <summary>
+		/// The cubic bezier computer for the track's easing function
+		/// </summary>
+		public CubicBezier Bezier
+		{
+			get
+			{
+				if (cubicBezier == null && Easing != null)
+				{
+					cubicBezier = new CubicBezier(Easing[0], Easing[1], Easing[2], Easing[3]);
+				}
+				return cubicBezier;
+			}
+		}
 	}
 
 	/// <summary>
@@ -93,5 +110,21 @@ namespace MixedRealityExtension.Animation
 		/// How the value approaches this frame's value. Defaults to linear (0, 0, 1, 1).
 		/// </summary>
 		public float[] Easing;
+
+		private CubicBezier cubicBezier;
+		/// <summary>
+		/// The cubic bezier computer for the frame's easing function
+		/// </summary>
+		public CubicBezier Bezier
+		{
+			get
+			{
+				if (cubicBezier == null && Easing != null)
+				{
+					cubicBezier = new CubicBezier(Easing[0], Easing[1], Easing[2], Easing[3]);
+				}
+				return cubicBezier;
+			}
+		}
 	}
 }

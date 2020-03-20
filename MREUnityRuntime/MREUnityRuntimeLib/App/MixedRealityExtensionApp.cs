@@ -719,12 +719,13 @@ namespace MixedRealityExtension.App
 				return;
 			}
 
-			var pass2Xfrms = new List<Transform>(2);
+			var secondPassXfrms = new List<Transform>(2);
 			foreach (var root in rootActors)
 			{
 				ProcessActors(root.transform, root.transform.parent != null ? root.transform.parent.GetComponent<Actor>() : null);
 			}
-			foreach (var pass2 in pass2Xfrms)
+			// some things require the whole hierarchy to have actors on it. run those here
+			foreach (var pass2 in secondPassXfrms)
 			{
 				ProcessActors2(pass2);
 			}
@@ -755,10 +756,11 @@ namespace MixedRealityExtension.App
 					actor.MeshId = MREAPI.AppsAPI.AssetCache.GetId(actor.UnityMesh) ?? Guid.Empty;
 				}
 
+				// native animation construction requires the whole actor hierarchy to already exist. defer to second pass
 				var nativeAnim = xfrm.gameObject.GetComponent<UnityEngine.Animation>();
 				if (nativeAnim != null && createdActors.Contains(actor))
 				{
-					pass2Xfrms.Add(xfrm);
+					secondPassXfrms.Add(xfrm);
 				}
 
 				foreach (Transform child in xfrm)

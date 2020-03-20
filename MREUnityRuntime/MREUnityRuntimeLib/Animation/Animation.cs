@@ -31,6 +31,8 @@ namespace MixedRealityExtension.Animation
 		/// </summary>
 		private bool StopUpdating = true;
 
+		private int[] LastKeyframeIndex;
+
 		public Animation(AnimationManager manager, Guid id, Guid dataId, Dictionary<string, Guid> targetMap) : base(manager, id)
 		{
 			DataId = dataId;
@@ -39,6 +41,7 @@ namespace MixedRealityExtension.Animation
 			MREAPI.AppsAPI.AssetCache.OnCached(dataId, cacheData =>
 			{
 				Data = (AnimationDataCached)cacheData;
+				LastKeyframeIndex = new int[Data.Tracks.Length];
 			});
 		}
 
@@ -63,9 +66,9 @@ namespace MixedRealityExtension.Animation
 		{
 			if (Data == null) return;
 
-			/*************************************************
+			/***************************************************************
 			 * Normalize time to animation length based on wrap settings
-			 *************************************************/
+			 ***************************************************************/
 
 			float currentTime;
 			if (Weight > 0 && Speed != 0)
@@ -86,6 +89,100 @@ namespace MixedRealityExtension.Animation
 				return;
 			}
 
+			currentTime = ApplyWrapMode(currentTime);
+
+			/*********************************************
+			 * Process tracks
+			 *********************************************/
+
+			JToken jToken;
+			JValue jValue = new JValue(false);
+			JObject jObject = new JObject();
+
+			for (var ti = 0; ti < Data.Tracks.Length; ti++)
+			{
+				var track = Data.Tracks[ti];
+
+				// grab the same keyframes from the last update
+				Keyframe prevFrame = track.Keyframes[LastKeyframeIndex[ti]],
+					nextFrame = LastKeyframeIndex[ti] + 1 < Data.Tracks.Length ? track.Keyframes[LastKeyframeIndex[ti] + 1] : null;
+
+				// if the current time isn't in that range, try the "next" keyframe based on speed sign
+				if (currentTime < prevFrame.Time || currentTime >= nextFrame.Time)
+				{
+					if (Speed < 0 && LastKeyframeIndex[ti] > 0)
+					{
+						nextFrame = prevFrame;
+						prevFrame = track.Keyframes[LastKeyframeIndex[ti] - 1];
+						LastKeyframeIndex[ti]--;
+					}
+					else if (Speed > 0 && LastKeyframeIndex[ti] < track.Keyframes.Length - 2)
+					{
+						prevFrame = nextFrame;
+						nextFrame = track.Keyframes[LastKeyframeIndex[ti] + 1];
+						LastKeyframeIndex[ti]++;
+					}
+				}
+
+				// if it's still not in range, we just have to search
+				if (prevFrame.Time > currentTime || nextFrame.Time <= currentTime)
+				{
+					prevFrame = null;
+					nextFrame = null;
+					for (int i = 0; i < (track.Keyframes.Length - 1); i++)
+					{
+						if (currentTime >= track.Keyframes[i].Time && currentTime < track.Keyframes[i + 1].Time)
+						{
+							prevFrame = track.Keyframes[i];
+							nextFrame = track.Keyframes[i + 1];
+							LastKeyframeIndex[ti] = i;
+							break;
+						}
+					}
+					// either no keyframes, or time out of range
+					if (prevFrame == null)
+					{
+						continue;
+					}
+				}
+				
+
+				var linearT = (currentTime - prevFrame.Time) / (nextFrame.Time - prevFrame.Time);
+
+				// compute new value for targeted field
+				if (prevFrame.Value.Type == JTokenType.Object)
+				{
+					jToken = jObject;
+					Interpolations.Interpolate(prevFrame.Value, nextFrame.Value, linearT, ref jToken, nextFrame.Bezier ?? track.Bezier);
+				}
+				else
+				{
+					jToken = jValue;
+					Interpolations.Interpolate(prevFrame.Value, nextFrame.Value, linearT, ref jToken, nextFrame.Bezier ?? track.Bezier);
+				}
+
+				var targetId = TargetMap[track.TargetPath.Placeholder];
+				if (track.TargetPath.AnimatibleType == "actor")
+				{
+					ActorPatch patch = TargetPatches.GetOrCreate(targetId, () => new ActorPatch());
+					patch.WriteToPath(track.TargetPath, jToken, 0);
+				}
+			}
+
+			/***********************************************
+			 * Apply patches to all objects involved
+			 ***********************************************/
+
+			foreach (var kvp in TargetPatches)
+			{
+				var actor = (Actor)manager.App.FindActor(kvp.Key);
+				actor?.ApplyPatch(kvp.Value);
+				kvp.Value.Clear();
+			}
+		}
+
+		private float ApplyWrapMode(float currentTime)
+		{
 			// From the documentation:
 			//   For the float and double operands, the result of x % y for the finite x and y is the value z such that:
 			//     The sign of z, if non-zero, is the same as the sign of x.
@@ -145,64 +242,7 @@ namespace MixedRealityExtension.Animation
 				currentTime = Math.Max(0, Math.Min(Data.Duration, currentTime));
 			}
 
-			/*********************************************
-			 * Process tracks
-			 *********************************************/
-
-			JToken jToken;
-			JValue jValue = new JValue(false);
-			JObject jObject = new JObject();
-
-			foreach (var track in Data.Tracks)
-			{
-				Keyframe prevFrame = null, nextFrame = null;
-				for (int i = 0; i < (track.Keyframes.Length - 1); i++)
-				{
-					if (track.Keyframes[i].Time <= currentTime && track.Keyframes[i + 1].Time > currentTime)
-					{
-						prevFrame = track.Keyframes[i];
-						nextFrame = track.Keyframes[i + 1];
-						break;
-					}
-				}
-				// either no keyframes, or time out of range
-				if (prevFrame == null)
-				{
-					continue;
-				}
-
-				var linearT = (currentTime - prevFrame.Time) / (nextFrame.Time - prevFrame.Time);
-
-				// compute new value for targeted field
-				if (prevFrame.Value.Type == JTokenType.Object)
-				{
-					jToken = jObject;
-					Interpolations.Interpolate(prevFrame.Value, nextFrame.Value, linearT, ref jToken, nextFrame.Easing ?? track.Easing);
-				}
-				else
-				{
-					jToken = jValue;
-					Interpolations.Interpolate(prevFrame.Value, nextFrame.Value, linearT, ref jToken, nextFrame.Easing ?? track.Easing);
-				}
-
-				var targetId = TargetMap[track.TargetPath.Placeholder];
-				if (track.TargetPath.AnimatibleType == "actor")
-				{
-					ActorPatch patch = TargetPatches.GetOrCreate(targetId, () => new ActorPatch());
-					patch.WriteToPath(track.TargetPath, jToken, 0);
-				}
-			}
-
-			/***********************************************
-			 * Apply patches to all objects involved
-			 ***********************************************/
-
-			foreach (var kvp in TargetPatches)
-			{
-				var actor = (Actor)manager.App.FindActor(kvp.Key);
-				actor.ApplyPatch(kvp.Value);
-				kvp.Value.Clear();
-			}
+			return currentTime;
 		}
 	}
 }
