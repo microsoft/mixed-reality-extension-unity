@@ -41,12 +41,17 @@ namespace MixedRealityExtension.Patching.Types
 			Properties = user.UserInfo.Properties;
 		}
 
-		void IPatchable.WriteToPath(TargetPath path, JToken value, int depth = 0)
+		public void WriteToPath(TargetPath path, JToken value, int depth)
 		{
 
 		}
 
 		public void Clear()
+		{
+
+		}
+
+		public void Restore(TargetPath path, int depth)
 		{
 
 		}

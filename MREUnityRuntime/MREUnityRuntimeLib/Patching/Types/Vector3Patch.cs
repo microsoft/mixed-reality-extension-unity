@@ -63,7 +63,7 @@ namespace MixedRealityExtension.Patching.Types
 			}
 		}
 
-		void IPatchable.WriteToPath(TargetPath path, JToken value, int depth)
+		public void WriteToPath(TargetPath path, JToken value, int depth)
 		{
 			if (depth == path.PathParts.Length)
 			{
@@ -92,6 +92,11 @@ namespace MixedRealityExtension.Patching.Types
 			X = null;
 			Y = null;
 			Z = null;
+		}
+
+		public void Restore(TargetPath path, int depth)
+		{
+			
 		}
 	}
 }

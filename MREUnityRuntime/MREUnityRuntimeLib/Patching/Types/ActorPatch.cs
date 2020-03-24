@@ -42,7 +42,7 @@ namespace MixedRealityExtension.Patching.Types
 			}
 		}
 
-		void IPatchable.WriteToPath(TargetPath path, JToken value, int depth)
+		public void WriteToPath(TargetPath path, JToken value, int depth)
 		{
 			if (depth == path.PathParts.Length)
 			{
@@ -80,6 +80,23 @@ namespace MixedRealityExtension.Patching.Types
 		{
 			App = null;
 			Local = null;
+		}
+
+		public void Restore(TargetPath path, int depth)
+		{
+			if (depth >= path.PathParts.Length) return;
+
+			switch (path.PathParts[depth])
+			{
+				case "local":
+					Local = savedLocal ?? new ScaledTransformPatch();
+					Local.Restore(path, depth + 1);
+					break;
+				case "app":
+					App = savedApp ?? new TransformPatch();
+					App.Restore(path, depth + 1);
+					break;
+			}
 		}
 	}
 
@@ -146,7 +163,7 @@ namespace MixedRealityExtension.Patching.Types
 			Id = id;
 		}
 
-		void IPatchable.WriteToPath(TargetPath path, JToken value, int depth)
+		public void WriteToPath(TargetPath path, JToken value, int depth)
 		{
 			if (depth == path.PathParts.Length)
 			{
@@ -171,6 +188,19 @@ namespace MixedRealityExtension.Patching.Types
 		public void Clear()
 		{
 			Transform = null;
+		}
+
+		public void Restore(TargetPath path, int depth)
+		{
+			if (path.AnimatibleType != "actor" || depth >= path.PathParts.Length) return;
+
+			switch (path.PathParts[depth])
+			{
+				case "transform":
+					Transform = savedTransform ?? new ActorTransformPatch();
+					Transform.Restore(path, depth + 1);
+					break;
+			}
 		}
 	}
 }

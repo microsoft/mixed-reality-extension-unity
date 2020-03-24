@@ -114,12 +114,17 @@ namespace MixedRealityExtension.Patching.Types
 			ConstraintFlags = (MRERigidBodyConstraints)Enum.Parse(typeof(MRERigidBodyConstraints), rigidbody.constraints.ToString());
 		}
 
-		void IPatchable.WriteToPath(TargetPath path, JToken value, int depth = 0)
+		public void WriteToPath(TargetPath path, JToken value, int depth)
 		{
 
 		}
 
 		public void Clear()
+		{
+
+		}
+
+		public void Restore(TargetPath path, int depth)
 		{
 
 		}

@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace MixedRealityExtension.Animation
 {
-	internal class TargetPath
+	public class TargetPath
 	{
 		private static Regex PathRegex = new Regex("^(?<type>actor|animation|material):(?<placeholder>[^/]+)/(?<path>.+)$");
 

@@ -79,7 +79,7 @@ namespace MixedRealityExtension.Patching.Types
 			if (other.WrapMode.HasValue) WrapMode = other.WrapMode;
 		}
 
-		void IPatchable.WriteToPath(TargetPath path, JToken value, int depth = 0)
+		public void WriteToPath(TargetPath path, JToken value, int depth)
 		{
 
 		}
@@ -87,6 +87,11 @@ namespace MixedRealityExtension.Patching.Types
 		public void Clear()
 		{
 			
+		}
+
+		public void Restore(TargetPath path, int depth)
+		{
+
 		}
 	}
 }

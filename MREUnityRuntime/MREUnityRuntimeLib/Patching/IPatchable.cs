@@ -9,13 +9,11 @@ namespace MixedRealityExtension.Patching
 	{
 		void WriteToPath(TargetPath path, JToken value, int depth);
 		void Clear();
-	}
-
-	internal static class IPatchableExtensions
-	{
-		internal static void WriteToPath(this IPatchable patch, TargetPath path, JToken value, int depth)
-		{
-			patch.WriteToPath(path, value, depth);
-		}
+		/// <summary>
+		/// Reassign saved patch instances to main properties
+		/// </summary>
+		/// <param name="path">The path whose parts should be restored</param>
+		/// <param name="depth">Which path part should be restored on this object</param>
+		void Restore(TargetPath path, int depth);
 	}
 }

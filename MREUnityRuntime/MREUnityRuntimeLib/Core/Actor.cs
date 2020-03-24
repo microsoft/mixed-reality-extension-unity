@@ -339,23 +339,71 @@ namespace MixedRealityExtension.Core
 			Destroy(gameObject);
 		}
 
-		internal ActorPatch GeneratePatch(TargetPath path = null)
+		internal ActorPatch GeneratePatch(ActorPatch output = null, TargetPath path = null)
 		{
-			LocalTransform.ToLocalTransform(transform);
-			AppTransform.ToAppTransform(transform, App.SceneRoot.transform);
-
-			var localTransform = new ScaledTransformPatch()
+			if (output == null)
 			{
-				Position = new Vector3Patch(transform.localPosition),
-				Rotation = new QuaternionPatch(transform.localRotation),
-				Scale = new Vector3Patch(transform.localScale)
-			};
+				output = new ActorPatch();
+			}
 
-			var appTransform = new TransformPatch()
+			var generateAll = path == null;
+			if (!generateAll)
 			{
-				Position = new Vector3Patch(App.SceneRoot.transform.InverseTransformPoint(transform.position)),
-				Rotation = new QuaternionPatch(Quaternion.Inverse(App.SceneRoot.transform.rotation) * transform.rotation)
-			};
+				if (path.AnimatibleType != "actor") return output;
+				output.Restore(path, 0);
+			}
+
+			if (generateAll || path.PathParts[0] == "transform")
+			{
+				if (generateAll || path.PathParts[1] == "local")
+				{
+					LocalTransform.ToLocalTransform(transform);
+					if (generateAll || path.PathParts[2] == "position")
+					{
+						var localPos = transform.localPosition;
+						if (generateAll || path.PathParts.Length == 3 || path.PathParts[3] == "x")
+						{
+							output.Transform.Local.Position.X = localPos.x;
+						}
+						if (generateAll || path.PathParts.Length == 3 || path.PathParts[3] == "y")
+						{
+							output.Transform.Local.Position.Y = localPos.y;
+						}
+						if (generateAll || path.PathParts.Length == 3 || path.PathParts[3] == "z")
+						{
+							output.Transform.Local.Position.Z = localPos.z;
+						}
+					}
+					if (generateAll || path.PathParts[2] == "rotation")
+					{
+						var localRot = transform.localRotation;
+						output.Transform.Local.Rotation.X = localRot.x;
+						output.Transform.Local.Rotation.Y = localRot.y;
+						output.Transform.Local.Rotation.Z = localRot.z;
+						output.Transform.Local.Rotation.W = localRot.w;
+					}
+					if (generateAll || path.PathParts[2] == "scale")
+					{
+						var localScale = transform.localScale;
+						if (generateAll || path.PathParts.Length == 3 || path.PathParts[3] == "x")
+						{
+							output.Transform.Local.Scale.X = localScale.x;
+						}
+						if (generateAll || path.PathParts.Length == 3 || path.PathParts[3] == "y")
+						{
+							output.Transform.Local.Scale.Y = localScale.y;
+						}
+						if (generateAll || path.PathParts.Length == 3 || path.PathParts[3] == "z")
+						{
+							output.Transform.Local.Scale.Z = localScale.z;
+						}
+					}
+				}
+				if (generateAll || path.PathParts[1] == "app")
+				{
+					AppTransform.ToAppTransform(transform, App.SceneRoot.transform);
+				}
+			}
 
 			var rigidBody = PatchingUtilMethods.GeneratePatch(RigidBody, (Rigidbody)null, App.SceneRoot.transform);
 

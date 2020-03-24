@@ -53,7 +53,7 @@ namespace MixedRealityExtension.Patching.Types
 			Rotation = new QuaternionPatch(rotation);
 		}
 
-		void IPatchable.WriteToPath(TargetPath path, JToken value, int depth)
+		public void WriteToPath(TargetPath path, JToken value, int depth)
 		{
 			if (depth == path.PathParts.Length)
 			{
@@ -103,6 +103,23 @@ namespace MixedRealityExtension.Patching.Types
 			Position = null;
 			Rotation = null;
 		}
+
+		public virtual void Restore(TargetPath path, int depth)
+		{
+			if (depth >= path.PathParts.Length) return;
+
+			switch (path.PathParts[depth])
+			{
+				case "position":
+					Position = savedPosition ?? new Vector3Patch();
+					Position.Restore(path, depth + 1);
+					break;
+				case "rotation":
+					Rotation = savedRotation ?? new QuaternionPatch();
+					Rotation.Restore(path, depth + 1);
+					break;
+			}
+		}
 	}
 
 	public class ScaledTransformPatch : TransformPatch, IPatchable
@@ -136,7 +153,7 @@ namespace MixedRealityExtension.Patching.Types
 			Scale = new Vector3Patch(scale);
 		}
 
-		void IPatchable.WriteToPath(TargetPath path, JToken value, int depth)
+		public void WriteToPath(TargetPath path, JToken value, int depth)
 		{
 			if (depth == path.PathParts.Length)
 			{
@@ -166,6 +183,22 @@ namespace MixedRealityExtension.Patching.Types
 		{
 			base.Clear();
 			Scale = null;
+		}
+
+		public override void Restore(TargetPath path, int depth)
+		{
+			if (depth >= path.PathParts.Length) return;
+
+			switch (path.PathParts[depth])
+			{
+				case "scale":
+					Scale = savedScale ?? new Vector3Patch();
+					Scale.Restore(path, depth + 1);
+					break;
+				default:
+					base.Restore(path, depth);
+					break;
+			}
 		}
 	}
 }

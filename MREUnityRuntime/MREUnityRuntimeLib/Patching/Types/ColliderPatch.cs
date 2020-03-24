@@ -25,12 +25,17 @@ namespace MixedRealityExtension.Patching.Types
 		[PatchProperty]
 		public IEnumerable<ColliderEventType> EventSubscriptions { get; set; }
 
-		void IPatchable.WriteToPath(TargetPath path, JToken value, int depth = 0)
+		public void WriteToPath(TargetPath path, JToken value, int depth)
 		{
 
 		}
 
 		public void Clear()
+		{
+
+		}
+
+		public void Restore(TargetPath path, int depth)
 		{
 
 		}
