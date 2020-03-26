@@ -46,10 +46,10 @@ namespace UnityStandardAssets.Characters.FirstPerson
             GetInput(out speed);
             // always move along the camera forward as it is the direction that it being aimed at
             Vector3 desiredMove = m_Camera.transform.forward * m_Input.y
-				                + m_Camera.transform.right * m_Input.x
-			                    + m_Camera.transform.up * m_Input.z;
+                                + m_Camera.transform.right * m_Input.x
+                                + m_Camera.transform.up * m_Input.z;
 
-			m_MoveDir = desiredMove * speed;
+            m_MoveDir = desiredMove * speed;
 
             if (!m_CharacterController.isGrounded)
             {
@@ -65,7 +65,7 @@ namespace UnityStandardAssets.Characters.FirstPerson
             // Read input
             float horizontal = CrossPlatformInputManager.GetAxis("Horizontal");
             float vertical = CrossPlatformInputManager.GetAxis("Vertical");
-			float upordown = 0;
+            float upordown = 0;
 
             bool waswalking = m_IsWalking;
 
@@ -74,13 +74,13 @@ namespace UnityStandardAssets.Characters.FirstPerson
             // keep track of whether or not the character is walking or running
             m_IsWalking = !Input.GetKey(KeyCode.LeftShift);
 
-			// add also additional possibility for up-down with keys
-			upordown = (Input.GetKey(KeyCode.Q)) ? m_WalkSpeed : 0;
-			upordown = (Input.GetKey(KeyCode.Z)) ? -m_WalkSpeed : upordown;
+            // add also additional possibility for up-down with keys
+            upordown = (Input.GetKey(KeyCode.Q)) ? m_WalkSpeed : 0;
+            upordown = (Input.GetKey(KeyCode.Z)) ? -m_WalkSpeed : upordown;
 #endif
 
-			// set the desired speed to be walking or running
-			speed = m_IsWalking ? m_WalkSpeed : m_RunSpeed;
+            // set the desired speed to be walking or running
+            speed = m_IsWalking ? m_WalkSpeed : m_RunSpeed;
             m_Input = new Vector3(horizontal, vertical, upordown);
 
             // normalize input if it exceeds 1 in combined length:
@@ -93,11 +93,11 @@ namespace UnityStandardAssets.Characters.FirstPerson
 
         private void RotateView()
         {
-			m_MouseLook.LookRotation(transform, m_Camera.transform);
-		}
+            m_MouseLook.LookRotation(transform, m_Camera.transform);
+        }
 
 
-		private void OnControllerColliderHit(ControllerColliderHit hit)
+        private void OnControllerColliderHit(ControllerColliderHit hit)
         {
             Rigidbody body = hit.collider.attachedRigidbody;
             //dont move the rigidbody if the character is on top of it
