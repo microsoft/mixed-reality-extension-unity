@@ -120,6 +120,14 @@ namespace MixedRealityExtension.Patching.Types
 					break;
 			}
 		}
+
+		public virtual void RestoreAll()
+		{
+			Position = savedPosition ?? new Vector3Patch();
+			Position.RestoreAll();
+			Rotation = savedRotation ?? new QuaternionPatch();
+			Rotation.RestoreAll();
+		}
 	}
 
 	public class ScaledTransformPatch : TransformPatch, IPatchable
@@ -199,6 +207,13 @@ namespace MixedRealityExtension.Patching.Types
 					base.Restore(path, depth);
 					break;
 			}
+		}
+
+		public override void RestoreAll()
+		{
+			base.RestoreAll();
+			Scale = savedScale ?? new Vector3Patch();
+			Scale.RestoreAll();
 		}
 	}
 }

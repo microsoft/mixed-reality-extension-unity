@@ -106,5 +106,10 @@ namespace MixedRealityExtension.Patching.Types
 		{
 
 		}
+
+		public void RestoreAll()
+		{
+
+		}
 	}
 }

@@ -98,6 +98,14 @@ namespace MixedRealityExtension.Patching.Types
 					break;
 			}
 		}
+
+		public void RestoreAll()
+		{
+			Local = savedLocal ?? new ScaledTransformPatch();
+			Local.RestoreAll();
+			App = savedApp ?? new TransformPatch();
+			App.RestoreAll();
+		}
 	}
 
 	public class ActorPatch : IPatchable
@@ -201,6 +209,12 @@ namespace MixedRealityExtension.Patching.Types
 					Transform.Restore(path, depth + 1);
 					break;
 			}
+		}
+
+		public void RestoreAll()
+		{
+			Transform = savedTransform ?? new ActorTransformPatch();
+			Transform.RestoreAll();
 		}
 	}
 }

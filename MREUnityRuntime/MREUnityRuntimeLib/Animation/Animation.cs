@@ -5,6 +5,7 @@ using MixedRealityExtension.Core;
 using MixedRealityExtension.Patching;
 using MixedRealityExtension.Patching.Types;
 using MixedRealityExtension.Util;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
@@ -31,17 +32,23 @@ namespace MixedRealityExtension.Animation
 		/// </summary>
 		private bool StopUpdating = true;
 
+		/// <summary>
+		/// The index of the keyframe used last update
+		/// </summary>
 		private int[] LastKeyframeIndex;
+
+		private Keyframe[] ImplicitStartKeyframes;
 
 		public Animation(AnimationManager manager, Guid id, Guid dataId, Dictionary<string, Guid> targetMap) : base(manager, id)
 		{
 			DataId = dataId;
 			TargetMap = targetMap;
 
-			MREAPI.AppsAPI.AssetCache.OnCached(dataId, cacheData =>
+			MREAPI.AppsAPI.AssetCache.OnCached(DataId, cacheData =>
 			{
 				Data = (AnimationDataCached)cacheData;
 				LastKeyframeIndex = new int[Data.Tracks.Length];
+				InitializeImplicitStartKeyframes();
 			});
 		}
 
@@ -50,7 +57,7 @@ namespace MixedRealityExtension.Animation
 			base.ApplyPatch(patch);
 			if (IsPlaying)
 			{
-				// Exec the update at least once, even if Speed == 0
+				// Exec the update at least once after a patch, even if Speed == 0
 				StopUpdating = false;
 			}
 		}
@@ -66,10 +73,7 @@ namespace MixedRealityExtension.Animation
 		{
 			if (Data == null) return;
 
-			/***************************************************************
-			 * Normalize time to animation length based on wrap settings
-			 ***************************************************************/
-
+			// normalize time to animation length based on wrap settings
 			float currentTime;
 			if (Weight > 0 && Speed != 0)
 			{
@@ -91,61 +95,20 @@ namespace MixedRealityExtension.Animation
 
 			currentTime = ApplyWrapMode(currentTime);
 
-			/*********************************************
-			 * Process tracks
-			 *********************************************/
-
+			// process tracks
 			JToken jToken;
 			JValue jValue = new JValue(false);
 			JObject jObject = new JObject();
-
 			for (var ti = 0; ti < Data.Tracks.Length; ti++)
 			{
 				var track = Data.Tracks[ti];
+				(Keyframe prevFrame, Keyframe nextFrame) = GetActiveKeyframes(ti, currentTime);
 
-				// grab the same keyframes from the last update
-				Keyframe prevFrame = track.Keyframes[LastKeyframeIndex[ti]],
-					nextFrame = LastKeyframeIndex[ti] + 1 < Data.Tracks.Length ? track.Keyframes[LastKeyframeIndex[ti] + 1] : null;
-
-				// if the current time isn't in that range, try the "next" keyframe based on speed sign
-				if (currentTime < prevFrame.Time || currentTime >= nextFrame.Time)
+				// either no keyframes, or time out of range
+				if (prevFrame == null)
 				{
-					if (Speed < 0 && LastKeyframeIndex[ti] > 0)
-					{
-						nextFrame = prevFrame;
-						prevFrame = track.Keyframes[LastKeyframeIndex[ti] - 1];
-						LastKeyframeIndex[ti]--;
-					}
-					else if (Speed > 0 && LastKeyframeIndex[ti] < track.Keyframes.Length - 2)
-					{
-						prevFrame = nextFrame;
-						nextFrame = track.Keyframes[LastKeyframeIndex[ti] + 1];
-						LastKeyframeIndex[ti]++;
-					}
+					continue;
 				}
-
-				// if it's still not in range, we just have to search
-				if (prevFrame.Time > currentTime || nextFrame.Time <= currentTime)
-				{
-					prevFrame = null;
-					nextFrame = null;
-					for (int i = 0; i < (track.Keyframes.Length - 1); i++)
-					{
-						if (currentTime >= track.Keyframes[i].Time && currentTime < track.Keyframes[i + 1].Time)
-						{
-							prevFrame = track.Keyframes[i];
-							nextFrame = track.Keyframes[i + 1];
-							LastKeyframeIndex[ti] = i;
-							break;
-						}
-					}
-					// either no keyframes, or time out of range
-					if (prevFrame == null)
-					{
-						continue;
-					}
-				}
-				
 
 				var linearT = (currentTime - prevFrame.Time) / (nextFrame.Time - prevFrame.Time);
 
@@ -161,18 +124,16 @@ namespace MixedRealityExtension.Animation
 					Interpolations.Interpolate(prevFrame.Value, nextFrame.Value, linearT, ref jToken, nextFrame.Bezier ?? track.Bezier);
 				}
 
+				// collect track result in a patch
 				var targetId = TargetMap[track.TargetPath.Placeholder];
 				if (track.TargetPath.AnimatibleType == "actor")
 				{
-					ActorPatch patch = TargetPatches.GetOrCreate(targetId, () => new ActorPatch());
+					ActorPatch patch = TargetPatches.GetOrCreate(targetId, () => new ActorPatch(targetId));
 					patch.WriteToPath(track.TargetPath, jToken, 0);
 				}
 			}
 
-			/***********************************************
-			 * Apply patches to all objects involved
-			 ***********************************************/
-
+			// apply patches to all objects involved
 			foreach (var kvp in TargetPatches)
 			{
 				var actor = (Actor)manager.App.FindActor(kvp.Key);
@@ -243,6 +204,150 @@ namespace MixedRealityExtension.Animation
 			}
 
 			return currentTime;
+		}
+
+		private (Keyframe, Keyframe) GetActiveKeyframes(int trackIndex, float currentTime)
+		{
+			var ti = trackIndex;
+			var track = Data.Tracks[ti];
+
+			// grab the same keyframes from the last update
+			Keyframe prevFrame, nextFrame;
+			if (LastKeyframeIndex[ti] == -1)
+			{
+				prevFrame = ImplicitStartKeyframes[ti];
+				nextFrame = track.Keyframes[0];
+			}
+			else
+			{
+				prevFrame = track.Keyframes[LastKeyframeIndex[ti]];
+				try
+				{
+					nextFrame = (LastKeyframeIndex[ti] + 1) < Data.Tracks.Length ? track.Keyframes[LastKeyframeIndex[ti] + 1] : null;
+				}
+				catch (Exception e)
+				{
+					UnityEngine.Debug.LogFormat("ti: {0}, LastKeyframeIndex: {1}", ti, (ti >= 0 && ti < LastKeyframeIndex.Length) ? LastKeyframeIndex[ti] : -5);
+					UnityEngine.Debug.LogException(e);
+					return (null, null);
+				}
+			}
+
+			// if the current time isn't in that range, try the "next" keyframe based on speed sign
+			if (currentTime < prevFrame.Time || currentTime >= nextFrame.Time)
+			{
+				// use implicit start keyframe
+				if (LastKeyframeIndex[ti] == 0 && prevFrame.Time > 0)
+				{
+					nextFrame = prevFrame;
+					prevFrame = ImplicitStartKeyframes[ti];
+					LastKeyframeIndex[ti] = -1;
+				}
+				// mid-animation in reverse
+				else if (Speed < 0 && LastKeyframeIndex[ti] > 0)
+				{
+					nextFrame = prevFrame;
+					prevFrame = track.Keyframes[LastKeyframeIndex[ti] - 1];
+					LastKeyframeIndex[ti]--;
+				}
+				// mid animation going forward
+				else if (Speed > 0 && LastKeyframeIndex[ti] < track.Keyframes.Length - 2)
+				{
+					prevFrame = nextFrame;
+					nextFrame = track.Keyframes[LastKeyframeIndex[ti] + 1];
+					LastKeyframeIndex[ti]++;
+				}
+			}
+
+			// if it's still not in range, we just have to search
+			int ki;
+			if (track.Keyframes[0].Time < 0)
+			{
+				prevFrame = ImplicitStartKeyframes[ti];
+				nextFrame = track.Keyframes[0];
+				ki = -1;
+			}
+			else if (track.Keyframes.Length >= 2)
+			{
+				prevFrame = track.Keyframes[0];
+				nextFrame = track.Keyframes[1];
+				ki = 0;
+			}
+			else
+			{
+				return (null, null);
+			}
+
+			while ((ki + 1) < track.Keyframes.Length && (prevFrame.Time > currentTime || nextFrame.Time <= currentTime))
+			{
+				ki++;
+				prevFrame = track.Keyframes[ki];
+				nextFrame = track.Keyframes[ki + 1];
+			}
+
+			// found the right frames, return them
+			if ((ki + 1) < track.Keyframes.Length)
+			{
+				LastKeyframeIndex[ti] = ki;
+				return (prevFrame, nextFrame);
+			}
+			// didn't
+			else
+			{
+				return (null, null);
+			}
+		}
+
+		private void InitializeImplicitStartKeyframes()
+		{
+			ImplicitStartKeyframes = new Keyframe[Data.Tracks.Length];
+			var serializer = JsonSerializer.Create(Constants.SerializerSettings);
+
+			for (var ti = 0; ti < Data.Tracks.Length; ti++)
+			{
+				var track = Data.Tracks[ti];
+
+				// explicit start, no need to generate one
+				if (track.Keyframes[0].Time == 0) continue;
+
+				// get a patch of the target type
+				var targetId = TargetMap[track.TargetPath.Placeholder];
+				IPatchable patch;
+				if (track.TargetPath.AnimatibleType == "actor")
+				{
+					// pull current value
+					var actor = (Actor)manager.App.FindActor(targetId);
+					ActorPatch actorPatch = TargetPatches.GetOrCreate(targetId, () => new ActorPatch(targetId));
+					actorPatch = actor?.GeneratePatch(actorPatch, track.TargetPath);
+					patch = actorPatch;
+				}
+				else continue;
+
+				// traverse patch for the targeted field
+				JToken json = JObject.FromObject(patch, serializer);
+				patch.Clear();
+				var parseFail = false;
+				foreach (var pathPart in track.TargetPath.PathParts)
+				{
+					if (json.Type == JTokenType.Object)
+					{
+						json = ((JObject)json).GetValue(pathPart);
+					}
+					else
+					{
+						parseFail = true;
+						break;
+					}
+				}
+				if (parseFail) continue;
+
+				// generate keyframe
+				ImplicitStartKeyframes[ti] = new Keyframe()
+				{
+					Time = 0f,
+					Value = json
+				};
+			}
 		}
 	}
 }

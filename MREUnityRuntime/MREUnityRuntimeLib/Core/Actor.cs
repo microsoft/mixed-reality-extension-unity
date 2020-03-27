@@ -343,7 +343,7 @@ namespace MixedRealityExtension.Core
 		{
 			if (output == null)
 			{
-				output = new ActorPatch();
+				output = new ActorPatch(Id);
 			}
 
 			var generateAll = path == null;
@@ -351,6 +351,10 @@ namespace MixedRealityExtension.Core
 			{
 				if (path.AnimatibleType != "actor") return output;
 				output.Restore(path, 0);
+			}
+			else
+			{
+				output.RestoreAll();
 			}
 
 			if (generateAll || path.PathParts[0] == "transform")
@@ -402,43 +406,61 @@ namespace MixedRealityExtension.Core
 				if (generateAll || path.PathParts[1] == "app")
 				{
 					AppTransform.ToAppTransform(transform, App.SceneRoot.transform);
+					if (generateAll || path.PathParts[2] == "position")
+					{
+						if (generateAll || path.PathParts.Length == 3 || path.PathParts[3] == "x")
+						{
+							output.Transform.App.Position.X = AppTransform.Position.X;
+						}
+						if (generateAll || path.PathParts.Length == 3 || path.PathParts[3] == "y")
+						{
+							output.Transform.App.Position.Y = AppTransform.Position.Y;
+						}
+						if (generateAll || path.PathParts.Length == 3 || path.PathParts[3] == "z")
+						{
+							output.Transform.App.Position.Z = AppTransform.Position.Z;
+						}
+					}
+					if (generateAll || path.PathParts[2] == "rotation")
+					{
+						var localRot = transform.localRotation;
+						output.Transform.App.Rotation.X = AppTransform.Rotation.X;
+						output.Transform.App.Rotation.Y = AppTransform.Rotation.Y;
+						output.Transform.App.Rotation.Z = AppTransform.Rotation.Z;
+						output.Transform.App.Rotation.W = AppTransform.Rotation.W;
+					}
 				}
 			}
 
-			var rigidBody = PatchingUtilMethods.GeneratePatch(RigidBody, (Rigidbody)null, App.SceneRoot.transform);
-
-			ColliderPatch collider = null;
-			_collider = gameObject.GetComponent<UnityCollider>();
-			if (_collider != null)
+			if (generateAll)
 			{
-				if (Collider == null)
+				var rigidBody = PatchingUtilMethods.GeneratePatch(RigidBody, (Rigidbody)null, App.SceneRoot.transform);
+
+				ColliderPatch collider = null;
+				_collider = gameObject.GetComponent<UnityCollider>();
+				if (_collider != null)
 				{
-					Collider = gameObject.AddComponent<Collider>();
+					if (Collider == null)
+					{
+						Collider = gameObject.AddComponent<Collider>();
+					}
+					Collider.Initialize(_collider);
+					collider = Collider.GenerateInitialPatch();
 				}
-				Collider.Initialize(_collider);
-				collider = Collider.GenerateInitialPatch();
-			}
 
-			var actorPatch = new ActorPatch(Id)
-			{
-				ParentId = ParentId,
-				Name = Name,
-				Transform = new ActorTransformPatch()
-				{
-					Local = localTransform,
-					App = appTransform
-				},
-				RigidBody = rigidBody,
-				Collider = collider,
-				Appearance = new AppearancePatch()
+				output.ParentId = ParentId;
+				output.Name = Name;
+				output.RigidBody = rigidBody;
+				output.Collider = collider;
+				output.Appearance = new AppearancePatch()
 				{
 					Enabled = appearanceEnabled,
 					MaterialId = MaterialId,
 					MeshId = MeshId
-				}
-			};
+				};
+			}
 
-			return (!actorPatch.IsPatched()) ? null : actorPatch;
+			return output;
 		}
 
 		internal OperationResult EnableRigidBody(RigidBodyPatch rigidBodyPatch)

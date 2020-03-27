@@ -96,7 +96,12 @@ namespace MixedRealityExtension.Patching.Types
 
 		public void Restore(TargetPath path, int depth)
 		{
-			
+
+		}
+
+		public void RestoreAll()
+		{
+
 		}
 	}
 }

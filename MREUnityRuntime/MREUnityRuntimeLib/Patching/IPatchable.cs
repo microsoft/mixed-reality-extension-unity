@@ -10,10 +10,15 @@ namespace MixedRealityExtension.Patching
 		void WriteToPath(TargetPath path, JToken value, int depth);
 		void Clear();
 		/// <summary>
-		/// Reassign saved patch instances to main properties
+		/// Assign a saved patch instance to public property
 		/// </summary>
 		/// <param name="path">The path whose parts should be restored</param>
 		/// <param name="depth">Which path part should be restored on this object</param>
 		void Restore(TargetPath path, int depth);
+
+		/// <summary>
+		/// Assign all saved patches to public properties
+		/// </summary>
+		void RestoreAll();
 	}
 }

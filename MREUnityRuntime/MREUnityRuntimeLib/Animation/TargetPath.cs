@@ -3,6 +3,7 @@
 using MixedRealityExtension.Core;
 using MixedRealityExtension.Patching;
 using MixedRealityExtension.Patching.Types;
+using Newtonsoft.Json.Linq;
 using System.Text.RegularExpressions;
 using UnityEngine;
 
@@ -30,7 +31,6 @@ namespace MixedRealityExtension.Animation
 			{
 				try
 				{
-
 					AnimatibleType = match.Groups["type"].ToString();
 					Placeholder = match.Groups["placeholder"].ToString();
 					Path = match.Groups["path"].ToString();
