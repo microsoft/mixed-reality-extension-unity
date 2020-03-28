@@ -65,7 +65,7 @@ namespace UnityStandardAssets.Characters.FirstPerson
             // Read input
             float horizontal = CrossPlatformInputManager.GetAxis("Horizontal");
             float vertical = CrossPlatformInputManager.GetAxis("Vertical");
-            float upordown = 0;
+            float upordown = 0.0f;
 
             bool waswalking = m_IsWalking;
 
@@ -75,8 +75,7 @@ namespace UnityStandardAssets.Characters.FirstPerson
             m_IsWalking = !Input.GetKey(KeyCode.LeftShift);
 
             // add also additional possibility for up-down with keys
-            upordown = (Input.GetKey(KeyCode.Q)) ? m_WalkSpeed : 0;
-            upordown = (Input.GetKey(KeyCode.Z)) ? -m_WalkSpeed : upordown;
+            upordown = (Input.GetKey(KeyCode.Q)) ? m_WalkSpeed : ((Input.GetKey(KeyCode.Z)) ? -m_WalkSpeed : 0.0f);
 #endif
 
             // set the desired speed to be walking or running
