@@ -176,6 +176,7 @@ namespace MixedRealityExtension.Core
 		private void OnDestroyActors(DestroyActors payload, Action onCompleteCallback)
 		{
 			DestroyActors(payload.ActorIds);
+			_app.AnimationManager.CleanUpOrphanedAnimations(payload.ActorIds);
 			onCompleteCallback?.Invoke();
 		}
 

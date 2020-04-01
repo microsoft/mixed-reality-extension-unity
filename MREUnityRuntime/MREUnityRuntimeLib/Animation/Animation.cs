@@ -10,7 +10,6 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 
-
 namespace MixedRealityExtension.Animation
 {
 	internal class Animation : BaseAnimation
@@ -42,6 +41,8 @@ namespace MixedRealityExtension.Animation
 		/// </summary>
 		private Keyframe[] ImplicitStartKeyframes;
 
+		private static JTokenPool TokenPool = new JTokenPool();
+
 		public Animation(AnimationManager manager, Guid id, Guid dataId, Dictionary<string, Guid> targetMap) : base(manager, id)
 		{
 			DataId = dataId;
@@ -51,13 +52,23 @@ namespace MixedRealityExtension.Animation
 			{
 				Data = (AnimationDataCached)cacheData;
 				LastKeyframeIndex = new int[Data.Tracks.Length];
-				InitializeImplicitStartKeyframes();
+				ImplicitStartKeyframes = new Keyframe[Data.Tracks.Length];
+				if (Weight > 0 && Data.NeedsImplicitKeyframes)
+				{
+					InitializeImplicitStartKeyframes();
+				}
 			});
 		}
 
 		public override void ApplyPatch(AnimationPatch patch)
 		{
+			var wasPlaying = IsPlaying;
 			base.ApplyPatch(patch);
+			if (!wasPlaying && IsPlaying && (Data?.NeedsImplicitKeyframes ?? false))
+			{
+				InitializeImplicitStartKeyframes();
+			}
+
 			if (IsPlaying)
 			{
 				// Exec the update at least once after a patch, even if Speed == 0
@@ -99,9 +110,6 @@ namespace MixedRealityExtension.Animation
 			currentTime = ApplyWrapMode(currentTime);
 
 			// process tracks
-			JToken jToken;
-			JValue jValue = new JValue(false);
-			JObject jObject = new JObject();
 			for (var ti = 0; ti < Data.Tracks.Length; ti++)
 			{
 				var track = Data.Tracks[ti];
@@ -116,15 +124,15 @@ namespace MixedRealityExtension.Animation
 				var linearT = (currentTime - prevFrame.Time) / (nextFrame.Time - prevFrame.Time);
 
 				// compute new value for targeted field
-				if (prevFrame.Value.Type == JTokenType.Object)
+				var interpolatedToken = TokenPool.Lease(prevFrame.Value.Type);
+				Interpolations.Interpolate(prevFrame.Value, nextFrame.Value, linearT, ref interpolatedToken, nextFrame.Bezier ?? track.Bezier);
+
+				// mix starting values with relative keyframe values
+				JToken mixedToken = interpolatedToken;
+				if (track.Relative == true)
 				{
-					jToken = jObject;
-					Interpolations.Interpolate(prevFrame.Value, nextFrame.Value, linearT, ref jToken, nextFrame.Bezier ?? track.Bezier);
-				}
-				else
-				{
-					jToken = jValue;
-					Interpolations.Interpolate(prevFrame.Value, nextFrame.Value, linearT, ref jToken, nextFrame.Bezier ?? track.Bezier);
+					mixedToken = TokenPool.Lease(interpolatedToken.Type);
+					Interpolations.ResolveRelativeValue(ImplicitStartKeyframes[ti].Value, interpolatedToken, ref mixedToken);
 				}
 
 				// collect track result in a patch
@@ -132,7 +140,14 @@ namespace MixedRealityExtension.Animation
 				if (track.TargetPath.AnimatibleType == "actor")
 				{
 					ActorPatch patch = TargetPatches.GetOrCreate(targetId, () => new ActorPatch(targetId));
-					patch.WriteToPath(track.TargetPath, jToken, 0);
+					patch.WriteToPath(track.TargetPath, mixedToken, 0);
+				}
+
+				// make sure JTokens are reused
+				TokenPool.Return(interpolatedToken);
+				if (track.Relative == true)
+				{
+					TokenPool.Return(mixedToken);
 				}
 			}
 
@@ -267,7 +282,6 @@ namespace MixedRealityExtension.Animation
 
 		private void InitializeImplicitStartKeyframes()
 		{
-			ImplicitStartKeyframes = new Keyframe[Data.Tracks.Length];
 			var serializer = JsonSerializer.Create(Constants.SerializerSettings);
 
 			for (var ti = 0; ti < Data.Tracks.Length; ti++)
@@ -275,7 +289,7 @@ namespace MixedRealityExtension.Animation
 				var track = Data.Tracks[ti];
 
 				// explicit start, no need to generate one
-				if (track.Keyframes[0].Time == 0 && track.Relative != true) continue;
+				if (track.Keyframes[0].Time <= 0 && track.Relative != true) continue;
 
 				// get a patch of the target type
 				var targetId = TargetMap[track.TargetPath.Placeholder];
@@ -309,11 +323,48 @@ namespace MixedRealityExtension.Animation
 				if (parseFail) continue;
 
 				// generate keyframe
-				ImplicitStartKeyframes[ti] = new Keyframe()
+				if (ImplicitStartKeyframes[ti] == null)
 				{
-					Time = 0f,
-					Value = json
-				};
+					ImplicitStartKeyframes[ti] = new Keyframe()
+					{
+						Time = 0f,
+						Value = json
+					};
+				}
+				else
+				{
+					ImplicitStartKeyframes[ti].Value = json;
+				}
+			}
+		}
+
+		private class JTokenPool
+		{
+			private Stack<JObject> jObjectPool = new Stack<JObject>(3);
+			private Stack<JValue> jValuePool = new Stack<JValue>(3);
+
+			public JToken Lease(JTokenType type)
+			{
+				if (type == JTokenType.Object)
+				{
+					return jObjectPool.Count > 0 ? jObjectPool.Pop() : new JObject();
+				}
+				else
+				{
+					return jValuePool.Count > 0 ? jValuePool.Pop() : new JValue(0);
+				}
+			}
+
+			public void Return(JToken token)
+			{
+				if (token.Type == JTokenType.Object)
+				{
+					jObjectPool.Push((JObject)token);
+				}
+				else
+				{
+					jValuePool.Push((JValue)token);
+				}
 			}
 		}
 	}

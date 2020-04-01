@@ -39,6 +39,12 @@ namespace MixedRealityExtension.Animation
 			}
 		}
 
+		public void DeregisterAnimation(BaseAnimation anim)
+		{
+			Animations.Remove(anim.Id);
+			PendingPatches.Remove(anim.Id);
+		}
+
 		public void UpdateServerTimeOffset(long serverTime)
 		{
 			var latestOffset = serverTime - LocalUnixNow();
@@ -56,9 +62,35 @@ namespace MixedRealityExtension.Animation
 			}
 		}
 
+		public static long LocalUnixNow()
+		{
+			return (DateTimeOffset.UtcNow - Epoch).Ticks / 10_000;
+		}
+
 		public long ServerNow()
 		{
 			return LocalUnixNow() + ServerTimeOffset;
+		}
+
+		public void CleanUpOrphanedAnimations(params Guid[] destroyedIds)
+		{
+			CleanUpOrphanedAnimations(destroyedIds);
+		}
+
+		public void CleanUpOrphanedAnimations(IEnumerable<Guid> destroyedIds)
+		{
+			var badIds = new HashSet<Guid>(destroyedIds);
+			foreach (var anim in Animations.Values)
+			{
+				var mreAnim = anim as Animation;
+				// anim data is destroyed
+				if (mreAnim != null && badIds.Contains(mreAnim.DataId) ||
+					// anim targets a destroyed object, and all targets of this anim are/were destroyed
+					anim.TargetIds.Any(id => badIds.Contains(id)) && anim.TargetIds.All(id => App.FindActor(id) == null))
+				{
+					DeregisterAnimation(anim);
+				}
+			}
 		}
 
 		[CommandHandler(typeof(CreateAnimation2))]
@@ -119,11 +151,6 @@ namespace MixedRealityExtension.Animation
 			}
 
 			onCompleteCallback?.Invoke();
-		}
-
-		public static long LocalUnixNow()
-		{
-			return (DateTimeOffset.UtcNow - Epoch).Ticks / 10_000;
 		}
 	}
 }

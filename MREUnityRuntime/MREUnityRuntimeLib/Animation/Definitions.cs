@@ -16,13 +16,9 @@ namespace MixedRealityExtension.Animation
 		/// </summary>
 		public Track[] Tracks;
 
-		public float Duration
-		{
-			get
-			{
-				return Tracks.Select(t => t.Keyframes[t.Keyframes.Length - 1].Time).Max();
-			}
-		}
+		public float Duration => Tracks.Select(t => t.Keyframes[t.Keyframes.Length - 1].Time).Max();
+
+		public bool NeedsImplicitKeyframes => Tracks.Any(track => track.Keyframes[0].Time > 0 || track.Relative == true);
 	}
 
 	/// <summary>
