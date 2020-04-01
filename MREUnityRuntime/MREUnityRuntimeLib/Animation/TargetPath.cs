@@ -1,9 +1,5 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
-using MixedRealityExtension.Core;
-using MixedRealityExtension.Patching;
-using MixedRealityExtension.Patching.Types;
-using Newtonsoft.Json.Linq;
 using System.Text.RegularExpressions;
 using UnityEngine;
 

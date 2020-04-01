@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 using CubicBezier = MixedRealityExtension.Util.CubicBezier;
 using Newtonsoft.Json.Linq;
-using System.Collections.Generic;
 using Quaternion = UnityEngine.Quaternion;
 using UnityMath = UnityEngine.Mathf;
 
