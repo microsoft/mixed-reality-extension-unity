@@ -275,7 +275,7 @@ namespace MixedRealityExtension.Animation
 				var track = Data.Tracks[ti];
 
 				// explicit start, no need to generate one
-				if (track.Keyframes[0].Time == 0) continue;
+				if (track.Keyframes[0].Time == 0 && track.Relative != true) continue;
 
 				// get a patch of the target type
 				var targetId = TargetMap[track.TargetPath.Placeholder];
