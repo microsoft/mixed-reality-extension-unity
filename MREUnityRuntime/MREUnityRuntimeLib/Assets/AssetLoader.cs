@@ -450,6 +450,7 @@ namespace MixedRealityExtension.Assets
 				}
 				UnityEngine.Object.Destroy(asset);
 			}
+
 			onCompleteCallback?.Invoke();
 		}
 

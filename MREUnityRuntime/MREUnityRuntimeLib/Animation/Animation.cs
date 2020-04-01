@@ -18,6 +18,8 @@ namespace MixedRealityExtension.Animation
 
 		public AnimationDataCached Data { get; private set; }
 
+		private bool DataSet = false;
+
 		private Dictionary<string, Guid> TargetMap;
 
 		/// <summary>
@@ -51,6 +53,7 @@ namespace MixedRealityExtension.Animation
 			MREAPI.AppsAPI.AssetCache.OnCached(DataId, cacheData =>
 			{
 				Data = (AnimationDataCached)cacheData;
+				DataSet = true;
 				LastKeyframeIndex = new int[Data.Tracks.Length];
 				ImplicitStartKeyframes = new Keyframe[Data.Tracks.Length];
 				if (Weight > 0 && Data.NeedsImplicitKeyframes)
@@ -85,7 +88,15 @@ namespace MixedRealityExtension.Animation
 
 		internal override void Update()
 		{
-			if (Data == null) return;
+			if (Data == null)
+			{
+				// only way for Data to be unset is if it's unloaded
+				if (DataSet)
+				{
+					manager.DeregisterAnimation(this);
+				}
+				return;
+			}
 
 			// normalize time to animation length based on wrap settings
 			float currentTime;

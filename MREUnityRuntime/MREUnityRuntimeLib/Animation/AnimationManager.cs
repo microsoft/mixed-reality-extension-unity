@@ -83,10 +83,8 @@ namespace MixedRealityExtension.Animation
 			foreach (var anim in Animations.Values)
 			{
 				var mreAnim = anim as Animation;
-				// anim data is destroyed
-				if (mreAnim != null && badIds.Contains(mreAnim.DataId) ||
-					// anim targets a destroyed object, and all targets of this anim are/were destroyed
-					anim.TargetIds.Any(id => badIds.Contains(id)) && anim.TargetIds.All(id => App.FindActor(id) == null))
+				// anim targets a destroyed object, and all targets of this anim are/were destroyed
+				if (anim.TargetIds.Any(id => badIds.Contains(id)) && anim.TargetIds.All(id => App.FindActor(id) == null))
 				{
 					DeregisterAnimation(anim);
 				}
