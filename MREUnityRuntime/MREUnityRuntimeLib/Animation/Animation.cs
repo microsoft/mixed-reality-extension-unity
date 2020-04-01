@@ -37,6 +37,9 @@ namespace MixedRealityExtension.Animation
 		/// </summary>
 		private int[] LastKeyframeIndex;
 
+		/// <summary>
+		/// Reference frames for relative or non-zero start animations. Indexed by track index
+		/// </summary>
 		private Keyframe[] ImplicitStartKeyframes;
 
 		public Animation(AnimationManager manager, Guid id, Guid dataId, Dictionary<string, Guid> targetMap) : base(manager, id)
@@ -211,87 +214,51 @@ namespace MixedRealityExtension.Animation
 			var ti = trackIndex;
 			var track = Data.Tracks[ti];
 
-			// grab the same keyframes from the last update
-			Keyframe prevFrame, nextFrame;
-			if (LastKeyframeIndex[ti] == -1)
-			{
-				prevFrame = ImplicitStartKeyframes[ti];
-				nextFrame = track.Keyframes[0];
-			}
-			else
-			{
-				prevFrame = track.Keyframes[LastKeyframeIndex[ti]];
-				try
-				{
-					nextFrame = (LastKeyframeIndex[ti] + 1) < Data.Tracks.Length ? track.Keyframes[LastKeyframeIndex[ti] + 1] : null;
-				}
-				catch (Exception e)
-				{
-					UnityEngine.Debug.LogFormat("ti: {0}, LastKeyframeIndex: {1}", ti, (ti >= 0 && ti < LastKeyframeIndex.Length) ? LastKeyframeIndex[ti] : -5);
-					UnityEngine.Debug.LogException(e);
-					return (null, null);
-				}
-			}
+			// grab the leading keyframe from the last update (might be first frame if first update)
+			Keyframe nextFrame = track.Keyframes[LastKeyframeIndex[ti]];
+
+			// grab trailing keyframe from last update: frame before nextFrame, or the implicit start frame (might be null)
+			Keyframe prevFrame = LastKeyframeIndex[ti] > 0 ? track.Keyframes[LastKeyframeIndex[ti] - 1] : ImplicitStartKeyframes[ti];
+
+			// test to see if current frames are usable
+			bool GoodFrames() => prevFrame != null && prevFrame.Time <= currentTime && nextFrame.Time > currentTime;
 
 			// if the current time isn't in that range, try the "next" keyframe based on speed sign
-			if (currentTime < prevFrame.Time || currentTime >= nextFrame.Time)
+			if (!GoodFrames())
 			{
-				// use implicit start keyframe
-				if (LastKeyframeIndex[ti] == 0 && prevFrame.Time > 0)
+				// going forward
+				if (Speed > 0 && LastKeyframeIndex[ti] < track.Keyframes.Length - 1)
 				{
-					nextFrame = prevFrame;
-					prevFrame = ImplicitStartKeyframes[ti];
-					LastKeyframeIndex[ti] = -1;
+					prevFrame = nextFrame;
+					nextFrame = track.Keyframes[++LastKeyframeIndex[ti]];
 				}
-				// mid-animation in reverse
+				// going backward
 				else if (Speed < 0 && LastKeyframeIndex[ti] > 0)
 				{
 					nextFrame = prevFrame;
-					prevFrame = track.Keyframes[LastKeyframeIndex[ti] - 1];
-					LastKeyframeIndex[ti]--;
-				}
-				// mid animation going forward
-				else if (Speed > 0 && LastKeyframeIndex[ti] < track.Keyframes.Length - 2)
-				{
-					prevFrame = nextFrame;
-					nextFrame = track.Keyframes[LastKeyframeIndex[ti] + 1];
-					LastKeyframeIndex[ti]++;
+					prevFrame = --LastKeyframeIndex[ti] > 0 ? track.Keyframes[LastKeyframeIndex[ti] - 1] : ImplicitStartKeyframes[ti];
 				}
 			}
 
 			// if it's still not in range, we just have to search
-			int ki;
-			if (track.Keyframes[0].Time < 0)
+			if (!GoodFrames())
 			{
 				prevFrame = ImplicitStartKeyframes[ti];
 				nextFrame = track.Keyframes[0];
-				ki = -1;
-			}
-			else if (track.Keyframes.Length >= 2)
-			{
-				prevFrame = track.Keyframes[0];
-				nextFrame = track.Keyframes[1];
-				ki = 0;
-			}
-			else
-			{
-				return (null, null);
+				LastKeyframeIndex[ti] = 0;
+				while (!GoodFrames() && LastKeyframeIndex[ti] < track.Keyframes.Length - 1)
+				{
+					prevFrame = nextFrame;
+					nextFrame = track.Keyframes[++LastKeyframeIndex[ti]];
+				}
 			}
 
-			while ((ki + 1) < track.Keyframes.Length && (prevFrame.Time > currentTime || nextFrame.Time <= currentTime))
+			// we found the right frame pair, return them
+			if (GoodFrames())
 			{
-				ki++;
-				prevFrame = track.Keyframes[ki];
-				nextFrame = track.Keyframes[ki + 1];
-			}
-
-			// found the right frames, return them
-			if ((ki + 1) < track.Keyframes.Length)
-			{
-				LastKeyframeIndex[ti] = ki;
 				return (prevFrame, nextFrame);
 			}
-			// didn't
+			// the provided time is not between any two frames in this animation
 			else
 			{
 				return (null, null);
