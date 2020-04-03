@@ -81,14 +81,12 @@ namespace MixedRealityExtension.Animation
 		public void CleanUpOrphanedAnimations(IEnumerable<Guid> destroyedIds)
 		{
 			var badIds = new HashSet<Guid>(destroyedIds);
-			foreach (var anim in Animations.Values)
+			var badAnims = Animations.Values.Where(a =>
+				a.TargetIds.Any(id => badIds.Contains(id)) &&
+				a.TargetIds.All(id => App.FindActor(id) == null));
+			foreach (var anim in badAnims)
 			{
-				var mreAnim = anim as Animation;
-				// anim targets a destroyed object, and all targets of this anim are/were destroyed
-				if (anim.TargetIds.Any(id => badIds.Contains(id)) && anim.TargetIds.All(id => App.FindActor(id) == null))
-				{
-					DeregisterAnimation(anim);
-				}
+				DeregisterAnimation(anim);
 			}
 		}
 
