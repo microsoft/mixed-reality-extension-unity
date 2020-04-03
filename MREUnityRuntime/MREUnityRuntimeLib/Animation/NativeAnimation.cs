@@ -105,10 +105,5 @@ namespace MixedRealityExtension.Animation
 			patch.Duration = nativeState.length;
 			return patch;
 		}
-
-		internal override void Update()
-		{
-
-		}
 	}
 }

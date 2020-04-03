@@ -9,7 +9,7 @@ using MixedRealityExtension.Patching.Types;
 
 namespace MixedRealityExtension.Animation
 {
-	internal class BaseAnimation
+	internal abstract class BaseAnimation
 	{
 		protected AnimationManager manager;
 

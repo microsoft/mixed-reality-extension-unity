@@ -118,6 +118,18 @@ namespace MixedRealityExtension.Messaging.Payloads
 	}
 
 	/// <summary>
+	/// App => Engine
+	/// The marked animations should be unloaded.
+	/// </summary>
+	public class DestroyAnimations: NetworkCommandPayload
+	{
+		/// <summary>
+		/// The list of IDs for animations to be destroyed
+		/// </summary>
+		public IEnumerable<Guid> AnimationIds { get; set; }
+	}
+
+	/// <summary>
 	/// Payload for when the app needs to restore the state of a set of actors.
 	/// </summary>
 	public class StateRestore : NetworkCommandPayload

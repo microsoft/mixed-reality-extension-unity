@@ -73,23 +73,6 @@ namespace MixedRealityExtension.Animation
 			return LocalUnixNow() + ServerTimeOffset;
 		}
 
-		public void CleanUpOrphanedAnimations(params Guid[] destroyedIds)
-		{
-			CleanUpOrphanedAnimations(destroyedIds);
-		}
-
-		public void CleanUpOrphanedAnimations(IEnumerable<Guid> destroyedIds)
-		{
-			var badIds = new HashSet<Guid>(destroyedIds);
-			var badAnims = Animations.Values.Where(a =>
-				a.TargetIds.Any(id => badIds.Contains(id)) &&
-				a.TargetIds.All(id => App.FindActor(id) == null));
-			foreach (var anim in badAnims)
-			{
-				DeregisterAnimation(anim);
-			}
-		}
-
 		[CommandHandler(typeof(CreateAnimation2))]
 		private void OnCreateAnimation(CreateAnimation2 message, Action onCompleteCallback)
 		{
@@ -147,6 +130,16 @@ namespace MixedRealityExtension.Animation
 				PendingPatches[message.Animation.Id] = message.Animation;
 			}
 
+			onCompleteCallback?.Invoke();
+		}
+
+		[CommandHandler(typeof(DestroyAnimations))]
+		private void OnDestroyAnimations(DestroyAnimations message, Action onCompleteCallback)
+		{
+			foreach (var id in message.AnimationIds)
+			{
+				Animations.Remove(id);
+			}
 			onCompleteCallback?.Invoke();
 		}
 	}

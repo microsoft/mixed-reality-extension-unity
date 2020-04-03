@@ -21,6 +21,7 @@ namespace MixedRealityExtension.Messaging.Payloads
 	[PayloadType(typeof(CreateFromPrefab), "create-from-prefab")]
 	[PayloadType(typeof(CollisionEventRaised), "collision-event-raised")]
 	[PayloadType(typeof(DestroyActors), "destroy-actors")]
+	[PayloadType(typeof(DestroyAnimations), "destroy-animations")]
 	[PayloadType(typeof(DialogResponse), "dialog-response")]
 	[PayloadType(typeof(EngineToAppRPC), "engine2app-rpc")]
 	[PayloadType(typeof(Handshake), "handshake")]
