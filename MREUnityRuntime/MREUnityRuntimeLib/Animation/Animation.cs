@@ -247,7 +247,7 @@ namespace MixedRealityExtension.Animation
 			Keyframe prevFrame = LastKeyframeIndex[ti] > 0 ? track.Keyframes[LastKeyframeIndex[ti] - 1] : ImplicitStartKeyframes[ti];
 
 			// test to see if current frames are usable
-			bool GoodFrames() => prevFrame != null && prevFrame.Time <= currentTime && nextFrame.Time > currentTime;
+			bool GoodFrames() => prevFrame != null && prevFrame.Time < nextFrame.Time && prevFrame.Time <= currentTime && nextFrame.Time >= currentTime;
 
 			// if the current time isn't in that range, try the "next" keyframe based on speed sign
 			if (!GoodFrames())

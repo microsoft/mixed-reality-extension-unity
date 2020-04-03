@@ -55,7 +55,6 @@ namespace MixedRealityExtension.Animation
 			{
 				WrapMode = patch.WrapMode.Value;
 			}
-			// only patch one of BasisTime and Time, based on play state
 			if (patch.BasisTime.HasValue)
 			{
 				BasisTime = patch.BasisTime.Value;

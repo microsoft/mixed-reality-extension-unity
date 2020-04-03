@@ -20,6 +20,7 @@ namespace MixedRealityExtension.Animation
 		private readonly Dictionary<Guid, BaseAnimation> Animations = new Dictionary<Guid, BaseAnimation>(10);
 		private readonly Dictionary<Guid, AnimationPatch> PendingPatches = new Dictionary<Guid, AnimationPatch>(10);
 		private long ServerTimeOffset = 0;
+		private List<BaseAnimation> TempUpdateList = new List<BaseAnimation>(10);
 
 		public AnimationManager(MixedRealityExtensionApp app)
 		{
@@ -53,7 +54,10 @@ namespace MixedRealityExtension.Animation
 
 		public void Update()
 		{
-			foreach (var anim in Animations.Values)
+			// necessary to avoid weirdness when deregistering anims in the Update loop
+			TempUpdateList.Clear();
+			TempUpdateList.AddRange(Animations.Values);
+			foreach (var anim in TempUpdateList)
 			{
 				anim.Update();
 			}
