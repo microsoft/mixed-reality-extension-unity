@@ -32,11 +32,15 @@ namespace UnityStandardAssets.Characters.FirstPerson
         {
             float yRot = CrossPlatformInputManager.GetAxis("Mouse X") * XSensitivity;
             float xRot = CrossPlatformInputManager.GetAxis("Mouse Y") * YSensitivity;
-
+            float keyYRot = 0f;
+#if !MOBILE_INPUT
+            keyYRot = (Input.GetKey(KeyCode.X)) ? -0.1f : ((Input.GetKey(KeyCode.C)) ? 0.1f : 0.0f);
+#endif
             m_CharacterTargetRot *= Quaternion.Euler (0f, yRot, 0f);
             m_CameraTargetRot *= Quaternion.Euler (-xRot, 0f, 0f);
+            m_CharacterTargetRot *= Quaternion.Euler(0f, keyYRot, 0f);
 
-            if(clampVerticalRotation)
+            if (clampVerticalRotation)
                 m_CameraTargetRot = ClampRotationAroundXAxis (m_CameraTargetRot);
 
             if(smooth)

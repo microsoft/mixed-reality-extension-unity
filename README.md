@@ -37,6 +37,7 @@ https://github.com/Microsoft/mixed-reality-extension-sdk-samples#How-to-Build-an
 ## To Debug the Unity Runtime DLL 
 * From within the Unity3D editor click `Assets->Open C# Project`. This opens Visual Studio and generates a solution file and project files
 * In the Solution Explorer, right click on `Solution 'MRETestBed' (3 projects)`, click `Add->Existing Project...`, and select MREUnityRuntime\MREUnityRuntimeLib\MREUnityRuntimeLib.csproj
+* Press play in the editor
 * Select `Debug->Attach Unity Debugger` (requires the Visual Studio Unity Tools installed to show up), and choose Project MRETestBed, type Editor
 
 Putting breakpoints inside the MREUnityRuntimeLib DLL is not always working, but pressing stop in Unity Editor, rebuilding the MREUnityRuntimeLib project in Visual Studio, and pressing play in the Unity Editor tends to fix it.
