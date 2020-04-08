@@ -53,7 +53,7 @@ namespace MixedRealityExtension.Patching.Types
 			Rotation = new QuaternionPatch(rotation);
 		}
 
-		public void WriteToPath(TargetPath path, JToken value, int depth)
+		public virtual void WriteToPath(TargetPath path, JToken value, int depth)
 		{
 			if (depth == path.PathParts.Length)
 			{
@@ -161,7 +161,7 @@ namespace MixedRealityExtension.Patching.Types
 			Scale = new Vector3Patch(scale);
 		}
 
-		public void WriteToPath(TargetPath path, JToken value, int depth)
+		public override void WriteToPath(TargetPath path, JToken value, int depth)
 		{
 			if (depth == path.PathParts.Length)
 			{

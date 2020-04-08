@@ -102,6 +102,30 @@ namespace MixedRealityExtension.Animation
 		/// </summary>
 		public JToken Value;
 
+		private TargetPath valuePath = null;
+		private bool valuePathTested = false;
+
+		public TargetPath ValuePath
+		{
+			get
+			{
+				if (!valuePathTested)
+				{
+					valuePathTested = true;
+					if (Value.Type == JTokenType.String)
+					{
+						try
+						{
+							valuePath = new TargetPath(Value.Value<string>());
+						}
+						catch { }
+					}
+					
+				}
+				return valuePath;
+			}
+		}
+
 		/// <summary>
 		/// How the value approaches this frame's value. Defaults to linear (0, 0, 1, 1).
 		/// </summary>

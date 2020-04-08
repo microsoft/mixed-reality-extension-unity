@@ -25,7 +25,8 @@ namespace MixedRealityExtension.Animation
 		/// <summary>
 		/// Only used for the duration of the Update method
 		/// </summary>
-		private Dictionary<Guid, ActorPatch> TargetPatches = new Dictionary<Guid, ActorPatch>(2);
+		private Dictionary<Guid, ActorPatch> InputPatches = new Dictionary<Guid, ActorPatch>(2);
+		private Dictionary<Guid, ActorPatch> OutputPatches = new Dictionary<Guid, ActorPatch>(2);
 
 		/// <summary>
 		/// When an animation is stopping (by weight == 0 || speed == 0), this flag indicates
@@ -121,8 +122,10 @@ namespace MixedRealityExtension.Animation
 			currentTime = ApplyWrapMode(currentTime);
 
 			// process tracks
+			IPatchable patch;
 			for (var ti = 0; ti < Data.Tracks.Length; ti++)
 			{
+				bool usesMixedToken = false;
 				var track = Data.Tracks[ti];
 				(Keyframe prevFrame, Keyframe nextFrame) = GetActiveKeyframes(ti, currentTime);
 
@@ -134,14 +137,38 @@ namespace MixedRealityExtension.Animation
 
 				var linearT = (currentTime - prevFrame.Time) / (nextFrame.Time - prevFrame.Time);
 
+				// get realtime value for trailing frame
+				JToken prevFrameValue = prevFrame.Value;
+				if (
+					// if previous frame value is a path
+					prevFrame.ValuePath != null && (
+					// get the current value from the actor as a patch
+					!GetPatchAtPath(prevFrame.ValuePath, out patch) ||
+					// convert patch to a JToken
+					!GetTokenAtPath(patch, prevFrame.ValuePath, out prevFrameValue)))
+				{
+					// can't get current value, skip this track
+					continue;
+				}
+
+				// get realtime value for leading frame (same as above)
+				JToken nextFrameValue = nextFrame.Value;
+				if (nextFrame.ValuePath != null && (
+					!GetPatchAtPath(nextFrame.ValuePath, out patch) ||
+					!GetTokenAtPath(patch, nextFrame.ValuePath, out nextFrameValue)))
+				{
+					continue;
+				}
+
 				// compute new value for targeted field
-				var interpolatedToken = TokenPool.Lease(prevFrame.Value.Type);
-				Interpolations.Interpolate(prevFrame.Value, nextFrame.Value, linearT, ref interpolatedToken, nextFrame.Bezier ?? track.Bezier);
+				var interpolatedToken = TokenPool.Lease(prevFrameValue.Type);
+				Interpolations.Interpolate(prevFrameValue, nextFrameValue, linearT, ref interpolatedToken, nextFrame.Bezier ?? track.Bezier);
 
 				// mix starting values with relative keyframe values
 				JToken mixedToken = interpolatedToken;
 				if (track.Relative == true)
 				{
+					usesMixedToken = true;
 					mixedToken = TokenPool.Lease(interpolatedToken.Type);
 					Interpolations.ResolveRelativeValue(ImplicitStartKeyframes[ti].Value, interpolatedToken, ref mixedToken);
 				}
@@ -150,20 +177,21 @@ namespace MixedRealityExtension.Animation
 				var targetId = TargetMap[track.TargetPath.Placeholder];
 				if (track.TargetPath.AnimatibleType == "actor")
 				{
-					ActorPatch patch = TargetPatches.GetOrCreate(targetId, () => new ActorPatch(targetId));
-					patch.WriteToPath(track.TargetPath, mixedToken, 0);
+					ActorPatch actorPatch = OutputPatches.GetOrCreate(targetId, () => new ActorPatch(targetId));
+					actorPatch.WriteToPath(track.TargetPath, mixedToken, 0);
+					OutputPatches[targetId] = actorPatch;
 				}
 
 				// make sure JTokens are reused
 				TokenPool.Return(interpolatedToken);
-				if (track.Relative == true)
+				if (usesMixedToken)
 				{
 					TokenPool.Return(mixedToken);
 				}
 			}
 
 			// apply patches to all objects involved
-			foreach (var kvp in TargetPatches)
+			foreach (var kvp in OutputPatches)
 			{
 				var actor = (Actor)manager.App.FindActor(kvp.Key);
 				actor?.ApplyPatch(kvp.Value);
@@ -293,8 +321,6 @@ namespace MixedRealityExtension.Animation
 
 		private void InitializeImplicitStartKeyframes()
 		{
-			var serializer = JsonSerializer.Create(Constants.SerializerSettings);
-
 			for (var ti = 0; ti < Data.Tracks.Length; ti++)
 			{
 				var track = Data.Tracks[ti];
@@ -303,35 +329,16 @@ namespace MixedRealityExtension.Animation
 				if (track.Keyframes[0].Time <= 0 && track.Relative != true) continue;
 
 				// get a patch of the target type
-				var targetId = TargetMap[track.TargetPath.Placeholder];
-				IPatchable patch;
-				if (track.TargetPath.AnimatibleType == "actor")
+				if (!GetPatchAtPath(track.TargetPath, out IPatchable patch))
 				{
-					// pull current value
-					var actor = (Actor)manager.App.FindActor(targetId);
-					ActorPatch actorPatch = TargetPatches.GetOrCreate(targetId, () => new ActorPatch(targetId));
-					actorPatch = actor?.GeneratePatch(actorPatch, track.TargetPath);
-					patch = actorPatch;
+					continue;
 				}
-				else continue;
 
 				// traverse patch for the targeted field
-				JToken json = JObject.FromObject(patch, serializer);
-				patch.Clear();
-				var parseFail = false;
-				foreach (var pathPart in track.TargetPath.PathParts)
+				if (!GetTokenAtPath(patch, track.TargetPath, out JToken json))
 				{
-					if (json.Type == JTokenType.Object)
-					{
-						json = ((JObject)json).GetValue(pathPart);
-					}
-					else
-					{
-						parseFail = true;
-						break;
-					}
+					continue;
 				}
-				if (parseFail) continue;
 
 				// generate keyframe
 				if (ImplicitStartKeyframes[ti] == null)
@@ -347,6 +354,48 @@ namespace MixedRealityExtension.Animation
 					ImplicitStartKeyframes[ti].Value = json;
 				}
 			}
+		}
+
+		private bool GetPatchAtPath(TargetPath path, out IPatchable patch)
+		{
+			var targetId = TargetMap[path.Placeholder];
+			if (path.AnimatibleType == "actor")
+			{
+				// pull current value
+				var actor = (Actor)manager.App.FindActor(targetId);
+				ActorPatch actorPatch = InputPatches.GetOrCreate(targetId, () => new ActorPatch(targetId));
+				actorPatch = actor?.GeneratePatch(actorPatch, path);
+				if (actor != null)
+				{
+					patch = actorPatch;
+					return true;
+				}
+			}
+
+			patch = null;
+			return false;
+		}
+
+		private static readonly JsonSerializer Serializer = JsonSerializer.Create(Constants.SerializerSettings);
+
+		private static bool GetTokenAtPath(IPatchable patch, TargetPath path, out JToken token)
+		{
+			// Note: The serializer is supposed to reuse token objects when possible, but I don't have any insight into the reuse algorithm,
+			// so this could be generating garbage. TODO: Investigate this implementation.
+			token = JObject.FromObject(patch, Serializer);
+			foreach (var pathPart in path.PathParts)
+			{
+				if (token.Type == JTokenType.Object)
+				{
+					token = ((JObject)token).GetValue(pathPart);
+				}
+				else
+				{
+					token = null;
+					return false;
+				}
+			}
+			return true;
 		}
 
 		private class JTokenPool

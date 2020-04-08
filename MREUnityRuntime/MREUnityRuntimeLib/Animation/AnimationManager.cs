@@ -138,6 +138,7 @@ namespace MixedRealityExtension.Animation
 		{
 			foreach (var id in message.AnimationIds)
 			{
+				UnityEngine.Debug.LogFormat("Destroying anim {0}", id);
 				Animations.Remove(id);
 			}
 			onCompleteCallback?.Invoke();
