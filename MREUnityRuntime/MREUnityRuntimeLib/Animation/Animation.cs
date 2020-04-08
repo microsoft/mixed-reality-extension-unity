@@ -328,14 +328,8 @@ namespace MixedRealityExtension.Animation
 				// explicit start, no need to generate one
 				if (track.Keyframes[0].Time <= 0 && track.Relative != true) continue;
 
-				// get a patch of the target type
-				if (!GetPatchAtPath(track.TargetPath, out IPatchable patch))
-				{
-					continue;
-				}
-
-				// traverse patch for the targeted field
-				if (!GetTokenAtPath(patch, track.TargetPath, out JToken json))
+				// get a patch of the target type, traverse patch for the targeted field
+				if (!GetPatchAtPath(track.TargetPath, out IPatchable patch) || !GetTokenAtPath(patch, track.TargetPath, out JToken json))
 				{
 					continue;
 				}

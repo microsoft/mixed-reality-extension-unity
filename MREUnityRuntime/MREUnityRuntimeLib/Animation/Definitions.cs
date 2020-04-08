@@ -120,7 +120,6 @@ namespace MixedRealityExtension.Animation
 						}
 						catch { }
 					}
-					
 				}
 				return valuePath;
 			}
