@@ -43,6 +43,12 @@ namespace MixedRealityExtension.Animation
 			PendingPatches.Remove(anim.Id);
 		}
 
+		public void Reset()
+		{
+			Animations.Clear();
+			PendingPatches.Clear();
+		}
+
 		public void UpdateServerTimeOffset(long serverTime)
 		{
 			var latestOffset = serverTime - LocalUnixNow();

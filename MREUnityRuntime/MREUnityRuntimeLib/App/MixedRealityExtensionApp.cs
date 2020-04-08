@@ -258,6 +258,7 @@ namespace MixedRealityExtension.App
 			}
 			_ownedGameObjects.Clear();
 			_actorManager.Reset();
+			AnimationManager.Reset();
 		}
 
 		/// <inheritdoc />
