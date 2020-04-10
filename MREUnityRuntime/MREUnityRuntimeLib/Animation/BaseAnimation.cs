@@ -21,13 +21,33 @@ namespace MixedRealityExtension.Animation
 		public virtual float Weight { get; protected set; }
 		public virtual MWAnimationWrapMode WrapMode { get; protected set; }
 
+		public virtual bool IsPlaying
+		{
+			get => Weight > 0;
+			protected set
+			{
+				if (value)
+				{
+					if (WrapMode == MWAnimationWrapMode.Once)
+					{
+						Time = 0;
+					}
+
+					BasisTime = Speed == 0 ? 0 : Math.Max(0, manager.ServerNow() - (long)Math.Floor(Time * 1000 / Speed));
+					Weight = 1;
+				}
+				else
+				{
+					Weight = 0;
+				}
+			}
+		}
+
 		public virtual List<Guid> TargetIds { get; set; }
 		protected List<Actor> TargetActors => TargetIds
 			.Select(id => manager.App.FindActor(id) as Actor)
 			.Where(a => a != null)
 			.ToList();
-
-		public bool IsPlaying => Weight > 0;
 
 		internal BaseAnimation(AnimationManager manager, Guid id)
 		{
@@ -43,17 +63,21 @@ namespace MixedRealityExtension.Animation
 			{
 				Name = patch.Name;
 			}
+			if (patch.WrapMode.HasValue)
+			{
+				WrapMode = patch.WrapMode.Value;
+			}
 			if (patch.Speed.HasValue)
 			{
 				Speed = patch.Speed.Value;
 			}
+			if (patch.IsPlaying.HasValue)
+			{
+				IsPlaying = patch.IsPlaying.Value;
+			}
 			if (patch.Weight.HasValue)
 			{
 				Weight = patch.Weight.Value;
-			}
-			if (patch.WrapMode.HasValue)
-			{
-				WrapMode = patch.WrapMode.Value;
 			}
 			if (patch.BasisTime.HasValue)
 			{

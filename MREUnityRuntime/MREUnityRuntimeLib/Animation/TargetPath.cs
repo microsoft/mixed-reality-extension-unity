@@ -67,5 +67,10 @@ namespace MixedRealityExtension.Animation
 		{
 			return TargetPathString.GetHashCode();
 		}
+
+		public override bool Equals(object obj)
+		{
+			return obj != null && GetType() == obj.GetType() && TargetPathString == ((TargetPath)obj).TargetPathString;
+		}
 	}
 }

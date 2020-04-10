@@ -55,6 +55,12 @@ namespace MixedRealityExtension.Patching.Types
 		public MWAnimationWrapMode? WrapMode { get; set; }
 
 		/// <summary>
+		/// Convenience property for setting Weight and Basis/Time
+		/// </summary>
+		[PatchProperty]
+		public bool? IsPlaying { get; set; }
+
+		/// <summary>
 		/// What runtime objects are being animated
 		/// </summary>
 		public IEnumerable<Guid> TargetIds { get; set; }
