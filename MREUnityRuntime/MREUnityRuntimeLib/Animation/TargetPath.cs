@@ -3,6 +3,7 @@
 using JTokenType = Newtonsoft.Json.Linq.JTokenType;
 using ITokenLookup = System.Collections.Generic.IReadOnlyDictionary<string, Newtonsoft.Json.Linq.JTokenType>;
 using TokenLookup = System.Collections.Generic.Dictionary<string, Newtonsoft.Json.Linq.JTokenType>;
+using System;
 using System.Text.RegularExpressions;
 using UnityEngine;
 
@@ -30,7 +31,7 @@ namespace MixedRealityExtension.Animation
 
 		private static Regex PathRegex = new Regex("^(?<type>actor|animation|material):(?<placeholder>[^/]+)/(?<path>.+)$");
 
-		public string PathString { get; }
+		public string TargetPathString { get; }
 
 		public string AnimatibleType { get; }
 
@@ -42,8 +43,8 @@ namespace MixedRealityExtension.Animation
 
 		public TargetPath(string pathString)
 		{
-			PathString = pathString;
-			var match = PathRegex.Match(PathString);
+			TargetPathString = pathString;
+			var match = PathRegex.Match(TargetPathString);
 			try
 			{
 				AnimatibleType = match.Groups["type"].ToString();
@@ -55,6 +56,16 @@ namespace MixedRealityExtension.Animation
 			{
 				throw new System.ArgumentException($"{pathString} is not a valid path string.", e);
 			}
+		}
+
+		public TargetPath ResolvePlaceholder(Guid id)
+		{
+			return new TargetPath($"{AnimatibleType}:{id}/{Path}");
+		}
+
+		public override int GetHashCode()
+		{
+			return TargetPathString.GetHashCode();
 		}
 	}
 }

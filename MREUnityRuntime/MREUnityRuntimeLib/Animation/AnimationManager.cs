@@ -1,10 +1,13 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 using MixedRealityExtension.App;
+using MixedRealityExtension.Core;
 using MixedRealityExtension.Messaging;
 using MixedRealityExtension.Messaging.Commands;
 using MixedRealityExtension.Messaging.Payloads;
+using MixedRealityExtension.Patching;
 using MixedRealityExtension.Patching.Types;
+using MixedRealityExtension.Util;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,6 +16,20 @@ namespace MixedRealityExtension.Animation
 {
 	internal class AnimationManager : ICommandHandlerContext
 	{
+		internal class AnimBlend
+		{
+			public readonly TargetPath Path;
+			public Newtonsoft.Json.Linq.JToken CurrentValue;
+			public float TotalWeight;
+
+			internal AnimBlend(TargetPath path)
+			{
+				Path = path;
+				CurrentValue = null;
+				TotalWeight = 0;
+			}
+		}
+
 		private static DateTimeOffset Epoch = new DateTimeOffset(1970, 1, 1, 0, 0, 0, TimeSpan.Zero);
 		private readonly long OffsetUpdateThreshold = 50;
 
@@ -20,7 +37,13 @@ namespace MixedRealityExtension.Animation
 		private readonly Dictionary<Guid, BaseAnimation> Animations = new Dictionary<Guid, BaseAnimation>(10);
 		private readonly Dictionary<Guid, AnimationPatch> PendingPatches = new Dictionary<Guid, AnimationPatch>(10);
 		private long ServerTimeOffset = 0;
+
+		// update loop caching
 		private List<BaseAnimation> TempUpdateList = new List<BaseAnimation>(10);
+		private List<AnimBlend> TempBlendList = new List<AnimBlend>(10);
+		public Dictionary<Guid, IPatchable> AnimInputPatches = new Dictionary<Guid, IPatchable>(5);
+		public Dictionary<Guid, IPatchable> AnimOutputPatches = new Dictionary<Guid, IPatchable>(5);
+		public Dictionary<TargetPath, AnimBlend> AnimBlends = new Dictionary<TargetPath, AnimBlend>(10);
 
 		public AnimationManager(MixedRealityExtensionApp app)
 		{
@@ -41,12 +64,18 @@ namespace MixedRealityExtension.Animation
 		{
 			Animations.Remove(anim.Id);
 			PendingPatches.Remove(anim.Id);
+			foreach (var id in anim.TargetIds)
+			{
+				AnimOutputPatches.Remove(id);
+			}
 		}
 
 		public void Reset()
 		{
 			Animations.Clear();
 			PendingPatches.Clear();
+			AnimInputPatches.Clear();
+			AnimOutputPatches.Clear();
 		}
 
 		public void UpdateServerTimeOffset(long serverTime)
@@ -60,12 +89,47 @@ namespace MixedRealityExtension.Animation
 
 		public void Update()
 		{
-			// necessary to avoid weirdness when deregistering anims in the Update loop
+			var serverTime = ServerNow();
+
+			// compute individual animation contributions
 			TempUpdateList.Clear();
 			TempUpdateList.AddRange(Animations.Values);
 			foreach (var anim in TempUpdateList)
 			{
-				anim.Update();
+				anim.Update(serverTime);
+			}
+
+			// roll all anim outputs into patches
+			TempBlendList.Clear();
+			TempBlendList.AddRange(AnimBlends.Values);
+			foreach (var blend in TempBlendList)
+			{
+				if (blend.TotalWeight == 0)
+				{
+					AnimBlends.Remove(blend.Path);
+					continue;
+				}
+
+				var targetId = Guid.Parse(blend.Path.Placeholder);
+				if (blend.Path.AnimatibleType == "actor")
+				{
+					ActorPatch actorPatch = (ActorPatch)AnimOutputPatches.GetOrCreate(targetId, () => new ActorPatch(targetId));
+					actorPatch.WriteToPath(blend.Path, blend.CurrentValue, 0);
+				}
+
+				// reinitialize blend weight
+				blend.TotalWeight = 0;
+			}
+
+			// apply patches to all objects involved
+			foreach (var kvp in AnimOutputPatches)
+			{
+				if (kvp.Value is ActorPatch)
+				{
+					var actor = (Actor)App.FindActor(kvp.Key);
+					actor?.ApplyPatch((ActorPatch)kvp.Value);
+				}
+				kvp.Value.Clear();
 			}
 		}
 

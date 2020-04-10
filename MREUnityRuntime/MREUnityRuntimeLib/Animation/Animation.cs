@@ -23,12 +23,6 @@ namespace MixedRealityExtension.Animation
 		private Dictionary<string, Guid> TargetMap;
 
 		/// <summary>
-		/// Only used for the duration of the Update method
-		/// </summary>
-		private Dictionary<Guid, ActorPatch> InputPatches = new Dictionary<Guid, ActorPatch>(2);
-		private Dictionary<Guid, ActorPatch> OutputPatches = new Dictionary<Guid, ActorPatch>(2);
-
-		/// <summary>
 		/// When an animation is stopping (by weight == 0 || speed == 0), this flag indicates
 		/// we should update one last time before stopping
 		/// </summary>
@@ -44,7 +38,10 @@ namespace MixedRealityExtension.Animation
 		/// </summary>
 		private Keyframe[] ImplicitStartKeyframes;
 
+		private TargetPath[] ResolvedTargetPaths;
+
 		private static JTokenPool TokenPool = new JTokenPool();
+		private static CubicBezier LinearEasing = new CubicBezier(0, 0, 1, 1);
 
 		public Animation(AnimationManager manager, Guid id, Guid dataId, Dictionary<string, Guid> targetMap) : base(manager, id)
 		{
@@ -60,6 +57,13 @@ namespace MixedRealityExtension.Animation
 				if (Weight > 0 && Data.NeedsImplicitKeyframes)
 				{
 					InitializeImplicitStartKeyframes();
+				}
+
+				ResolvedTargetPaths = new TargetPath[Data.Tracks.Length];
+				for (var i = 0; i < Data.Tracks.Length; i++)
+				{
+					var t = Data.Tracks[i];
+					ResolvedTargetPaths[i] = t.TargetPath.ResolvePlaceholder(TargetMap[t.TargetPath.Placeholder]);
 				}
 			});
 		}
@@ -87,7 +91,7 @@ namespace MixedRealityExtension.Animation
 			return patch;
 		}
 
-		internal override void Update()
+		internal override void Update(long serverTime)
 		{
 			if (Data == null)
 			{
@@ -104,7 +108,7 @@ namespace MixedRealityExtension.Animation
 			if (Weight > 0 && Speed != 0)
 			{
 				// normal operation
-				currentTime = (AnimationManager.LocalUnixNow() - BasisTime) * Speed / 1000;
+				currentTime = (serverTime - BasisTime) * Speed / 1000;
 				StopUpdating = false;
 			}
 			else if (!StopUpdating)
@@ -125,7 +129,6 @@ namespace MixedRealityExtension.Animation
 			IPatchable patch;
 			for (var ti = 0; ti < Data.Tracks.Length; ti++)
 			{
-				bool usesMixedToken = false;
 				var track = Data.Tracks[ti];
 				(Keyframe prevFrame, Keyframe nextFrame) = GetActiveKeyframes(ti, currentTime);
 
@@ -161,41 +164,48 @@ namespace MixedRealityExtension.Animation
 				}
 
 				// compute new value for targeted field
-				var interpolatedToken = TokenPool.Lease(prevFrameValue.Type);
-				Interpolations.Interpolate(prevFrameValue, nextFrameValue, linearT, ref interpolatedToken, nextFrame.Bezier ?? track.Bezier);
+				var outputToken = TokenPool.Lease(prevFrameValue.Type);
+				Interpolations.Interpolate(prevFrameValue, nextFrameValue, linearT, ref outputToken, nextFrame.Bezier ?? track.Bezier);
 
 				// mix starting values with relative keyframe values
-				JToken mixedToken = interpolatedToken;
 				if (track.Relative == true)
 				{
-					usesMixedToken = true;
-					mixedToken = TokenPool.Lease(interpolatedToken.Type);
-					Interpolations.ResolveRelativeValue(ImplicitStartKeyframes[ti].Value, interpolatedToken, ref mixedToken);
+					var temp = TokenPool.Lease(outputToken.Type);
+					Interpolations.ResolveRelativeValue(ImplicitStartKeyframes[ti].Value, outputToken, ref temp);
+					TokenPool.Return(outputToken);
+					outputToken = temp;
 				}
 
-				// collect track result in a patch
+				// mix computed value with the result of any other anims targeting the same property
 				var targetId = TargetMap[track.TargetPath.Placeholder];
-				if (track.TargetPath.AnimatibleType == "actor")
+				var targetPathId = ResolvedTargetPaths[ti];
+				var blendData = manager.AnimBlends.GetOrCreate(targetPathId, () => new AnimationManager.AnimBlend(targetPathId));
+				if (blendData.TotalWeight == 0)
 				{
-					ActorPatch actorPatch = OutputPatches.GetOrCreate(targetId, () => new ActorPatch(targetId));
-					actorPatch.WriteToPath(track.TargetPath, mixedToken, 0);
-					OutputPatches[targetId] = actorPatch;
+					blendData.TotalWeight = Weight;
+					if (blendData.CurrentValue == null)
+					{
+						blendData.CurrentValue = outputToken.DeepClone();
+					}
+					else
+					{
+						var temp = blendData.CurrentValue;
+						blendData.CurrentValue = outputToken;
+						outputToken = temp;
+					}
+				}
+				else
+				{
+					blendData.TotalWeight += Weight;
+					var blended = TokenPool.Lease(outputToken.Type);
+					Interpolations.Interpolate(outputToken, blendData.CurrentValue, Weight / blendData.TotalWeight, ref blended, LinearEasing);
+
+					TokenPool.Return(blendData.CurrentValue);
+					blendData.CurrentValue = blended;
 				}
 
 				// make sure JTokens are reused
-				TokenPool.Return(interpolatedToken);
-				if (usesMixedToken)
-				{
-					TokenPool.Return(mixedToken);
-				}
-			}
-
-			// apply patches to all objects involved
-			foreach (var kvp in OutputPatches)
-			{
-				var actor = (Actor)manager.App.FindActor(kvp.Key);
-				actor?.ApplyPatch(kvp.Value);
-				kvp.Value.Clear();
+				TokenPool.Return(outputToken);
 			}
 		}
 
@@ -357,9 +367,8 @@ namespace MixedRealityExtension.Animation
 			{
 				// pull current value
 				var actor = (Actor)manager.App.FindActor(targetId);
-				ActorPatch actorPatch = InputPatches.GetOrCreate(targetId, () => new ActorPatch(targetId));
-				actorPatch = actor?.GeneratePatch(actorPatch, path);
-				if (actor != null)
+				ActorPatch actorPatch = (ActorPatch)manager.AnimInputPatches.GetOrCreate(targetId, () => new ActorPatch(targetId));
+				if (actor?.GeneratePatch(actorPatch, path) != null)
 				{
 					patch = actorPatch;
 					return true;

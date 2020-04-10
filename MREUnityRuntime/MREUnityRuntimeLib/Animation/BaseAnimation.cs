@@ -99,7 +99,7 @@ namespace MixedRealityExtension.Animation
 			return patch;
 		}
 
-		internal virtual void Update()
+		internal virtual void Update(long serverTime)
 		{
 
 		}
