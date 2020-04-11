@@ -9,6 +9,10 @@ namespace MixedRealityExtension.Animation
 {
 	internal static class Interpolations
 	{
+		private static Quaternion tempA;
+		private static Quaternion tempB;
+		private static Quaternion tempMix;
+
 		internal static void Interpolate(JToken a, JToken b, float linearT, ref JToken mix, CubicBezier easing)
 		{
 			var easedT = easing?.Sample(linearT) ?? 0;
@@ -19,7 +23,6 @@ namespace MixedRealityExtension.Animation
 				JObject A = (JObject)a;
 				JObject B = (JObject)b;
 				JObject Mix = (JObject)mix;
-				Mix.RemoveAll();
 
 				if (A.ContainsKey("x") && A.ContainsKey("y"))
 				{
@@ -28,27 +31,27 @@ namespace MixedRealityExtension.Animation
 						// quaternion
 						if (A.ContainsKey("w"))
 						{
-							var q1 = new Quaternion(A.Value<float>("x"), A.Value<float>("y"), A.Value<float>("z"), A.Value<float>("w"));
-							var q2 = new Quaternion(B.Value<float>("x"), B.Value<float>("y"), B.Value<float>("z"), B.Value<float>("w"));
-							var qMix = Quaternion.Slerp(q1, q2, easedT);
-							Mix.Add("x", qMix.x);
-							Mix.Add("y", qMix.y);
-							Mix.Add("z", qMix.z);
-							Mix.Add("w", qMix.w);
+							tempA.Set(A.ForceFloat("x"), A.ForceFloat("y"), A.ForceFloat("z"), A.ForceFloat("w"));
+							tempB.Set(B.ForceFloat("x"), B.ForceFloat("y"), B.ForceFloat("z"), B.ForceFloat("w"));
+							tempMix = Quaternion.Slerp(tempA, tempB, easedT);
+							Mix.SetOrAdd("x", tempMix.x);
+							Mix.SetOrAdd("y", tempMix.y);
+							Mix.SetOrAdd("z", tempMix.z);
+							Mix.SetOrAdd("w", tempMix.w);
 						}
 						// Vector3
 						else
 						{
-							Mix.Add("x", UnityMath.Lerp(A.Value<float>("x"), B.Value<float>("x"), easedT));
-							Mix.Add("y", UnityMath.Lerp(A.Value<float>("y"), B.Value<float>("y"), easedT));
-							Mix.Add("z", UnityMath.Lerp(A.Value<float>("z"), B.Value<float>("z"), easedT));
+							Mix.SetOrAdd("x", UnityMath.Lerp(A.ForceFloat("x"), B.ForceFloat("x"), easedT));
+							Mix.SetOrAdd("y", UnityMath.Lerp(A.ForceFloat("y"), B.ForceFloat("y"), easedT));
+							Mix.SetOrAdd("z", UnityMath.Lerp(A.ForceFloat("z"), B.ForceFloat("z"), easedT));
 						}
 					}
 					// Vector2
 					else
 					{
-						Mix.Add("x", UnityMath.Lerp(A.Value<float>("x"), B.Value<float>("x"), easedT));
-						Mix.Add("y", UnityMath.Lerp(A.Value<float>("y"), B.Value<float>("y"), easedT));
+						Mix.SetOrAdd("x", UnityMath.Lerp(A.ForceFloat("x"), B.ForceFloat("x"), easedT));
+						Mix.SetOrAdd("y", UnityMath.Lerp(A.ForceFloat("y"), B.ForceFloat("y"), easedT));
 					}
 				}
 				// TODO: other compound types (color3, color4)
@@ -63,7 +66,7 @@ namespace MixedRealityExtension.Animation
 				// numeric types
 				if (a.Type == JTokenType.Float || a.Type == JTokenType.Integer)
 				{
-					Mix.Value = UnityMath.Lerp(A.Value<float>(), B.Value<float>(), easedT);
+					Mix.Value = UnityMath.Lerp(A.ForceFloat(), B.ForceFloat(), easedT);
 				}
 				// no easing available, just use A
 				else
@@ -81,7 +84,6 @@ namespace MixedRealityExtension.Animation
 				JObject Reference = (JObject)reference;
 				JObject Relative = (JObject)relative;
 				JObject Result = (JObject)result;
-				Result.RemoveAll();
 
 				if (Reference.ContainsKey("x") && Reference.ContainsKey("y"))
 				{
@@ -90,36 +92,36 @@ namespace MixedRealityExtension.Animation
 						// quaternion
 						if (Reference.ContainsKey("w"))
 						{
-							var qReference = new Quaternion(
-								Reference.Value<float>("x"),
-								Reference.Value<float>("y"),
-								Reference.Value<float>("z"),
-								Reference.Value<float>("w"));
-							var qRelative = new Quaternion(
-								Relative.Value<float>("x"),
-								Relative.Value<float>("y"),
-								Relative.Value<float>("z"),
-								Relative.Value<float>("w"));
+							tempA.Set(
+								Reference.ForceFloat("x"),
+								Reference.ForceFloat("y"),
+								Reference.ForceFloat("z"),
+								Reference.ForceFloat("w"));
+							tempB.Set(
+								Relative.ForceFloat("x"),
+								Relative.ForceFloat("y"),
+								Relative.ForceFloat("z"),
+								Relative.ForceFloat("w"));
 							// equivalent to applying rotations in sequence: reference, then relative
-							var qResult = qReference * qRelative;
-							Result.Add("x", qResult.x);
-							Result.Add("y", qResult.y);
-							Result.Add("z", qResult.z);
-							Result.Add("w", qResult.w);
+							tempMix = tempA * tempB;
+							Result.SetOrAdd("x", tempMix.x);
+							Result.SetOrAdd("y", tempMix.y);
+							Result.SetOrAdd("z", tempMix.z);
+							Result.SetOrAdd("w", tempMix.w);
 						}
 						// Vector3
 						else
 						{
-							Result.Add("x", Reference.Value<float>("x") + Relative.Value<float>("x"));
-							Result.Add("y", Reference.Value<float>("y") + Relative.Value<float>("y"));
-							Result.Add("z", Reference.Value<float>("z") + Relative.Value<float>("z"));
+							Result.SetOrAdd("x", Reference.ForceFloat("x") + Relative.ForceFloat("x"));
+							Result.SetOrAdd("y", Reference.ForceFloat("y") + Relative.ForceFloat("y"));
+							Result.SetOrAdd("z", Reference.ForceFloat("z") + Relative.ForceFloat("z"));
 						}
 					}
 					// Vector2
 					else
 					{
-						Result.Add("x", Reference.Value<float>("x") + Relative.Value<float>("x"));
-						Result.Add("y", Reference.Value<float>("y") + Relative.Value<float>("y"));
+						Result.SetOrAdd("x", Reference.ForceFloat("x") + Relative.ForceFloat("x"));
+						Result.SetOrAdd("y", Reference.ForceFloat("y") + Relative.ForceFloat("y"));
 					}
 				}
 				// TODO: other compound types (color3, color4)
@@ -132,19 +134,46 @@ namespace MixedRealityExtension.Animation
 				var Result = (JValue)result;
 
 				// numeric types
-				if (Reference.Type == JTokenType.Float)
+				if (Reference.Type == JTokenType.Float || Reference.Type == JTokenType.Integer)
 				{
-					Result.Value = reference.Value<float>() + relative.Value<float>();
-				}
-				else if (Reference.Type == JTokenType.Integer)
-				{
-					Result.Value = reference.Value<int>() + relative.Value<int>();
+					Result.Value = Reference.ForceFloat() + Relative.ForceFloat();
 				}
 				// can't blend types
 				else
 				{
-					Result.Replace(Reference);
+					Result.Value = Reference.Value;
 				}
+			}
+		}
+
+		static void SetOrAdd(this JObject _this, string key, object value)
+		{
+			if (_this.ContainsKey(key))
+			{
+				((JValue)_this[key]).Value = value;
+			}
+			else
+			{
+				_this.Add(new JProperty(key, value));
+			}
+		}
+
+		static float ForceFloat(this JToken _this, string name = null)
+		{
+			if (_this.Type == JTokenType.Object && !string.IsNullOrEmpty(name))
+			{
+				var child = ((JObject)_this).GetValue(name);
+				return child.ForceFloat();
+			}
+			else
+			{
+				var This = (JValue)_this;
+				if (This.Value.GetType() != typeof(double))
+				{
+					// for some reason Json.net really doesn't want to store a float here
+					This.Value = This.Value<double>();
+				}
+				return (float)(double)This.Value; // weird but necessary
 			}
 		}
 	}

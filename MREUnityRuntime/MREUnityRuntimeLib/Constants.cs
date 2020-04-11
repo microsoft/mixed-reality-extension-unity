@@ -15,6 +15,7 @@ namespace MixedRealityExtension
 			SerializerSettings = new JsonSerializerSettings
 			{
 				ContractResolver = new Newtonsoft.Json.Serialization.CamelCasePropertyNamesContractResolver(),
+				FloatParseHandling = FloatParseHandling.Double,
 				Formatting = Formatting.None,
 				NullValueHandling = NullValueHandling.Ignore,
 			};
