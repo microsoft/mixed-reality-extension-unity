@@ -68,7 +68,7 @@ namespace MixedRealityExtension.Animation
 				{
 					Mix.Value = UnityMath.Lerp(A.ForceFloat(), B.ForceFloat(), easedT);
 				}
-				// no easing available, just use A
+				// no interpolation available, just use A
 				else
 				{
 					Mix.Value = A.Value;
