@@ -34,10 +34,18 @@ namespace MixedRealityExtension.Animation
 		private int[] LastKeyframeIndex;
 
 		/// <summary>
-		/// Reference frames for relative or non-zero start animations. Indexed by track index
+		/// Reference frames for non-zero start animations. Indexed by track index
 		/// </summary>
 		private Keyframe[] ImplicitStartKeyframes;
 
+		/// <summary>
+		/// Absolute values of relative keyframes. Indexed by track index, then keyframe index
+		/// </summary>
+		private Keyframe[][] ResolvedRelativeKeyframes;
+
+		/// <summary>
+		/// Keyframe target paths, with placeholders swapped for GUIDs. Used for blending output with other anims
+		/// </summary>
 		private TargetPath[] ResolvedTargetPaths;
 
 		private static JTokenPool TokenPool = new JTokenPool();
@@ -54,16 +62,23 @@ namespace MixedRealityExtension.Animation
 				DataSet = true;
 				LastKeyframeIndex = new int[Data.Tracks.Length];
 				ImplicitStartKeyframes = new Keyframe[Data.Tracks.Length];
-				if (Weight > 0 && Data.NeedsImplicitKeyframes)
-				{
-					InitializeImplicitStartKeyframes();
-				}
-
+				ResolvedRelativeKeyframes = new Keyframe[Data.Tracks.Length][];
 				ResolvedTargetPaths = new TargetPath[Data.Tracks.Length];
+
 				for (var i = 0; i < Data.Tracks.Length; i++)
 				{
 					var t = Data.Tracks[i];
 					ResolvedTargetPaths[i] = t.TargetPath.ResolvePlaceholder(TargetMap[t.TargetPath.Placeholder]);
+
+					if (t.Relative == true)
+					{
+						ResolvedRelativeKeyframes[i] = new Keyframe[t.Keyframes.Length];
+					}
+				}
+
+				if (Weight > 0 && Data.NeedsImplicitKeyframes)
+				{
+					InitializeImplicitKeyframes();
 				}
 			});
 		}
@@ -74,7 +89,7 @@ namespace MixedRealityExtension.Animation
 			base.ApplyPatch(patch);
 			if (!wasPlaying && IsPlaying && (Data?.NeedsImplicitKeyframes ?? false))
 			{
-				InitializeImplicitStartKeyframes();
+				InitializeImplicitKeyframes();
 			}
 
 			if (IsPlaying)
@@ -164,17 +179,8 @@ namespace MixedRealityExtension.Animation
 				}
 
 				// compute new value for targeted field
-				var outputToken = TokenPool.Lease(prevFrameValue.Type);
+				var outputToken = TokenPool.Lease(prevFrameValue);
 				Interpolations.Interpolate(prevFrameValue, nextFrameValue, linearT, ref outputToken, nextFrame.Bezier ?? track.Bezier);
-
-				// mix starting values with relative keyframe values
-				if (track.Relative == true)
-				{
-					var temp = TokenPool.Lease(outputToken.Type);
-					Interpolations.ResolveRelativeValue(ImplicitStartKeyframes[ti].Value, outputToken, ref temp);
-					TokenPool.Return(outputToken);
-					outputToken = temp;
-				}
 
 				// mix computed value with the result of any other anims targeting the same property
 				var targetId = TargetMap[track.TargetPath.Placeholder];
@@ -197,7 +203,7 @@ namespace MixedRealityExtension.Animation
 				else
 				{
 					blendData.TotalWeight += Weight;
-					var blended = TokenPool.Lease(outputToken.Type);
+					var blended = TokenPool.Lease(outputToken);
 					Interpolations.Interpolate(outputToken, blendData.CurrentValue, Weight / blendData.TotalWeight, ref blended, LinearEasing);
 
 					TokenPool.Return(blendData.CurrentValue);
@@ -209,6 +215,7 @@ namespace MixedRealityExtension.Animation
 			}
 		}
 
+		private int WrapRepetition = 0;
 		private float ApplyWrapMode(float currentTime)
 		{
 			// From the documentation:
@@ -221,9 +228,8 @@ namespace MixedRealityExtension.Animation
 			// We want the result to always be non-negative, so we're using the extended formula
 			//   currentTime - rep * Data.Duration
 			// everywhere instead of currentTime % Data.Duration.
-			var rep = (int)Math.Floor(currentTime / Data.Duration);
-			// UnityEngine.Debug.LogFormat("Now: {0}, Basis: {1}", AnimationManager.LocalUnixNow(), BasisTime);
-			// UnityEngine.Debug.LogFormat("Time: {0}, Rep: {1}", currentTime, rep);
+			var oldRep = WrapRepetition;
+			WrapRepetition = (int)Math.Floor(currentTime / Data.Duration);
 
 			if (WrapMode == MWAnimationWrapMode.Loop)
 			{
@@ -234,7 +240,13 @@ namespace MixedRealityExtension.Animation
 				 *  ---------+---------
 				 * -3 -2 -1  0  1  2  3
 				 */
-				currentTime = currentTime - rep * Data.Duration;
+				currentTime = currentTime - WrapRepetition * Data.Duration;
+
+				// this is a looping relative animation, reset reference frame for root motion
+				if (Data.NeedsImplicitKeyframes && oldRep != WrapRepetition)
+				{
+					InitializeImplicitKeyframes(true);
+				}
 			}
 			else if (WrapMode == MWAnimationWrapMode.PingPong)
 			{
@@ -245,20 +257,19 @@ namespace MixedRealityExtension.Animation
 				 *  ---------+---------
 				 * -3 -2 -1  0  1  2  3
 				 */
-				if (rep % 2 == 0)
+				if (WrapRepetition % 2 == 0)
 				{
 					// forward case
-					currentTime = currentTime - rep * Data.Duration;
+					currentTime = currentTime - WrapRepetition * Data.Duration;
 				}
 				else
 				{
 					// backward case
-					currentTime = Data.Duration - (currentTime - rep * Data.Duration);
+					currentTime = Data.Duration - (currentTime - WrapRepetition * Data.Duration);
 				}
 			}
 			else if (WrapMode == MWAnimationWrapMode.Once)
 			{
-				// 
 				/*** Once mode: Clamp to range
 				 *               ______
 				 *           |  /
@@ -277,47 +288,55 @@ namespace MixedRealityExtension.Animation
 		{
 			var ti = trackIndex;
 			var track = Data.Tracks[ti];
+			var keyframes = track.Relative == true ? ResolvedRelativeKeyframes[ti] : track.Keyframes;
 
 			// grab the leading keyframe from the last update (might be first frame if first update)
-			Keyframe nextFrame = track.Keyframes[LastKeyframeIndex[ti]];
+			Keyframe nextFrame = keyframes[LastKeyframeIndex[ti]];
 
 			// grab trailing keyframe from last update: frame before nextFrame, or the implicit start frame (might be null)
-			Keyframe prevFrame = LastKeyframeIndex[ti] > 0 ? track.Keyframes[LastKeyframeIndex[ti] - 1] : ImplicitStartKeyframes[ti];
+			Keyframe prevFrame = LastKeyframeIndex[ti] > 0 ? keyframes[LastKeyframeIndex[ti] - 1] : ImplicitStartKeyframes[ti];
 
 			// test to see if current frames are usable
 			bool GoodFrames() => prevFrame != null && prevFrame.Time < nextFrame.Time && prevFrame.Time <= currentTime && nextFrame.Time >= currentTime;
 
+			if (GoodFrames())
+			{
+				return (prevFrame, nextFrame);
+			}
 			// if the current time isn't in that range, try the "next" keyframe based on speed sign
-			if (!GoodFrames())
+			else
 			{
 				// going forward
-				if (Speed > 0 && LastKeyframeIndex[ti] < track.Keyframes.Length - 1)
+				if (Speed > 0 && LastKeyframeIndex[ti] < keyframes.Length - 1)
 				{
 					prevFrame = nextFrame;
-					nextFrame = track.Keyframes[++LastKeyframeIndex[ti]];
+					nextFrame = keyframes[++LastKeyframeIndex[ti]];
 				}
 				// going backward
 				else if (Speed < 0 && LastKeyframeIndex[ti] > 0)
 				{
 					nextFrame = prevFrame;
-					prevFrame = --LastKeyframeIndex[ti] > 0 ? track.Keyframes[LastKeyframeIndex[ti] - 1] : ImplicitStartKeyframes[ti];
+					prevFrame = --LastKeyframeIndex[ti] > 0 ? keyframes[LastKeyframeIndex[ti] - 1] : ImplicitStartKeyframes[ti];
 				}
 			}
 
+			if (GoodFrames())
+			{
+				return (prevFrame, nextFrame);
+			}
 			// if it's still not in range, we just have to search
-			if (!GoodFrames())
+			else
 			{
 				prevFrame = ImplicitStartKeyframes[ti];
-				nextFrame = track.Keyframes[0];
+				nextFrame = keyframes[0];
 				LastKeyframeIndex[ti] = 0;
-				while (!GoodFrames() && LastKeyframeIndex[ti] < track.Keyframes.Length - 1)
+				while (!GoodFrames() && LastKeyframeIndex[ti] < keyframes.Length - 1)
 				{
 					prevFrame = nextFrame;
-					nextFrame = track.Keyframes[++LastKeyframeIndex[ti]];
+					nextFrame = keyframes[++LastKeyframeIndex[ti]];
 				}
 			}
 
-			// we found the right frame pair, return them
 			if (GoodFrames())
 			{
 				return (prevFrame, nextFrame);
@@ -329,33 +348,64 @@ namespace MixedRealityExtension.Animation
 			}
 		}
 
-		private void InitializeImplicitStartKeyframes()
+		private void InitializeImplicitKeyframes(bool recycleLastFrames = false)
 		{
 			for (var ti = 0; ti < Data.Tracks.Length; ti++)
 			{
 				var track = Data.Tracks[ti];
 
-				// explicit start, no need to generate one
-				if (track.Keyframes[0].Time <= 0 && track.Relative != true) continue;
-
-				// get a patch of the target type, traverse patch for the targeted field
-				if (!GetPatchAtPath(track.TargetPath, out IPatchable patch) || !GetTokenAtPath(patch, track.TargetPath, out JToken json))
+				// if looping, set implicit start exactly at the last frame of the previous loop
+				if (recycleLastFrames && track.Relative == true)
 				{
-					continue;
+					var temp = ImplicitStartKeyframes[ti].Value;
+					ImplicitStartKeyframes[ti].Value = ResolvedRelativeKeyframes[ti][track.Keyframes.Length - 1].Value;
+					ResolvedRelativeKeyframes[ti][track.Keyframes.Length - 1].Value = temp;
 				}
-
-				// generate keyframe
-				if (ImplicitStartKeyframes[ti] == null)
+				// only snapshot start state if we need it
+				else if (track.Keyframes[0].Time > 0 || track.Relative == true)
 				{
-					ImplicitStartKeyframes[ti] = new Keyframe()
+					// get a patch of the target type, traverse patch for the targeted field
+					if (!GetPatchAtPath(track.TargetPath, out IPatchable patch) || !GetTokenAtPath(patch, track.TargetPath, out JToken json))
 					{
-						Time = 0f,
-						Value = json
-					};
+						continue;
+					}
+
+					// generate keyframe
+					if (ImplicitStartKeyframes[ti] == null)
+					{
+						ImplicitStartKeyframes[ti] = new Keyframe()
+						{
+							Time = 0f,
+							Value = json
+						};
+					}
+					else
+					{
+						ImplicitStartKeyframes[ti].Value = json;
+					}
 				}
-				else
+
+				// resolve all relative keyframes now
+				if (track.Relative == true)
 				{
-					ImplicitStartKeyframes[ti].Value = json;
+					for (var ki = 0; ki < track.Keyframes.Length; ki++)
+					{
+						var keyframe = track.Keyframes[ki];
+						if (ResolvedRelativeKeyframes[ti][ki] == null)
+						{
+							ResolvedRelativeKeyframes[ti][ki] = new Keyframe()
+							{
+								Time = keyframe.Time,
+								Value = TokenPool.Lease(keyframe.Value),
+								Easing = keyframe.Easing
+							};
+						}
+
+						Interpolations.ResolveRelativeValue(
+							ImplicitStartKeyframes[ti].Value,
+							keyframe.Value,
+							ref ResolvedRelativeKeyframes[ti][ki].Value);
+					}
 				}
 			}
 		}
@@ -399,36 +449,6 @@ namespace MixedRealityExtension.Animation
 				}
 			}
 			return true;
-		}
-
-		private class JTokenPool
-		{
-			private Stack<JObject> jObjectPool = new Stack<JObject>(3);
-			private Stack<JValue> jValuePool = new Stack<JValue>(3);
-
-			public JToken Lease(JTokenType type)
-			{
-				if (type == JTokenType.Object)
-				{
-					return jObjectPool.Count > 0 ? jObjectPool.Pop() : new JObject();
-				}
-				else
-				{
-					return jValuePool.Count > 0 ? jValuePool.Pop() : new JValue(0);
-				}
-			}
-
-			public void Return(JToken token)
-			{
-				if (token.Type == JTokenType.Object)
-				{
-					jObjectPool.Push((JObject)token);
-				}
-				else
-				{
-					jValuePool.Push((JValue)token);
-				}
-			}
 		}
 	}
 }

@@ -92,6 +92,7 @@
     <Compile Include="Animation\AnimationManager.cs" />
     <Compile Include="Animation\AnimationState.cs" />
     <Compile Include="Animation\AnimationWrapMode.cs" />
+    <Compile Include="Animation\JTokenPool.cs" />
     <Compile Include="Animation\MWSetAnimationStateOptions.cs" />
     <Compile Include="Animation\NativeAnimation.cs" />
     <Compile Include="Animation\TargetPath.cs" />
