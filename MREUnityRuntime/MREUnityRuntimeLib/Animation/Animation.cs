@@ -141,18 +141,12 @@ namespace MixedRealityExtension.Animation
 			currentTime = ApplyWrapMode(currentTime);
 
 			// process tracks
-			IPatchable patch;
-			Keyframe prevFrame, nextFrame;
-			JToken prevFrameValue, nextFrameValue, outputToken, temp;
-			bool usesPrevFrameValue, usesNextFrameValue;
-			Track track;
-			float linearT;
 			for (var ti = 0; ti < Data.Tracks.Length; ti++)
 			{
-				track = Data.Tracks[ti];
-				usesPrevFrameValue = false; usesNextFrameValue = false;
+				Track track = Data.Tracks[ti];
+				bool usesPrevFrameValue = false, usesNextFrameValue = false;
 
-				(prevFrame, nextFrame) = GetActiveKeyframes(ti, currentTime);
+				(Keyframe prevFrame, Keyframe nextFrame) = GetActiveKeyframes(ti, currentTime);
 
 				// either no keyframes, or time out of range
 				if (prevFrame == null)
@@ -160,13 +154,13 @@ namespace MixedRealityExtension.Animation
 					continue;
 				}
 
-				linearT = (currentTime - prevFrame.Time) / (nextFrame.Time - prevFrame.Time);
+				float linearT = (currentTime - prevFrame.Time) / (nextFrame.Time - prevFrame.Time);
 
 				// get realtime value for trailing frame
-				prevFrameValue = prevFrame.Value;
+				JToken prevFrameValue = prevFrame.Value;
 				if (prevFrame.ValuePath != null)
 				{
-					if (GetPatchAtPath(prevFrame.ValuePath, out patch))
+					if (GetPatchAtPath(prevFrame.ValuePath, out IPatchable patch))
 					{
 						prevFrameValue = TokenPool.Lease(TargetPath.TypeOfPath[prevFrame.ValuePath.Path]);
 						if (patch.ReadFromPath(prevFrame.ValuePath, ref prevFrameValue, 0))
@@ -183,10 +177,10 @@ namespace MixedRealityExtension.Animation
 				}
 
 				// get realtime value for leading frame (same as above)
-				nextFrameValue = nextFrame.Value;
+				JToken nextFrameValue = nextFrame.Value;
 				if (nextFrame.ValuePath != null)
 				{
-					if (GetPatchAtPath(nextFrame.ValuePath, out patch))
+					if (GetPatchAtPath(nextFrame.ValuePath, out IPatchable patch))
 					{
 						nextFrameValue = TokenPool.Lease(TargetPath.TypeOfPath[nextFrame.ValuePath.Path]);
 						if (patch.ReadFromPath(nextFrame.ValuePath, ref nextFrameValue, 0))
@@ -203,21 +197,19 @@ namespace MixedRealityExtension.Animation
 				}
 
 				// compute new value for targeted field
-				outputToken = TokenPool.Lease(prevFrameValue);
+				JToken outputToken = TokenPool.Lease(prevFrameValue);
 				Interpolations.Interpolate(prevFrameValue, nextFrameValue, linearT, ref outputToken, nextFrame.Bezier ?? track.Bezier);
 				if (usesPrevFrameValue)
 				{
 					TokenPool.Return(prevFrameValue);
-					prevFrameValue = null;
 				}
 				if (usesNextFrameValue)
 				{
 					TokenPool.Return(nextFrameValue);
-					nextFrameValue = null;
 				}
 
 				// mix computed value with the result of any other anims targeting the same property
-				var blendData = manager.AnimBlends.GetOrCreate(
+				AnimationManager.AnimBlend blendData = manager.AnimBlends.GetOrCreate(
 					ResolvedTargetPaths[ti],
 					() => new AnimationManager.AnimBlend(ResolvedTargetPaths[ti]));
 				if (blendData.TotalWeight == 0)
@@ -229,26 +221,20 @@ namespace MixedRealityExtension.Animation
 					}
 					else
 					{
-						temp = blendData.CurrentValue;
+						JToken temp = blendData.CurrentValue;
 						blendData.CurrentValue = outputToken;
-						outputToken = temp;
-						temp = null;
+						TokenPool.Return(temp);
 					}
 				}
 				else
 				{
 					blendData.TotalWeight += Weight;
-					temp = TokenPool.Lease(outputToken);
+					JToken temp = TokenPool.Lease(outputToken);
 					Interpolations.Interpolate(outputToken, blendData.CurrentValue, Weight / blendData.TotalWeight, ref temp, LinearEasing);
 
 					TokenPool.Return(blendData.CurrentValue);
 					blendData.CurrentValue = temp;
-					temp = null;
 				}
-
-				// make sure JTokens are reused
-				TokenPool.Return(outputToken);
-				outputToken = null;
 			}
 		}
 
