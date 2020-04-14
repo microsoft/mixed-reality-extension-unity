@@ -7,14 +7,14 @@ namespace MixedRealityExtension.Animation
 {
 	internal class JTokenPool
 	{
-		private enum TokenPoolType
+		public enum TokenPoolType
 		{
 			Value = 0,
 			Vector3,
 			Quaternion
 		}
 
-		private Dictionary<TokenPoolType, Stack<JToken>> TokenPool = new Dictionary<TokenPoolType, Stack<JToken>>(3)
+		private readonly Dictionary<TokenPoolType, Stack<JToken>> TokenPool = new Dictionary<TokenPoolType, Stack<JToken>>(3)
 		{
 			{TokenPoolType.Value, new Stack<JToken>(5) },
 			{TokenPoolType.Vector3, new Stack<JToken>(5) },
@@ -28,7 +28,11 @@ namespace MixedRealityExtension.Animation
 		/// <returns></returns>
 		public JToken Lease(JToken matchingType)
 		{
-			var type = DetermineType(matchingType);
+			return Lease(DetermineType(matchingType));
+		}
+
+		public JToken Lease(TokenPoolType type)
+		{
 			var pool = TokenPool[type];
 			return pool.Count > 0 ? pool.Pop() : GenerateType(type);
 		}

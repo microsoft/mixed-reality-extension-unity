@@ -10,6 +10,7 @@ namespace MixedRealityExtension.Patching.Types
 {
 	public class QuaternionPatch : IEquatable<QuaternionPatch>, IPatchable
 	{
+		// TODO: Make X, Y, Z, and W fields non-optional, since you can't just specify one and maintain a valid unit quaternion
 		[PatchProperty]
 		public float? X { get; set; }
 
@@ -91,15 +92,26 @@ namespace MixedRealityExtension.Patching.Types
 				W = value.Value<float>("w");
 			}
 			// else
-				// an unrecognized path, do nothing
+			// an unrecognized path, do nothing
+		}
+
+		public bool ReadFromPath(TargetPath path, ref JToken value, int depth)
+		{
+			if (depth == path.PathParts.Length && X.HasValue && Y.HasValue && Z.HasValue && W.HasValue)
+			{
+				var oValue = (JObject)value;
+				oValue.SetOrAdd("x", X.Value);
+				oValue.SetOrAdd("y", Y.Value);
+				oValue.SetOrAdd("z", Z.Value);
+				oValue.SetOrAdd("w", W.Value);
+				return true;
+			}
+			return false;
 		}
 
 		public void Clear()
 		{
-			X = null;
-			Y = null;
-			Z = null;
-			W = null;
+			
 		}
 
 		public void Restore(TargetPath path, int depth)

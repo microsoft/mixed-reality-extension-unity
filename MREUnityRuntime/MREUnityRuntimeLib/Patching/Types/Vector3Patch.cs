@@ -84,7 +84,38 @@ namespace MixedRealityExtension.Patching.Types
 				Z = value.Value<float>();
 			}
 			// else
-				// an unrecognized path, do nothing
+			// an unrecognized path, do nothing
+		}
+
+		public bool ReadFromPath(TargetPath path, ref JToken value, int depth)
+		{
+			if (depth == path.PathParts.Length && X.HasValue && Y.HasValue && Z.HasValue)
+			{
+				var oValue = (JObject)value;
+				oValue.SetOrAdd("x", X.Value);
+				oValue.SetOrAdd("y", Y.Value);
+				oValue.SetOrAdd("z", Z.Value);
+				return true;
+			}
+			else if (path.PathParts[depth] == "x" && X.HasValue)
+			{
+				var vValue = (JValue)value;
+				vValue.Value = X.Value;
+				return true;
+			}
+			else if (path.PathParts[depth] == "y" && Y.HasValue)
+			{
+				var vValue = (JValue)value;
+				vValue.Value = Y.Value;
+				return true;
+			}
+			else if (path.PathParts[depth] == "z" && Z.HasValue)
+			{
+				var vValue = (JValue)value;
+				vValue.Value = Z.Value;
+				return true;
+			}
+			return false;
 		}
 
 		public void Clear()

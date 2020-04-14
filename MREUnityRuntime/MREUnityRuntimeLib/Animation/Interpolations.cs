@@ -146,7 +146,7 @@ namespace MixedRealityExtension.Animation
 			}
 		}
 
-		static void SetOrAdd(this JObject _this, string key, object value)
+		internal static void SetOrAdd(this JObject _this, string key, object value)
 		{
 			if (_this.ContainsKey(key))
 			{
@@ -158,7 +158,7 @@ namespace MixedRealityExtension.Animation
 			}
 		}
 
-		static float ForceFloat(this JToken _this, string name = null)
+		internal static float ForceFloat(this JToken _this, string name = null)
 		{
 			if (_this.Type == JTokenType.Object && !string.IsNullOrEmpty(name))
 			{

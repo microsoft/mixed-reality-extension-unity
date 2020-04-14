@@ -98,6 +98,19 @@ namespace MixedRealityExtension.Patching.Types
 			return false;
 		}
 
+		public virtual bool ReadFromPath(TargetPath path, ref JToken value, int depth)
+		{
+			if (path.PathParts[depth] == "position")
+			{
+				return Position?.ReadFromPath(path, ref value, depth + 1) ?? false;
+			}
+			else if (path.PathParts[depth] == "rotation")
+			{
+				return Rotation?.ReadFromPath(path, ref value, depth + 1) ?? false;
+			}
+			return false;
+		}
+
 		public virtual void Clear()
 		{
 			Position = null;
@@ -184,7 +197,19 @@ namespace MixedRealityExtension.Patching.Types
 				scale.WriteToPath(path, value, depth + 1);
 			}
 			// else
-				// an unrecognized path, do nothing
+			// an unrecognized path, do nothing
+		}
+
+		public override bool ReadFromPath(TargetPath path, ref JToken value, int depth)
+		{
+			if (path.PathParts[depth] == "scale")
+			{
+				return Scale?.ReadFromPath(path, ref value, depth + 1) ?? false;
+			}
+			else
+			{
+				return base.ReadFromPath(path, ref value, depth);
+			}
 		}
 
 		public override void Clear()

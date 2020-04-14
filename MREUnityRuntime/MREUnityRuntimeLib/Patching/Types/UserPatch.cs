@@ -46,6 +46,11 @@ namespace MixedRealityExtension.Patching.Types
 
 		}
 
+		public bool ReadFromPath(TargetPath path, ref JToken value, int depth)
+		{
+			return false;
+		}
+
 		public void Clear()
 		{
 

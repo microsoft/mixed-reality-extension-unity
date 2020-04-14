@@ -102,6 +102,8 @@ namespace MixedRealityExtension.Animation
 			// roll all anim outputs into patches
 			TempBlendList.Clear();
 			TempBlendList.AddRange(AnimBlends.Values);
+			Guid targetId;
+			ActorPatch actorPatch;
 			foreach (var blend in TempBlendList)
 			{
 				if (blend.TotalWeight == 0)
@@ -110,10 +112,10 @@ namespace MixedRealityExtension.Animation
 					continue;
 				}
 
-				var targetId = Guid.Parse(blend.Path.Placeholder);
+				targetId = Guid.Parse(blend.Path.Placeholder);
 				if (blend.Path.AnimatibleType == "actor")
 				{
-					ActorPatch actorPatch = (ActorPatch)AnimOutputPatches.GetOrCreate(targetId, () => new ActorPatch(targetId));
+					actorPatch = (ActorPatch)AnimOutputPatches.GetOrCreate(targetId, () => new ActorPatch(targetId));
 					actorPatch.WriteToPath(blend.Path, blend.CurrentValue, 0);
 				}
 

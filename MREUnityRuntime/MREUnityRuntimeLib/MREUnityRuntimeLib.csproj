@@ -125,6 +125,7 @@
     <Compile Include="Patching\Types\AnimationPatch.cs" />
     <Compile Include="Patching\Types\AppearancePatch.cs" />
     <Compile Include="Patching\Types\LookAtPatch.cs" />
+    <Compile Include="Patching\Types\ActorTransformPatch.cs" />
     <Compile Include="PluginInterfaces\IDialogFactory.cs" />
     <Compile Include="PluginInterfaces\ILayerApplicator.cs" />
     <Compile Include="PluginInterfaces\IUserInfoProvider.cs" />

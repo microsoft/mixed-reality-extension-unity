@@ -142,10 +142,17 @@ namespace MixedRealityExtension.Animation
 
 			// process tracks
 			IPatchable patch;
+			Keyframe prevFrame, nextFrame;
+			JToken prevFrameValue, nextFrameValue, outputToken, temp;
+			bool usesPrevFrameValue, usesNextFrameValue;
+			Track track;
+			float linearT;
 			for (var ti = 0; ti < Data.Tracks.Length; ti++)
 			{
-				var track = Data.Tracks[ti];
-				(Keyframe prevFrame, Keyframe nextFrame) = GetActiveKeyframes(ti, currentTime);
+				track = Data.Tracks[ti];
+				usesPrevFrameValue = false; usesNextFrameValue = false;
+
+				(prevFrame, nextFrame) = GetActiveKeyframes(ti, currentTime);
 
 				// either no keyframes, or time out of range
 				if (prevFrame == null)
@@ -153,39 +160,66 @@ namespace MixedRealityExtension.Animation
 					continue;
 				}
 
-				var linearT = (currentTime - prevFrame.Time) / (nextFrame.Time - prevFrame.Time);
+				linearT = (currentTime - prevFrame.Time) / (nextFrame.Time - prevFrame.Time);
 
 				// get realtime value for trailing frame
-				JToken prevFrameValue = prevFrame.Value;
-				if (
-					// if previous frame value is a path
-					prevFrame.ValuePath != null && (
-					// get the current value from the actor as a patch
-					!GetPatchAtPath(prevFrame.ValuePath, out patch) ||
-					// convert patch to a JToken
-					!GetTokenAtPath(patch, prevFrame.ValuePath, out prevFrameValue)))
+				prevFrameValue = prevFrame.Value;
+				if (prevFrame.ValuePath != null)
 				{
-					// can't get current value, skip this track
-					continue;
+					if (GetPatchAtPath(prevFrame.ValuePath, out patch))
+					{
+						prevFrameValue = TokenPool.Lease(TargetPath.TypeOfPath[prevFrame.ValuePath.Path]);
+						if (patch.ReadFromPath(prevFrame.ValuePath, ref prevFrameValue, 0))
+						{
+							usesPrevFrameValue = true;
+						}
+						else
+						{
+							TokenPool.Return(prevFrameValue);
+							continue;
+						}
+					}
+					else continue;
 				}
 
 				// get realtime value for leading frame (same as above)
-				JToken nextFrameValue = nextFrame.Value;
-				if (nextFrame.ValuePath != null && (
-					!GetPatchAtPath(nextFrame.ValuePath, out patch) ||
-					!GetTokenAtPath(patch, nextFrame.ValuePath, out nextFrameValue)))
+				nextFrameValue = nextFrame.Value;
+				if (nextFrame.ValuePath != null)
 				{
-					continue;
+					if (GetPatchAtPath(nextFrame.ValuePath, out patch))
+					{
+						nextFrameValue = TokenPool.Lease(TargetPath.TypeOfPath[nextFrame.ValuePath.Path]);
+						if (patch.ReadFromPath(nextFrame.ValuePath, ref nextFrameValue, 0))
+						{
+							usesNextFrameValue = true;
+						}
+						else
+						{
+							TokenPool.Return(nextFrameValue);
+							continue;
+						}
+					}
+					else continue;
 				}
 
 				// compute new value for targeted field
-				var outputToken = TokenPool.Lease(prevFrameValue);
+				outputToken = TokenPool.Lease(prevFrameValue);
 				Interpolations.Interpolate(prevFrameValue, nextFrameValue, linearT, ref outputToken, nextFrame.Bezier ?? track.Bezier);
+				if (usesPrevFrameValue)
+				{
+					TokenPool.Return(prevFrameValue);
+					prevFrameValue = null;
+				}
+				if (usesNextFrameValue)
+				{
+					TokenPool.Return(nextFrameValue);
+					nextFrameValue = null;
+				}
 
 				// mix computed value with the result of any other anims targeting the same property
-				var targetId = TargetMap[track.TargetPath.Placeholder];
-				var targetPathId = ResolvedTargetPaths[ti];
-				var blendData = manager.AnimBlends.GetOrCreate(targetPathId, () => new AnimationManager.AnimBlend(targetPathId));
+				var blendData = manager.AnimBlends.GetOrCreate(
+					ResolvedTargetPaths[ti],
+					() => new AnimationManager.AnimBlend(ResolvedTargetPaths[ti]));
 				if (blendData.TotalWeight == 0)
 				{
 					blendData.TotalWeight = Weight;
@@ -195,23 +229,26 @@ namespace MixedRealityExtension.Animation
 					}
 					else
 					{
-						var temp = blendData.CurrentValue;
+						temp = blendData.CurrentValue;
 						blendData.CurrentValue = outputToken;
 						outputToken = temp;
+						temp = null;
 					}
 				}
 				else
 				{
 					blendData.TotalWeight += Weight;
-					var blended = TokenPool.Lease(outputToken);
-					Interpolations.Interpolate(outputToken, blendData.CurrentValue, Weight / blendData.TotalWeight, ref blended, LinearEasing);
+					temp = TokenPool.Lease(outputToken);
+					Interpolations.Interpolate(outputToken, blendData.CurrentValue, Weight / blendData.TotalWeight, ref temp, LinearEasing);
 
 					TokenPool.Return(blendData.CurrentValue);
-					blendData.CurrentValue = blended;
+					blendData.CurrentValue = temp;
+					temp = null;
 				}
 
 				// make sure JTokens are reused
 				TokenPool.Return(outputToken);
+				outputToken = null;
 			}
 		}
 
@@ -364,24 +401,21 @@ namespace MixedRealityExtension.Animation
 				// only snapshot start state if we need it
 				else if (track.Keyframes[0].Time > 0 || track.Relative == true)
 				{
-					// get a patch of the target type, traverse patch for the targeted field
-					if (!GetPatchAtPath(track.TargetPath, out IPatchable patch) || !GetTokenAtPath(patch, track.TargetPath, out JToken json))
-					{
-						continue;
-					}
-
 					// generate keyframe
 					if (ImplicitStartKeyframes[ti] == null)
 					{
 						ImplicitStartKeyframes[ti] = new Keyframe()
 						{
 							Time = 0f,
-							Value = json
+							Value = TokenPool.Lease(TargetPath.TypeOfPath[track.TargetPath.Path])
 						};
 					}
-					else
+
+					// get a patch of the target type, traverse patch for the targeted field
+					JToken json = ImplicitStartKeyframes[ti].Value;
+					if (!GetPatchAtPath(track.TargetPath, out IPatchable patch) || !patch.ReadFromPath(track.TargetPath, ref json, 0))
 					{
-						ImplicitStartKeyframes[ti].Value = json;
+						continue;
 					}
 				}
 
@@ -429,7 +463,7 @@ namespace MixedRealityExtension.Animation
 			return false;
 		}
 
-		private static readonly JsonSerializer Serializer = JsonSerializer.Create(Constants.SerializerSettings);
+		/*private static readonly JsonSerializer Serializer = JsonSerializer.Create(Constants.SerializerSettings);
 
 		private static bool GetTokenAtPath(IPatchable patch, TargetPath path, out JToken token)
 		{
@@ -449,6 +483,6 @@ namespace MixedRealityExtension.Animation
 				}
 			}
 			return true;
-		}
+		}*/
 	}
 }
