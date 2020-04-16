@@ -70,6 +70,12 @@ namespace MixedRealityExtension.Core
 		private MeshFilter filter = null;
 		internal MeshFilter MeshFilter => filter = filter ?? GetComponent<MeshFilter>();
 
+		public delegate void RigidBodyAddedHandler(Guid id, UnityEngine.Rigidbody rigidbody, bool isOwned);
+		public event RigidBodyAddedHandler RigidBodyAdded;
+
+		public delegate void RigidBodyRemovedHandler(Guid id);
+		public event RigidBodyRemovedHandler RigidBodyRemoved;
+
 		#region IActor Properties - Public
 
 		/// <inheritdoc />
@@ -248,9 +254,12 @@ namespace MixedRealityExtension.Core
 					actorPatch.ParentId = ParentId;
 				}
 
-				if (ShouldSync(subscriptions, ActorComponentType.Transform))
+				if (RigidBody == null)
 				{
-					GenerateTransformPatch(actorPatch);
+					if (ShouldSync(subscriptions, ActorComponentType.Transform))
+					{
+						GenerateTransformPatch(actorPatch);
+					}
 				}
 
 				if (ShouldSync(subscriptions, ActorComponentType.Rigidbody))
@@ -520,6 +529,11 @@ namespace MixedRealityExtension.Core
 					DestroyMediaById(mediaInstance.Key, mediaInstance.Value);
 				}
 			}
+
+			if (RigidBody != null)
+			{
+				RigidBodyRemoved?.Invoke(Id);
+			}
 		}
 
 		protected override void InternalUpdate()
@@ -696,6 +710,8 @@ namespace MixedRealityExtension.Core
 			{
 				_rigidbody = gameObject.AddComponent<Rigidbody>();
 				RigidBody = new RigidBody(_rigidbody, App.SceneRoot.transform);
+
+				RigidBodyAdded?.Invoke(Id, _rigidbody, CanSync());
 			}
 			return RigidBody;
 		}

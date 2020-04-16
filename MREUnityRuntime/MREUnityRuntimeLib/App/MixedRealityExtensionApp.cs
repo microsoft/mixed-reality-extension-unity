@@ -39,6 +39,8 @@ namespace MixedRealityExtension.App
 		private readonly CommandManager _commandManager;
 		internal readonly AnimationManager AnimationManager;
 
+		private PhysicsBridge _physicsBridge;
+
 		private readonly MonoBehaviour _ownerScript;
 
 		private IConnectionInternal _conn;
@@ -155,6 +157,7 @@ namespace MixedRealityExtension.App
 			_assetLoader = new AssetLoader(ownerScript, this);
 			_userManager = new UserManager(this);
 			_actorManager = new ActorManager(this);
+			_physicsBridge = new PhysicsBridge();
 			SoundManager = new SoundManager(this);
 			AnimationManager = new AnimationManager(this);
 			_commandManager = new CommandManager(new Dictionary<Type, ICommandHandlerContext>()
@@ -166,6 +169,9 @@ namespace MixedRealityExtension.App
 				{ typeof(AnimationManager), AnimationManager }
 			});
 
+			_actorManager.RigidBodyAdded += OnRigidBodyAdded;
+			_actorManager.RigidBodyRemoved += OnRigidBodyRemoved;
+
 			RPC = new RPCInterface(this);
 			RPCChannels = new RPCChannelInterface();
 			// RPC messages without a ChannelName will route to the "global" RPC handlers.
@@ -175,6 +181,16 @@ namespace MixedRealityExtension.App
 #else
 			Logger = logger ?? new ConsoleLogger(this);
 #endif
+		}
+
+		private void OnRigidBodyAdded(Guid id, Rigidbody rigidbody, bool isOwned)
+		{
+			_physicsBridge.addRigidBody(id, rigidbody, isOwned);
+		}
+
+		private void OnRigidBodyRemoved(Guid id)
+		{
+			_physicsBridge.removeRigidBody(id);
 		}
 
 		/// <inheritdoc />
@@ -261,6 +277,20 @@ namespace MixedRealityExtension.App
 		}
 
 		/// <inheritdoc />
+		public void FixedUpdate()
+		{
+			_physicsBridge.FixedUpdate(SceneRoot.transform);
+		}
+
+		private void SendPhysicsUpdate()
+		{
+			_physicsBridge._appId = InstanceId;
+
+			PhysicsBridgePatch physicsPatch = new PhysicsBridgePatch(_physicsBridge.Update(SceneRoot.transform));
+			EventManager.QueueEvent(new PhysicsBridgeUpdated(InstanceId, physicsPatch));
+		}
+
+		/// <inheritdoc />
 		public void Update()
 		{
 			// Process events then we will update the connection.
@@ -274,6 +304,7 @@ namespace MixedRealityExtension.App
 			}
 			// Process actor queues after connection update.
 			_actorManager.Update();
+			SendPhysicsUpdate();
 			SoundManager.Update();
 			_commandManager.Update();
 			AnimationManager.Update();
@@ -875,6 +906,13 @@ namespace MixedRealityExtension.App
 					onCompleteCallback?.Invoke();
 				});
 			}
+		}
+
+		[CommandHandler(typeof(PhysicsBridgeUpdate))]
+		private void OnTransformsUpdate(PhysicsBridgeUpdate payload, Action onCompleteCallback)
+		{
+			_physicsBridge.addSnapshot(payload.PhysicsBridge.ToSnapshot());
+			onCompleteCallback?.Invoke();
 		}
 
 		#endregion

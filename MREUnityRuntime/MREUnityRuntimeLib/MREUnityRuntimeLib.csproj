@@ -106,6 +106,7 @@
     <Compile Include="Core\Interfaces\ICollider.cs" />
     <Compile Include="Core\Interfaces\IUserInfo.cs" />
     <Compile Include="Core\MediaCommand.cs" />
+    <Compile Include="Core\PhysicsBridge.cs" />
     <Compile Include="Core\SoundManager.cs" />
     <Compile Include="Core\MediaStateOptions.cs" />
     <Compile Include="Core\Types\MWVector2.cs" />
@@ -115,11 +116,13 @@
     <Compile Include="Factories\SimpleLayerApplicator.cs" />
     <Compile Include="Messaging\Events\Types\ActorCorrectionEvent.cs" />
     <Compile Include="Messaging\Events\Types\ColliderEvent.cs" />
+    <Compile Include="Messaging\Events\Types\PhysicsBridgeUpdated.cs" />
     <Compile Include="Messaging\Events\Types\TriggerEvent.cs" />
     <Compile Include="Messaging\Payloads\Converters\UnsignedConverter.cs" />
     <Compile Include="Patching\Types\AnimationPatch.cs" />
     <Compile Include="Patching\Types\AppearancePatch.cs" />
     <Compile Include="Patching\Types\LookAtPatch.cs" />
+    <Compile Include="Patching\Types\PhysicsBridgePatch.cs" />
     <Compile Include="PluginInterfaces\IDialogFactory.cs" />
     <Compile Include="PluginInterfaces\ILayerApplicator.cs" />
     <Compile Include="PluginInterfaces\IUserInfoProvider.cs" />

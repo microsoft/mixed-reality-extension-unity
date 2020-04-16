@@ -25,15 +25,34 @@ namespace MixedRealityExtension.Core
 
 		internal Dictionary<Guid, Actor>.ValueCollection Actors => _actorMapping.Values;
 
+
+		public delegate void RigidBodyAddedHandler(Guid id, UnityEngine.Rigidbody rigidbody, bool isOwned);
+		internal event RigidBodyAddedHandler RigidBodyAdded;
+
+		public delegate void RigidBodyRemovedHandler(Guid id);
+		internal event RigidBodyRemovedHandler RigidBodyRemoved;
+
 		internal ActorManager(MixedRealityExtensionApp app)
 		{
 			_app = app;
+		}
+
+		private void OnRigidBodyAdded(Guid id, UnityEngine.Rigidbody rigidbody, bool isOwned)
+		{
+			RigidBodyAdded?.Invoke(id, rigidbody, isOwned);
+		}
+
+		private void OnRigidBodyRemoved(Guid id)
+		{
+			RigidBodyRemoved?.Invoke(id);
 		}
 
 		internal Actor AddActor(Guid id, Actor actor)
 		{
 			actor.Initialize(id, _app);
 			_actorMapping[id] = actor;
+			actor.RigidBodyAdded += OnRigidBodyAdded;
+			actor.RigidBodyRemoved += OnRigidBodyRemoved;
 			OnActorCreated?.Invoke(actor);
 			return actor;
 		}
@@ -56,7 +75,14 @@ namespace MixedRealityExtension.Core
 					_actorMapping.Remove(id);
 					try
 					{
+						//bool hasRB = actor.RigidBody != null;
+
 						actor.Destroy();
+
+						//if (hasRB)
+						//{
+						//	RigidBodyRemoved?.Invoke(id);
+						//}
 					}
 					catch (Exception e)
 					{
@@ -144,8 +170,15 @@ namespace MixedRealityExtension.Core
 			bool removed = false;
 			if (_actorMapping.ContainsKey(id))
 			{
+				//bool hasRigidBody = _actorMapping[id].RigidBody != null;
+
 				_actorMapping.Remove(id);
 				removed = true;
+
+				//if (hasRigidBody)
+				//{
+				//	RigidBodyRemoved?.Invoke(id);
+				//}
 			}
 
 			if (_actorCommandQueues.TryGetValue(id, out ActorCommandQueue queue))
