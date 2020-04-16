@@ -124,6 +124,11 @@ namespace MixedRealityExtension.App
 		void Shutdown();
 
 		/// <summary>
+		/// Update keyframed rigid bodies.
+		/// </summary>
+		void FixedUpdate();
+
+		/// <summary>
 		/// Update the remote app runtime.
 		/// </summary>
 		void Update();

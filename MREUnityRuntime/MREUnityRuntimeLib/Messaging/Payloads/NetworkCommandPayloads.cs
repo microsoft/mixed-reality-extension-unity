@@ -480,4 +480,16 @@ namespace MixedRealityExtension.Messaging.Payloads
 		/// </summary>
 		public string Text;
 	}
+
+	/// <summary>
+	/// Bidirectional
+	/// Payload to sync rigid body transforms between peers.
+	/// </summary>
+	public class PhysicsBridgeUpdate : NetworkCommandPayload
+	{
+		/// <summary>
+		/// Physics bridge update with transforms for owned rigid bodies.
+		/// </summary>
+		public PhysicsBridgePatch PhysicsBridge { get; set; }
+	}
 }
