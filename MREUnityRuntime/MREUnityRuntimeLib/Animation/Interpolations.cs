@@ -15,7 +15,7 @@ namespace MixedRealityExtension.Animation
 
 		internal static void Interpolate(JToken a, JToken b, float linearT, ref JToken mix, CubicBezier easing)
 		{
-			var easedT = easing?.Sample(linearT) ?? 0;
+			var easedT = easing.Sample(linearT);
 
 			// compound types
 			if (a.Type == JTokenType.Object)

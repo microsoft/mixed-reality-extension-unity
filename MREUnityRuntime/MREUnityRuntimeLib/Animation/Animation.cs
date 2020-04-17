@@ -198,7 +198,7 @@ namespace MixedRealityExtension.Animation
 
 				// compute new value for targeted field
 				JToken outputToken = TokenPool.Lease(prevFrameValue);
-				Interpolations.Interpolate(prevFrameValue, nextFrameValue, linearT, ref outputToken, nextFrame.Bezier ?? track.Bezier);
+				Interpolations.Interpolate(prevFrameValue, nextFrameValue, linearT, ref outputToken, nextFrame.Bezier ?? track.Bezier ?? LinearEasing);
 				if (usesPrevFrameValue)
 				{
 					TokenPool.Return(prevFrameValue);

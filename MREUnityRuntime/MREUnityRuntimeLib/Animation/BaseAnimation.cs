@@ -71,6 +71,10 @@ namespace MixedRealityExtension.Animation
 			{
 				Speed = patch.Speed.Value;
 			}
+			if (patch.Time.HasValue)
+			{
+				Time = patch.Time.Value;
+			}
 			if (patch.IsPlaying.HasValue)
 			{
 				IsPlaying = patch.IsPlaying.Value;
@@ -82,10 +86,6 @@ namespace MixedRealityExtension.Animation
 			if (patch.BasisTime.HasValue)
 			{
 				BasisTime = patch.BasisTime.Value;
-			}
-			if (patch.Time.HasValue)
-			{
-				Time = patch.Time.Value;
 			}
 
 			var isMoving = IsPlaying && Speed != 0;

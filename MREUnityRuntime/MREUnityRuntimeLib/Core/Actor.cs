@@ -1044,13 +1044,13 @@ namespace MixedRealityExtension.Core
 				if (transformPatch.Local.Position != null)
 				{
 					var localPosition = transform.localPosition.GetPatchApplied(LocalTransform.Position.ApplyPatch(transformPatch.Local.Position));
-					transformUpdate.Position = transform.TransformPoint(localPosition);
+					transformUpdate.Position = transform.parent.TransformPoint(localPosition);
 				}
 
 				if (transformPatch.Local.Rotation != null)
 				{
 					var localRotation = transform.localRotation.GetPatchApplied(LocalTransform.Rotation.ApplyPatch(transformPatch.Local.Rotation));
-					transformUpdate.Rotation = transform.rotation * localRotation;
+					transformUpdate.Rotation = transform.parent.rotation * localRotation;
 				}
 			}
 

@@ -63,6 +63,14 @@ namespace MixedRealityExtension.Patching.Types
 			}
 		}
 
+		public override string ToString()
+		{
+			return string.Format("({0}, {1}, {2})",
+				X.HasValue ? X.Value.ToString() : "null",
+				Y.HasValue ? Y.Value.ToString() : "null",
+				Z.HasValue ? Z.Value.ToString() : "null");
+		}
+
 		public void WriteToPath(TargetPath path, JToken value, int depth)
 		{
 			if (depth == path.PathParts.Length)
