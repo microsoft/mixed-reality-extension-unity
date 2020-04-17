@@ -48,6 +48,11 @@ namespace MixedRealityExtension.Animation
 		/// </summary>
 		private TargetPath[] ResolvedTargetPaths;
 
+		/// <summary>
+		/// Animation weight that lags behind by one frame. Used for "one more update" calculation.
+		/// </summary>
+		private float LastWeight = 0;
+
 		private static JTokenPool TokenPool = new JTokenPool();
 		private static CubicBezier LinearEasing = new CubicBezier(0, 0, 1, 1);
 
@@ -124,6 +129,7 @@ namespace MixedRealityExtension.Animation
 			{
 				// normal operation
 				currentTime = (serverTime - BasisTime) * Speed / 1000;
+				LastWeight = Weight;
 				StopUpdating = false;
 			}
 			else if (!StopUpdating)
@@ -212,9 +218,11 @@ namespace MixedRealityExtension.Animation
 				AnimationManager.AnimBlend blendData = manager.AnimBlends.GetOrCreate(
 					ResolvedTargetPaths[ti],
 					() => new AnimationManager.AnimBlend(ResolvedTargetPaths[ti]));
+
+				blendData.FinalUpdate = blendData.FinalUpdate || StopUpdating;
 				if (blendData.TotalWeight == 0)
 				{
-					blendData.TotalWeight = Weight;
+					blendData.TotalWeight = LastWeight;
 					if (blendData.CurrentValue == null)
 					{
 						blendData.CurrentValue = outputToken.DeepClone();
@@ -228,9 +236,9 @@ namespace MixedRealityExtension.Animation
 				}
 				else
 				{
-					blendData.TotalWeight += Weight;
+					blendData.TotalWeight += LastWeight;
 					JToken temp = TokenPool.Lease(outputToken);
-					Interpolations.Interpolate(outputToken, blendData.CurrentValue, Weight / blendData.TotalWeight, ref temp, LinearEasing);
+					Interpolations.Interpolate(outputToken, blendData.CurrentValue, LastWeight / blendData.TotalWeight, ref temp, LinearEasing);
 
 					TokenPool.Return(blendData.CurrentValue);
 					blendData.CurrentValue = temp;
@@ -301,7 +309,15 @@ namespace MixedRealityExtension.Animation
 				 *  ---------+---------
 				 * -3 -2 -1  0  1  2  3
 				 */
+
 				currentTime = Math.Max(0, Math.Min(Data.Duration, currentTime));
+
+				// check for completion
+				if (Speed > 0 && currentTime == Data.Duration || Speed < 0 && currentTime == 0)
+				{
+					StopUpdating = true;
+					MarkFinished(currentTime);
+				}
 			}
 
 			return currentTime;

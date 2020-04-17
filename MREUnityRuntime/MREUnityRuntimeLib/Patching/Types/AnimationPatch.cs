@@ -68,7 +68,7 @@ namespace MixedRealityExtension.Patching.Types
 		/// <summary>
 		/// The ID of the AnimationData bound to this animation
 		/// </summary>
-		public Guid DataId { get; set; }
+		public Guid? DataId { get; set; }
 
 		/// <summary>
 		/// The length in seconds of the animation

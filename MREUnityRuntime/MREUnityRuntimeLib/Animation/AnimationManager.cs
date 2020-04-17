@@ -21,12 +21,14 @@ namespace MixedRealityExtension.Animation
 			public readonly TargetPath Path;
 			public Newtonsoft.Json.Linq.JToken CurrentValue;
 			public float TotalWeight;
+			public bool FinalUpdate;
 
 			internal AnimBlend(TargetPath path)
 			{
 				Path = path;
 				CurrentValue = null;
 				TotalWeight = 0;
+				FinalUpdate = false;
 			}
 		}
 
@@ -41,9 +43,11 @@ namespace MixedRealityExtension.Animation
 		// update loop caching
 		private List<BaseAnimation> TempUpdateList = new List<BaseAnimation>(10);
 		private List<AnimBlend> TempBlendList = new List<AnimBlend>(10);
+		private List<Guid> TempPatchList = new List<Guid>(5);
 		public Dictionary<Guid, IPatchable> AnimInputPatches = new Dictionary<Guid, IPatchable>(5);
 		public Dictionary<Guid, IPatchable> AnimOutputPatches = new Dictionary<Guid, IPatchable>(5);
 		public Dictionary<TargetPath, AnimBlend> AnimBlends = new Dictionary<TargetPath, AnimBlend>(10);
+		private HashSet<Guid> SendUpdates = new HashSet<Guid>();
 
 		public AnimationManager(MixedRealityExtensionApp app)
 		{
@@ -68,6 +72,7 @@ namespace MixedRealityExtension.Animation
 			{
 				AnimOutputPatches.Remove(id);
 			}
+			anim.OnDestroy();
 		}
 
 		public void Reset()
@@ -100,10 +105,9 @@ namespace MixedRealityExtension.Animation
 			}
 
 			// roll all anim outputs into patches
+			SendUpdates.Clear();
 			TempBlendList.Clear();
 			TempBlendList.AddRange(AnimBlends.Values);
-			Guid targetId;
-			ActorPatch actorPatch;
 			foreach (var blend in TempBlendList)
 			{
 				if (blend.TotalWeight == 0)
@@ -112,26 +116,46 @@ namespace MixedRealityExtension.Animation
 					continue;
 				}
 
-				targetId = Guid.Parse(blend.Path.Placeholder);
+				var targetId = Guid.Parse(blend.Path.Placeholder);
 				if (blend.Path.AnimatibleType == "actor")
 				{
-					actorPatch = (ActorPatch)AnimOutputPatches.GetOrCreate(targetId, () => new ActorPatch(targetId));
+					var actorPatch = (ActorPatch)AnimOutputPatches.GetOrCreate(targetId, () => new ActorPatch(targetId));
 					actorPatch.WriteToPath(blend.Path, blend.CurrentValue, 0);
+				}
+
+				if (blend.FinalUpdate)
+				{
+					SendUpdates.Add(targetId);
 				}
 
 				// reinitialize blend weight
 				blend.TotalWeight = 0;
+				blend.FinalUpdate = false;
 			}
 
 			// apply patches to all objects involved
-			foreach (var kvp in AnimOutputPatches)
+			TempPatchList.Clear();
+			TempPatchList.AddRange(AnimOutputPatches.Keys);
+			foreach (var id in TempPatchList)
 			{
-				if (kvp.Value is ActorPatch)
+				var patch = AnimOutputPatches[id];
+				if (patch is ActorPatch actorPatch)
 				{
-					var actor = (Actor)App.FindActor(kvp.Key);
-					actor?.ApplyPatch((ActorPatch)kvp.Value);
+					var actor = (Actor)App.FindActor(id);
+					if (actorPatch.IsEmpty())
+					{
+						AnimOutputPatches.Remove(id);
+					}
+					else if (actor != null)
+					{
+						actor.ApplyPatch(actorPatch);
+						if (SendUpdates.Contains(id))
+						{
+							App.Protocol.Send(new ActorUpdate() { Actor = actorPatch });
+						}
+					}
 				}
-				kvp.Value.Clear();
+				patch.Clear();
 			}
 		}
 
@@ -155,31 +179,53 @@ namespace MixedRealityExtension.Animation
 			}
 
 			// create the anim
-			var anim = new Animation(this, message.Animation.Id, message.Animation.DataId, message.Targets);
-			anim.TargetIds = message.Animation.TargetIds.ToList();
-			anim.ApplyPatch(message.Animation);
-
-			RegisterAnimation(anim);
-
-			Trace trace = new Trace()
+			if (message.Animation.DataId != null)
 			{
-				Severity = TraceSeverity.Info,
-				Message = $"Successfully created animation named {anim.Name}"
-			};
+				var anim = new Animation(this, message.Animation.Id, message.Animation.DataId.Value, message.Targets);
+				anim.TargetIds = message.Animation.TargetIds.ToList();
+				anim.ApplyPatch(message.Animation);
 
-			App.Protocol.Send(
-				new ObjectSpawned()
+				RegisterAnimation(anim);
+
+				Trace trace = new Trace()
 				{
-					Result = new OperationResult()
+					Severity = TraceSeverity.Info,
+					Message = $"Successfully created animation named {anim.Name}"
+				};
+
+				App.Protocol.Send(
+					new ObjectSpawned()
 					{
-						ResultCode = OperationResultCode.Success,
-						Message = trace.Message
+						Result = new OperationResult()
+						{
+							ResultCode = OperationResultCode.Success,
+							Message = trace.Message
+						},
+						Traces = new List<Trace>() { trace },
+						Animations = new AnimationPatch[] { anim.GeneratePatch() }
 					},
-					Traces = new List<Trace>() { trace },
-					Animations = new AnimationPatch[] { anim.GeneratePatch() }
-				},
-				message.MessageId
-			);
+					message.MessageId
+				);
+			}
+			else
+			{
+				App.Protocol.Send(
+					new ObjectSpawned()
+					{
+						Result = new OperationResult()
+						{
+							ResultCode = OperationResultCode.Error,
+							Message = $"Failed to create new animation {message.Animation.Id}; no data ID provided."
+						},
+						Traces = new List<Trace>() { new Trace()
+						{
+							Severity = TraceSeverity.Error,
+							Message = $"Failed to create new animation {message.Animation.Id}; no data ID provided."
+						} }
+					},
+					message.MessageId
+				);
+			}
 
 			onCompleteCallback?.Invoke();
 		}
@@ -210,7 +256,10 @@ namespace MixedRealityExtension.Animation
 		{
 			foreach (var id in message.AnimationIds)
 			{
-				Animations.Remove(id);
+				if (Animations.TryGetValue(id, out BaseAnimation anim))
+				{
+					DeregisterAnimation(anim);
+				}
 			}
 			onCompleteCallback?.Invoke();
 		}

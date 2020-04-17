@@ -72,5 +72,10 @@ namespace MixedRealityExtension.Animation
 		{
 			return obj != null && GetType() == obj.GetType() && TargetPathString == ((TargetPath)obj).TargetPathString;
 		}
+
+		public override string ToString()
+		{
+			return TargetPathString;
+		}
 	}
 }

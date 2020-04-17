@@ -107,6 +107,22 @@ namespace MixedRealityExtension.Patching.Types
 			Transform = null;
 		}
 
+		public bool IsEmpty()
+		{
+			return Name == null
+				&& Transform == null
+				&& ParentId == null
+				&& Appearance == null
+				&& RigidBody == null
+				&& Collider == null
+				&& Light == null
+				&& Text == null
+				&& Attachment == null
+				&& LookAt == null
+				&& Grabbable == null
+				&& Subscriptions == null;
+		}
+
 		public void Restore(TargetPath path, int depth)
 		{
 			if (path.AnimatibleType != "actor" || depth >= path.PathParts.Length) return;

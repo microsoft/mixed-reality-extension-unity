@@ -6,6 +6,7 @@ using System.Linq;
 
 using MixedRealityExtension.Core;
 using MixedRealityExtension.Patching.Types;
+using AnimationUpdate = MixedRealityExtension.Messaging.Payloads.AnimationUpdate;
 
 namespace MixedRealityExtension.Animation
 {
@@ -26,20 +27,32 @@ namespace MixedRealityExtension.Animation
 			get => Weight > 0;
 			protected set
 			{
+				if (IsPlaying == value)
+				{
+					return;
+				}
+
+				var patch = new AnimationPatch() { Id = Id };
 				if (value)
 				{
 					if (WrapMode == MWAnimationWrapMode.Once)
 					{
 						Time = 0;
+						patch.Time = 0;
 					}
 
 					BasisTime = Speed == 0 ? 0 : Math.Max(0, manager.ServerNow() - (long)Math.Floor(Time * 1000 / Speed));
 					Weight = 1;
+					patch.BasisTime = BasisTime;
+					patch.Weight = Weight;
 				}
 				else
 				{
 					Weight = 0;
+					patch.Weight = 0;
 				}
+
+				manager.App.Protocol.Send(new AnimationUpdate() { Animation = patch });
 			}
 		}
 
@@ -57,8 +70,6 @@ namespace MixedRealityExtension.Animation
 
 		public virtual void ApplyPatch(AnimationPatch patch)
 		{
-			var wasMoving = IsPlaying && Speed != 0;
-
 			if (patch.Name != null)
 			{
 				Name = patch.Name;
@@ -87,16 +98,6 @@ namespace MixedRealityExtension.Animation
 			{
 				BasisTime = patch.BasisTime.Value;
 			}
-
-			var isMoving = IsPlaying && Speed != 0;
-			// send one transform update when the anim stops
-			if (wasMoving && !isMoving)
-			{
-				foreach (var actor in TargetActors)
-				{
-					actor.SendActorUpdate(Messaging.Payloads.ActorComponentType.Transform);
-				}
-			}
 		}
 
 		public virtual AnimationPatch GeneratePatch()
@@ -123,7 +124,31 @@ namespace MixedRealityExtension.Animation
 			return patch;
 		}
 
+		protected void MarkFinished(float currentTime)
+		{
+			Weight = 0;
+			Time = currentTime;
+			BasisTime = Speed == 0 ? 0 : Math.Max(0, manager.ServerNow() - (long)Math.Floor(currentTime * 1000 / Speed));
+
+			var update = new AnimationUpdate()
+			{
+				Animation = new AnimationPatch()
+				{
+					Id = Id,
+					Weight = Weight,
+					Time = Time,
+					BasisTime = BasisTime
+				}
+			};
+			manager.App.Protocol.Send(update);
+		}
+
 		internal virtual void Update(long serverTime)
+		{
+
+		}
+
+		internal virtual void OnDestroy()
 		{
 
 		}

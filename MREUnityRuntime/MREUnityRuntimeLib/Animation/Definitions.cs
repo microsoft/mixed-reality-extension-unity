@@ -165,5 +165,10 @@ namespace MixedRealityExtension.Animation
 				return cubicBezier;
 			}
 		}
+
+		public override string ToString()
+		{
+			return string.Format("(T={0}: {1})", Time, Value.ToString(Formatting.None));
+		}
 	}
 }
