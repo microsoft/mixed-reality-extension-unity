@@ -1,8 +1,9 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
-
+using MixedRealityExtension.Animation;
 using MixedRealityExtension.Core;
 using MixedRealityExtension.Core.Collision;
+using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
 
 namespace MixedRealityExtension.Patching.Types
@@ -23,5 +24,30 @@ namespace MixedRealityExtension.Patching.Types
 
 		[PatchProperty]
 		public IEnumerable<ColliderEventType> EventSubscriptions { get; set; }
+
+		public void WriteToPath(TargetPath path, JToken value, int depth)
+		{
+
+		}
+
+		public bool ReadFromPath(TargetPath path, ref JToken value, int depth)
+		{
+			return false;
+		}
+
+		public void Clear()
+		{
+
+		}
+
+		public void Restore(TargetPath path, int depth)
+		{
+
+		}
+
+		public void RestoreAll()
+		{
+
+		}
 	}
 }

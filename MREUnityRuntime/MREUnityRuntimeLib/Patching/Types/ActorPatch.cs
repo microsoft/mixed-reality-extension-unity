@@ -1,29 +1,36 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
+using MixedRealityExtension.Animation;
 using MixedRealityExtension.Messaging.Payloads;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 
 namespace MixedRealityExtension.Patching.Types
 {
-	public class ActorTransformPatch: IPatchable
-	{
-		[PatchProperty]
-		public TransformPatch App { get; set; }
-
-		[PatchProperty]
-		public ScaledTransformPatch Local { get; set; }
-	}
-
-	public class ActorPatch: IPatchable
+	public class ActorPatch : IPatchable
 	{
 		public Guid Id { get; set; }
 
 		[PatchProperty]
 		public string Name { get; set; }
 
+		private ActorTransformPatch transform;
+		private ActorTransformPatch savedTransform;
 		[PatchProperty]
-		public ActorTransformPatch Transform { get; set; }
+		public ActorTransformPatch Transform
+		{
+			get => transform;
+			set
+			{
+				if (value == null && transform != null)
+				{
+					savedTransform = transform;
+					savedTransform.Clear();
+				}
+				transform = value;
+			}
+		}
 
 		[PatchProperty]
 		public Guid? ParentId { get; set; }
@@ -62,6 +69,77 @@ namespace MixedRealityExtension.Patching.Types
 		internal ActorPatch(Guid id)
 		{
 			Id = id;
+		}
+
+		public void WriteToPath(TargetPath path, JToken value, int depth)
+		{
+			if (depth == path.PathParts.Length)
+			{
+				// actors are not directly patchable, do nothing
+			}
+			else if (path.PathParts[depth] == "transform")
+			{
+				if (Transform == null)
+				{
+					if (savedTransform == null)
+					{
+						savedTransform = new ActorTransformPatch();
+					}
+					transform = savedTransform;
+				}
+				Transform.WriteToPath(path, value, depth + 1);
+			}
+			// else
+				// an unrecognized path, do nothing
+		}
+
+		public bool ReadFromPath(TargetPath path, ref JToken value, int depth)
+		{
+			if (path.PathParts[depth] == "transform")
+			{
+				return Transform?.ReadFromPath(path, ref value, depth + 1) ?? false;
+			}
+			return false;
+		}
+
+		public void Clear()
+		{
+			Transform = null;
+		}
+
+		public bool IsEmpty()
+		{
+			return Name == null
+				&& Transform == null
+				&& ParentId == null
+				&& Appearance == null
+				&& RigidBody == null
+				&& Collider == null
+				&& Light == null
+				&& Text == null
+				&& Attachment == null
+				&& LookAt == null
+				&& Grabbable == null
+				&& Subscriptions == null;
+		}
+
+		public void Restore(TargetPath path, int depth)
+		{
+			if (path.AnimatibleType != "actor" || depth >= path.PathParts.Length) return;
+
+			switch (path.PathParts[depth])
+			{
+				case "transform":
+					Transform = savedTransform ?? new ActorTransformPatch();
+					Transform.Restore(path, depth + 1);
+					break;
+			}
+		}
+
+		public void RestoreAll()
+		{
+			Transform = savedTransform ?? new ActorTransformPatch();
+			Transform.RestoreAll();
 		}
 	}
 }

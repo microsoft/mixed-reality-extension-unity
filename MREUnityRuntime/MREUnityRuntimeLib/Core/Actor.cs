@@ -339,58 +339,128 @@ namespace MixedRealityExtension.Core
 			Destroy(gameObject);
 		}
 
-		internal ActorPatch GenerateInitialPatch()
+		internal ActorPatch GeneratePatch(ActorPatch output = null, TargetPath path = null)
 		{
-			LocalTransform.ToLocalTransform(transform);
-			AppTransform.ToAppTransform(transform, App.SceneRoot.transform);
-
-			var localTransform = new ScaledTransformPatch()
+			if (output == null)
 			{
-				Position = new Vector3Patch(transform.localPosition),
-				Rotation = new QuaternionPatch(transform.localRotation),
-				Scale = new Vector3Patch(transform.localScale)
-			};
-
-			var appTransform = new TransformPatch()
-			{
-				Position = new Vector3Patch(App.SceneRoot.transform.InverseTransformPoint(transform.position)),
-				Rotation = new QuaternionPatch(Quaternion.Inverse(App.SceneRoot.transform.rotation) * transform.rotation)
-			};
-
-			var rigidBody = PatchingUtilMethods.GeneratePatch(RigidBody, (Rigidbody)null, App.SceneRoot.transform);
-
-			ColliderPatch collider = null;
-			_collider = gameObject.GetComponent<UnityCollider>();
-			if (_collider != null)
-			{
-				if (Collider == null)
-				{
-					Collider = gameObject.AddComponent<Collider>();
-				}
-				Collider.Initialize(_collider);
-				collider = Collider.GenerateInitialPatch();
+				output = new ActorPatch(Id);
 			}
 
-			var actorPatch = new ActorPatch(Id)
+			var generateAll = path == null;
+			if (!generateAll)
 			{
-				ParentId = ParentId,
-				Name = Name,
-				Transform = new ActorTransformPatch()
+				if (path.AnimatibleType != "actor") return output;
+				output.Restore(path, 0);
+			}
+			else
+			{
+				output.RestoreAll();
+			}
+
+			if (generateAll || path.PathParts[0] == "transform")
+			{
+				if (generateAll || path.PathParts[1] == "local")
 				{
-					Local = localTransform,
-					App = appTransform
-				},
-				RigidBody = rigidBody,
-				Collider = collider,
-				Appearance = new AppearancePatch()
+					LocalTransform.ToLocalTransform(transform);
+					if (generateAll || path.PathParts[2] == "position")
+					{
+						var localPos = transform.localPosition;
+						if (generateAll || path.PathParts.Length == 3 || path.PathParts[3] == "x")
+						{
+							output.Transform.Local.Position.X = localPos.x;
+						}
+						if (generateAll || path.PathParts.Length == 3 || path.PathParts[3] == "y")
+						{
+							output.Transform.Local.Position.Y = localPos.y;
+						}
+						if (generateAll || path.PathParts.Length == 3 || path.PathParts[3] == "z")
+						{
+							output.Transform.Local.Position.Z = localPos.z;
+						}
+					}
+					if (generateAll || path.PathParts[2] == "rotation")
+					{
+						var localRot = transform.localRotation;
+						output.Transform.Local.Rotation.X = localRot.x;
+						output.Transform.Local.Rotation.Y = localRot.y;
+						output.Transform.Local.Rotation.Z = localRot.z;
+						output.Transform.Local.Rotation.W = localRot.w;
+					}
+					if (generateAll || path.PathParts[2] == "scale")
+					{
+						var localScale = transform.localScale;
+						if (generateAll || path.PathParts.Length == 3 || path.PathParts[3] == "x")
+						{
+							output.Transform.Local.Scale.X = localScale.x;
+						}
+						if (generateAll || path.PathParts.Length == 3 || path.PathParts[3] == "y")
+						{
+							output.Transform.Local.Scale.Y = localScale.y;
+						}
+						if (generateAll || path.PathParts.Length == 3 || path.PathParts[3] == "z")
+						{
+							output.Transform.Local.Scale.Z = localScale.z;
+						}
+					}
+				}
+				if (generateAll || path.PathParts[1] == "app")
+				{
+					AppTransform.ToAppTransform(transform, App.SceneRoot.transform);
+					if (generateAll || path.PathParts[2] == "position")
+					{
+						if (generateAll || path.PathParts.Length == 3 || path.PathParts[3] == "x")
+						{
+							output.Transform.App.Position.X = AppTransform.Position.X;
+						}
+						if (generateAll || path.PathParts.Length == 3 || path.PathParts[3] == "y")
+						{
+							output.Transform.App.Position.Y = AppTransform.Position.Y;
+						}
+						if (generateAll || path.PathParts.Length == 3 || path.PathParts[3] == "z")
+						{
+							output.Transform.App.Position.Z = AppTransform.Position.Z;
+						}
+					}
+					if (generateAll || path.PathParts[2] == "rotation")
+					{
+						var localRot = transform.localRotation;
+						output.Transform.App.Rotation.X = AppTransform.Rotation.X;
+						output.Transform.App.Rotation.Y = AppTransform.Rotation.Y;
+						output.Transform.App.Rotation.Z = AppTransform.Rotation.Z;
+						output.Transform.App.Rotation.W = AppTransform.Rotation.W;
+					}
+				}
+			}
+
+			if (generateAll)
+			{
+				var rigidBody = PatchingUtilMethods.GeneratePatch(RigidBody, (Rigidbody)null, App.SceneRoot.transform);
+
+				ColliderPatch collider = null;
+				_collider = gameObject.GetComponent<UnityCollider>();
+				if (_collider != null)
+				{
+					if (Collider == null)
+					{
+						Collider = gameObject.AddComponent<Collider>();
+					}
+					Collider.Initialize(_collider);
+					collider = Collider.GenerateInitialPatch();
+				}
+
+				output.ParentId = ParentId;
+				output.Name = Name;
+				output.RigidBody = rigidBody;
+				output.Collider = collider;
+				output.Appearance = new AppearancePatch()
 				{
 					Enabled = appearanceEnabled,
 					MaterialId = MaterialId,
 					MeshId = MeshId
-				}
-			};
+				};
+			}
 
-			return (!actorPatch.IsPatched()) ? null : actorPatch;
+			return output;
 		}
 
 		internal OperationResult EnableRigidBody(RigidBodyPatch rigidBodyPatch)
@@ -974,13 +1044,13 @@ namespace MixedRealityExtension.Core
 				if (transformPatch.Local.Position != null)
 				{
 					var localPosition = transform.localPosition.GetPatchApplied(LocalTransform.Position.ApplyPatch(transformPatch.Local.Position));
-					transformUpdate.Position = transform.TransformPoint(localPosition);
+					transformUpdate.Position = transform.parent.TransformPoint(localPosition);
 				}
 
 				if (transformPatch.Local.Rotation != null)
 				{
 					var localRotation = transform.localRotation.GetPatchApplied(LocalTransform.Rotation.ApplyPatch(transformPatch.Local.Rotation));
-					transformUpdate.Rotation = transform.rotation * localRotation;
+					transformUpdate.Rotation = transform.parent.rotation * localRotation;
 				}
 			}
 
@@ -1408,7 +1478,7 @@ namespace MixedRealityExtension.Core
 							payload.AnimationId.Value,
 							unityAnim,
 							unityState);
-						nativeAnim.targetActors = new List<Actor>() { this };
+						nativeAnim.TargetIds = new List<Guid>() { Id };
 						App.AnimationManager.RegisterAnimation(nativeAnim);
 
 						Trace trace = new Trace()

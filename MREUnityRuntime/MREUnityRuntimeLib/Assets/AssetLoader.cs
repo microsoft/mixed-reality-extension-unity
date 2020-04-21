@@ -1,5 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
+using MixedRealityExtension.Animation;
 using MixedRealityExtension.API;
 using MixedRealityExtension.App;
 using MixedRealityExtension.Core;
@@ -297,6 +298,10 @@ namespace MixedRealityExtension.Assets
 				{
 					// do nothing; mesh properties are immutable
 				}
+				else if (def.AnimationData != null)
+				{
+					// do nothing; animation data are immutable
+				}
 				else
 				{
 					_app.Logger.LogError($"Asset {def.Id} is not patchable, or not of the right type!");
@@ -382,6 +387,14 @@ namespace MixedRealityExtension.Assets
 				}
 			}
 
+			// create animation data
+			else if (unityAsset == null && def.AnimationData != null)
+			{
+				var animDataCache = ScriptableObject.CreateInstance<AnimationDataCached>();
+				animDataCache.Tracks = def.AnimationData.Value.Tracks;
+				unityAsset = animDataCache;
+			}
+
 			MREAPI.AppsAPI.AssetCache.CacheAsset(unityAsset, def.Id, payload.ContainerId, colliderGeometry: colliderGeo);
 
 			// verify creation and apply initial patch
@@ -437,6 +450,7 @@ namespace MixedRealityExtension.Assets
 				}
 				UnityEngine.Object.Destroy(asset);
 			}
+
 			onCompleteCallback?.Invoke();
 		}
 
@@ -526,6 +540,13 @@ namespace MixedRealityExtension.Assets
 					{
 						Duration = videoStream.Duration
 					}
+				};
+			}
+			else if (unityAsset is AnimationDataCached animData)
+			{
+				return new Asset()
+				{
+					Id = id
 				};
 			}
 			else

@@ -110,7 +110,7 @@ namespace MixedRealityExtension.Core.Components
 					if (value.HasValue)
 					{
 						var curveInfo = GetOrCreateCurve(type, propertyName);
-						var keyframe = new Keyframe(time, value.Value, 0, 0, 0, 0);
+						var keyframe = new UnityEngine.Keyframe(time, value.Value, 0, 0, 0, 0);
 						curveInfo.Curve.AddKey(keyframe);
 					}
 				}
