@@ -66,9 +66,31 @@ namespace MixedRealityExtension.Core
 		private ActorTransformPatch _rbTransformPatch;
 
 		private new Renderer renderer = null;
-		internal Renderer Renderer => renderer = renderer ?? GetComponent<Renderer>();
-		private MeshFilter filter = null;
-		internal MeshFilter MeshFilter => filter = filter ?? GetComponent<MeshFilter>();
+		internal Renderer Renderer
+		{
+			get
+			{
+				if (renderer == null)
+				{
+					var t = GetComponent<Renderer>();
+					renderer = t;
+				}
+				return renderer;
+			}
+		}
+		private MeshFilter meshFilter = null;
+		internal MeshFilter MeshFilter
+		{
+			get
+			{
+				if (meshFilter == null)
+				{
+					var t = GetComponent<MeshFilter>();
+					meshFilter = t;
+				}
+				return meshFilter;
+			}
+		}
 
 		#region IActor Properties - Public
 
@@ -196,9 +218,15 @@ namespace MixedRealityExtension.Core
 		}
 
 		internal UInt32 appearanceEnabled = UInt32.MaxValue;
-		internal bool activeAndEnabled =>
-			((Parent as Actor)?.activeAndEnabled ?? true)
-			&& ((App.LocalUser?.Groups ?? 1) & appearanceEnabled) > 0;
+		internal bool activeAndEnabled
+		{
+			get
+			{
+				bool parentEnabled = (Parent != null) ? (Parent as Actor).activeAndEnabled : true;
+				uint userGroups = (App.LocalUser?.Groups ?? 1);
+				return parentEnabled && (userGroups & appearanceEnabled) > 0;
+			}
+		}
 
 		#endregion
 
@@ -238,7 +266,7 @@ namespace MixedRealityExtension.Core
 
 				// We need to detect for changes in parent on the client, and handle updating the server.
 				// But only update if the identified parent is not pending.
-				var parentId = Parent?.Id ?? Guid.Empty;
+				var parentId = (Parent != null) ? Parent.Id : Guid.Empty;
 				if (ParentId != parentId && App.FindActor(ParentId) != null)
 				{
 					// TODO @tombu - Determine if the new parent is an actor in OUR MRE.
@@ -922,9 +950,9 @@ namespace MixedRealityExtension.Core
 						forceUpdateRenderer = true;
 					}
 					// guarantee mesh filter (unless it has a skinned mesh renderer)
-					if (renderer is MeshRenderer && filter == null)
+					if (renderer is MeshRenderer && meshFilter == null)
 					{
-						filter = gameObject.AddComponent<MeshFilter>();
+						meshFilter = gameObject.AddComponent<MeshFilter>();
 					}
 
 					// look up and assign mesh
