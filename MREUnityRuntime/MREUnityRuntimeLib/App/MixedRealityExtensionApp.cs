@@ -24,7 +24,6 @@ using MixedRealityExtension.Util.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using UnityEngine;
 
 using Trace = MixedRealityExtension.Messaging.Trace;
@@ -537,6 +536,12 @@ namespace MixedRealityExtension.App
 		private void Connection_OnError(Exception ex)
 		{
 			Logger.LogError($"Exception: {ex.Message}\nStack Trace: {ex.StackTrace}");
+			Exception inner = ex.InnerException;
+			while (inner != null)
+			{
+				Logger.LogError($"Inner Exception: {inner.Message}\nStack Trace: {inner.StackTrace}");
+				inner = inner.InnerException;
+			}
 		}
 
 		private void Handshake_OnOperatingModel(OperatingModel operatingModel)
@@ -618,7 +623,7 @@ namespace MixedRealityExtension.App
 				_actorManager.UpdateAllVisibility();
 				onCompleteCallback?.Invoke();
 			}
-			catch(Exception e)
+			catch (Exception e)
 			{
 				Debug.LogException(e);
 			}

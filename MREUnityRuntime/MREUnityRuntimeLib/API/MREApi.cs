@@ -1,17 +1,14 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
-using System;
-
 using MixedRealityExtension.App;
 using MixedRealityExtension.Assets;
-using MixedRealityExtension.Core;
 using MixedRealityExtension.Factories;
-using MixedRealityExtension.PluginInterfaces.Behaviors;
 using MixedRealityExtension.PluginInterfaces;
-using UnityEngine;
-
-using AppManager = MixedRealityExtension.Util.ObjectManager<MixedRealityExtension.App.IMixedRealityExtensionApp>;
+using MixedRealityExtension.PluginInterfaces.Behaviors;
 using MixedRealityExtension.Util.Logging;
+using System;
+using UnityEngine;
+using AppManager = MixedRealityExtension.Util.ObjectManager<MixedRealityExtension.App.IMixedRealityExtensionApp>;
 
 namespace MixedRealityExtension.API
 {
@@ -49,7 +46,8 @@ namespace MixedRealityExtension.API
 			IVideoPlayerFactory videoPlayerFactory = null,
 			IUserInfoProvider userInfoProvider = null,
 			IDialogFactory dialogFactory = null,
-			IMRELogger logger = null)
+			IMRELogger logger = null,
+			bool verboseLogging = false)
 		{
 			AppsAPI.DefaultMaterial = defaultMaterial;
 			AppsAPI.LayerApplicator = layerApplicator;
@@ -63,6 +61,7 @@ namespace MixedRealityExtension.API
 			AppsAPI.MaterialPatcher = materialPatcher ?? new DefaultMaterialPatcher();
 			AppsAPI.UserInfoProvider = userInfoProvider ?? new NullUserInfoProvider();
 			AppsAPI.DialogFactory = dialogFactory;
+			AppsAPI.VerboseLogging = verboseLogging;
 
 #if ANDROID_DEBUG
 			Logger = logger ?? new UnityLogger(null);
@@ -128,6 +127,8 @@ namespace MixedRealityExtension.API
 
 		internal IDialogFactory DialogFactory { get; set; }
 
+		public bool VerboseLogging { get; set; }
+
 		/// <summary>
 		/// Creates a new mixed reality extension app and adds it to the MRE runtime.
 		/// </summary>
@@ -136,7 +137,7 @@ namespace MixedRealityExtension.API
 		/// <returns>Returns the newly created mixed reality extension app.</returns>
 		public IMixedRealityExtensionApp CreateMixedRealityExtensionApp(string globalAppId, MonoBehaviour ownerScript)
 		{
-			var mreApp = new MixedRealityExtensionApp(globalAppId, ownerScript)
+			var mreApp = new MixedRealityExtensionApp(globalAppId, ownerScript, MREAPI.Logger)
 			{
 				InstanceId = Guid.NewGuid()
 			};

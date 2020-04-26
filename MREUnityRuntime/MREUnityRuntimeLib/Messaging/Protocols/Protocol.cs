@@ -1,12 +1,12 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
-using System;
 using MixedRealityExtension.API;
 using MixedRealityExtension.App;
 using MixedRealityExtension.IPC;
 using MixedRealityExtension.Messaging.Payloads;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System;
 using UnityEngine;
 
 namespace MixedRealityExtension.Messaging.Protocols
@@ -57,9 +57,10 @@ namespace MixedRealityExtension.Messaging.Protocols
 		{
 			try
 			{
-#if ANDROID_DEBUG
-				App.Logger.LogDebug($"Recv: {json}");
-#endif
+				if (MREAPI.AppsAPI.VerboseLogging)
+				{
+					App.Logger.LogDebug($"Recv: {json}");
+				}
 
 				var message = JsonConvert.DeserializeObject<Message>(json, Constants.SerializerSettings);
 
@@ -122,6 +123,12 @@ namespace MixedRealityExtension.Messaging.Protocols
 				try
 				{
 					var json = JsonConvert.SerializeObject(message, Constants.SerializerSettings);
+
+					if (MREAPI.AppsAPI.VerboseLogging)
+					{
+						App.Logger.LogDebug($"Send: {json}");
+					}
+
 					try
 					{
 						Conn.Send(json);
