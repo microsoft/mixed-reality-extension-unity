@@ -1,8 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
+using MixedRealityExtension.Assets;
 using System;
 using System.Collections.Generic;
-using MixedRealityExtension.Assets;
 using UnityEngine;
 using ColliderGeometry = MixedRealityExtension.Core.ColliderGeometry;
 
@@ -62,5 +62,10 @@ namespace MixedRealityExtension.PluginInterfaces
 		/// <param name="containerId">The container ID.</param>
 		/// <returns>The list of assets removed from the cache</returns>
 		IEnumerable<UnityEngine.Object> UncacheAssets(Guid containerId);
+
+		/// <summary>
+		/// Removes and destroys everything in the cache.
+		/// </summary>
+		void ForceCleanCache();
 	}
 }

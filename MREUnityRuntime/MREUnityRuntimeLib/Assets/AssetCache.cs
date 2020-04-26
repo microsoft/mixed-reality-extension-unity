@@ -1,15 +1,14 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
+using MixedRealityExtension.PluginInterfaces;
+using MixedRealityExtension.Util;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using MixedRealityExtension.PluginInterfaces;
-using MixedRealityExtension.Util;
 using UnityEngine;
-using Object = UnityEngine.Object;
-
-using ColliderGeometry = MixedRealityExtension.Core.ColliderGeometry;
 using CacheCallback = System.Action<UnityEngine.Object>;
+using ColliderGeometry = MixedRealityExtension.Core.ColliderGeometry;
+using Object = UnityEngine.Object;
 
 namespace MixedRealityExtension.Assets
 {
@@ -118,7 +117,7 @@ namespace MixedRealityExtension.Assets
 					{
 						cb?.Invoke(asset);
 					}
-					catch(Exception e)
+					catch (Exception e)
 					{
 						Debug.LogException(e);
 					}
@@ -132,6 +131,16 @@ namespace MixedRealityExtension.Assets
 			var assets = cache.Where(c => c.ContainerId == containerId && c.Asset != null).Select(c => c.Asset).ToArray();
 			cache.RemoveAll(c => c.ContainerId == containerId);
 			return assets;
+		}
+
+		public void ForceCleanCache()
+		{
+			for (int i = 0; i < cache.Count; ++i)
+			{
+				UnityEngine.GameObject.Destroy(cache[i].Asset);
+			}
+			cache.Clear();
+			cacheCallbacks.Clear();
 		}
 	}
 }
