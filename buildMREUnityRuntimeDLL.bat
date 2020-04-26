@@ -5,7 +5,7 @@ for /f "usebackq tokens=*" %%i in (`"%~dp0tools\vswhere" -products * -requires M
   set VSInstallDir=%%i
   if exist "%%i\MSBuild\Current\Bin\MSBuild.exe" goto FoundVisualStudio
 )
-echo MSBuild not found - please install Visual Studio 2019
+echo MSBuild not found - please install Visual Studio 2017 or later
 pause
 exit /b 1
 
@@ -16,7 +16,7 @@ set ErrorString=Failed Visual Studio build
 
 if errorlevel 1 (
   echo BUILD FAILED: %ErrorString%
-  echo Make sure you have Visual Studio 2019, and Visual Studio's Unity Tools installed
+  echo Make sure you have Visual Studio 2017 or later, and Visual Studio's Unity Tools installed
   pause
   exit /b 1
 )
