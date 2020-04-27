@@ -15,6 +15,7 @@ namespace MixedRealityExtension
 			SerializerSettings = new JsonSerializerSettings
 			{
 				ContractResolver = new Newtonsoft.Json.Serialization.CamelCasePropertyNamesContractResolver(),
+				FloatParseHandling = FloatParseHandling.Double,
 				Formatting = Formatting.None,
 				NullValueHandling = NullValueHandling.Ignore,
 			};
@@ -45,7 +46,7 @@ namespace MixedRealityExtension
 		 * This matches major.minor from the package version number, and is updated as part of the manual
 		 * SDK release procedures.
 		 */
-		internal const string CurrentClientVersion = "0.15";
+		internal const string CurrentClientVersion = "0.17";
 
 		/*
 		 * Minimum Supported SDK version

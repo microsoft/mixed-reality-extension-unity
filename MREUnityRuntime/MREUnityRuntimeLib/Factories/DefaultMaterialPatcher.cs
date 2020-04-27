@@ -19,7 +19,7 @@ namespace MixedRealityExtension.Factories
 	/// </summary>
 	public class DefaultMaterialPatcher : IMaterialPatcher
 	{
-		protected Dictionary<int, Guid> textureAssignments = new Dictionary<int, Guid>(20);
+		protected Dictionary<int, Guid> mainTextureAssignments = new Dictionary<int, Guid>(20);
 
 		private MWColor _materialColor = new MWColor();
 		private MWVector2 _textureOffset = new MWVector2();
@@ -52,7 +52,7 @@ namespace MixedRealityExtension.Factories
 			if (patch.MainTextureId != null)
 			{
 				var textureId = patch.MainTextureId.Value;
-				textureAssignments[material.GetInstanceID()] = textureId;
+				mainTextureAssignments[material.GetInstanceID()] = textureId;
 				if (patch.MainTextureId == Guid.Empty)
 				{
 					material.mainTexture = null;
@@ -61,7 +61,7 @@ namespace MixedRealityExtension.Factories
 				{
 					MREAPI.AppsAPI.AssetCache.OnCached(textureId, tex =>
 					{
-						if (!material || textureAssignments[material.GetInstanceID()] != textureId) return;
+						if (!material || mainTextureAssignments[material.GetInstanceID()] != textureId) return;
 						material.mainTexture = (Texture)tex;
 					});
 				}

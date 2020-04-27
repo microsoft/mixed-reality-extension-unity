@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
+using MixedRealityExtension.Animation;
 using MixedRealityExtension.Core.Types;
+using Newtonsoft.Json.Linq;
 using System;
 using UnityEngine;
 
@@ -8,6 +10,7 @@ namespace MixedRealityExtension.Patching.Types
 {
 	public class QuaternionPatch : IEquatable<QuaternionPatch>, IPatchable
 	{
+		// TODO: Make X, Y, Z, and W fields non-optional, since you can't just specify one and maintain a valid unit quaternion
 		[PatchProperty]
 		public float? X { get; set; }
 
@@ -16,7 +19,7 @@ namespace MixedRealityExtension.Patching.Types
 
 		[PatchProperty]
 		public float? Z { get; set; }
-
+		
 		[PatchProperty]
 		public float? W { get; set; }
 
@@ -77,6 +80,53 @@ namespace MixedRealityExtension.Patching.Types
 					Z.Equals(other.Z) &&
 					W.Equals(other.W);
 			}
+		}
+
+		public override string ToString()
+		{
+			return string.Format("({0}, {1}, {2}, {3})", X, Y, Z, W);
+		}
+
+		public void WriteToPath(TargetPath path, JToken value, int depth)
+		{
+			if (depth == path.PathParts.Length)
+			{
+				X = value.Value<float>("x");
+				Y = value.Value<float>("y");
+				Z = value.Value<float>("z");
+				W = value.Value<float>("w");
+			}
+			// else
+			// an unrecognized path, do nothing
+		}
+
+		public bool ReadFromPath(TargetPath path, ref JToken value, int depth)
+		{
+			if (depth == path.PathParts.Length && X.HasValue && Y.HasValue && Z.HasValue && W.HasValue)
+			{
+				var oValue = (JObject)value;
+				oValue.SetOrAdd("x", X.Value);
+				oValue.SetOrAdd("y", Y.Value);
+				oValue.SetOrAdd("z", Z.Value);
+				oValue.SetOrAdd("w", W.Value);
+				return true;
+			}
+			return false;
+		}
+
+		public void Clear()
+		{
+			
+		}
+
+		public void Restore(TargetPath path, int depth)
+		{
+
+		}
+
+		public void RestoreAll()
+		{
+
 		}
 	}
 }

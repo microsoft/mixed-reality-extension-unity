@@ -4,7 +4,7 @@ using MixedRealityExtension.Animation;
 using MixedRealityExtension.Messaging.Payloads.Converters;
 using System;
 using System.Collections.Generic;
-using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace MixedRealityExtension.Patching.Types
 {
@@ -55,10 +55,20 @@ namespace MixedRealityExtension.Patching.Types
 		public MWAnimationWrapMode? WrapMode { get; set; }
 
 		/// <summary>
-		/// What runtime objects are being animated
+		/// Convenience property for setting Weight and Basis/Time
 		/// </summary>
 		[PatchProperty]
-		public IEnumerable<Guid> TargetActorIds { get; set; }
+		public bool? IsPlaying { get; set; }
+
+		/// <summary>
+		/// What runtime objects are being animated
+		/// </summary>
+		public IEnumerable<Guid> TargetIds { get; set; }
+
+		/// <summary>
+		/// The ID of the AnimationData bound to this animation
+		/// </summary>
+		public Guid? DataId { get; set; }
 
 		/// <summary>
 		/// The length in seconds of the animation
@@ -73,6 +83,31 @@ namespace MixedRealityExtension.Patching.Types
 			if (other.Speed.HasValue) Speed = other.Speed;
 			if (other.Weight.HasValue) Weight = other.Weight;
 			if (other.WrapMode.HasValue) WrapMode = other.WrapMode;
+		}
+
+		public void WriteToPath(TargetPath path, JToken value, int depth)
+		{
+
+		}
+
+		public bool ReadFromPath(TargetPath path, ref JToken value, int depth)
+		{
+			return false;
+		}
+
+		public void Clear()
+		{
+			
+		}
+
+		public void Restore(TargetPath path, int depth)
+		{
+
+		}
+
+		public void RestoreAll()
+		{
+
 		}
 	}
 }

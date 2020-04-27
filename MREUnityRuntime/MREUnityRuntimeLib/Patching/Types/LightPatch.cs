@@ -1,7 +1,9 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
+using MixedRealityExtension.Animation;
 using MixedRealityExtension.Core.Interfaces;
 using MixedRealityExtension.Util;
+using Newtonsoft.Json.Linq;
 
 namespace MixedRealityExtension.Patching.Types
 {
@@ -36,6 +38,31 @@ namespace MixedRealityExtension.Patching.Types
 			Range = light.range;
 			Intensity = light.intensity;
 			SpotAngle = light.spotAngle;
+		}
+
+		public void WriteToPath(TargetPath path, JToken value, int depth)
+		{
+
+		}
+
+		public bool ReadFromPath(TargetPath path, ref JToken value, int depth)
+		{
+			return false;
+		}
+
+		public void Clear()
+		{
+
+		}
+
+		public void Restore(TargetPath path, int depth)
+		{
+
+		}
+
+		public void RestoreAll()
+		{
+
 		}
 	}
 }
