@@ -861,6 +861,15 @@ namespace MixedRealityExtension.Core
 			}
 
 			_collider = unityCollider;
+
+			// update bounciness and frictions 
+			if (colliderPatch.Bounciness.HasValue)
+				_collider.material.bounciness = colliderPatch.Bounciness.Value;
+			if (colliderPatch.StaticFriction.HasValue)
+				_collider.material.staticFriction = colliderPatch.StaticFriction.Value;
+			if (colliderPatch.DynamicFriction.HasValue)
+				_collider.material.dynamicFriction = colliderPatch.DynamicFriction.Value;
+
 			if (Collider == null)
 			{
 				Collider = gameObject.AddComponent<Collider>();
