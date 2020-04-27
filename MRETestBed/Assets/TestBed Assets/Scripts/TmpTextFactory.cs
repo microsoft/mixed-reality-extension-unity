@@ -7,8 +7,11 @@ using UnityEngine;
 
 public class TmpTextFactory : ITextFactory
 {
+	public TMP_FontAsset DefaultFont;
 	public TMP_FontAsset SerifFont;
 	public TMP_FontAsset SansSerifFont;
+	public TMP_FontAsset MonospaceFont;
+	public TMP_FontAsset CursiveFont;
 
 	public IText CreateText(IActor actor)
 	{

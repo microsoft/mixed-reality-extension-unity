@@ -121,11 +121,48 @@ public class TmpText : IText
 	{
 		get
 		{
-			return _tmp.font == _factory.SerifFont ? FontFamily.Serif : FontFamily.SansSerif;
+			if (_tmp.font == _factory.SerifFont)
+			{
+				return FontFamily.Serif;
+			}
+			else if (_tmp.font == _factory.SansSerifFont)
+			{
+				return FontFamily.SansSerif;
+			}
+			else if (_tmp.font == _factory.MonospaceFont)
+			{
+				return FontFamily.Monospace;
+			}
+			else if (_tmp.font == _factory.CursiveFont)
+			{
+				return FontFamily.Cursive;
+			}
+			else
+			{
+				return FontFamily.Default;
+			}
 		}
 		private set
 		{
-			_tmp.font = value == FontFamily.Serif ? _factory.SerifFont : _factory.SansSerifFont;
+			switch (value)
+			{
+				case FontFamily.Serif:
+					_tmp.font = _factory.SerifFont != null ? _factory.SerifFont : _factory.DefaultFont;
+					break;
+				case FontFamily.SansSerif:
+					_tmp.font = _factory.SansSerifFont != null ? _factory.SansSerifFont : _factory.DefaultFont;
+					break;
+				case FontFamily.Monospace:
+					_tmp.font = _factory.MonospaceFont != null ? _factory.MonospaceFont : _factory.DefaultFont;
+					break;
+				case FontFamily.Cursive:
+					_tmp.font = _factory.CursiveFont != null ? _factory.CursiveFont : _factory.DefaultFont;
+					break;
+				case FontFamily.Default:
+				default:
+					_tmp.font = _factory.DefaultFont;
+					break;
+			}
 			_renderer.material = _tmp.font.material;
 		}
 	}

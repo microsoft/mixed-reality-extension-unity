@@ -85,10 +85,19 @@ public class MREComponent : MonoBehaviour
 	private static bool _apiInitialized = false;
 
 	[SerializeField]
+	private TMP_FontAsset DefaultFont;
+
+	[SerializeField]
 	private TMP_FontAsset SerifFont;
 
 	[SerializeField]
 	private TMP_FontAsset SansSerifFont;
+
+	[SerializeField]
+	private TMP_FontAsset MonospaceFont;
+
+	[SerializeField]
+	private TMP_FontAsset CursiveFont;
 
 	[SerializeField]
 	private UnityEngine.Material DefaultPrimMaterial;
@@ -118,8 +127,11 @@ public class MREComponent : MonoBehaviour
 				behaviorFactory: new BehaviorFactory(),
 				textFactory: new TmpTextFactory()
 				{
+					DefaultFont = DefaultFont,
 					SerifFont = SerifFont,
-					SansSerifFont = SansSerifFont
+					SansSerifFont = SansSerifFont,
+					MonospaceFont = MonospaceFont,
+					CursiveFont = CursiveFont
 				},
 				libraryFactory: new ResourceFactory(),
 				assetCache: new AssetCache(new GameObject("MRE Asset Cache")),
