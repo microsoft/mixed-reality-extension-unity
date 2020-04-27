@@ -112,6 +112,8 @@ namespace MixedRealityExtension.Core
 			set => transform.name = value;
 		}
 
+		private Guid? Owner = null;
+
 		/// <inheritdoc />
 		IMixedRealityExtensionApp IActor.App => base.App;
 
@@ -332,6 +334,7 @@ namespace MixedRealityExtension.Core
 		internal void ApplyPatch(ActorPatch actorPatch)
 		{
 			PatchName(actorPatch.Name);
+			PatchOwner(actorPatch.Owner);
 			PatchParent(actorPatch.ParentId);
 			PatchAppearance(actorPatch.Appearance);
 			PatchTransform(actorPatch.Transform);
@@ -815,7 +818,8 @@ namespace MixedRealityExtension.Core
 				_rigidbody = gameObject.AddComponent<Rigidbody>();
 				RigidBody = new RigidBody(_rigidbody, App.SceneRoot.transform);
 
-				RigidBodyAdded?.Invoke(Id, _rigidbody, CanSync());
+				bool isOwner = Owner.HasValue ? Owner.Value == App.LocalUser.Id : CanSync();
+				RigidBodyAdded?.Invoke(Id, _rigidbody, isOwner);
 			}
 			return RigidBody;
 		}
@@ -944,6 +948,14 @@ namespace MixedRealityExtension.Core
 			{
 				Name = nameOrNull;
 				name = Name;
+			}
+		}
+
+		private void PatchOwner(Guid? ownerOrNull)
+		{
+			if (ownerOrNull.HasValue)
+			{
+				Owner = ownerOrNull;
 			}
 		}
 
@@ -1771,7 +1783,12 @@ namespace MixedRealityExtension.Core
 		[CommandHandler(typeof(RBAddForce))]
 		private void OnRBAddForce(RBAddForce payload, Action onCompleteCallback)
 		{
-			RigidBody?.RigidBodyAddForce(new MWVector3().ApplyPatch(payload.Force));
+			bool isOwner = Owner.HasValue ? Owner.Value == App.LocalUser.Id : CanSync();
+			if (isOwner)
+			{
+				RigidBody?.RigidBodyAddForce(new MWVector3().ApplyPatch(payload.Force));
+			}
+
 			onCompleteCallback?.Invoke();
 		}
 
