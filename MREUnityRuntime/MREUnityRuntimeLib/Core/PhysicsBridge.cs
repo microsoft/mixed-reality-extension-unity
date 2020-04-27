@@ -180,6 +180,7 @@ namespace MixedRealityExtension.Core
 
 				if (transform != null)
 				{
+					rb.RigidBody.isKinematic = true;
 					rb.RigidBody.transform.position = /*rootTransform.position +*/ rootTransform.TransformPoint(transform.Position);
 					rb.RigidBody.transform.rotation = rootTransform.rotation * transform.Rotation;
 				}
