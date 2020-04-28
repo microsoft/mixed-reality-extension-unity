@@ -274,6 +274,7 @@ namespace MixedRealityExtension.App
 			}
 			_ownedGameObjects.Clear();
 			_actorManager.Reset();
+			AnimationManager.Reset();
 		}
 
 		/// <inheritdoc />
@@ -731,7 +732,7 @@ namespace MixedRealityExtension.App
 			).Select(go => go.GetComponent<Actor>()).ToArray();
 
 			var rootActor = createdActors.FirstOrDefault();
-			var createdAnims = new List<Animation.Animation>(5);
+			var createdAnims = new List<Animation.BaseAnimation>(5);
 
 			if (rootActors.Length == 1 && rootActor.transform.parent == null)
 			{
@@ -750,8 +751,15 @@ namespace MixedRealityExtension.App
 				return;
 			}
 
-			foreach (var root in rootActors) {
+			var secondPassXfrms = new List<Transform>(2);
+			foreach (var root in rootActors)
+			{
 				ProcessActors(root.transform, root.transform.parent != null ? root.transform.parent.GetComponent<Actor>() : null);
+			}
+			// some things require the whole hierarchy to have actors on it. run those here
+			foreach (var pass2 in secondPassXfrms)
+			{
+				ProcessActors2(pass2);
 			}
 
 			if (originalMessage != null && rootActors.Length == 1)
@@ -780,6 +788,22 @@ namespace MixedRealityExtension.App
 					actor.MeshId = MREAPI.AppsAPI.AssetCache.GetId(actor.UnityMesh) ?? Guid.Empty;
 				}
 
+				// native animation construction requires the whole actor hierarchy to already exist. defer to second pass
+				var nativeAnim = xfrm.gameObject.GetComponent<UnityEngine.Animation>();
+				if (nativeAnim != null && createdActors.Contains(actor))
+				{
+					secondPassXfrms.Add(xfrm);
+				}
+
+				foreach (Transform child in xfrm)
+				{
+					ProcessActors(child, actor);
+				}
+			}
+
+			void ProcessActors2(Transform xfrm)
+			{
+				var actor = xfrm.gameObject.GetComponent<Actor>();
 				var nativeAnim = xfrm.gameObject.GetComponent<UnityEngine.Animation>();
 				if (nativeAnim != null && createdActors.Contains(actor))
 				{
@@ -788,17 +812,13 @@ namespace MixedRealityExtension.App
 					foreach (AnimationState state in nativeAnim)
 					{
 						var anim = new NativeAnimation(AnimationManager, guids.Next(), nativeAnim, state);
-						anim.targetActors = animTargets != null
-							? animTargets.GetTargets(xfrm, stateIndex, addRootToTargets: true)
-							: new List<Actor>() { actor };
+						anim.TargetIds = animTargets != null
+							? animTargets.GetTargets(xfrm, stateIndex++, addRootToTargets: true).Select(a => a.Id).ToList()
+							: new List<Guid>() { actor.Id };
+
 						AnimationManager.RegisterAnimation(anim);
 						createdAnims.Add(anim);
 					}
-				}
-
-				foreach (Transform child in xfrm)
-				{
-					ProcessActors(child, actor);
 				}
 			}
 		}
@@ -806,7 +826,7 @@ namespace MixedRealityExtension.App
 		private void SendCreateActorResponse(
 			CreateActor originalMessage,
 			IList<Actor> actors = null,
-			IList<Animation.Animation> anims = null,
+			IList<Animation.BaseAnimation> anims = null,
 			string failureMessage = null,
 			Action onCompleteCallback = null)
 		{
@@ -826,7 +846,7 @@ namespace MixedRealityExtension.App
 						Message = trace.Message
 					},
 					Traces = new List<Trace>() { trace },
-					Actors = actors?.Select((actor) => actor.GenerateInitialPatch()) ?? new ActorPatch[] { },
+					Actors = actors?.Select((actor) => actor.GeneratePatch()) ?? new ActorPatch[] { },
 					Animations = anims?.Select(anim => anim.GeneratePatch()) ?? new AnimationPatch[] { }
 				},
 				originalMessage?.MessageId

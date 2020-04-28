@@ -118,6 +118,18 @@ namespace MixedRealityExtension.Messaging.Payloads
 	}
 
 	/// <summary>
+	/// App => Engine
+	/// The marked animations should be unloaded.
+	/// </summary>
+	public class DestroyAnimations: NetworkCommandPayload
+	{
+		/// <summary>
+		/// The list of IDs for animations to be destroyed
+		/// </summary>
+		public IEnumerable<Guid> AnimationIds { get; set; }
+	}
+
+	/// <summary>
 	/// Payload for when the app needs to restore the state of a set of actors.
 	/// </summary>
 	public class StateRestore : NetworkCommandPayload
@@ -262,6 +274,23 @@ namespace MixedRealityExtension.Messaging.Payloads
 		/// (Optional) The initial time, speed, and enable state of the animation (all values also optional). See <see cref="MWSetAnimationStateOptions"/>.
 		/// </summary>
 		public MWSetAnimationStateOptions InitialState { get; set; }
+	}
+
+	/// <summary>
+	/// App => Engine
+	/// Payload to bind animation data to targets.
+	/// </summary>
+	public class CreateAnimation2 : NetworkCommandPayload
+	{
+		/// <summary>
+		/// The initialization state of the animation.
+		/// </summary>
+		public AnimationPatch Animation { get; set; }
+
+		/// <summary>
+		/// Mapping of placeholder names to target GUIDs.
+		/// </summary>
+		public Dictionary<string, Guid> Targets { get; set; }
 	}
 
 	/// <summary>

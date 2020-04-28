@@ -8,10 +8,11 @@ using UnityEngine;
 
 namespace MixedRealityExtension.Animation
 {
-	internal class NativeAnimation : Animation
+	internal class NativeAnimation : BaseAnimation
 	{
 		private UnityEngine.Animation nativeAnimation;
 		private AnimationState nativeState;
+		private NativeAnimationHelper helper;
 
 		public override string Name
 		{
@@ -97,6 +98,14 @@ namespace MixedRealityExtension.Animation
 		{
 			this.nativeAnimation = nativeAnimation;
 			this.nativeState = nativeState;
+
+			helper = nativeAnimation.gameObject.AddComponent<NativeAnimationHelper>();
+			helper.Animation = this;
+		}
+
+		internal override void OnDestroy()
+		{
+			UnityEngine.Object.Destroy(helper);
 		}
 
 		public override AnimationPatch GeneratePatch()
@@ -106,9 +115,35 @@ namespace MixedRealityExtension.Animation
 			return patch;
 		}
 
-		internal override void Update()
+		private class NativeAnimationHelper : MonoBehaviour
 		{
+			public NativeAnimation Animation;
 
+			private void Start()
+			{
+				Animation.nativeState.clip.AddEvent(new AnimationEvent()
+				{
+					time = 0,
+					functionName = "AnimationEndReached",
+					floatParameter = 0
+				});
+
+				Animation.nativeState.clip.AddEvent(new AnimationEvent()
+				{
+					time = Animation.nativeState.length,
+					functionName = "AnimationEndReached",
+					floatParameter = Animation.nativeState.length
+				});
+			}
+
+			private void AnimationEndReached(float time)
+			{
+				if (Animation.WrapMode == MWAnimationWrapMode.Once &&
+					(Animation.Speed < 0 && time == 0 || Animation.Speed > 0 && time == Animation.nativeState.length))
+				{
+					Animation.MarkFinished(time);
+				}
+			}
 		}
 	}
 }
