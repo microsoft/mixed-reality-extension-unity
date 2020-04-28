@@ -184,7 +184,6 @@ namespace MixedRealityExtension.Animation
 				var anim = new Animation(this, message.Animation.Id, message.Animation.DataId.Value, message.Targets);
 				anim.TargetIds = message.Animation.TargetIds.ToList();
 				anim.ApplyPatch(message.Animation);
-
 				RegisterAnimation(anim);
 
 				Trace trace = new Trace()
