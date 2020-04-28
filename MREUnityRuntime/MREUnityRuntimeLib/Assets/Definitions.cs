@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 using System;
+using MixedRealityExtension.Animation;
 using MixedRealityExtension.Core.Types;
 using MixedRealityExtension.Patching.Types;
 using Newtonsoft.Json;
@@ -57,6 +58,11 @@ namespace MixedRealityExtension.Assets
 		/// If this asset is a video, contains those properties
 		/// </summary>
 		public VideoStream? VideoStream;
+
+		/// <summary>
+		/// Only populated when this asset is animation data. An asset will only have one of these types specified.
+		/// </summary>
+		public AnimationData? AnimationData;
 	}
 
 	/// <summary>

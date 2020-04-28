@@ -57,7 +57,8 @@ namespace MixedRealityExtension.Util
 		/// <returns>The calculated value.</returns>
 		public float Sample(float val)
 		{
-			if (val <= 0)
+			// special case all zeros: no interpolation
+			if (val <= 0 || (mX1 == 0 && mY1 == 0 && mX2 == 0 && mY2 == 0))
 			{
 				return 0;
 			}

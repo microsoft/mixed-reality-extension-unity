@@ -84,13 +84,18 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Animation\Animation.cs" />
+    <Compile Include="Animation\BaseAnimation.cs" />
+    <Compile Include="Animation\Interpolations.cs" />
+    <Compile Include="Animation\Definitions.cs" />
     <Compile Include="Animation\AnimationEvent.cs" />
     <Compile Include="Animation\AnimationKeyframe.cs" />
     <Compile Include="Animation\AnimationManager.cs" />
     <Compile Include="Animation\AnimationState.cs" />
     <Compile Include="Animation\AnimationWrapMode.cs" />
+    <Compile Include="Animation\JTokenPool.cs" />
     <Compile Include="Animation\MWSetAnimationStateOptions.cs" />
     <Compile Include="Animation\NativeAnimation.cs" />
+    <Compile Include="Animation\TargetPath.cs" />
     <Compile Include="Assets\PrefabAnimationTargets.cs" />
     <Compile Include="Core\CollisionLayers.cs" />
     <Compile Include="Assets\AssetCache.cs" />
@@ -123,6 +128,7 @@
     <Compile Include="Patching\Types\AppearancePatch.cs" />
     <Compile Include="Patching\Types\LookAtPatch.cs" />
     <Compile Include="Patching\Types\PhysicsBridgePatch.cs" />
+    <Compile Include="Patching\Types\ActorTransformPatch.cs" />
     <Compile Include="PluginInterfaces\IDialogFactory.cs" />
     <Compile Include="PluginInterfaces\ILayerApplicator.cs" />
     <Compile Include="PluginInterfaces\IUserInfoProvider.cs" />

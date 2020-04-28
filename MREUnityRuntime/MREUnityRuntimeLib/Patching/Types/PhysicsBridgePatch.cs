@@ -3,8 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-
+using MixedRealityExtension.Animation;
 using MixedRealityExtension.Core;
+using Newtonsoft.Json.Linq;
 
 namespace MixedRealityExtension.Patching.Types
 {
@@ -80,5 +81,30 @@ namespace MixedRealityExtension.Patching.Types
 		public float Time { get; set; }
 
 		public List<TransformPatchInfo> Transforms { get; set; }
+
+		public void WriteToPath(TargetPath path, JToken value, int depth)
+		{
+
+		}
+
+		public bool ReadFromPath(TargetPath path, ref JToken value, int depth)
+		{
+			return false;
+		}
+
+		public void Clear()
+		{
+
+		}
+
+		public void Restore(TargetPath path, int depth)
+		{
+
+		}
+
+		public void RestoreAll()
+		{
+
+		}
 	}
 }
