@@ -12,6 +12,7 @@ using MixedRealityExtension.Patching.Types;
 using MixedRealityExtension.Util;
 using MixedRealityExtension.Util.Unity;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
@@ -614,6 +615,30 @@ namespace MixedRealityExtension.Assets
 
 				default:
 					return null;
+			}
+		}
+
+		protected IEnumerator WaitUntilEnum(WaitUntil waitUntil)
+		{
+			yield return waitUntil;
+		}
+
+		private static void RunCoroutineSync(IEnumerator streamEnum)
+		{
+			var stack = new Stack<IEnumerator>();
+			stack.Push(streamEnum);
+			while (stack.Count > 0)
+			{
+				var enumerator = stack.Pop();
+				if (enumerator.MoveNext())
+				{
+					stack.Push(enumerator);
+					var subEnumerator = enumerator.Current as IEnumerator;
+					if (subEnumerator != null)
+					{
+						stack.Push(subEnumerator);
+					}
+				}
 			}
 		}
 	}
