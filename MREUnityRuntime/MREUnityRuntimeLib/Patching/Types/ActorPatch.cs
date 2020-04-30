@@ -17,6 +17,7 @@ namespace MixedRealityExtension.Patching.Types
 
 		private ActorTransformPatch transform;
 		private ActorTransformPatch savedTransform;
+
 		[PatchProperty]
 		public Guid? Owner { get; set; }
 

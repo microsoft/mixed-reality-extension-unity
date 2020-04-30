@@ -12,7 +12,9 @@ using MixedRealityExtension.Patching.Types;
 using MixedRealityExtension.Util;
 using MixedRealityExtension.Util.Unity;
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityGLTF;
@@ -156,8 +158,17 @@ namespace MixedRealityExtension.Assets
 			var stream = await loader.LoadStreamAsync(URIHelper.GetFileFromUri(source.ParsedUri));
 
 			// pre-parse glTF document so we can get a scene count
-			// TODO: run this in thread
-			GLTF.GLTFParser.ParseJson(stream, out GLTF.Schema.GLTFRoot gltfRoot);
+			// run this in thread
+			GLTF.Schema.GLTFRoot gltfRoot = null;
+			Thread parseJsonThread = new Thread(() => GLTF.GLTFParser.ParseJson(stream, out gltfRoot));
+			parseJsonThread.Priority = System.Threading.ThreadPriority.Highest;
+			parseJsonThread.Start();
+			RunCoroutineSync(WaitUntilEnum(new WaitUntil(() => !parseJsonThread.IsAlive)));
+			if (gltfRoot == null)
+			{
+				throw new GLTFLoadException("Failed to parse glTF");
+			}
+			//GLTF.GLTFParser.ParseJson(stream, out GLTF.Schema.GLTFRoot gltfRoot);
 			stream.Position = 0;
 
 			GLTFSceneImporter importer =
@@ -594,6 +605,30 @@ namespace MixedRealityExtension.Assets
 
 				default:
 					return null;
+			}
+		}
+
+		protected IEnumerator WaitUntilEnum(WaitUntil waitUntil)
+		{
+			yield return waitUntil;
+		}
+
+		private static void RunCoroutineSync(IEnumerator streamEnum)
+		{
+			var stack = new Stack<IEnumerator>();
+			stack.Push(streamEnum);
+			while (stack.Count > 0)
+			{
+				var enumerator = stack.Pop();
+				if (enumerator.MoveNext())
+				{
+					stack.Push(enumerator);
+					var subEnumerator = enumerator.Current as IEnumerator;
+					if (subEnumerator != null)
+					{
+						stack.Push(subEnumerator);
+					}
+				}
 			}
 		}
 	}

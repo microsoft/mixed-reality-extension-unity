@@ -24,12 +24,14 @@ public class VertexShadedGltfImporter : GLTFSceneImporter
 		: base(gltfFileName, options)
 	{
 		_templateMaterial = templateMaterial;
+		IsMultithreaded = true;
 	}
 
 	public VertexShadedGltfImporter(Material templateMaterial, GLTFRoot root, Stream stream, ImportOptions options)
 		: base (root, stream, options)
 	{
 		_templateMaterial = templateMaterial;
+		IsMultithreaded = true;
 	}
 
 	protected override async Task ConstructMaterialImageBuffers(GLTFMaterial def)
