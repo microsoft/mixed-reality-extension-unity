@@ -118,30 +118,14 @@ namespace MixedRealityExtension.Messaging.Protocols
 		{
 			if (Conn != null)
 			{
-				message.Id = Guid.NewGuid().ToString();
-
 				try
 				{
-					var json = JsonConvert.SerializeObject(message, Constants.SerializerSettings);
-
-					if (MREAPI.AppsAPI.VerboseLogging)
-					{
-						App.Logger.LogDebug($"Send: {json}");
-					}
-
-					try
-					{
-						Conn.Send(json);
-					}
-					catch (Exception e)
-					{
-						// Don't log to App.Logger here. The WebSocket might be disconnected.
-						Debug.LogError($"Error sending message {json}\nException: {e.Message}\nStackTrace: {e.StackTrace}");
-					}
+					Conn.Send(message);
 				}
 				catch (Exception e)
 				{
-					App.Logger.LogDebug($"Error serializing message. Exception: {e.Message}\nStackTrace: {e.StackTrace}");
+					// Don't log to App.Logger here. The WebSocket might be disconnected.
+					Debug.LogError($"Error sending message {message.Payload.GetType()}\nException: {e.Message}\nStackTrace: {e.StackTrace}");
 				}
 			}
 		}

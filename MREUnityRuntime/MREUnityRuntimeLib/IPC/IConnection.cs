@@ -1,5 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
+using MixedRealityExtension.Messaging;
 using System;
 
 namespace MixedRealityExtension.IPC
@@ -87,6 +88,8 @@ namespace MixedRealityExtension.IPC
 		/// </summary>
 		/// <param name="message"></param>
 		void Send(string message);
+
+		void Send(Message message);
 	}
 
 	internal interface IConnectionInternal : IConnection

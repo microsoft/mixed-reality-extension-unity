@@ -1,5 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
+using MixedRealityExtension.API;
+using MixedRealityExtension.Messaging;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -8,7 +11,6 @@ using System.Net.WebSockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using UnityEngine;
 using UnityEngine.Networking;
 
 namespace MixedRealityExtension.IPC.Connections
@@ -99,6 +101,48 @@ namespace MixedRealityExtension.IPC.Connections
 			{
 				try { await _ws.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, reason, CancellationToken).ConfigureAwait(false); } catch { }
 			}
+		}
+
+		public void Send(Message message)
+		{
+			if (disposed)
+			{
+				throw new ObjectDisposedException("WebSocket has been disposed");
+			}
+
+			if (_ws.State != WebSocketState.Open)
+			{
+				throw new InvalidOperationException("WebSocket is not open");
+			}
+
+			// Ensure the message is sent on this websocket rather than a websocket allocated in the future (in case of a reconnect).
+			var ws = _ws;
+
+			_sendQueue.Add(async () =>
+			{
+				try
+				{
+					message.Id = Guid.NewGuid().ToString();
+					var json = JsonConvert.SerializeObject(message, Constants.SerializerSettings);
+
+					if (MREAPI.AppsAPI.VerboseLogging)
+					{
+						MREAPI.Logger.LogDebug($"Send: {json}");
+					}
+
+					var buffer = new ArraySegment<byte>(Encoding.UTF8.GetBytes(json));
+					try
+					{
+						await ws.SendAsync(buffer, WebSocketMessageType.Text, true, CancellationToken).ConfigureAwait(false);
+					}
+					catch (Exception)
+					{ }
+				}
+				catch (Exception e)
+				{
+					MREAPI.Logger.LogDebug($"Error serializing message. Exception: {e.Message}\nStackTrace: {e.StackTrace}");
+				}
+			});
 		}
 
 		/// <inheritdoc />
@@ -212,7 +256,7 @@ namespace MixedRealityExtension.IPC.Connections
 						wasOpen = false;
 						await Connect().ConfigureAwait(false);
 
-						 // Wait until the connection is fully resolved (whether that be success or failure).
+						// Wait until the connection is fully resolved (whether that be success or failure).
 						while (_ws.State == WebSocketState.Connecting)
 						{
 							// Exit task if requested.
@@ -327,7 +371,7 @@ namespace MixedRealityExtension.IPC.Connections
 				Invoke_OnError(e);
 			}
 		}
-		
+
 		void IConnectionInternal.Update()
 		{
 			while (_eventQueue.TryTake(out Action action))
