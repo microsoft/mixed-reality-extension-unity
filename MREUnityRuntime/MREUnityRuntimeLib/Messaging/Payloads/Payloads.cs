@@ -196,12 +196,14 @@ namespace MixedRealityExtension.Messaging.Payloads
 		/// <summary>
 		/// The enumeration of actors created during the object spawn command operation.
 		/// </summary>
-		public IEnumerable<ActorPatch> Actors { get; set; }
+		/// <note>We use an array to prevent off thread actor patch creation, which touches unity objects.</note>
+		public ActorPatch[] Actors { get; set; }
 
 		/// <summary>
 		/// The enumeration of animations created during the object spawn.
 		/// </summary>
-		public IEnumerable<AnimationPatch> Animations { get; set; }
+		/// <note>We use an array to prevent off thread actor patch creation, which touches unity objects.</note>
+		public AnimationPatch[] Animations { get; set; }
 	}
 
 	/// <summary>
@@ -243,7 +245,7 @@ namespace MixedRealityExtension.Messaging.Payloads
 	/// <summary>
 	/// Payload for when an action is performed for a behavior on an actor from engine to app.
 	/// </summary>
-	public class ActionPerformed : Payload 
+	public class ActionPerformed : Payload
 	{
 		/// <summary>
 		/// The id of the user performing the action.
@@ -275,7 +277,7 @@ namespace MixedRealityExtension.Messaging.Payloads
 	/// Engine => App
 	/// Sends the collision event information to the app.
 	/// </summary>
-	public class CollisionEventRaised: Payload
+	public class CollisionEventRaised : Payload
 	{
 		/// <summary>
 		/// The actor id of the collider the event is being raised on.
@@ -297,7 +299,7 @@ namespace MixedRealityExtension.Messaging.Payloads
 	/// Engine => App
 	/// Sends the trigger event information to the app.
 	/// </summary>
-	public class TriggerEventRaised: Payload
+	public class TriggerEventRaised : Payload
 	{
 		/// <summary>
 		/// The actor id of the collider the event is being raised on.
