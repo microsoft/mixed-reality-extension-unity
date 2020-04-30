@@ -1,5 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
+// #define CACHE_IMPORTERS
+
 using MixedRealityExtension.Animation;
 using MixedRealityExtension.API;
 using MixedRealityExtension.App;
@@ -157,20 +159,31 @@ namespace MixedRealityExtension.Assets
 				$"{source.ParsedUri.AbsoluteUri}"));
 			// $"{containerId}:{source.ParsedUri.AbsoluteUri}"));
 
-			// download file
-			var rootUrl = URIHelper.GetDirectoryName(source.ParsedUri.AbsoluteUri);
-			var loader = new WebRequestLoader(rootUrl);
-			var stream = await loader.LoadStreamAsync(URIHelper.GetFileFromUri(source.ParsedUri));
+			Guid gltfid = guidGenerator.Next();
+			GLTFSceneImporter importer = null;
+			GLTF.Schema.GLTFRoot gltfRoot = null;
+#if CACHE_IMPORTERS
+			MREAPI.AppsAPI.AssetCache.TryGetGLTFImporter(gltfid, out importer, out gltfRoot);
+#endif
+			if (importer == null)
+			{
+				// download file
+				var rootUrl = URIHelper.GetDirectoryName(source.ParsedUri.AbsoluteUri);
+				var loader = new WebRequestLoader(rootUrl);
+				var stream = await loader.LoadStreamAsync(URIHelper.GetFileFromUri(source.ParsedUri));
 
-			// pre-parse glTF document so we can get a scene count
-			// TODO: run this in thread
-			GLTF.GLTFParser.ParseJson(stream, out GLTF.Schema.GLTFRoot gltfRoot);
-			stream.Position = 0;
+				// pre-parse glTF document so we can get a scene count
+				// TODO: run this in thread
+				GLTF.GLTFParser.ParseJson(stream, out gltfRoot);
+				stream.Position = 0;
 
-			GLTFSceneImporter importer =
-				MREAPI.AppsAPI.GLTFImporterFactory.CreateImporter(gltfRoot, loader, _asyncHelper, stream);
-			importer.SceneParent = MREAPI.AppsAPI.AssetCache.CacheRootGO().transform;
-			importer.Collider = colliderType.ToGLTFColliderType();
+				importer = MREAPI.AppsAPI.GLTFImporterFactory.CreateImporter(gltfRoot, loader, _asyncHelper, stream);
+				importer.SceneParent = MREAPI.AppsAPI.AssetCache.CacheRootGO().transform;
+				importer.Collider = colliderType.ToGLTFColliderType();
+#if CACHE_IMPORTERS
+				MREAPI.AppsAPI.AssetCache.CacheGLTFImporter(gltfid, importer, gltfRoot);
+#endif
+			}
 
 			// load textures
 			if (gltfRoot.Textures != null)
@@ -281,7 +294,9 @@ namespace MixedRealityExtension.Assets
 				}
 			}
 
+#if !CACHE_IMPORTERS
 			importer.Dispose();
+#endif
 
 			return assets;
 		}

@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityGLTF;
 using CacheCallback = System.Action<UnityEngine.Object>;
 using ColliderGeometry = MixedRealityExtension.Core.ColliderGeometry;
 using Object = UnityEngine.Object;
@@ -37,6 +38,7 @@ namespace MixedRealityExtension.Assets
 
 		private readonly List<CacheEntry> cache = new List<CacheEntry>(50);
 		private readonly Dictionary<Guid, List<CacheCallback>> cacheCallbacks = new Dictionary<Guid, List<CacheCallback>>(50);
+		private readonly Dictionary<Guid, Tuple<GLTFSceneImporter, GLTF.Schema.GLTFRoot>> importerCache = new Dictionary<Guid, Tuple<GLTFSceneImporter, GLTF.Schema.GLTFRoot>>(50);
 		private readonly GameObject cacheRoot;
 		private readonly GameObject emptyTemplate;
 
@@ -47,6 +49,32 @@ namespace MixedRealityExtension.Assets
 
 			emptyTemplate = new GameObject("Empty");
 			emptyTemplate.transform.SetParent(cacheRoot.transform, false);
+		}
+
+		public void CacheGLTFImporter(Guid id, GLTFSceneImporter importer, GLTF.Schema.GLTFRoot root)
+		{
+			TryGetGLTFImporter(id, out GLTFSceneImporter oldImporter, out GLTF.Schema.GLTFRoot oldRoot);
+			if (oldImporter != null)
+			{
+				oldImporter.Dispose();
+				importerCache.Remove(id);
+			}
+			importerCache.Add(id, Tuple.Create(importer, root));
+		}
+
+		public void TryGetGLTFImporter(Guid id, out GLTFSceneImporter importer, out GLTF.Schema.GLTFRoot root)
+		{
+			Tuple<GLTFSceneImporter, GLTF.Schema.GLTFRoot> result;
+			if (importerCache.TryGetValue(id, out result))
+			{
+				importer = result.Item1;
+				root = result.Item2;
+			}
+			else
+			{
+				importer = null;
+				root = null;
+			}
 		}
 
 		/// <inheritdoc cref="CacheRootGO"/>
@@ -135,11 +163,26 @@ namespace MixedRealityExtension.Assets
 
 		public void ForceCleanCache()
 		{
+			foreach (var entry in importerCache)
+			{
+				entry.Value.Item1.Dispose();
+			}
+			importerCache.Clear();
+
 			for (int i = 0; i < cache.Count; ++i)
 			{
+				if (cache[i].Asset is GameObject prefab)
+				{
+					var filters = prefab.GetComponentsInChildren<MeshFilter>();
+					foreach (var f in filters)
+					{
+						UnityEngine.Object.Destroy(f.sharedMesh);
+					}
+				}
 				UnityEngine.GameObject.Destroy(cache[i].Asset);
 			}
 			cache.Clear();
+
 			cacheCallbacks.Clear();
 		}
 	}

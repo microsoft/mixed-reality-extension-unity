@@ -4,6 +4,7 @@ using MixedRealityExtension.Assets;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityGLTF;
 using ColliderGeometry = MixedRealityExtension.Core.ColliderGeometry;
 
 namespace MixedRealityExtension.PluginInterfaces
@@ -67,5 +68,8 @@ namespace MixedRealityExtension.PluginInterfaces
 		/// Removes and destroys everything in the cache.
 		/// </summary>
 		void ForceCleanCache();
+
+		void CacheGLTFImporter(Guid id, GLTFSceneImporter importer, GLTF.Schema.GLTFRoot root);
+		void TryGetGLTFImporter(Guid id, out GLTFSceneImporter importer, out GLTF.Schema.GLTFRoot root);
 	}
 }
