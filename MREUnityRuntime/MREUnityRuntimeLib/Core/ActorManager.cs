@@ -1,6 +1,5 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
-using MixedRealityExtension.API;
 using MixedRealityExtension.App;
 using MixedRealityExtension.Core.Interfaces;
 using MixedRealityExtension.IPC;
@@ -13,7 +12,7 @@ using System.Linq;
 
 namespace MixedRealityExtension.Core
 {
-	internal class ActorManager : ICommandHandlerContext
+	internal class ActorManager : CommandHandlerContext<ActorManager>
 	{
 		private MixedRealityExtensionApp _app;
 		private Dictionary<Guid, Actor> _actorMapping = new Dictionary<Guid, Actor>();
@@ -88,7 +87,7 @@ namespace MixedRealityExtension.Core
 
 		internal void UpdateAllVisibility()
 		{
-			foreach(var actor in _actorMapping.Values.Where(a => a.Parent == null))
+			foreach (var actor in _actorMapping.Values.Where(a => a.Parent == null))
 			{
 				Actor.ApplyVisibilityUpdate(actor, force: true);
 			}

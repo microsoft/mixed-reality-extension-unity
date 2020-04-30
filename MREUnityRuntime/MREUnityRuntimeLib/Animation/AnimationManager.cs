@@ -14,7 +14,7 @@ using System.Linq;
 
 namespace MixedRealityExtension.Animation
 {
-	internal class AnimationManager : ICommandHandlerContext
+	internal class AnimationManager : CommandHandlerContext<AnimationManager>
 	{
 		internal class AnimBlend
 		{
@@ -173,7 +173,8 @@ namespace MixedRealityExtension.Animation
 		private void OnCreateAnimation(CreateAnimation2 message, Action onCompleteCallback)
 		{
 			// the animation already exists, no-op
-			if (Animations.ContainsKey(message.Animation.Id)) {
+			if (Animations.ContainsKey(message.Animation.Id))
+			{
 				onCompleteCallback?.Invoke();
 				return;
 			}

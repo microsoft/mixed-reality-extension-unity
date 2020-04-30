@@ -118,6 +118,7 @@
     <Compile Include="Core\VideoStreamDescription.cs" />
     <Compile Include="Factories\DefaultMaterialPatcher.cs" />
     <Compile Include="Factories\SimpleLayerApplicator.cs" />
+    <Compile Include="Messaging\Commands\CommandHandlerContext.cs" />
     <Compile Include="Messaging\Events\Types\ActorCorrectionEvent.cs" />
     <Compile Include="Messaging\Events\Types\ColliderEvent.cs" />
     <Compile Include="Messaging\Events\Types\TriggerEvent.cs" />

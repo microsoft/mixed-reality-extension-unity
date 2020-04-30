@@ -24,13 +24,14 @@ using MixedRealityExtension.Util.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using UnityEngine;
 
 using Trace = MixedRealityExtension.Messaging.Trace;
 
 namespace MixedRealityExtension.App
 {
-	internal sealed class MixedRealityExtensionApp : IMixedRealityExtensionApp, ICommandHandlerContext
+	internal sealed class MixedRealityExtensionApp : CommandHandlerContext<MixedRealityExtensionApp>, IMixedRealityExtensionApp
 	{
 		private readonly AssetLoader _assetLoader;
 		private readonly UserManager _userManager;
@@ -156,14 +157,23 @@ namespace MixedRealityExtension.App
 			_actorManager = new ActorManager(this);
 			SoundManager = new SoundManager(this);
 			AnimationManager = new AnimationManager(this);
-			_commandManager = new CommandManager(new Dictionary<Type, ICommandHandlerContext>()
-			{
-				{ typeof(MixedRealityExtensionApp), this },
-				{ typeof(Actor), null },
-				{ typeof(AssetLoader), _assetLoader },
-				{ typeof(ActorManager), _actorManager },
-				{ typeof(AnimationManager), AnimationManager }
-			});
+			_commandManager = new CommandManager(
+				new Dictionary<Type, ICommandHandlerContext>()
+				{
+					{ typeof(MixedRealityExtensionApp), this },
+					{ typeof(Actor), null },
+					{ typeof(AssetLoader), _assetLoader },
+					{ typeof(ActorManager), _actorManager },
+					{ typeof(AnimationManager), AnimationManager }
+				},
+				new Dictionary<Type, Dictionary<Type, MethodInfo>>()
+				{
+					{ typeof(MixedRealityExtensionApp), MixedRealityExtensionApp.GetMethodInfoDictionary() },
+					{ typeof(Actor), Actor.GetMethodInfoDictionary() },
+					{ typeof(AssetLoader), AssetLoader.GetMethodInfoDictionary() },
+					{ typeof(ActorManager), ActorManager.GetMethodInfoDictionary() },
+					{ typeof(AnimationManager), AnimationManager.GetMethodInfoDictionary() }
+				});
 
 			RPC = new RPCInterface(this);
 			RPCChannels = new RPCChannelInterface();

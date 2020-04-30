@@ -33,18 +33,20 @@ namespace MixedRealityExtension.Messaging.Commands
 		// The maximum amount of time to wait for an onCompleteCallback to be invoked.
 		private static readonly TimeSpan QueuedCompletionCallbackTimeout = TimeSpan.FromSeconds(60);
 
-		public CommandManager(Dictionary<Type, ICommandHandlerContext> commandHandlers)
+		/// <note>
+		/// We use a separate dictionary for methods because c# doesn't support static method interfaces and because not all handlercontexts will be non-null at this time.
+		/// </note>
+		public CommandManager(Dictionary<Type, ICommandHandlerContext> commandHandlers, Dictionary<Type, Dictionary<Type, MethodInfo>> commandHandlerMethods)
 		{
 			foreach (var commandHandlerPair in commandHandlers)
 			{
 				// Build table of handler to method info.
-				_methodHandlersByContextType.Add(commandHandlerPair.Key,
-					new Type[] { commandHandlerPair.Key }
-						.SelectMany(t => t.GetMethods(BindingFlags.NonPublic | BindingFlags.Instance))
-						.Where(m => m.GetCustomAttributes().OfType<CommandHandler>().Any())
-						.ToDictionary(m => m.GetCustomAttributes().OfType<CommandHandler>().First().CommandType));
-
 				_invocationTargets.Add(commandHandlerPair.Key, commandHandlerPair.Value);
+			}
+			foreach (var commandHandlerPair in commandHandlerMethods)
+			{
+				// Build table of handler to method info.
+				_methodHandlersByContextType.Add(commandHandlerPair.Key, commandHandlerPair.Value);
 			}
 		}
 

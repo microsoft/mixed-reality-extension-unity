@@ -14,17 +14,17 @@ using MixedRealityExtension.Messaging.Events.Types;
 using MixedRealityExtension.Messaging.Payloads;
 using MixedRealityExtension.Patching;
 using MixedRealityExtension.Patching.Types;
+using MixedRealityExtension.PluginInterfaces.Behaviors;
+using MixedRealityExtension.Util;
 using MixedRealityExtension.Util.Unity;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using UnityEngine;
-
-using UnityLight = UnityEngine.Light;
-using UnityCollider = UnityEngine.Collider;
-using MixedRealityExtension.PluginInterfaces.Behaviors;
-using MixedRealityExtension.Util;
 using IVideoPlayer = MixedRealityExtension.PluginInterfaces.IVideoPlayer;
+using UnityCollider = UnityEngine.Collider;
+using UnityLight = UnityEngine.Light;
 namespace MixedRealityExtension.Core
 {
 	/// <summary>
@@ -32,6 +32,21 @@ namespace MixedRealityExtension.Core
 	/// </summary>
 	internal sealed class Actor : MixedRealityExtensionObject, ICommandHandlerContext, IActor
 	{
+		// Note: We already inherit from MixedRealityExtensionObject, so we can't use CommandHanderContext as a base.
+		static Dictionary<Type, MethodInfo> _methodInfo;
+		static Actor()
+		{
+			_methodInfo = new Type[] { typeof(Actor) }
+				.SelectMany(t => t.GetMethods(BindingFlags.NonPublic | BindingFlags.Instance))
+				.Where(m => m.GetCustomAttributes().OfType<CommandHandler>().Any())
+				.ToDictionary(m => m.GetCustomAttributes().OfType<CommandHandler>().First().CommandType);
+		}
+
+		public static Dictionary<Type, MethodInfo> GetMethodInfoDictionary()
+		{
+			return _methodInfo;
+		}
+
 		private Rigidbody _rigidbody;
 		private UnityLight _light;
 		private UnityCollider _collider;
