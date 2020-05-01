@@ -1,17 +1,16 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 using MixedRealityExtension.Animation;
-using MixedRealityExtension.Messaging.Payloads.Converters;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
-using Newtonsoft.Json.Linq;
 
 namespace MixedRealityExtension.Patching.Types
 {
 	/// <summary>
 	/// A serialized animation definition
 	/// </summary>
-	public class AnimationPatch : IPatchable
+	public class AnimationPatch : Patchable<AnimationPatch>, IPatchable
 	{
 		/// <summary>
 		/// Generated unique ID of this animation
@@ -97,7 +96,7 @@ namespace MixedRealityExtension.Patching.Types
 
 		public void Clear()
 		{
-			
+
 		}
 
 		public void Restore(TargetPath path, int depth)

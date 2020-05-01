@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 using MixedRealityExtension.Animation;
 using MixedRealityExtension.Core;
-using MixedRealityExtension.Core.Types;
 using MixedRealityExtension.Messaging.Payloads.Converters;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -11,7 +10,7 @@ using System.Collections.Generic;
 
 namespace MixedRealityExtension.Patching.Types
 {
-	public class UserPatch : IPatchable
+	public class UserPatch : Patchable<UserPatch>, IPatchable
 	{
 		public Guid Id { get; set; }
 

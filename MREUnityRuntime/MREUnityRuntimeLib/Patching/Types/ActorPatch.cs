@@ -8,7 +8,7 @@ using System.Collections.Generic;
 
 namespace MixedRealityExtension.Patching.Types
 {
-	public class ActorPatch : IPatchable
+	public class ActorPatch : Patchable<ActorPatch>, IPatchable
 	{
 		public Guid Id { get; set; }
 
@@ -90,7 +90,7 @@ namespace MixedRealityExtension.Patching.Types
 				Transform.WriteToPath(path, value, depth + 1);
 			}
 			// else
-				// an unrecognized path, do nothing
+			// an unrecognized path, do nothing
 		}
 
 		public bool ReadFromPath(TargetPath path, ref JToken value, int depth)

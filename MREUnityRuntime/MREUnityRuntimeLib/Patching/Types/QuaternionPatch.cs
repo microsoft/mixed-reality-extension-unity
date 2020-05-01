@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace MixedRealityExtension.Patching.Types
 {
-	public class QuaternionPatch : IEquatable<QuaternionPatch>, IPatchable
+	public class QuaternionPatch : Patchable<QuaternionPatch>, IEquatable<QuaternionPatch>, IPatchable
 	{
 		// TODO: Make X, Y, Z, and W fields non-optional, since you can't just specify one and maintain a valid unit quaternion
 		[PatchProperty]
@@ -19,7 +19,7 @@ namespace MixedRealityExtension.Patching.Types
 
 		[PatchProperty]
 		public float? Z { get; set; }
-		
+
 		[PatchProperty]
 		public float? W { get; set; }
 
@@ -116,7 +116,7 @@ namespace MixedRealityExtension.Patching.Types
 
 		public void Clear()
 		{
-			
+
 		}
 
 		public void Restore(TargetPath path, int depth)

@@ -1,14 +1,14 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
-using System;
 using MixedRealityExtension.Animation;
 using MixedRealityExtension.Messaging.Payloads.Converters;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System;
 
 namespace MixedRealityExtension.Patching.Types
 {
-	public class AppearancePatch : IPatchable
+	public class AppearancePatch : Patchable<AppearancePatch>, IPatchable
 	{
 		[PatchProperty]
 		[JsonConverter(typeof(UnsignedConverter))]

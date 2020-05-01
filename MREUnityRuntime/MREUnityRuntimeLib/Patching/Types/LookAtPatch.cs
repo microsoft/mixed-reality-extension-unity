@@ -3,14 +3,10 @@
 using MixedRealityExtension.Animation;
 using Newtonsoft.Json.Linq;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace MixedRealityExtension.Patching.Types
 {
-	public class LookAtPatch : IPatchable
+	public class LookAtPatch : Patchable<LookAtPatch>, IPatchable
 	{
 		[PatchProperty]
 		public Guid? ActorId { get; set; }

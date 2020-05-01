@@ -3,17 +3,13 @@
 using MixedRealityExtension.Animation;
 using Newtonsoft.Json.Linq;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace MixedRealityExtension.Patching.Types
 {
 	/// <summary>
 	/// Attachment patch.
 	/// </summary>
-	public class AttachmentPatch : IEquatable<AttachmentPatch>, IPatchable
+	public class AttachmentPatch : Patchable<AttachmentPatch>, IEquatable<AttachmentPatch>, IPatchable
 	{
 		public string AttachPoint { get; set; }
 

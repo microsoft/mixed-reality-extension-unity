@@ -37,5 +37,7 @@ namespace MixedRealityExtension.Patching
 		/// Assign all saved patches to public properties
 		/// </summary>
 		void RestoreAll();
+
+		System.Reflection.PropertyInfo[] GetPatchableProperties();
 	}
 }

@@ -6,7 +6,7 @@ using Newtonsoft.Json.Linq;
 
 namespace MixedRealityExtension.Patching.Types
 {
-	public class TextPatch : IPatchable
+	public class TextPatch : Patchable<TextPatch>, IPatchable
 	{
 		[PatchProperty]
 		public bool? Enabled { get; set; }
