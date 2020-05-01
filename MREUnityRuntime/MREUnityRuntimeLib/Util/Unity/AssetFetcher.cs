@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 using System;
 using System.Collections;
+using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -11,6 +12,8 @@ namespace MixedRealityExtension.Util.Unity
 
 	public static class AssetFetcher<T> where T : class
 	{
+		private static int activeLoads = 0;
+
 		public struct FetchResult
 		{
 			public T Asset;
@@ -52,8 +55,14 @@ namespace MixedRealityExtension.Util.Unity
 					yield break;
 				}
 
+				while (activeLoads >= 4)
+				{
+					yield return null;
+				}
+
 				using (var www = new UnityWebRequest(uri, "GET", handler, null))
 				{
+					Interlocked.Increment(ref activeLoads);
 					yield return www.SendWebRequest();
 					if (www.isNetworkError)
 					{
@@ -67,13 +76,14 @@ namespace MixedRealityExtension.Util.Unity
 					{
 						if (typeof(T) == typeof(AudioClip))
 						{
-							result.Asset = ((DownloadHandlerAudioClip) handler).audioClip as T;
+							result.Asset = ((DownloadHandlerAudioClip)handler).audioClip as T;
 						}
 						else if (typeof(T) == typeof(Texture))
 						{
-							result.Asset = ((DownloadHandlerTexture) handler).texture as T;
+							result.Asset = ((DownloadHandlerTexture)handler).texture as T;
 						}
 					}
+					Interlocked.Decrement(ref activeLoads);
 				}
 			}
 		}
