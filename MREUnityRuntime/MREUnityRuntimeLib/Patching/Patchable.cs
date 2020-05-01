@@ -7,8 +7,8 @@ namespace MixedRealityExtension.Patching
 	/// <summary>
 	/// Statically caches properties for patchables. This increases IsPatched performance from 200+us
 	/// per transform patch to 30-60us and reduced chess' initial patching frame time from 150ms to
-	/// 20ms. Note we had to duplicate some code in the ScaledTransform due to a lack of multiple
-	/// inheritance or mixins in C#.
+	/// 20ms on a high end CPU. Note we had to duplicate some code in the ScaledTransform due to a lack
+	/// of multiple inheritance or mixins in C#.
 	/// </summary>
 	public class Patchable<T>
 	{

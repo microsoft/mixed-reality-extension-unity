@@ -103,6 +103,13 @@ namespace MixedRealityExtension.IPC.Connections
 			}
 		}
 
+		/// <summary>
+		/// Sends a message to ther server, doing JSON serialization off thread. Moving this work
+		/// off thread saved us 30ms on several large frames in the chess app on a high end CPU. Note that
+		/// Some of the messages use enumerables to pass collections, which will now be executed off
+		/// thread. This is a performance win in many cases, but it means we can no longer access unity
+		/// objects through these enumerators.
+		/// </summary>
 		public void Send(Message message)
 		{
 			if (disposed)

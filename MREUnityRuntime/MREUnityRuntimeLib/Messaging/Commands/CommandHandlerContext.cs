@@ -5,6 +5,11 @@ using System.Reflection;
 
 namespace MixedRealityExtension.Messaging.Commands
 {
+	/// <summary>
+	/// This class pre-caches method info for command handlers, since it does not change at runtime.
+	/// This saved us 20ms on the startup frame for the MREApp on a high end CPU.
+	/// </summary>
+	/// <typeparam name="T"></typeparam>
 	internal class CommandHandlerContext<T> : ICommandHandlerContext
 	{
 		static Dictionary<Type, MethodInfo> _methodInfo;
