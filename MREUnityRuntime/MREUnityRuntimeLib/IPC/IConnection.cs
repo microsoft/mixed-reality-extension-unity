@@ -61,7 +61,7 @@ namespace MixedRealityExtension.IPC
 		/// <summary>
 		/// Invoked after the connection receives a message;
 		/// </summary>
-		event MWEventHandler<string> OnReceive;
+		event MWEventHandler<Message> OnReceive;
 
 		/// <summary>
 		/// Invoked when an error occurred on the connection.

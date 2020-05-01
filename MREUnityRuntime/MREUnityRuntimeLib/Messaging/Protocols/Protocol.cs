@@ -1,11 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
-using MixedRealityExtension.API;
 using MixedRealityExtension.App;
 using MixedRealityExtension.IPC;
 using MixedRealityExtension.Messaging.Payloads;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using System;
 using UnityEngine;
 
@@ -53,17 +50,10 @@ namespace MixedRealityExtension.Messaging.Protocols
 			}
 		}
 
-		private void Conn_OnReceive(string json)
+		private void Conn_OnReceive(Message message)
 		{
 			try
 			{
-				if (MREAPI.AppsAPI.VerboseLogging)
-				{
-					App.Logger.LogDebug($"Recv: {json}");
-				}
-
-				var message = JsonConvert.DeserializeObject<Message>(json, Constants.SerializerSettings);
-
 				if (message.Payload is Payloads.Heartbeat payload)
 				{
 					App.UpdateServerTimeOffset(payload.ServerTime);
@@ -76,16 +66,15 @@ namespace MixedRealityExtension.Messaging.Protocols
 			}
 			catch (Exception ex)
 			{
-				var message = $"Failed to process message: {json}\nError: {ex.Message}\nStackTrace: {ex.StackTrace}";
-				App.Logger.LogDebug(message);
+				var errorMessage = $"Failed to process message: {message.Payload.GetType()}\nError: {ex.Message}\nStackTrace: {ex.StackTrace}";
+				App.Logger.LogDebug(errorMessage);
 				try
 				{
 					// In case of failure: make a best effort to send a reply message, so promises don't hang and the app can know something about what went wrong.
-					var jtoken = JToken.Parse(json);
-					var replyToId = jtoken["id"].ToString();
+					var replyToId = message.Id;
 					Send(new OperationResult()
 					{
-						Message = message,
+						Message = errorMessage,
 						ResultCode = OperationResultCode.Error
 					}, replyToId);
 				}

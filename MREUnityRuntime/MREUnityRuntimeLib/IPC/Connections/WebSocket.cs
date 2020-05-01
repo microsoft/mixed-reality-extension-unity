@@ -45,7 +45,7 @@ namespace MixedRealityExtension.IPC.Connections
 		public event MWEventHandler<Exception> OnError;
 
 		/// <inheritdoc />
-		public event MWEventHandler<string> OnReceive;
+		public event MWEventHandler<Message> OnReceive;
 
 		/// <inheritdoc />
 		public bool IsActive => _cancellationTokenSource != null;
@@ -338,8 +338,9 @@ namespace MixedRealityExtension.IPC.Connections
 							// Dispatch the message.
 							if (result != null && result.EndOfMessage && stream.Length > 0)
 							{
-								var message = Encoding.UTF8.GetString(stream.GetBuffer(), 0, (int)stream.Length);
-								Invoke_OnReceive(message);
+								string json = Encoding.UTF8.GetString(stream.GetBuffer(), 0, (int)stream.Length);
+
+								Invoke_OnReceive(json);
 							}
 
 							// Reset accumulation buffer.
@@ -412,9 +413,26 @@ namespace MixedRealityExtension.IPC.Connections
 			_eventQueue.Add(() => OnError?.Invoke(e));
 		}
 
-		private void Invoke_OnReceive(string message)
+		/// <summary>
+		/// Moving deserliazation to the background thread reduces Chess' primary deserialization
+		/// frame from 100ms to under 10ms on a high end CPU.
+		/// </summary>
+		private void Invoke_OnReceive(string json)
 		{
-			_eventQueue.Add(() => OnReceive?.Invoke(message));
+			if (MREAPI.AppsAPI.VerboseLogging)
+			{
+				MREAPI.Logger.LogDebug($"Recv: {json}");
+			}
+
+			try
+			{
+				Message message = JsonConvert.DeserializeObject<Message>(json, Constants.SerializerSettings);
+				_eventQueue.Add(() => OnReceive?.Invoke(message));
+			}
+			catch (Exception e)
+			{
+				MREAPI.Logger.LogDebug($"Error deserializing message.Json: {json}\nException: {e.Message}\nStackTrace: {e.StackTrace}");
+			}
 		}
 
 		private void StartWorker()
