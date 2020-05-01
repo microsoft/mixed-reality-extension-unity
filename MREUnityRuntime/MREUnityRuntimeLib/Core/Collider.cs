@@ -68,6 +68,15 @@ namespace MixedRealityExtension.Core
 		/// <inheritdoc />
 		public bool IsTrigger => _collider.isTrigger;
 
+		/// <inheritdoc />
+		public float Bounciness => _collider.material.bounciness;
+
+		/// <inheritdoc />
+		public float StaticFriction => _collider.material.staticFriction;
+
+		/// <inheritdoc />
+		public float DynamicFriction => _collider.material.dynamicFriction;
+
 		// /// <inheritdoc />
 		//public CollisionLayer CollisionLayer { get; set; }
 
@@ -106,6 +115,10 @@ namespace MixedRealityExtension.Core
 		{
 			_collider.enabled = _collider.enabled.GetPatchApplied(IsEnabled.ApplyPatch(patch.Enabled));
 			_collider.isTrigger = _collider.isTrigger.GetPatchApplied(IsTrigger.ApplyPatch(patch.IsTrigger));
+			_collider.material.bounciness = _collider.material.bounciness.GetPatchApplied(Bounciness.ApplyPatch(patch.Bounciness));
+			_collider.material.staticFriction = _collider.material.staticFriction.GetPatchApplied(StaticFriction.ApplyPatch(patch.StaticFriction));
+			_collider.material.dynamicFriction = _collider.material.dynamicFriction.GetPatchApplied(DynamicFriction.ApplyPatch(patch.DynamicFriction));
+
 			MREAPI.AppsAPI.LayerApplicator.ApplyLayerToCollider(patch.Layer, _collider);
 
 			if (patch.EventSubscriptions != null)
@@ -183,6 +196,10 @@ namespace MixedRealityExtension.Core
 			{
 				Enabled = _collider.enabled,
 				IsTrigger = _collider.isTrigger,
+				Bounciness = _collider.material.bounciness,
+				StaticFriction = _collider.material.staticFriction,
+				DynamicFriction = _collider.material.dynamicFriction,
+
 				Layer = MREAPI.AppsAPI.LayerApplicator.DetermineLayerOfCollider(_collider),
 				Geometry = colliderGeo
 			};

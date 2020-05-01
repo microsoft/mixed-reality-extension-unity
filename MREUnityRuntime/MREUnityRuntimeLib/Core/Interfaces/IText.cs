@@ -83,6 +83,11 @@ namespace MixedRealityExtension.Core.Interfaces
 	public enum FontFamily
 	{
 		/// <summary>
+		/// No preference on font, use engine's preferred font
+		/// </summary>
+		Default = 0,
+
+		/// <summary>
 		/// Use the engine's preferred serif-style font
 		/// </summary>
 		Serif,
@@ -90,7 +95,17 @@ namespace MixedRealityExtension.Core.Interfaces
 		/// <summary>
 		/// Use the engine's preferred sans serif-style font
 		/// </summary>
-		SansSerif
+		SansSerif,
+
+		/// <summary>
+		/// Use the engine's preferred monospace font
+		/// </summary>
+		Monospace,
+
+		/// <summary>
+		/// Use the engine's preferred handwriting font
+		/// </summary>
+		Cursive
 	}
 
 	/// <summary>

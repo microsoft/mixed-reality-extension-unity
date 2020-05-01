@@ -31,10 +31,6 @@ sysinfo.txt
 /*.svd
  
 Assets/Assemblies/MREUnity*.*
-Assets/Assemblies/*.pdb
-Assets/Assemblies/*.pdb.meta
-Assets/Assemblies/*.mdb
-Assets/Assemblies/*.mdb.meta
 !Assets/Assemblies/*.dll.meta
 
 # ============ #
