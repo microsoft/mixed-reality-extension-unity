@@ -14,7 +14,7 @@ namespace MixedRealityExtension.Patching.Types
 	{
 		public TransformPatchInfo() { }
 
-		internal TransformPatchInfo(Guid id, PhysicsBridge.Snapshot.Transform transform)
+		internal TransformPatchInfo(Guid id, PhysicsBridge.Snapshot.SnapshotTransform transform)
 		{
 			Id = id;
 
@@ -23,6 +23,9 @@ namespace MixedRealityExtension.Patching.Types
 			Transform.Rotation = new QuaternionPatch(transform.Rotation);
 		}
 
+		/// <summary>
+		/// ID of the actor (of the RB)
+		/// </summary>
 		public Guid Id { get; set; }
 
 		public TransformPatch Transform { get; set; }
@@ -34,13 +37,13 @@ namespace MixedRealityExtension.Patching.Types
 
 		internal PhysicsBridgePatch(PhysicsBridge.Snapshot snapshot)
 		{
-			Id = snapshot.SourceId;
+			Id = snapshot.SourceAppId;
 			Time = snapshot.Time;
-			Transforms = new List<TransformPatchInfo>(snapshot.Transforms.Count);
+			bridgeTransforms = new List<TransformPatchInfo>(snapshot.snapshotTransforms.Count);
 
-			foreach (var ti in snapshot.Transforms)
+			foreach (var ti in snapshot.snapshotTransforms)
 			{
-				Transforms.Add(new TransformPatchInfo(ti.Id, ti.Transform));
+				bridgeTransforms.Add(new TransformPatchInfo(ti.Id, ti.sTransform));
 			}
 		}
 
@@ -48,39 +51,41 @@ namespace MixedRealityExtension.Patching.Types
 		{
 			var snapshot = new PhysicsBridge.Snapshot();
 
-			snapshot.SourceId = Id;
+			snapshot.SourceAppId = Id;
 			snapshot.Time = Time;
 
-			if (Transforms != null)
+			if (bridgeTransforms != null)
 			{
-				snapshot.Transforms = new List<PhysicsBridge.Snapshot.TrasformInfo>(Transforms.Count);
+				snapshot.snapshotTransforms = new List<PhysicsBridge.Snapshot.SnapshotTrasformInfo>(bridgeTransforms.Count);
 
-				foreach (var ti in Transforms)
+				foreach (var ti in bridgeTransforms)
 				{
-					var t = new PhysicsBridge.Snapshot.TrasformInfo();
+					var t = new PhysicsBridge.Snapshot.SnapshotTrasformInfo();
 					t.Id = ti.Id;
 
-					t.Transform = new PhysicsBridge.Snapshot.Transform();
-					t.Transform.Position = new UnityEngine.Vector3(ti.Transform.Position.X.Value, ti.Transform.Position.Y.Value, ti.Transform.Position.Z.Value);
-					t.Transform.Rotation = new UnityEngine.Quaternion(ti.Transform.Rotation.X.Value, ti.Transform.Rotation.Y.Value, ti.Transform.Rotation.Z.Value, ti.Transform.Rotation.W.Value);
+					t.sTransform = new PhysicsBridge.Snapshot.SnapshotTransform();
+					t.sTransform.Position = new UnityEngine.Vector3(ti.Transform.Position.X.Value, ti.Transform.Position.Y.Value, ti.Transform.Position.Z.Value);
+					t.sTransform.Rotation = new UnityEngine.Quaternion(ti.Transform.Rotation.X.Value, ti.Transform.Rotation.Y.Value, ti.Transform.Rotation.Z.Value, ti.Transform.Rotation.W.Value);
 
-					snapshot.Transforms.Add(t);
+					snapshot.snapshotTransforms.Add(t);
 				}
 			}
 			else
 			{
-				snapshot.Transforms = new List<PhysicsBridge.Snapshot.TrasformInfo>();
+				snapshot.snapshotTransforms = new List<PhysicsBridge.Snapshot.SnapshotTrasformInfo>();
 			}
 
 			return snapshot;
-
 		}
 
+		/// <summary>
+		/// source app id (of the sender)
+		/// </summary>
 		public Guid Id { get; set; }
 
 		public float Time { get; set; }
 
-		public List<TransformPatchInfo> Transforms { get; set; }
+		public List<TransformPatchInfo> bridgeTransforms { get; set; }
 
 		public void WriteToPath(TargetPath path, JToken value, int depth)
 		{
