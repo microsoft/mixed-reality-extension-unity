@@ -12,6 +12,7 @@ namespace MixedRealityExtension.Util.Unity
 
 	public static class AssetFetcher<T> where T : class
 	{
+		// Global: Keep track of the number of active asset fetch web requests.
 		private static int activeLoads = 0;
 
 		public struct FetchResult
@@ -31,9 +32,10 @@ namespace MixedRealityExtension.Util.Unity
 
 			runner.StartCoroutine(LoadCoroutine());
 
+			// Spin asynchronously until the request completes.
 			while (!result.IsPopulated)
 			{
-				await Task.Delay(50);
+				await Task.Delay(10);
 			}
 
 			return result;
@@ -55,6 +57,7 @@ namespace MixedRealityExtension.Util.Unity
 					yield break;
 				}
 
+				// Spin asynchronously until activeLoads allows us through.
 				while (activeLoads >= 4)
 				{
 					yield return null;
@@ -62,7 +65,9 @@ namespace MixedRealityExtension.Util.Unity
 
 				using (var www = new UnityWebRequest(uri, "GET", handler, null))
 				{
+					// Increment activeLoads
 					Interlocked.Increment(ref activeLoads);
+
 					yield return www.SendWebRequest();
 					if (www.isNetworkError)
 					{
@@ -83,6 +88,8 @@ namespace MixedRealityExtension.Util.Unity
 							result.Asset = ((DownloadHandlerTexture)handler).texture as T;
 						}
 					}
+
+					// Decrement activeLoads
 					Interlocked.Decrement(ref activeLoads);
 				}
 			}
