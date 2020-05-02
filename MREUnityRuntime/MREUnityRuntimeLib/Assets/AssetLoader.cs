@@ -12,8 +12,8 @@ using MixedRealityExtension.Patching.Types;
 using MixedRealityExtension.Util;
 using MixedRealityExtension.Util.Unity;
 using System;
-using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -24,7 +24,6 @@ using MWTexture = MixedRealityExtension.Assets.Texture;
 using MWMesh = MixedRealityExtension.Assets.Mesh;
 using MWSound = MixedRealityExtension.Assets.Sound;
 using MWVideoStream = MixedRealityExtension.Assets.VideoStream;
-using System.IO;
 
 namespace MixedRealityExtension.Assets
 {
@@ -180,12 +179,19 @@ namespace MixedRealityExtension.Assets
 			}
 
 			// pre-parse glTF document so we can get a scene count
-			// run this asynchronously
+			// run this on a threadpool thread so that the Unity main thread is not blocked
 			GLTF.Schema.GLTFRoot gltfRoot = null;
-			await Task.Run(() =>
+			try
 			{
-				GLTF.GLTFParser.ParseJson(stream, out gltfRoot);
-			});
+				await Task.Run(() =>
+				{
+					GLTF.GLTFParser.ParseJson(stream, out gltfRoot);
+				});
+			}
+			catch (Exception e)
+			{
+				Debug.LogError(e);
+			}
 			if (gltfRoot == null)
 			{
 				throw new GLTFLoadException("Failed to parse glTF");
