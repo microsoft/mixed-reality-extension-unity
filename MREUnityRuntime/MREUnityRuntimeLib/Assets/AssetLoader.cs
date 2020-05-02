@@ -199,99 +199,100 @@ namespace MixedRealityExtension.Assets
 			//GLTF.GLTFParser.ParseJson(stream, out GLTF.Schema.GLTFRoot gltfRoot);
 			stream.Position = 0;
 
-			GLTFSceneImporter importer =
-				MREAPI.AppsAPI.GLTFImporterFactory.CreateImporter(gltfRoot, loader, _asyncHelper, stream);
-			importer.SceneParent = MREAPI.AppsAPI.AssetCache.CacheRootGO().transform;
-			importer.Collider = colliderType.ToGLTFColliderType();
-
-			// load textures
-			if (gltfRoot.Textures != null)
+			using (GLTFSceneImporter importer =
+				MREAPI.AppsAPI.GLTFImporterFactory.CreateImporter(gltfRoot, loader, _asyncHelper, stream))
 			{
-				for (var i = 0; i < gltfRoot.Textures.Count; i++)
+				importer.SceneParent = MREAPI.AppsAPI.AssetCache.CacheRootGO().transform;
+				importer.Collider = colliderType.ToGLTFColliderType();
+
+				// load textures
+				if (gltfRoot.Textures != null)
 				{
-					await importer.LoadTextureAsync(gltfRoot.Textures[i], i, true);
-					var texture = importer.GetTexture(i);
-					texture.name = gltfRoot.Textures[i].Name ?? $"texture:{i}";
-
-					var asset = GenerateAssetPatch(texture, guidGenerator.Next());
-					asset.Name = texture.name;
-					asset.Source = new AssetSource(source.ContainerType, source.Uri, $"texture:{i}");
-					MREAPI.AppsAPI.AssetCache.CacheAsset(texture, asset.Id, containerId, source);
-					assets.Add(asset);
-				}
-			}
-
-			// load meshes
-			if (gltfRoot.Meshes != null)
-			{
-				var cancellationSource = new System.Threading.CancellationTokenSource();
-				for (var i = 0; i < gltfRoot.Meshes.Count; i++)
-				{
-					var mesh = await importer.LoadMeshAsync(i, cancellationSource.Token);
-					mesh.name = gltfRoot.Meshes[i].Name ?? $"mesh:{i}";
-
-					var asset = GenerateAssetPatch(mesh, guidGenerator.Next());
-					asset.Name = mesh.name;
-					asset.Source = new AssetSource(source.ContainerType, source.Uri, $"mesh:{i}");
-					var colliderGeo = colliderType == ColliderType.Mesh ?
-						(ColliderGeometry)new MeshColliderGeometry() { MeshId = asset.Id } :
-						(ColliderGeometry)new BoxColliderGeometry() { Size = (mesh.bounds.size * 0.8f).CreateMWVector3() };
-					MREAPI.AppsAPI.AssetCache.CacheAsset(mesh, asset.Id, containerId, source, colliderGeo);
-					assets.Add(asset);
-				}
-			}
-
-			// load materials
-			if (gltfRoot.Materials != null)
-			{
-				for (var i = 0; i < gltfRoot.Materials.Count; i++)
-				{
-					var matdef = gltfRoot.Materials[i];
-					var material = await importer.LoadMaterialAsync(i);
-					material.name = matdef.Name ?? $"material:{i}";
-
-					var asset = GenerateAssetPatch(material, guidGenerator.Next());
-					asset.Name = material.name;
-					asset.Source = new AssetSource(source.ContainerType, source.Uri, $"material:{i}");
-					MREAPI.AppsAPI.AssetCache.CacheAsset(material, asset.Id, containerId, source);
-					assets.Add(asset);
-				}
-			}
-
-			// load prefabs
-			if (gltfRoot.Scenes != null)
-			{
-				for (var i = 0; i < gltfRoot.Scenes.Count; i++)
-				{
-					await importer.LoadSceneAsync(i).ConfigureAwait(true);
-
-					GameObject rootObject = importer.LastLoadedScene;
-					rootObject.name = gltfRoot.Scenes[i].Name ?? $"scene:{i}";
-
-					var animation = rootObject.GetComponent<UnityEngine.Animation>();
-					if (animation != null)
+					for (var i = 0; i < gltfRoot.Textures.Count; i++)
 					{
-						animation.playAutomatically = false;
+						await importer.LoadTextureAsync(gltfRoot.Textures[i], i, true);
+						var texture = importer.GetTexture(i);
+						texture.name = gltfRoot.Textures[i].Name ?? $"texture:{i}";
 
-						// initialize mapping so we know which gameobjects are targeted by which animation clips
-						var mapping = rootObject.AddComponent<PrefabAnimationTargets>();
-						mapping.Initialize(gltfRoot, i);
+						var asset = GenerateAssetPatch(texture, guidGenerator.Next());
+						asset.Name = texture.name;
+						asset.Source = new AssetSource(source.ContainerType, source.Uri, $"texture:{i}");
+						MREAPI.AppsAPI.AssetCache.CacheAsset(texture, asset.Id, containerId, source);
+						assets.Add(asset);
 					}
+				}
 
-					MWGOTreeWalker.VisitTree(rootObject, (go) =>
+				// load meshes
+				if (gltfRoot.Meshes != null)
+				{
+					var cancellationSource = new System.Threading.CancellationTokenSource();
+					for (var i = 0; i < gltfRoot.Meshes.Count; i++)
 					{
-						go.layer = MREAPI.AppsAPI.LayerApplicator.DefaultLayer;
-					});
+						var mesh = await importer.LoadMeshAsync(i, cancellationSource.Token);
+						mesh.name = gltfRoot.Meshes[i].Name ?? $"mesh:{i}";
 
-					var def = GenerateAssetPatch(rootObject, guidGenerator.Next());
-					def.Name = rootObject.name;
-					def.Source = new AssetSource(source.ContainerType, source.Uri, $"scene:{i}");
-					MREAPI.AppsAPI.AssetCache.CacheAsset(rootObject, def.Id, containerId, source);
-					assets.Add(def);
+						var asset = GenerateAssetPatch(mesh, guidGenerator.Next());
+						asset.Name = mesh.name;
+						asset.Source = new AssetSource(source.ContainerType, source.Uri, $"mesh:{i}");
+						var colliderGeo = colliderType == ColliderType.Mesh ?
+							(ColliderGeometry)new MeshColliderGeometry() { MeshId = asset.Id } :
+							(ColliderGeometry)new BoxColliderGeometry() { Size = (mesh.bounds.size * 0.8f).CreateMWVector3() };
+						MREAPI.AppsAPI.AssetCache.CacheAsset(mesh, asset.Id, containerId, source, colliderGeo);
+						assets.Add(asset);
+					}
+				}
+
+				// load materials
+				if (gltfRoot.Materials != null)
+				{
+					for (var i = 0; i < gltfRoot.Materials.Count; i++)
+					{
+						var matdef = gltfRoot.Materials[i];
+						var material = await importer.LoadMaterialAsync(i);
+						material.name = matdef.Name ?? $"material:{i}";
+
+						var asset = GenerateAssetPatch(material, guidGenerator.Next());
+						asset.Name = material.name;
+						asset.Source = new AssetSource(source.ContainerType, source.Uri, $"material:{i}");
+						MREAPI.AppsAPI.AssetCache.CacheAsset(material, asset.Id, containerId, source);
+						assets.Add(asset);
+					}
+				}
+
+				// load prefabs
+				if (gltfRoot.Scenes != null)
+				{
+					for (var i = 0; i < gltfRoot.Scenes.Count; i++)
+					{
+						await importer.LoadSceneAsync(i).ConfigureAwait(true);
+
+						GameObject rootObject = importer.LastLoadedScene;
+						rootObject.name = gltfRoot.Scenes[i].Name ?? $"scene:{i}";
+
+						var animation = rootObject.GetComponent<UnityEngine.Animation>();
+						if (animation != null)
+						{
+							animation.playAutomatically = false;
+
+							// initialize mapping so we know which gameobjects are targeted by which animation clips
+							var mapping = rootObject.AddComponent<PrefabAnimationTargets>();
+							mapping.Initialize(gltfRoot, i);
+						}
+
+						MWGOTreeWalker.VisitTree(rootObject, (go) =>
+						{
+							go.layer = MREAPI.AppsAPI.LayerApplicator.DefaultLayer;
+						});
+
+						var def = GenerateAssetPatch(rootObject, guidGenerator.Next());
+						def.Name = rootObject.name;
+						def.Source = new AssetSource(source.ContainerType, source.Uri, $"scene:{i}");
+						MREAPI.AppsAPI.AssetCache.CacheAsset(rootObject, def.Id, containerId, source);
+						assets.Add(def);
+					}
 				}
 			}
 
-			importer.Dispose();
 			return assets;
 		}
 
