@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using UnityEngine;
 
 namespace MixedRealityExtension.Core
 {
@@ -73,6 +74,16 @@ namespace MixedRealityExtension.Core
 		}
 
 		/// <summary>
+		/// to monitor the collisions between frames this we need to store per contact pair. 
+		/// </summary>
+		public class CollisionMonitorInfo
+		{
+			public float timeFromStartCollision = 0.0f;
+			public float lastApproxDistance = float.MaxValue;
+			public float relativeApproachingVel = -float.MaxValue;
+		}
+
+		/// <summary>
 		///  for interactive collisions we need to store the implicit velocities and other stuff to know
 		/// </summary>
 		public class CollisionSwitchInfo
@@ -82,24 +93,21 @@ namespace MixedRealityExtension.Core
 			public UnityEngine.Vector3 linearVelocity;
 			public UnityEngine.Vector3 angularVelocity;
 			public Guid rigidBodyId;
+			public CollisionMonitorInfo monitorInfo;
 		}
-
 
 		private class RigidBodyInfo
 		{
-			public RigidBodyInfo(Guid id, UnityEngine.Rigidbody rb, /*UnityEngine.Collider collider,*/ bool ownership)
+			public RigidBodyInfo(Guid id, UnityEngine.Rigidbody rb, bool ownership)
 			{
 				Id = id;
 				RigidBody = rb;
-				//rbCollider = collider;
 				Ownership = ownership;
 			}
 
 			public Guid Id;
 
 			public UnityEngine.Rigidbody RigidBody;
-
-			//public UnityEngine.Collider rbCollider;
 
 			public bool Ownership; ///< true if this rigid body is owned by this client
 		}
@@ -116,7 +124,12 @@ namespace MixedRealityExtension.Core
 		/// <summary>
 		/// when we update a body we compute the implicit velocity. This velocity is needed, in case of collisions to switch from kinematic to kinematic=false
 		/// </summary>
-		List<CollisionSwitchInfo> _snapshotCollisionInfos = new List<CollisionSwitchInfo>();
+		List<CollisionSwitchInfo> _switchCollisionInfos = new List<CollisionSwitchInfo>();
+
+		/// <summary>
+		/// <todo> the input should be GuidXGuid since one body could collide with multiple other, or one collision is enough (?)
+		/// </summary>
+		Dictionary<Guid, CollisionMonitorInfo> _monitorCollisionInfo = new Dictionary<Guid, CollisionMonitorInfo>();
 
 		public PhysicsBridge()
 		{
@@ -192,12 +205,12 @@ namespace MixedRealityExtension.Core
 		{
 			// physics rigid body management
 			// set transforms/velocities for key framed bodies
-
+			float DT = UnityEngine.Time.fixedDeltaTime;
+			float halfDT = 0.5f * DT;
+			float invDT = (1.0f / DT);
 
 			// <todo> this is wrong we should keep 
-			_snapshotCollisionInfos.Clear();
-
-			//const float invDeltaTime = 1.0f / UnityEngine.Time.fixedDeltaTime;
+			_switchCollisionInfos.Clear();
 
 			foreach (var rb in _rigidBodies.Values)
 			{
@@ -214,25 +227,97 @@ namespace MixedRealityExtension.Core
 
 					collisionInfo.startPosition = rb.RigidBody.transform.position;
 					collisionInfo.startOrientation = rb.RigidBody.transform.rotation;
-
-					rb.RigidBody.isKinematic = true;
-					rb.RigidBody.transform.position = /*rootTransform.position +*/ rootTransform.TransformPoint(transform.Position);
-					rb.RigidBody.transform.rotation = rootTransform.rotation * transform.Rotation;
-
-					collisionInfo.linearVelocity = rb.RigidBody.transform.position - collisionInfo.startPosition;
-					collisionInfo.angularVelocity = (UnityEngine.Quaternion.Inverse(collisionInfo.startOrientation) * rb.RigidBody.transform.rotation).eulerAngles;
 					collisionInfo.rigidBodyId = rb.Id;
 
-					_snapshotCollisionInfos.Add(collisionInfo);
+					if (_monitorCollisionInfo.ContainsKey(rb.Id))
+					{
+						rb.RigidBody.isKinematic = false;
+						collisionInfo.monitorInfo = _monitorCollisionInfo[rb.Id];
+						collisionInfo.monitorInfo.timeFromStartCollision += DT;
+						collisionInfo.linearVelocity = rb.RigidBody.velocity;
+						collisionInfo.angularVelocity = rb.RigidBody.angularVelocity;
+
+						Debug.Log(" Remote body: " + rb.Id.ToString() + " is dynamic since:" + collisionInfo.monitorInfo.timeFromStartCollision);
+
+						// <todo> if time passes by then make a transformation between key framed and dynamic
+						// but only change the positions not the velocity
+					}
+					else
+					{
+						rb.RigidBody.isKinematic = true;
+						rb.RigidBody.transform.position = /*rootTransform.position +*/ rootTransform.TransformPoint(transform.Position);
+						rb.RigidBody.transform.rotation = rootTransform.rotation * transform.Rotation;
+						collisionInfo.linearVelocity = (rb.RigidBody.transform.position - collisionInfo.startPosition) * invDT;
+						collisionInfo.angularVelocity =
+							(UnityEngine.Quaternion.Inverse(collisionInfo.startOrientation)
+							 * rb.RigidBody.transform.rotation).eulerAngles * invDT;
+						Debug.Log(" Remote body: " + rb.Id.ToString() + " is key framed:");
+					}
+
+					_switchCollisionInfos.Add(collisionInfo);
 				}
 			}
+
+			// clear here all the monitoring since we will re add them
+			_monitorCollisionInfo.Clear();
 
 			// test collisions of each owned body with each not owned body
 			foreach (var rb in _rigidBodies.Values)
 			{
 				if (rb.Ownership)
 				{
-					// <todo> test here all the 
+					// <todo> test here all the remote-owned collisions and those should be turned to dynamic again.
+					foreach (var remoteBodyInfo in _switchCollisionInfos)
+					{
+						var remoteBody = _rigidBodies[remoteBodyInfo.rigidBodyId].RigidBody;
+						var comDist = (remoteBody.transform.position - rb.RigidBody.transform.position).magnitude;
+
+						var remoteHitPoint = remoteBody.ClosestPointOnBounds(rb.RigidBody.transform.position);
+						var ownedHitPoint = rb.RigidBody.ClosestPointOnBounds(remoteBody.transform.position);
+
+						var radiousRemote = 1.3f * (remoteHitPoint - remoteBody.transform.position).magnitude;
+						var radiusOwnedBody = 1.3f * (ownedHitPoint - rb.RigidBody.transform.position).magnitude;
+						var totalDistance = radiousRemote + radiusOwnedBody;
+
+						// project the linear velocity of the body
+						var projectedOwnedBodyPos = rb.RigidBody.transform.position + rb.RigidBody.velocity * DT;
+						var projectedComDist = (remoteBody.transform.position - projectedOwnedBodyPos).magnitude;
+
+						Debug.Log("prprojectedComDistoj: " + projectedComDist + " comDist:" + comDist
+							+ " totalDistance:" + totalDistance + " remote body pos:" + remoteBodyInfo.startPosition.ToString()
+							+ "inpul lin vel:" + remoteBodyInfo.linearVelocity);
+
+						// <todo> this is here a hard switch, alter it should be smooth
+						if (projectedComDist < totalDistance || comDist < totalDistance)
+						{
+							var collisionMonitorInfo = remoteBodyInfo.monitorInfo;
+							collisionMonitorInfo.relativeApproachingVel = (comDist - projectedComDist) * invDT;
+							collisionMonitorInfo.lastApproxDistance = Math.Min(comDist, projectedComDist);
+
+							// add to the monitor stream 
+							_monitorCollisionInfo.Add(remoteBodyInfo.rigidBodyId, collisionMonitorInfo);
+
+							// this is a new collision
+							if (collisionMonitorInfo.timeFromStartCollision < halfDT)
+							{
+								// switch back to dynamic
+								remoteBody.isKinematic = false;
+								remoteBody.transform.position = remoteBodyInfo.startPosition;
+								remoteBody.transform.rotation = remoteBodyInfo.startOrientation;
+								remoteBody.velocity = remoteBodyInfo.linearVelocity;
+								remoteBody.angularVelocity = remoteBodyInfo.angularVelocity;
+								Debug.Log(" remote body velocity SWITCH collision: " + remoteBody.velocity.ToString() +
+	                               "  start position:" + remoteBody.transform.position.ToString());
+							}
+							else
+							{
+								// do nothing just leave dynamic
+								// <todo> make a smoother transition as time passes and consider
+								Debug.Log(" remote body velocity stay collision: " + remoteBody.velocity.ToString() +
+									"  start position:" + remoteBody.transform.position.ToString());
+							}
+						}
+					}
 				}
 			}
 
