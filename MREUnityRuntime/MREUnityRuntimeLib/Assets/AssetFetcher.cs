@@ -7,14 +7,10 @@ using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Networking;
 
-namespace MixedRealityExtension.Util.Unity
+namespace MixedRealityExtension.Assets
 {
-
 	public static class AssetFetcher<T> where T : class
 	{
-		// Global: Keep track of the number of active asset fetch web requests.
-		private static int activeLoads = 0;
-
 		public struct FetchResult
 		{
 			public T Asset;
@@ -43,11 +39,11 @@ namespace MixedRealityExtension.Util.Unity
 			IEnumerator LoadCoroutine()
 			{
 				DownloadHandler handler;
-				if (typeof(T) == typeof(AudioClip))
+				if (typeof(T) == typeof(UnityEngine.AudioClip))
 				{
 					handler = new DownloadHandlerAudioClip(uri, AudioType.UNKNOWN);
 				}
-				else if (typeof(T) == typeof(Texture))
+				else if (typeof(T) == typeof(UnityEngine.Texture))
 				{
 					handler = new DownloadHandlerTexture(false);
 				}
@@ -57,17 +53,15 @@ namespace MixedRealityExtension.Util.Unity
 					yield break;
 				}
 
-				// Spin asynchronously until activeLoads allows us through.
-				while (activeLoads >= 4)
+				// Spin asynchronously until the load throttler would allow us through.
+				while (AssetLoadThrottling.WouldThrottle())
 				{
 					yield return null;
 				}
 
+				using (var scope = new AssetLoadThrottling.AssetLoadScope())
 				using (var www = new UnityWebRequest(uri, "GET", handler, null))
 				{
-					// Increment activeLoads
-					++activeLoads;
-
 					yield return www.SendWebRequest();
 					if (www.isNetworkError)
 					{
@@ -79,18 +73,15 @@ namespace MixedRealityExtension.Util.Unity
 					}
 					else
 					{
-						if (typeof(T) == typeof(AudioClip))
+						if (typeof(T) == typeof(UnityEngine.AudioClip))
 						{
 							result.Asset = ((DownloadHandlerAudioClip)handler).audioClip as T;
 						}
-						else if (typeof(T) == typeof(Texture))
+						else if (typeof(T) == typeof(UnityEngine.Texture))
 						{
 							result.Asset = ((DownloadHandlerTexture)handler).texture as T;
 						}
 					}
-
-					// Decrement activeLoads
-					--activeLoads;
 				}
 			}
 		}

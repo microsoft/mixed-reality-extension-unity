@@ -146,36 +146,21 @@ namespace MixedRealityExtension.Assets
 			onCompleteCallback?.Invoke();
 		}
 
-		// Global: Keep track of the number of active glTF web requests.
-		private static int activeLoads = 0;
-
 		private async Task<IList<Asset>> LoadAssetsFromGLTF(AssetSource source, Guid containerId, ColliderType colliderType)
 		{
-			// Spin asynchronously until activeLoads allows us through.
-			while (activeLoads >= 4)
-			{
-				await Task.Delay(10);
-			}
-
 			WebRequestLoader loader = null;
 			Stream stream = null;
 			IList<Asset> assets = new List<Asset>();
 			DeterministicGuids guidGenerator = new DeterministicGuids(UtilMethods.StringToGuid(
 				$"{containerId}:{source.ParsedUri.AbsoluteUri}"));
-			try
-			{
-				// Increment activeLoads
-				++activeLoads;
 
+			// Wait asynchronously until the load throttler lets us through.
+			using (var scope = await AssetLoadThrottling.AcquireLoadScope())
+			{
 				// download file
 				var rootUrl = URIHelper.GetDirectoryName(source.ParsedUri.AbsoluteUri);
 				loader = new WebRequestLoader(rootUrl);
 				stream = await loader.LoadStreamAsync(URIHelper.GetFileFromUri(source.ParsedUri));
-			}
-			finally
-			{
-				// Decrement activeLoads
-				--activeLoads;
 			}
 
 			// pre-parse glTF document so we can get a scene count
@@ -196,7 +181,6 @@ namespace MixedRealityExtension.Assets
 			{
 				throw new GLTFLoadException("Failed to parse glTF");
 			}
-			//GLTF.GLTFParser.ParseJson(stream, out GLTF.Schema.GLTFRoot gltfRoot);
 			stream.Position = 0;
 
 			using (GLTFSceneImporter importer =
