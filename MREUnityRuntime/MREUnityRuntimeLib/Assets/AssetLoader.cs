@@ -165,7 +165,7 @@ namespace MixedRealityExtension.Assets
 			try
 			{
 				// Increment activeLoads
-				Interlocked.Increment(ref activeLoads);
+				++activeLoads;
 
 				// download file
 				var rootUrl = URIHelper.GetDirectoryName(source.ParsedUri.AbsoluteUri);
@@ -175,7 +175,7 @@ namespace MixedRealityExtension.Assets
 			finally
 			{
 				// Decrement activeLoads
-				Interlocked.Decrement(ref activeLoads);
+				--activeLoads;
 			}
 
 			// pre-parse glTF document so we can get a scene count

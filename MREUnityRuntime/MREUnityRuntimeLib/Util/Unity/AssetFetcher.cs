@@ -66,7 +66,7 @@ namespace MixedRealityExtension.Util.Unity
 				using (var www = new UnityWebRequest(uri, "GET", handler, null))
 				{
 					// Increment activeLoads
-					Interlocked.Increment(ref activeLoads);
+					++activeLoads;
 
 					yield return www.SendWebRequest();
 					if (www.isNetworkError)
@@ -90,7 +90,7 @@ namespace MixedRealityExtension.Util.Unity
 					}
 
 					// Decrement activeLoads
-					Interlocked.Decrement(ref activeLoads);
+					--activeLoads;
 				}
 			}
 		}
