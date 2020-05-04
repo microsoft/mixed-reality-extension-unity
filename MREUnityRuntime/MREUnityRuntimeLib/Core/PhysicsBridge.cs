@@ -242,7 +242,7 @@ namespace MixedRealityExtension.Core
 						collisionInfo.monitorInfo.timeFromStartCollision += DT;
 						collisionInfo.linearVelocity = rb.RigidBody.velocity;
 						collisionInfo.angularVelocity = rb.RigidBody.angularVelocity;
-#if MRE_DEBUG
+#if MRE_PHYSICS_DEBUG
 						Debug.Log(" Remote body: " + rb.Id.ToString() + " is dynamic since:"
 							+ collisionInfo.monitorInfo.timeFromStartCollision + " relative distance:" + collisionInfo.monitorInfo.relativeDistance
 							+ " approach vel:" + collisionInfo.monitorInfo.relativeApproachingVel
@@ -273,7 +273,7 @@ namespace MixedRealityExtension.Core
 							(UnityEngine.Quaternion.Inverse(collisionInfo.startOrientation)
 							 * rb.RigidBody.transform.rotation).eulerAngles * invDT;
 						collisionInfo.monitorInfo = new CollisionMonitorInfo();
-#if MRE_DEBUG
+#if MRE_PHYSICS_DEBUG
 						Debug.Log(" Remote body: " + rb.Id.ToString() + " is key framed:");
 #endif
 					}
@@ -300,18 +300,23 @@ namespace MixedRealityExtension.Core
 						var remoteHitPoint = remoteBody.ClosestPointOnBounds(rb.RigidBody.transform.position);
 						var ownedHitPoint = rb.RigidBody.ClosestPointOnBounds(remoteBody.transform.position);
 
-						var radiousRemote = 1.3f * (remoteHitPoint - remoteBody.transform.position).magnitude;
-						var radiusOwnedBody = 1.3f * (ownedHitPoint - rb.RigidBody.transform.position).magnitude;
+						var remoteRelativeHitP = (remoteHitPoint - remoteBody.transform.position);
+						var ownedRelativeHitP = (ownedHitPoint - rb.RigidBody.transform.position);
+
+						var radiousRemote = 1.3f * remoteRelativeHitP.magnitude;
+						var radiusOwnedBody = 1.3f * ownedRelativeHitP.magnitude;
+
 						var totalDistance = radiousRemote + radiusOwnedBody + 0.0001f; // avoid division by zero
 
 						// project the linear velocity of the body
 						var projectedOwnedBodyPos = rb.RigidBody.transform.position + rb.RigidBody.velocity * DT;
 						var projectedComDist = (remoteBody.transform.position - projectedOwnedBodyPos).magnitude;
 
-#if MRE_DEBUG
+#if MRE_PHYSICS_DEBUG
 						Debug.Log("prprojectedComDistoj: " + projectedComDist + " comDist:" + comDist
 							+ " totalDistance:" + totalDistance + " remote body pos:" + remoteBodyInfo.startPosition.ToString()
-							+ "input lin vel:" + remoteBodyInfo.linearVelocity);
+							+ "input lin vel:" + remoteBodyInfo.linearVelocity + " radiousRemote:" + radiousRemote +
+							" radiusOwnedBody:" + radiusOwnedBody);
 #endif
 
 						var collisionMonitorInfo = remoteBodyInfo.monitorInfo;
@@ -323,10 +328,12 @@ namespace MixedRealityExtension.Core
 						bool isWithinCollisionRange = (projectedComDist < totalDistance || comDist < totalDistance || addToMonitor);
 						float timeSinceCollisionStart = collisionMonitorInfo.timeFromStartCollision;
 
-						// unconditionally add to the monitor stream if this is a reasonable collision
-						if (timeSinceCollisionStart <= startInterpolatingBack && collisionMonitorInfo.relativeDistance < 1.2f)
+						// unconditionally add to the monitor stream if this is a reasonable collision and we are only at the beginning
+						if (collisionMonitorInfo.timeFromStartCollision > halfDT &&
+							timeSinceCollisionStart <= startInterpolatingBack &&
+							collisionMonitorInfo.relativeDistance < 1.2f)
 						{
-#if MRE_DEBUG
+#if MRE_PHYSICS_DEBUG
 							Debug.Log(" unconditionally add to collision stream time:" + timeSinceCollisionStart +
 								" relative dist:" + collisionMonitorInfo.relativeDistance);
 #endif
@@ -340,7 +347,7 @@ namespace MixedRealityExtension.Core
 							// progress the interpolation
 							collisionMonitorInfo.keyframedInterpolationRatio =
 								invInterpolationTimeWindows * (timeSinceCollisionStart - startInterpolatingBack);
-#if MRE_DEBUG
+#if MRE_PHYSICS_DEBUG
 							Debug.Log(" doing interpolation new:" + collisionMonitorInfo.keyframedInterpolationRatio +
 								" old:" + oldVal);
 #endif
@@ -348,7 +355,7 @@ namespace MixedRealityExtension.Core
 							if (collisionMonitorInfo.relativeDistance < 0.8f
 								&& collisionMonitorInfo.keyframedInterpolationRatio > 0.2f)
 							{
-#if MRE_DEBUG
+#if MRE_PHYSICS_DEBUG
 								Debug.Log(" Stop interpolation time with DT:" + DT +
 									" Ratio:" + collisionMonitorInfo.keyframedInterpolationRatio +
 									" relDist:" + collisionMonitorInfo.relativeDistance);
@@ -372,14 +379,14 @@ namespace MixedRealityExtension.Core
 								remoteBody.transform.rotation = remoteBodyInfo.startOrientation;
 								remoteBody.velocity = remoteBodyInfo.linearVelocity;
 								remoteBody.angularVelocity = remoteBodyInfo.angularVelocity;
-#if MRE_DEBUG
+//#if MRE_PHYSICS_DEBUG
 								Debug.Log(" remote body velocity SWITCH collision: " + remoteBody.velocity.ToString() +
 	                               "  start position:" + remoteBody.transform.position.ToString());
-#endif
+//#endif
 							}
 							else
 							{
-#if MRE_DEBUG
+#if MRE_PHYSICS_DEBUG
 								// this is a previous collision so do nothing just leave dynamic
 								Debug.Log(" remote body velocity stay collision: " + remoteBody.velocity.ToString() +
 									"  start position:" + remoteBody.transform.position.ToString() +
