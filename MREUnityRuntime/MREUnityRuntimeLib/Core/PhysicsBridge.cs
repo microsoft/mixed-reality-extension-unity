@@ -36,14 +36,16 @@ namespace MixedRealityExtension.Core
 				}
 			}
 
-			public Snapshot.SnapshotTransform getTransform(Guid rbId)
+			public Snapshot.SnapshotTransform getTransform(Guid rbId, out float timeOfSnapshot)
 			{
+				timeOfSnapshot = -float.MaxValue;
 				foreach (var s in _snapshots.Values)
 				{
 					foreach (var t in s.snapshotTransforms)
 					{
 						if (t.Id == rbId)
 						{
+							timeOfSnapshot = s.Time;
 							return t.sTransform;
 						}
 					}
@@ -105,11 +107,18 @@ namespace MixedRealityExtension.Core
 				Id = id;
 				RigidBody = rb;
 				Ownership = ownership;
+				lastTimeKeyFramedUpdate = 0.0f;
+				lastValidLinerVelocity.Set(0.0f, 0.0f, 0.0f);
+				lastValidAngularVelocity.Set(0.0f, 0.0f, 0.0f);
 			}
 
 			public Guid Id;
 
 			public UnityEngine.Rigidbody RigidBody;
+
+			public float lastTimeKeyFramedUpdate;
+			public UnityEngine.Vector3 lastValidLinerVelocity;
+			public UnityEngine.Vector3 lastValidAngularVelocity;
 
 			public bool Ownership; ///< true if this rigid body is owned by this client
 		}
@@ -224,8 +233,9 @@ namespace MixedRealityExtension.Core
 				{
 					continue;
 				}
+				float timeOfSnapshot;
 
-				Snapshot.SnapshotTransform transform = _snapshotBuffer.getTransform(rb.Id);
+				Snapshot.SnapshotTransform transform = _snapshotBuffer.getTransform(rb.Id, out timeOfSnapshot);
 
 				if (transform != null)
 				{
@@ -265,13 +275,21 @@ namespace MixedRealityExtension.Core
 					}
 					else
 					{
+						UnityEngine.Vector3 newPosition = rootTransform.TransformPoint(transform.Position);
+						UnityEngine.Quaternion newOrientation = rootTransform.rotation * transform.Rotation;
 						rb.RigidBody.isKinematic = true;
-						rb.RigidBody.transform.position = rootTransform.TransformPoint(transform.Position);
-						rb.RigidBody.transform.rotation = rootTransform.rotation * transform.Rotation;
-						collisionInfo.linearVelocity = (rb.RigidBody.transform.position - collisionInfo.startPosition) * invDT;
-						collisionInfo.angularVelocity =
-							(UnityEngine.Quaternion.Inverse(collisionInfo.startOrientation)
-							 * rb.RigidBody.transform.rotation).eulerAngles * invDT;
+						if (rb.lastTimeKeyFramedUpdate < timeOfSnapshot)
+						{
+							rb.lastValidLinerVelocity = (newPosition - collisionInfo.startPosition) * invDT;
+							rb.lastValidAngularVelocity = (UnityEngine.Quaternion.Inverse(collisionInfo.startOrientation)
+							 * newOrientation).eulerAngles * invDT;
+						}
+						rb.RigidBody.transform.position = newPosition;
+						rb.RigidBody.transform.rotation = newOrientation;
+						rb.lastTimeKeyFramedUpdate = timeOfSnapshot;
+
+						collisionInfo.linearVelocity = rb.lastValidLinerVelocity;
+						collisionInfo.angularVelocity = rb.lastValidAngularVelocity;
 						collisionInfo.monitorInfo = new CollisionMonitorInfo();
 #if MRE_PHYSICS_DEBUG
 						Debug.Log(" Remote body: " + rb.Id.ToString() + " is key framed:");
@@ -379,10 +397,10 @@ namespace MixedRealityExtension.Core
 								remoteBody.transform.rotation = remoteBodyInfo.startOrientation;
 								remoteBody.velocity = remoteBodyInfo.linearVelocity;
 								remoteBody.angularVelocity = remoteBodyInfo.angularVelocity;
-//#if MRE_PHYSICS_DEBUG
+#if MRE_PHYSICS_DEBUG
 								Debug.Log(" remote body velocity SWITCH collision: " + remoteBody.velocity.ToString() +
 	                               "  start position:" + remoteBody.transform.position.ToString());
-//#endif
+#endif
 							}
 							else
 							{
