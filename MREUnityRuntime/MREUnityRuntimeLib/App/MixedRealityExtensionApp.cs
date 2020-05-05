@@ -38,6 +38,7 @@ namespace MixedRealityExtension.App
 		private readonly ActorManager _actorManager;
 		private readonly CommandManager _commandManager;
 		internal readonly AnimationManager AnimationManager;
+		private readonly AssetCache _assetCache;
 
 		private readonly MonoBehaviour _ownerScript;
 
@@ -140,6 +141,8 @@ namespace MixedRealityExtension.App
 
 		internal AssetLoader AssetLoader => _assetLoader;
 
+		public IAssetCache AssetCache => _assetCache;
+
 		#endregion
 
 		/// <summary>
@@ -165,6 +168,11 @@ namespace MixedRealityExtension.App
 				{ typeof(ActorManager), _actorManager },
 				{ typeof(AnimationManager), AnimationManager }
 			});
+
+			var cacheRoot = new GameObject("MRE Cache");
+			cacheRoot.transform.SetParent(_ownerScript.gameObject.transform);
+			cacheRoot.SetActive(false);
+			_assetCache = new AssetCache(cacheRoot);
 
 			RPC = new RPCInterface(this);
 			RPCChannels = new RPCChannelInterface();
@@ -262,7 +270,7 @@ namespace MixedRealityExtension.App
 
 			foreach (Guid id in _assetLoader.ActiveContainers)
 			{
-				MREAPI.AppsAPI.AssetCache.UncacheAssetsAndDestroy(id);
+				AssetCache.UncacheAssetsAndDestroy(id);
 			}
 			_assetLoader.ActiveContainers.Clear();
 		}
@@ -666,7 +674,7 @@ namespace MixedRealityExtension.App
 			try
 			{
 				var curGeneration = generation;
-				MREAPI.AppsAPI.AssetCache.OnCached(payload.PrefabId, prefab =>
+				AssetCache.OnCached(payload.PrefabId, prefab =>
 				{
 					if (this == null || _conn == null || !_conn.IsActive || generation != curGeneration) return;
 					if (prefab != null)
@@ -759,8 +767,8 @@ namespace MixedRealityExtension.App
 				actor.ParentId = parent?.Id ?? actor.ParentId;
 				if (actor.Renderer != null)
 				{
-					actor.MaterialId = MREAPI.AppsAPI.AssetCache.GetId(actor.Renderer.sharedMaterial) ?? Guid.Empty;
-					actor.MeshId = MREAPI.AppsAPI.AssetCache.GetId(actor.UnityMesh) ?? Guid.Empty;
+					actor.MaterialId = AssetCache.GetId(actor.Renderer.sharedMaterial) ?? Guid.Empty;
+					actor.MeshId = AssetCache.GetId(actor.UnityMesh) ?? Guid.Empty;
 				}
 
 				// native animation construction requires the whole actor hierarchy to already exist. defer to second pass

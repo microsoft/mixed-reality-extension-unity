@@ -29,7 +29,6 @@ namespace MixedRealityExtension.API
 		/// <param name="textFactory">The text factory to use within the runtime.</param>
 		/// <param name="primitiveFactory">The primitive factory to use within the runtime.</param>
 		/// <param name="libraryFactory">The library resource factory to use within the runtime.</param>
-		/// <param name="assetCache">The place for this MRE to cache its meshes, etc.</param>
 		/// <param name="gltfImporterFactory">The glTF loader factory. Uses default GLTFSceneImporter if omitted.</param>
 		/// <param name="materialPatcher">Overrides default material property map (color and mainTexture only).</param>
 		/// <param name="videoPlayerFactory"></param>
@@ -43,7 +42,6 @@ namespace MixedRealityExtension.API
 			ITextFactory textFactory = null,
 			IPrimitiveFactory primitiveFactory = null,
 			ILibraryResourceFactory libraryFactory = null,
-			IAssetCache assetCache = null,
 			IGLTFImporterFactory gltfImporterFactory = null,
 			IMaterialPatcher materialPatcher = null,
 			IVideoPlayerFactory videoPlayerFactory = null,
@@ -58,7 +56,6 @@ namespace MixedRealityExtension.API
 			AppsAPI.PrimitiveFactory = primitiveFactory ?? new MWPrimitiveFactory();
 			AppsAPI.LibraryResourceFactory = libraryFactory;
 			AppsAPI.VideoPlayerFactory = videoPlayerFactory;
-			AppsAPI.AssetCache = assetCache ?? new AssetCache();
 			AppsAPI.GLTFImporterFactory = gltfImporterFactory ?? new GLTFImporterFactory();
 			AppsAPI.MaterialPatcher = materialPatcher ?? new DefaultMaterialPatcher();
 			AppsAPI.UserInfoProvider = userInfoProvider ?? new NullUserInfoProvider();
@@ -101,11 +98,6 @@ namespace MixedRealityExtension.API
 		/// The class responsible for assigning layers to colliders.
 		/// </summary>
 		public ILayerApplicator LayerApplicator { get; internal set; }
-
-		/// <summary>
-		/// The pool of assets available to MREs
-		/// </summary>
-		public IAssetCache AssetCache { get; internal set; }
 
 		internal IBehaviorFactory BehaviorFactory { get; set; }
 

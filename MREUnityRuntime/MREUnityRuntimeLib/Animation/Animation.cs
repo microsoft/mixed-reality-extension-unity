@@ -61,7 +61,7 @@ namespace MixedRealityExtension.Animation
 			DataId = dataId;
 			TargetMap = targetMap;
 
-			MREAPI.AppsAPI.AssetCache.OnCached(DataId, cacheData =>
+			manager.App.AssetCache.OnCached(DataId, cacheData =>
 			{
 				Data = (AnimationDataCached)cacheData;
 				DataSet = true;
