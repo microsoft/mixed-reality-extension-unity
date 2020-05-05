@@ -262,7 +262,7 @@ namespace MixedRealityExtension.App
 
 			foreach (Guid id in _assetLoader.ActiveContainers)
 			{
-				MREAPI.AppsAPI.AssetCache.UncacheAssets(id);
+				MREAPI.AppsAPI.AssetCache.UncacheAssetsAndDestroy(id);
 			}
 			_assetLoader.ActiveContainers.Clear();
 		}

@@ -465,19 +465,7 @@ namespace MixedRealityExtension.Assets
 		[CommandHandler(typeof(UnloadAssets))]
 		internal void UnloadAssets(UnloadAssets payload, Action onCompleteCallback)
 		{
-			foreach (var asset in MREAPI.AppsAPI.AssetCache.UncacheAssets(payload.ContainerId))
-			{
-				// workaround: unload meshes implicitly
-				if (asset is GameObject prefab)
-				{
-					var filters = prefab.GetComponentsInChildren<MeshFilter>();
-					foreach (var f in filters)
-					{
-						UnityEngine.Object.Destroy(f.sharedMesh);
-					}
-				}
-				UnityEngine.Object.Destroy(asset);
-			}
+			MREAPI.AppsAPI.AssetCache.UncacheAssetsAndDestroy(payload.ContainerId);
 
 			ActiveContainers.Remove(payload.ContainerId);
 
