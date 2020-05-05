@@ -96,6 +96,7 @@
     <Compile Include="Animation\MWSetAnimationStateOptions.cs" />
     <Compile Include="Animation\NativeAnimation.cs" />
     <Compile Include="Animation\TargetPath.cs" />
+    <Compile Include="Assets\AssetLoadThrottling.cs" />
     <Compile Include="Assets\PrefabAnimationTargets.cs" />
     <Compile Include="Behaviors\ActionData\BaseActionData.cs" />
     <Compile Include="Behaviors\ActionData\BaseToolData.cs" />
@@ -294,7 +295,7 @@
     <Compile Include="Util\Unity\MWGOTreeWalker.cs" />
     <Compile Include="Util\Unity\MWUnityHelpers.cs" />
     <Compile Include="Util\Unity\MWUnityTypeExtensions.cs" />
-    <Compile Include="Util\Unity\AssetFetcher.cs" />
+    <Compile Include="Assets\AssetFetcher.cs" />
     <Compile Include="Util\UtilMethods.cs" />
   </ItemGroup>
   <ItemGroup />
