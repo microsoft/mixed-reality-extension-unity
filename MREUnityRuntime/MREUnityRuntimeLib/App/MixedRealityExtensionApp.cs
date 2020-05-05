@@ -259,6 +259,12 @@ namespace MixedRealityExtension.App
 			_ownedGameObjects.Clear();
 			_actorManager.Reset();
 			AnimationManager.Reset();
+
+			foreach (Guid id in _assetLoader.ActiveContainers)
+			{
+				MREAPI.AppsAPI.AssetCache.UncacheAssets(id);
+			}
+			_assetLoader.ActiveContainers.Clear();
 		}
 
 		/// <inheritdoc />

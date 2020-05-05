@@ -35,6 +35,8 @@ namespace MixedRealityExtension.Assets
 		private readonly MixedRealityExtensionApp _app;
 		private readonly AsyncCoroutineHelper _asyncHelper;
 
+		public HashSet<Guid> ActiveContainers = new HashSet<Guid>();
+
 		internal AssetLoader(MonoBehaviour owner, MixedRealityExtensionApp app)
 		{
 			_owner = owner ?? throw new ArgumentException("Asset loader requires an owner MonoBehaviour script to be assigned to it.");
@@ -127,6 +129,7 @@ namespace MixedRealityExtension.Assets
 			try
 			{
 				assets = await loader(payload.Source, payload.ContainerId, payload.ColliderType);
+				ActiveContainers.Add(payload.ContainerId);
 			}
 			catch (Exception e)
 			{
@@ -341,6 +344,8 @@ namespace MixedRealityExtension.Assets
 			var unityAsset = MREAPI.AppsAPI.AssetCache.GetAsset(def.Id);
 			ColliderGeometry colliderGeo = null;
 
+			ActiveContainers.Add(payload.ContainerId);
+
 			// create materials
 			if (unityAsset == null && def.Material != null)
 			{
@@ -473,6 +478,8 @@ namespace MixedRealityExtension.Assets
 				}
 				UnityEngine.Object.Destroy(asset);
 			}
+
+			ActiveContainers.Remove(payload.ContainerId);
 
 			onCompleteCallback?.Invoke();
 		}
