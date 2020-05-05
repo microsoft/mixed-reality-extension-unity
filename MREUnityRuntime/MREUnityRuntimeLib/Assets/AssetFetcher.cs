@@ -2,13 +2,13 @@
 // Licensed under the MIT License.
 using System;
 using System.Collections;
+using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Networking;
 
-namespace MixedRealityExtension.Util.Unity
+namespace MixedRealityExtension.Assets
 {
-
 	public static class AssetFetcher<T> where T : class
 	{
 		public struct FetchResult
@@ -28,9 +28,10 @@ namespace MixedRealityExtension.Util.Unity
 
 			runner.StartCoroutine(LoadCoroutine());
 
+			// Spin asynchronously until the request completes.
 			while (!result.IsPopulated)
 			{
-				await Task.Delay(50);
+				await Task.Delay(10);
 			}
 
 			return result;
@@ -38,11 +39,11 @@ namespace MixedRealityExtension.Util.Unity
 			IEnumerator LoadCoroutine()
 			{
 				DownloadHandler handler;
-				if (typeof(T) == typeof(AudioClip))
+				if (typeof(T) == typeof(UnityEngine.AudioClip))
 				{
 					handler = new DownloadHandlerAudioClip(uri, AudioType.UNKNOWN);
 				}
-				else if (typeof(T) == typeof(Texture))
+				else if (typeof(T) == typeof(UnityEngine.Texture))
 				{
 					handler = new DownloadHandlerTexture(false);
 				}
@@ -52,6 +53,13 @@ namespace MixedRealityExtension.Util.Unity
 					yield break;
 				}
 
+				// Spin asynchronously until the load throttler would allow us through.
+				while (AssetLoadThrottling.WouldThrottle())
+				{
+					yield return null;
+				}
+
+				using (var scope = new AssetLoadThrottling.AssetLoadScope())
 				using (var www = new UnityWebRequest(uri, "GET", handler, null))
 				{
 					yield return www.SendWebRequest();
@@ -65,13 +73,13 @@ namespace MixedRealityExtension.Util.Unity
 					}
 					else
 					{
-						if (typeof(T) == typeof(AudioClip))
+						if (typeof(T) == typeof(UnityEngine.AudioClip))
 						{
-							result.Asset = ((DownloadHandlerAudioClip) handler).audioClip as T;
+							result.Asset = ((DownloadHandlerAudioClip)handler).audioClip as T;
 						}
-						else if (typeof(T) == typeof(Texture))
+						else if (typeof(T) == typeof(UnityEngine.Texture))
 						{
-							result.Asset = ((DownloadHandlerTexture) handler).texture as T;
+							result.Asset = ((DownloadHandlerTexture)handler).texture as T;
 						}
 					}
 				}
