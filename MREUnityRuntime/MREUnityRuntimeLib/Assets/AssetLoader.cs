@@ -35,7 +35,7 @@ namespace MixedRealityExtension.Assets
 		private readonly MixedRealityExtensionApp _app;
 		private readonly AsyncCoroutineHelper _asyncHelper;
 
-		public HashSet<Guid> ActiveContainers = new HashSet<Guid>();
+		public readonly HashSet<Guid> ActiveContainers = new HashSet<Guid>();
 
 		internal AssetLoader(MonoBehaviour owner, MixedRealityExtensionApp app)
 		{
