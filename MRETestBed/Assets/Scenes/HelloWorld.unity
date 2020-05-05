@@ -228,10 +228,11 @@ MonoBehaviour:
   DefaultFont: {fileID: 11400000, guid: d7e232a6e5fd0c9448e57831beff4d85, type: 2}
   SerifFont: {fileID: 11400000, guid: 633eba92913f20449b8f7bd1e9f9d905, type: 2}
   SansSerifFont: {fileID: 11400000, guid: d7e232a6e5fd0c9448e57831beff4d85, type: 2}
-  MonospaceFont: {fileID: 11400000, guid: 1ad54cb9fdcb4dd4db690eb4e2cb6da5, type: 2}
+  MonospaceFont: {fileID: 11400000, guid: 0d3f42309929b8d44a322e20f52a0343, type: 2}
   CursiveFont: {fileID: 11400000, guid: b31d2923d654c0e49b3e196355c7878e, type: 2}
   DefaultPrimMaterial: {fileID: 2100000, guid: 265cb5b418966a64ea212597d469fa33, type: 2}
-  DialogFactory: {fileID: 0}
+  DialogFactory: {fileID: 114153473817070278, guid: f1f77a0b742ec0841858c35dc9348515,
+    type: 3}
 --- !u!114 &1141388992
 MonoBehaviour:
   m_ObjectHideFlags: 0
