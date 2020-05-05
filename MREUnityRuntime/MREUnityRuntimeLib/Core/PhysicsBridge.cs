@@ -81,10 +81,9 @@ namespace MixedRealityExtension.Core
 		public class CollisionMonitorInfo
 		{
 			public float timeFromStartCollision = 0.0f;
-			public float lastApproxDistance = float.MaxValue;
-			public float relativeApproachingVel = -float.MaxValue;
 			public float relativeDistance = float.MaxValue;
-			public float keyframedInterpolationRatio = 0.0f; ///< how much we interpolate between the jitter buffer and the simulation
+			/// how much we interpolate between the jitter buffer and the simulation
+			public float keyframedInterpolationRatio = 0.0f; 
 		}
 
 		/// <summary>
@@ -116,6 +115,7 @@ namespace MixedRealityExtension.Core
 
 			public UnityEngine.Rigidbody RigidBody;
 
+			/// these 3 fields are used to store the actual velocities
 			public float lastTimeKeyFramedUpdate;
 			public UnityEngine.Vector3 lastValidLinerVelocity;
 			public UnityEngine.Vector3 lastValidAngularVelocity;
@@ -132,14 +132,10 @@ namespace MixedRealityExtension.Core
 
 		private SnapshotBuffer _snapshotBuffer = new SnapshotBuffer();
 
-		/// <summary>
 		/// when we update a body we compute the implicit velocity. This velocity is needed, in case of collisions to switch from kinematic to kinematic=false
-		/// </summary>
 		List<CollisionSwitchInfo> _switchCollisionInfos = new List<CollisionSwitchInfo>();
 
-		/// <summary>
 		/// <todo> the input should be GuidXGuid since one body could collide with multiple other, or one collision is enough (?)
-		/// </summary>
 		Dictionary<Guid, CollisionMonitorInfo> _monitorCollisionInfo = new Dictionary<Guid, CollisionMonitorInfo>();
 
 		public PhysicsBridge()
@@ -223,8 +219,7 @@ namespace MixedRealityExtension.Core
 			const float endInterpolatingBack = 2.0f; // time in seconds
 			const float invInterpolationTimeWindows = 1.0f / (endInterpolatingBack - startInterpolatingBack);
 
-
-			// <todo> this is wrong we should keep 
+			// delete all the previous collisions
 			_switchCollisionInfos.Clear();
 
 			foreach (var rb in _rigidBodies.Values)
@@ -255,7 +250,6 @@ namespace MixedRealityExtension.Core
 #if MRE_PHYSICS_DEBUG
 						Debug.Log(" Remote body: " + rb.Id.ToString() + " is dynamic since:"
 							+ collisionInfo.monitorInfo.timeFromStartCollision + " relative distance:" + collisionInfo.monitorInfo.relativeDistance
-							+ " approach vel:" + collisionInfo.monitorInfo.relativeApproachingVel
 							+ " interpolation:" + collisionInfo.monitorInfo.keyframedInterpolationRatio);
 #endif
 
@@ -275,14 +269,18 @@ namespace MixedRealityExtension.Core
 					}
 					else
 					{
+						// no previous collision, keep key framed
 						UnityEngine.Vector3 newPosition = rootTransform.TransformPoint(transform.Position);
 						UnityEngine.Quaternion newOrientation = rootTransform.rotation * transform.Rotation;
 						rb.RigidBody.isKinematic = true;
+						// if there is a really new update then also store the implicit velocity
 						if (rb.lastTimeKeyFramedUpdate < timeOfSnapshot)
 						{
-							rb.lastValidLinerVelocity = (newPosition - collisionInfo.startPosition) * invDT;
+							// <todo> for long running times this could be a problem 
+							float invUpdateDT = 1.0f/(timeOfSnapshot - rb.lastTimeKeyFramedUpdate);
+							rb.lastValidLinerVelocity = (newPosition - collisionInfo.startPosition) * invUpdateDT;
 							rb.lastValidAngularVelocity = (UnityEngine.Quaternion.Inverse(collisionInfo.startOrientation)
-							 * newOrientation).eulerAngles * invDT;
+							 * newOrientation).eulerAngles * invUpdateDT;
 						}
 						rb.RigidBody.transform.position = newPosition;
 						rb.RigidBody.transform.rotation = newOrientation;
@@ -295,8 +293,8 @@ namespace MixedRealityExtension.Core
 						Debug.Log(" Remote body: " + rb.Id.ToString() + " is key framed:");
 #endif
 					}
-
-					// <todo> add more filtering here to cancel out unnecessary items
+					// <todo> add more filtering here to cancel out unnecessary items,
+					// but for small number of bodies should be OK
 					_switchCollisionInfos.Add(collisionInfo);
 				}
 			}
@@ -338,9 +336,8 @@ namespace MixedRealityExtension.Core
 #endif
 
 						var collisionMonitorInfo = remoteBodyInfo.monitorInfo;
-						collisionMonitorInfo.relativeApproachingVel = (comDist - projectedComDist) * invDT;
-						collisionMonitorInfo.lastApproxDistance = Math.Min(comDist, projectedComDist);
-						collisionMonitorInfo.relativeDistance = collisionMonitorInfo.lastApproxDistance / totalDistance;
+						float lastApproxDistance = Math.Min(comDist, projectedComDist);
+						collisionMonitorInfo.relativeDistance = lastApproxDistance / totalDistance;
 
 						bool addToMonitor = false;
 						bool isWithinCollisionRange = (projectedComDist < totalDistance || comDist < totalDistance || addToMonitor);
