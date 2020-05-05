@@ -135,7 +135,6 @@ namespace MixedRealityExtension.Behaviors.Actions
 		/// <summary>
 		/// Provides an action update while the action is being performed.
 		/// </summary>
-		/// <param name="user">The user performing the action.</param>
 		public void PerformActionUpdate()
 		{
 			UpdateAction(null);
