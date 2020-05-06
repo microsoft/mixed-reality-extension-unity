@@ -38,12 +38,12 @@ namespace MixedRealityExtension.Messaging.Payloads
 		/// <summary>
 		/// If the load failed, this string contains the reason why.
 		/// </summary>
-		public string FailureMessage;
+		public string FailureMessage { get; set; }
 
 		/// <summary>
 		/// The loaded assets.
 		/// </summary>
-		public IEnumerable<Asset> Assets;
+		public Asset[] Assets { get; set; }
 	}
 
 	/// <summary>

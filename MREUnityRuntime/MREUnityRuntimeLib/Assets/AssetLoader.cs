@@ -143,7 +143,7 @@ namespace MixedRealityExtension.Assets
 				Payload = new AssetsLoaded()
 				{
 					FailureMessage = failureMessage,
-					Assets = assets ?? new Asset[] { }
+					Assets = (new List<Asset>(assets)).ToArray()
 				}
 			});
 			onCompleteCallback?.Invoke();
