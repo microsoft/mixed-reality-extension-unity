@@ -98,6 +98,11 @@
     <Compile Include="Animation\TargetPath.cs" />
     <Compile Include="Assets\AssetLoadThrottling.cs" />
     <Compile Include="Assets\PrefabAnimationTargets.cs" />
+    <Compile Include="Behaviors\ActionData\BaseActionData.cs" />
+    <Compile Include="Behaviors\ActionData\BaseToolData.cs" />
+    <Compile Include="Behaviors\ActionData\PenData.cs" />
+    <Compile Include="Behaviors\Handlers\PenHandler.cs" />
+    <Compile Include="Behaviors\Handlers\ToolHandler.cs" />
     <Compile Include="Core\CollisionLayers.cs" />
     <Compile Include="Assets\AssetCache.cs" />
     <Compile Include="Assets\AssetGroup.cs" />
@@ -130,6 +135,8 @@
     <Compile Include="Patching\Types\LookAtPatch.cs" />
     <Compile Include="Patching\Types\PhysicsBridgePatch.cs" />
     <Compile Include="Patching\Types\ActorTransformPatch.cs" />
+    <Compile Include="PluginInterfaces\Behaviors\IToolBehavior.cs" />
+    <Compile Include="PluginInterfaces\Behaviors\IPenBehavior.cs" />
     <Compile Include="PluginInterfaces\IDialogFactory.cs" />
     <Compile Include="PluginInterfaces\ILayerApplicator.cs" />
     <Compile Include="PluginInterfaces\IUserInfoProvider.cs" />

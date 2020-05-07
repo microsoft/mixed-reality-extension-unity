@@ -4,6 +4,7 @@ using MWAssets = MixedRealityExtension.Assets;
 using MixedRealityExtension.Patching.Types;
 
 using MixedRealityExtension.API;
+using MixedRealityExtension.App;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -16,9 +17,9 @@ public class VertexMaterialPatcher : MixedRealityExtension.Factories.DefaultMate
 
 	protected Dictionary<int, Guid> emissiveTextureAssignments = new Dictionary<int, Guid>(20);
 
-	public override void ApplyMaterialPatch(Material material, MWAssets.Material patch)
+	public override void ApplyMaterialPatch(IMixedRealityExtensionApp app, Material material, MWAssets.Material patch)
 	{
-		base.ApplyMaterialPatch(material, patch);
+		base.ApplyMaterialPatch(app, material, patch);
 
 		if (patch.EmissiveColor != null)
 		{
@@ -56,7 +57,7 @@ public class VertexMaterialPatcher : MixedRealityExtension.Factories.DefaultMate
 			}
 			else
 			{
-				MREAPI.AppsAPI.AssetCache.OnCached(textureId, tex =>
+				app.AssetCache.OnCached(textureId, tex =>
 				{
 					if (!material || emissiveTextureAssignments[material.GetInstanceID()] != textureId) return;
 					material.SetTexture(EmissiveTexProp, (Texture)tex);
@@ -99,9 +100,9 @@ public class VertexMaterialPatcher : MixedRealityExtension.Factories.DefaultMate
 		}
 	}
 
-	public override MWAssets.Material GeneratePatch(Material material)
+	public override MWAssets.Material GeneratePatch(IMixedRealityExtensionApp app, Material material)
 	{
-		var patch = base.GeneratePatch(material);
+		var patch = base.GeneratePatch(app, material);
 
 		var unityColor = material.GetColor(EmissiveColorProp);
 		patch.EmissiveColor = new ColorPatch()
@@ -112,7 +113,7 @@ public class VertexMaterialPatcher : MixedRealityExtension.Factories.DefaultMate
 			A = unityColor.a
 		};
 
-		patch.EmissiveTextureId = MREAPI.AppsAPI.AssetCache.GetId(material.GetTexture(EmissiveTexProp));
+		patch.EmissiveTextureId = app.AssetCache.GetId(material.GetTexture(EmissiveTexProp));
 		patch.EmissiveTextureOffset = new Vector2Patch(material.GetTextureOffset(EmissiveTexProp));
 		patch.EmissiveTextureScale = new Vector2Patch(material.GetTextureScale(EmissiveTexProp));
 

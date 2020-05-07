@@ -62,5 +62,11 @@ namespace MixedRealityExtension.PluginInterfaces
 		/// <param name="containerId">The container ID.</param>
 		/// <returns>The list of assets removed from the cache</returns>
 		IEnumerable<UnityEngine.Object> UncacheAssets(Guid containerId);
+
+		/// <summary>
+		/// Remove assets from the cache and unload them from memory
+		/// </summary>
+		/// <param name="containerId">The asset container ID to be unloaded</param>
+		void UncacheAssetsAndDestroy(Guid containerId);
 	}
 }

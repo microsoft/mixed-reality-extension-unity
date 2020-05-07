@@ -382,8 +382,22 @@ namespace MixedRealityExtension.Core
 						// we add to the collision stream either when it is within range or 
 						if (isWithinCollisionRange || addToMonitor)
 						{
-							// add to the monitor stream 
-							_monitorCollisionInfo.Add(remoteBodyInfo.rigidBodyId, collisionMonitorInfo);
+							// add to the monitor stream
+							if (_monitorCollisionInfo.ContainsKey(remoteBodyInfo.rigidBodyId))
+							{
+								// if there is existent collision already with this remote body, then build the minimum
+								var existingMonitorInfo = _monitorCollisionInfo[remoteBodyInfo.rigidBodyId];
+								existingMonitorInfo.timeFromStartCollision =
+									Math.Min(existingMonitorInfo.timeFromStartCollision, collisionMonitorInfo.timeFromStartCollision);
+								existingMonitorInfo.relativeDistance =
+									Math.Min(existingMonitorInfo.relativeDistance, collisionMonitorInfo.relativeDistance);
+								existingMonitorInfo.keyframedInterpolationRatio =
+									Math.Min(existingMonitorInfo.keyframedInterpolationRatio, collisionMonitorInfo.keyframedInterpolationRatio);
+							}
+							else
+							{
+								_monitorCollisionInfo.Add(remoteBodyInfo.rigidBodyId, collisionMonitorInfo);
+							}
 
 							// this is a new collision
 							if (collisionMonitorInfo.timeFromStartCollision < halfDT)
