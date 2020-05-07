@@ -91,6 +91,11 @@ namespace MixedRealityExtension.App
 		GameObject SceneRoot { get; set; }
 
 		/// <summary>
+		/// Where assets for this app instance are stored
+		/// </summary>
+		IAssetCache AssetCache { get; }
+
+		/// <summary>
 		/// The RPC interface for registering handlers and invoking remote procedure calls.
 		/// </summary>
 		RPCInterface RPC { get; }

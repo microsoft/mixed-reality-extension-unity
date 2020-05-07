@@ -134,7 +134,6 @@ public class MREComponent : MonoBehaviour
 					CursiveFont = CursiveFont
 				},
 				libraryFactory: new ResourceFactory(),
-				assetCache: new AssetCache(new GameObject("MRE Asset Cache")),
 				userInfoProvider: new UserInfoProvider(),
 				dialogFactory: DialogFactory,
 				logger: new MRELogger(),

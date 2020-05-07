@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using MixedRealityExtension.API;
+using MixedRealityExtension.App;
 using MixedRealityExtension.Core.Types;
 using MixedRealityExtension.Util.Unity;
 using System;
@@ -21,7 +22,7 @@ namespace MixedRealityExtension.Core
 		/// </summary>
 		public abstract ColliderType Shape { get; }
 
-		internal abstract void Patch(UnityCollider collider);
+		internal abstract void Patch(MixedRealityExtensionApp app, UnityCollider collider);
 	}
 
 	/// <summary>
@@ -42,7 +43,7 @@ namespace MixedRealityExtension.Core
 		/// </summary>
 		public float? Radius { get; set; }
 
-		internal override void Patch(UnityCollider collider)
+		internal override void Patch(MixedRealityExtensionApp app, UnityCollider collider)
 		{
 			if (collider is SphereCollider sphereCollider)
 			{
@@ -86,7 +87,7 @@ namespace MixedRealityExtension.Core
 		/// </summary>
 		public MWVector3 Center { get; set; }
 
-		internal override void Patch(UnityCollider collider)
+		internal override void Patch(MixedRealityExtensionApp app, UnityCollider collider)
 		{
 			if (collider is BoxCollider boxCollider)
 			{
@@ -129,18 +130,18 @@ namespace MixedRealityExtension.Core
 		/// </summary>
 		public Guid MeshId { get; set; }
 
-		internal override void Patch(UnityCollider collider)
+		internal override void Patch(MixedRealityExtensionApp app, UnityCollider collider)
 		{
 			if (collider is MeshCollider meshCollider)
 			{
-				Patch(meshCollider);
+				Patch(app, meshCollider);
 			}
 		}
 
-		private void Patch(MeshCollider collider)
+		private void Patch(MixedRealityExtensionApp app, MeshCollider collider)
 		{
 			var tempId = MeshId;
-			MREAPI.AppsAPI.AssetCache.OnCached(MeshId, asset =>
+			app.AssetCache.OnCached(MeshId, asset =>
 			{
 				if (MeshId != tempId) return;
 				collider.sharedMesh = asset as Mesh;
@@ -193,7 +194,7 @@ namespace MixedRealityExtension.Core
 			get => Size != null ? Size.SmallestComponentValue() / 2 : (float?) null;
 		}
 
-		internal override void Patch(UnityCollider collider)
+		internal override void Patch(MixedRealityExtensionApp app, UnityCollider collider)
 		{
 			if (collider is CapsuleCollider capsuleCollider)
 			{
@@ -229,7 +230,7 @@ namespace MixedRealityExtension.Core
 		/// <inheritdoc />
 		public override ColliderType Shape => ColliderType.Auto;
 
-		internal override void Patch(UnityCollider collider)
+		internal override void Patch(MixedRealityExtensionApp app, UnityCollider collider)
 		{
 			// We do not accept patching for auto colliders from the app.
 		}
