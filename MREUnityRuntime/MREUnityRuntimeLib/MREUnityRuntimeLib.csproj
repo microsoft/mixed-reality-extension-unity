@@ -138,6 +138,8 @@
     <Compile Include="PluginInterfaces\Behaviors\IPenBehavior.cs" />
     <Compile Include="Patching\Types\PhysicsBridgePatch.cs" />
     <Compile Include="Patching\Types\ActorTransformPatch.cs" />
+    <Compile Include="PluginInterfaces\Behaviors\IToolBehavior.cs" />
+    <Compile Include="PluginInterfaces\Behaviors\IPenBehavior.cs" />
     <Compile Include="PluginInterfaces\IDialogFactory.cs" />
     <Compile Include="PluginInterfaces\ILayerApplicator.cs" />
     <Compile Include="PluginInterfaces\IUserInfoProvider.cs" />

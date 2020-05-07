@@ -180,6 +180,11 @@ namespace MixedRealityExtension.App
 			_actorManager.RigidBodyAdded += OnRigidBodyAdded;
 			_actorManager.RigidBodyRemoved += OnRigidBodyRemoved;
 
+			var cacheRoot = new GameObject("MRE Cache");
+			cacheRoot.transform.SetParent(_ownerScript.gameObject.transform);
+			cacheRoot.SetActive(false);
+			_assetCache = new AssetCache(cacheRoot);
+
 			RPC = new RPCInterface(this);
 			RPCChannels = new RPCChannelInterface();
 			// RPC messages without a ChannelName will route to the "global" RPC handlers.
