@@ -820,6 +820,8 @@ namespace MixedRealityExtension.Core
 
 				bool isOwner = Owner.HasValue ? Owner.Value == App.LocalUser.Id : CanSync();
 				RigidBodyAdded?.Invoke(Id, _rigidbody, isOwner);
+
+				_rigidbody.isKinematic = !isOwner;
 			}
 			return RigidBody;
 		}
