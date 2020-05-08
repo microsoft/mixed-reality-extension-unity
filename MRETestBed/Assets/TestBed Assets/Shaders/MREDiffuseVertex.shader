@@ -18,7 +18,7 @@ Shader "MRE/DiffuseVertex" {
 
 		Pass {
 			Tags { "LightMode" = "Vertex" }
-            Blend SrcAlpha OneMinusSrcAlpha
+			Blend SrcAlpha OneMinusSrcAlpha
 			ZWrite [_ZWrite]
 
 			CGPROGRAM
