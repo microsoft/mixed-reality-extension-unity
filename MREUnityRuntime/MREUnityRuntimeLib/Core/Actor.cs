@@ -837,6 +837,7 @@ namespace MixedRealityExtension.Core
 
 				RigidBodyAdded?.Invoke(Id, _rigidbody, isOwner);
 
+<<<<<<< HEAD
 
 				var behaviorComponent = GetActorComponent<BehaviorComponent>();
 				if (behaviorComponent != null && behaviorComponent.Behavior is ITargetBehavior targetBehavior)
@@ -846,6 +847,9 @@ namespace MixedRealityExtension.Core
 						targetBehavior.Grab.ActionStateChanged += test;
 					}
 				}
+=======
+				_rigidbody.isKinematic = !isOwner;
+>>>>>>> Init physics jitter buffer
 			}
 			return RigidBody;
 		}

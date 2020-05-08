@@ -1,78 +1,329 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Unity.Collections;
+using Unity.Jobs;
 using UnityEngine;
+
+namespace Experimental
+{
+	public struct RBTransform
+	{
+		public Vector3 Position;
+
+		public Quaternion Rotation;
+
+		public void Lerp(RBTransform t0, RBTransform t1, float f)
+		{
+			Position = Vector3.Lerp(t0.Position, t1.Position, f);
+			Rotation = Quaternion.Lerp(t0.Rotation, t1.Rotation, f);
+		}
+	}
+
+	public struct RBInfo
+	{
+		public Guid ID;
+
+		public RBTransform Transform;
+	}
+
+	public class Snapshot
+	{
+		public float Time;
+
+		public List<RBInfo> RigidBodies;
+	}
+
+	public class SnapshotBuffer
+	{
+		public Snapshot PreviousSnapshot { get; private set; }
+		public Snapshot CurrentSnapshot { get; private set; }
+
+		public float CurentTime { get; set; }
+
+		public float FullySupportedTime { get; private set; }
+
+		public float LastSnapshotTime { get; private set; }
+
+		private List<Snapshot> Snapshots = new List<Snapshot>();
+
+		public void AddSnapshot(Snapshot snapshot)
+		{
+			int insertIndex = 0;
+
+			while (insertIndex < Snapshots.Count)
+			{
+				if (snapshot.Time < Snapshots[insertIndex].Time)
+				{
+					break;
+				}
+				else
+				{
+					insertIndex++;
+				}
+			}
+
+			LastSnapshotTime = LastSnapshotTime > snapshot.Time ? LastSnapshotTime : snapshot.Time;
+
+			Snapshots.Insert(insertIndex, snapshot);
+		}
+
+		private float _playFactor = 1.0f;
+
+		private float _runningAverageOffset = 0.0f;
+
+		const int _runningAverageFrames = 120;
+
+		float TotalTime = 0.0f;
+
+		float dt = 0.0f;
+
+		public void startFrame(float timestep)
+		{
+			Debug.Log("start frame " + CurentTime + " delta " + timestep);
+
+			float offset = LastSnapshotTime - (CurentTime + timestep);
+			_runningAverageOffset -= _runningAverageOffset / _runningAverageFrames;
+			_runningAverageOffset += offset / _runningAverageFrames;
+
+			if (_runningAverageOffset < 0.01f)
+			{
+				_playFactor = 0.8f;
+			}
+			else if (_runningAverageOffset > 0.1f)
+			{
+				_playFactor = 1.1f;
+			}
+			else
+			{
+				_playFactor = 1.0f;
+			}
+		}
+
+		public void endFrame()
+		{
+
+		}
+
+		public void step(float deltaTime)
+		{
+			CurentTime += deltaTime * _playFactor;
+
+			Debug.Log("step " + CurentTime);
+
+			if (CurentTime > LastSnapshotTime)
+			{
+				return;
+			}
+
+			int prevIndex = -1;
+			int nextIndex = -1;
+
+			int i = 0;
+			for (; i < Snapshots.Count; i++)
+			{
+				if (Snapshots[i].Time >= CurentTime)
+				{
+					nextIndex = i;
+					break;
+				}
+				else
+				{
+					prevIndex = i;
+				}
+			}
+
+			if (prevIndex >= 0)
+			{
+				PreviousSnapshot = Snapshots[prevIndex];
+			}
+
+			if (nextIndex >= 0)
+			{
+				CurrentSnapshot = Snapshots[nextIndex];
+			}
+
+			if (prevIndex >= 1)
+			{
+				Snapshots.RemoveRange(0, prevIndex);
+			}
+		}
+	}
+
+	class JitterBuffer
+	{
+		//float Time;
+
+		public SnapshotBuffer SnapshotBuffer = new SnapshotBuffer();
+
+		public SortedList<Guid, RBInfo> RigidBodies = new SortedList<Guid, RBInfo>();
+
+		public void addSnapshot(Snapshot snapshot)
+		{
+			SnapshotBuffer.AddSnapshot(snapshot);
+		}
+
+		public void step(float timestep)
+		{
+			// process snapshots
+			SnapshotBuffer.step(timestep);
+
+			// put value in interpolation buffer
+			RigidBodies.Clear();
+			RigidBodies.Capacity = SnapshotBuffer.CurrentSnapshot.RigidBodies.Capacity;
+
+			float frac = (this.SnapshotBuffer.CurrentSnapshot.Time - this.SnapshotBuffer.PreviousSnapshot.Time) / (SnapshotBuffer.CurentTime - this.SnapshotBuffer.PreviousSnapshot.Time);
+
+			int prevIndex = 0;
+			int nextIndex = 0;
+
+			for (; nextIndex < SnapshotBuffer.CurrentSnapshot.RigidBodies.Count; nextIndex++)
+			{
+				RBInfo rb = SnapshotBuffer.CurrentSnapshot.RigidBodies[nextIndex];
+
+				while (prevIndex < SnapshotBuffer.PreviousSnapshot.RigidBodies.Count)
+				{
+					if (SnapshotBuffer.PreviousSnapshot.RigidBodies[prevIndex].ID.CompareTo(SnapshotBuffer.CurrentSnapshot.RigidBodies[nextIndex].ID) >= 0)
+					{
+						break;
+					}
+					else
+					{
+						prevIndex++;
+					}
+				}
+
+				if (prevIndex < SnapshotBuffer.PreviousSnapshot.RigidBodies.Count &&
+					SnapshotBuffer.PreviousSnapshot.RigidBodies[prevIndex].ID == SnapshotBuffer.CurrentSnapshot.RigidBodies[nextIndex].ID)
+				{
+					RBInfo rbi = new RBInfo();
+					rbi.ID = SnapshotBuffer.PreviousSnapshot.RigidBodies[prevIndex].ID;
+					rbi.Transform.Lerp(SnapshotBuffer.PreviousSnapshot.RigidBodies[prevIndex].Transform, SnapshotBuffer.CurrentSnapshot.RigidBodies[nextIndex].Transform, frac);
+
+					RigidBodies.Add(rbi.ID, rbi);
+				}
+			}
+		}
+	}
+
+	class MultiSourceJitterBuffer
+	{
+		Dictionary<Guid, JitterBuffer> Sources = new Dictionary<Guid, JitterBuffer>();
+
+		public SortedList<Guid, RBInfo> RigidBodies = new SortedList<Guid, RBInfo>();
+
+		public Experimental.RBTransform? getTransform(Guid rbId)
+		{
+			foreach (var s in RigidBodies.Values)
+			{
+					if (s.ID == rbId)
+					{
+						return s.Transform;
+					}
+			}
+
+			return null;
+		}
+
+		public void startFrame(float timestep)
+		{
+			foreach (var source in Sources)
+			{
+				source.Value.SnapshotBuffer.startFrame(timestep);
+			}
+		}
+
+		public void endFrame()
+		{ }
+
+		public void addSnapshot(Guid sourceId, Experimental.Snapshot snapshot)
+		{
+			if (!Sources.ContainsKey(sourceId))
+			{
+				var jb = new JitterBuffer();
+				jb.SnapshotBuffer = new SnapshotBuffer();
+				jb.SnapshotBuffer.CurentTime = snapshot.Time;
+				Sources.Add(sourceId, jb);
+			}
+
+			foreach (var source in Sources)
+			{
+				if (source.Key == sourceId)
+				{
+					source.Value.addSnapshot(snapshot);
+					break;
+				}
+			}
+		}
+
+		public void step(float deltaTime)
+		{
+			RigidBodies.Clear();
+
+			foreach (var source in Sources.Values)
+			{
+				source.step(deltaTime);
+
+				foreach (var b in source.RigidBodies)
+				{
+					RigidBodies.Add(b.Key, b.Value);
+				}
+			}
+		}
+	}
+}
 
 namespace MixedRealityExtension.Core
 {
 	public class PhysicsBridge
 	{
+		Experimental.MultiSourceJitterBuffer MSJB = new Experimental.MultiSourceJitterBuffer();
+
 		public class SnapshotBuffer
 		{
 			/// <summary>
 			/// this stores the snapshots received from all other clients, each client sends the owned updates of the actors (RBs)
 			/// </summary>
 			/// If one wants an updated for a remote body then needs to go though all these separate updates and one of the updates from one client we should find the actor ID
-			Dictionary<Guid, Snapshot> _snapshots = new Dictionary<Guid, Snapshot>();
+			Dictionary<Guid, Experimental.Snapshot> _snapshots = new Dictionary<Guid, Experimental.Snapshot>();
 
-			public void addSnapshot(Snapshot snapshot)
+			public void addSnapshot(Guid sourceId, Experimental.Snapshot snapshot)
 			{
 				// currently keep only the latest snapshot from same source
-
-				if (_snapshots.ContainsKey(snapshot.SourceAppId))
+				if (_snapshots.ContainsKey(sourceId))
 				{
-					var oldSnapshot = _snapshots[snapshot.SourceAppId];
+					var oldSnapshot = _snapshots[sourceId];
 
 					if (snapshot.Time > oldSnapshot.Time)
 					{
-						_snapshots[snapshot.SourceAppId] = snapshot;
+						_snapshots[sourceId] = snapshot;
 					}
 				}
 				else
 				{
-					_snapshots.Add(snapshot.SourceAppId, snapshot);
+					_snapshots.Add(sourceId, snapshot);
 				}
 			}
 
-			public Snapshot.SnapshotTransform getTransform(Guid rbId, out float timeOfSnapshot)
+			public Experimental.RBTransform? getTransform(Guid rbId, out float timeOfSnapshot)
 			{
 				timeOfSnapshot = -float.MaxValue;
 				foreach (var s in _snapshots.Values)
 				{
-					foreach (var t in s.snapshotTransforms)
+					foreach (var t in s.RigidBodies)
 					{
-						if (t.Id == rbId)
+						if (t.ID == rbId)
 						{
 							timeOfSnapshot = s.Time;
-							return t.sTransform;
+							return t.Transform;
 						}
 					}
 				}
 				return null;
 			}
-		}
-
-		public class Snapshot
-		{
-			public class SnapshotTransform
-			{
-				public UnityEngine.Vector3 Position;
-				public UnityEngine.Quaternion Rotation;
-			}
-
-			public class SnapshotTrasformInfo
-			{
-				public Guid Id;
-				public SnapshotTransform sTransform = new SnapshotTransform();
-			}
-
-			public Guid SourceAppId;
-
-			public float Time;
-
-			public List<SnapshotTrasformInfo> snapshotTransforms = new List<SnapshotTrasformInfo>();
 		}
 
 		/// <summary>
@@ -127,8 +378,6 @@ namespace MixedRealityExtension.Core
 
 			public bool IsKeyframed;
 		}
-
-		public Guid _appId;
 
 		private int _countOwnedTransforms = 0;
 		private int _countStreamedTransforms = 0;
@@ -220,15 +469,22 @@ namespace MixedRealityExtension.Core
 
 		#region Transform Streaming
 
-		public void addSnapshot(Snapshot snapshot)
+		public void addSnapshot(Guid sourceId, Experimental.Snapshot snapshot)
 		{
-			_snapshotBuffer.addSnapshot(snapshot);
+			_snapshotBuffer.addSnapshot(sourceId, snapshot);
+
+			MSJB.addSnapshot(sourceId, snapshot);
 		}
 
 		#endregion
 
+		private bool _startFrame = true;
+
 		public void FixedUpdate(UnityEngine.Transform rootTransform)
 		{
+			MSJB.startFrame(Time.fixedDeltaTime);
+			MSJB.step(Time.fixedDeltaTime);
+
 			// physics rigid body management
 			// set transforms/velocities for key framed bodies
 			float DT = UnityEngine.Time.fixedDeltaTime;
@@ -270,10 +526,12 @@ namespace MixedRealityExtension.Core
 
 				float timeOfSnapshot;
 
-				Snapshot.SnapshotTransform transform = _snapshotBuffer.getTransform(rb.Id, out timeOfSnapshot);
+				Experimental.RBTransform? nt = _snapshotBuffer.getTransform(rb.Id, out timeOfSnapshot);
 
-				if (transform != null)
+				if (nt != null)
 				{
+					var transform = nt.Value;
+
 					var collisionInfo = new CollisionSwitchInfo();
 
 					collisionInfo.startPosition = rb.RigidBody.transform.position;
@@ -532,15 +790,19 @@ namespace MixedRealityExtension.Core
 
 		}
 
-		public Snapshot Update(UnityEngine.Transform rootTransform)
+		public Experimental.Snapshot Update(UnityEngine.Transform rootTransform)
 		{
+			_startFrame = true;
+			MSJB.endFrame();
+
 			// collect transforms from owned rigid bodies
 			// and generate update packet/snapshot
 
-			Snapshot snapshot = new Snapshot();
-			snapshot.SourceAppId = _appId;
+			Experimental.Snapshot snapshot = new Experimental.Snapshot();
+			//snapshot.SourceId = _appId;
 			snapshot.Time = UnityEngine.Time.fixedTime + UnityEngine.Time.fixedDeltaTime;
-			snapshot.snapshotTransforms.Capacity = _countOwnedTransforms;
+			snapshot.RigidBodies = new List<Experimental.RBInfo>();
+			snapshot.RigidBodies.Capacity = _countOwnedTransforms;
 
 			foreach (var rb in _rigidBodies.Values)
 			{
@@ -549,8 +811,8 @@ namespace MixedRealityExtension.Core
 					continue;
 				}
 
-				var ti = new Snapshot.SnapshotTrasformInfo();
-				ti.Id = rb.Id;
+				var ti = new Experimental.RBInfo();
+				ti.ID = rb.Id;
 
 				//Position = new Vector3Patch(App.SceneRoot.transform.InverseTransformPoint(transform.position)),
 				//Rotation = new QuaternionPatch(Quaternion.Inverse(App.SceneRoot.transform.rotation) * transform.rotation)
@@ -558,10 +820,10 @@ namespace MixedRealityExtension.Core
 				//ti.Transform.Position = rb.RigidBody.transform.position - rootTransform.position;
 				//ti.Transform.Rotation = UnityEngine.Quaternion.Inverse(rootTransform.rotation) * rb.RigidBody.transform.rotation;
 
-				ti.sTransform.Position = rootTransform.InverseTransformPoint(rb.RigidBody.transform.position);
-				ti.sTransform.Rotation = UnityEngine.Quaternion.Inverse(rootTransform.rotation) * rb.RigidBody.transform.rotation;
+				ti.Transform.Position = rootTransform.InverseTransformPoint(rb.RigidBody.transform.position);
+				ti.Transform.Rotation = UnityEngine.Quaternion.Inverse(rootTransform.rotation) * rb.RigidBody.transform.rotation;
 
-				snapshot.snapshotTransforms.Add(ti);
+				snapshot.RigidBodies.Add(ti);
 			}
 
 			return snapshot;

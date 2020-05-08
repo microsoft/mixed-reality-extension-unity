@@ -14,7 +14,7 @@ namespace MixedRealityExtension.Patching.Types
 	{
 		public TransformPatchInfo() { }
 
-		internal TransformPatchInfo(Guid id, PhysicsBridge.Snapshot.SnapshotTransform transform)
+		internal TransformPatchInfo(Guid id, Experimental.RBTransform transform)
 		{
 			Id = id;
 
@@ -35,44 +35,43 @@ namespace MixedRealityExtension.Patching.Types
 	{
 		public PhysicsBridgePatch() { }
 
-		internal PhysicsBridgePatch(PhysicsBridge.Snapshot snapshot)
+		internal PhysicsBridgePatch(Guid sourceId, Experimental.Snapshot snapshot)
 		{
-			Id = snapshot.SourceAppId;
+			Id = sourceId;
 			Time = snapshot.Time;
-			bridgeTransforms = new List<TransformPatchInfo>(snapshot.snapshotTransforms.Count);
+			bridgeTransforms = new List<TransformPatchInfo>(snapshot.RigidBodies.Count);
 
-			foreach (var ti in snapshot.snapshotTransforms)
+			foreach (var ti in snapshot.RigidBodies)
 			{
-				bridgeTransforms.Add(new TransformPatchInfo(ti.Id, ti.sTransform));
+				bridgeTransforms.Add(new TransformPatchInfo(ti.ID, ti.Transform));
 			}
 		}
 
-		internal PhysicsBridge.Snapshot ToSnapshot()
+		internal Experimental.Snapshot ToSnapshot()
 		{
-			var snapshot = new PhysicsBridge.Snapshot();
+			var snapshot = new Experimental.Snapshot();
 
-			snapshot.SourceAppId = Id;
 			snapshot.Time = Time;
 
 			if (bridgeTransforms != null)
 			{
-				snapshot.snapshotTransforms = new List<PhysicsBridge.Snapshot.SnapshotTrasformInfo>(bridgeTransforms.Count);
+				snapshot.RigidBodies = new List<Experimental.RBInfo>(bridgeTransforms.Count);
 
 				foreach (var ti in bridgeTransforms)
 				{
-					var t = new PhysicsBridge.Snapshot.SnapshotTrasformInfo();
-					t.Id = ti.Id;
+					var t = new Experimental.RBInfo();
+					t.ID = ti.Id;
 
-					t.sTransform = new PhysicsBridge.Snapshot.SnapshotTransform();
-					t.sTransform.Position = new UnityEngine.Vector3(ti.Transform.Position.X.Value, ti.Transform.Position.Y.Value, ti.Transform.Position.Z.Value);
-					t.sTransform.Rotation = new UnityEngine.Quaternion(ti.Transform.Rotation.X.Value, ti.Transform.Rotation.Y.Value, ti.Transform.Rotation.Z.Value, ti.Transform.Rotation.W.Value);
+					t.Transform = new Experimental.RBTransform();
+					t.Transform.Position = new UnityEngine.Vector3(ti.Transform.Position.X.Value, ti.Transform.Position.Y.Value, ti.Transform.Position.Z.Value);
+					t.Transform.Rotation = new UnityEngine.Quaternion(ti.Transform.Rotation.X.Value, ti.Transform.Rotation.Y.Value, ti.Transform.Rotation.Z.Value, ti.Transform.Rotation.W.Value);
 
-					snapshot.snapshotTransforms.Add(t);
+					snapshot.RigidBodies.Add(t);
 				}
 			}
 			else
 			{
-				snapshot.snapshotTransforms = new List<PhysicsBridge.Snapshot.SnapshotTrasformInfo>();
+				snapshot.RigidBodies = new List<Experimental.RBInfo>();
 			}
 
 			return snapshot;
