@@ -8,19 +8,17 @@ Shader "MRE/DiffuseVertex" {
 		_EmissiveTex ("Emissive Texture", 2D) = "white" {}
 
 		// Blend settings
-		_AlphaCutoff("Alpha Cutoff", Range(0,1)) = 0.5
-		[HideInInspector] _ShouldCutout("__should_cutout", Float) = 0.0
 		[HideInInspector] _SrcBlend("__src", Float) = 1.0
 		[HideInInspector] _DstBlend("__dst", Float) = 0.0
 		[HideInInspector] _ZWrite("__zw", Float) = 1.0
 	}
 	SubShader {
-		Tags { "RenderMode" = "Opaque" "Queue" = "Geometry" }
+		Tags { "RenderMode" = "Transparent" "Queue" = "Geometry" }
 		LOD 200
 
 		Pass {
 			Tags { "LightMode" = "Vertex" }
-			Blend [_SrcBlend] [_DstBlend]
+            Blend SrcAlpha OneMinusSrcAlpha
 			ZWrite [_ZWrite]
 
 			CGPROGRAM
@@ -38,8 +36,6 @@ Shader "MRE/DiffuseVertex" {
 
 			uniform float4 _Color;
 			uniform float4 _EmissiveColor;
-			uniform float _ShouldCutout;
-			uniform float _AlphaCutoff;
 
 			struct appdata
 			{
@@ -122,7 +118,7 @@ Shader "MRE/DiffuseVertex" {
 					fixed4(_EmissiveColor.rgb, 0.0) * tex2D(_EmissiveTex, TRANSFORM_TEX(i.uv, _EmissiveTex)) +
 					i.diffuse * tex2D(_MainTex, TRANSFORM_TEX(i.uv, _MainTex));
 				UNITY_APPLY_FOG(i.fogCoord, color);
-				clip(lerp(1, color.a - _AlphaCutoff, _ShouldCutout));
+				clip(lerp(1, color.a, 0));
 				return color;
 			}
 			ENDCG
