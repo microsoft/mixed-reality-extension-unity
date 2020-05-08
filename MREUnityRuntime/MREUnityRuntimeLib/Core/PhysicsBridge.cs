@@ -313,7 +313,7 @@ namespace MixedRealityExtension.Core
 			{
 				if (rb.Ownership)
 				{
-					// <todo> test here all the remote-owned collisions and those should be turned to dynamic again.
+					// test here all the remote-owned collisions and those should be turned to dynamic again.
 					foreach (var remoteBodyInfo in _switchCollisionInfos)
 					{
 						var remoteBody = _rigidBodies[remoteBodyInfo.rigidBodyId].RigidBody;
@@ -342,13 +342,13 @@ namespace MixedRealityExtension.Core
 						bool isWithinCollisionRange = (projectedComDist < totalDistance || comDist < totalDistance || addToMonitor);
 						float timeSinceCollisionStart = collisionMonitorInfo.timeFromStartCollision;
 
-						//#if MRE_PHYSICS_DEBUG
+#if MRE_PHYSICS_DEBUG
 						Debug.Log("prprojectedComDistoj: " + projectedComDist + " comDist:" + comDist
 							+ " totalDistance:" + totalDistance + " remote body pos:" + remoteBodyInfo.startPosition.ToString()
 							+ "input lin vel:" + remoteBodyInfo.linearVelocity + " radiousRemote:" + radiousRemote +
 							" radiusOwnedBody:" + radiusOwnedBody + " relative dist:" + collisionMonitorInfo.relativeDistance
 							+ " timeSinceCollisionStart:" + timeSinceCollisionStart);
-						//#endif
+#endif
 
 						// unconditionally add to the monitor stream if this is a reasonable collision and we are only at the beginning
 						if (collisionMonitorInfo.timeFromStartCollision > halfDT &&
