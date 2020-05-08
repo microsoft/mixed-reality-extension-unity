@@ -43,7 +43,7 @@ namespace MixedRealityExtension.Assets
 				{
 					handler = new DownloadHandlerAudioClip(uri, AudioType.UNKNOWN);
 				}
-				else if (typeof(T) == typeof(UnityEngine.Texture))
+				else if (typeof(T) == typeof(UnityEngine.Texture2D))
 				{
 					handler = new DownloadHandlerTexture(false);
 				}
@@ -77,7 +77,7 @@ namespace MixedRealityExtension.Assets
 						{
 							result.Asset = ((DownloadHandlerAudioClip)handler).audioClip as T;
 						}
-						else if (typeof(T) == typeof(UnityEngine.Texture))
+						else if (typeof(T) == typeof(UnityEngine.Texture2D))
 						{
 							result.Asset = ((DownloadHandlerTexture)handler).texture as T;
 						}

@@ -292,7 +292,7 @@ namespace MixedRealityExtension.Assets
 				if (!_owner) return;
 
 				var mat = asset as UnityEngine.Material;
-				var tex = asset as UnityEngine.Texture;
+				var tex = asset as UnityEngine.Texture2D;
 				if (def.Material != null)
 				{
 					MREAPI.AppsAPI.MaterialPatcher.ApplyMaterialPatch(_app, mat, def.Material.Value);
@@ -355,11 +355,18 @@ namespace MixedRealityExtension.Assets
 			// create textures
 			else if (unityAsset == null && def.Texture != null)
 			{
-				var result = await AssetFetcher<UnityEngine.Texture>.LoadTask(_owner, new Uri(def.Texture.Value.Uri));
-				unityAsset = result.Asset;
+				var result = await AssetFetcher<UnityEngine.Texture2D>.LoadTask(_owner, new Uri(def.Texture.Value.Uri));
 				if (result.FailureMessage != null)
 				{
 					response.FailureMessage = result.FailureMessage;
+				}
+				else
+				{
+					var wwwTexture = result.Asset;
+					var mipTexture = new Texture2D(wwwTexture.width, wwwTexture.height, wwwTexture.format, true, false);
+					Graphics.CopyTexture(wwwTexture, 0, 0, mipTexture, 0, 0);
+					mipTexture.Apply(true);
+					unityAsset = mipTexture;
 				}
 			}
 
@@ -499,7 +506,7 @@ namespace MixedRealityExtension.Assets
 					Material = MREAPI.AppsAPI.MaterialPatcher.GeneratePatch(_app, mat)
 				};
 			}
-			else if (unityAsset is UnityEngine.Texture tex)
+			else if (unityAsset is UnityEngine.Texture2D tex)
 			{
 				return new Asset()
 				{
