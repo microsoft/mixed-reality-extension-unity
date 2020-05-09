@@ -25,6 +25,8 @@ using UnityCollider = UnityEngine.Collider;
 using MixedRealityExtension.PluginInterfaces.Behaviors;
 using MixedRealityExtension.Util;
 using IVideoPlayer = MixedRealityExtension.PluginInterfaces.IVideoPlayer;
+using MixedRealityExtension.Behaviors.Actions;
+
 namespace MixedRealityExtension.Core
 {
 	/// <summary>
@@ -97,6 +99,9 @@ namespace MixedRealityExtension.Core
 
 		public delegate void RigidBodyRemovedHandler(Guid id);
 		public event RigidBodyRemovedHandler RigidBodyRemoved;
+
+		public delegate void RigidBodyGrabbedHandler(Guid id, bool isGrabbed);
+		public event RigidBodyGrabbedHandler RigidBodyGrabbed;
 
 		#region IActor Properties - Public
 
@@ -811,6 +816,14 @@ namespace MixedRealityExtension.Core
 			return Light;
 		}
 
+		void test(object sender, ActionStateChangedArgs args)
+		{
+			if (args.NewState != ActionState.Performing)
+			{
+				RigidBodyGrabbed?.Invoke(Id, args.NewState == ActionState.Started);
+			}
+		}
+
 		private RigidBody AddRigidBody()
 		{
 			if (_rigidbody == null)
@@ -819,7 +832,20 @@ namespace MixedRealityExtension.Core
 				RigidBody = new RigidBody(_rigidbody, App.SceneRoot.transform);
 
 				bool isOwner = Owner.HasValue ? Owner.Value == App.LocalUser.Id : CanSync();
+
+				_rigidbody.isKinematic = !isOwner;
+
 				RigidBodyAdded?.Invoke(Id, _rigidbody, isOwner);
+
+
+				var behaviorComponent = GetActorComponent<BehaviorComponent>();
+				if (behaviorComponent != null && behaviorComponent.Behavior is ITargetBehavior targetBehavior)
+				{
+					if (targetBehavior.Grabbable)
+					{
+						targetBehavior.Grab.ActionStateChanged += test;
+					}
+				}
 			}
 			return RigidBody;
 		}
@@ -1382,6 +1408,8 @@ namespace MixedRealityExtension.Core
 
 					behaviorComponent.SetBehaviorHandler(handler);
 				}
+
+				((ITargetBehavior)behaviorComponent.Behavior).Grab.ActionStateChanged += test;
 
 				((ITargetBehavior)behaviorComponent.Behavior).Grabbable = grabbable.Value;
 

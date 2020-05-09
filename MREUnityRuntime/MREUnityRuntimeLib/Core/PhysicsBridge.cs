@@ -109,6 +109,8 @@ namespace MixedRealityExtension.Core
 				lastTimeKeyFramedUpdate = 0.0f;
 				lastValidLinerVelocity.Set(0.0f, 0.0f, 0.0f);
 				lastValidAngularVelocity.Set(0.0f, 0.0f, 0.0f);
+
+				IsKeyframed = false;
 			}
 
 			public Guid Id;
@@ -121,7 +123,9 @@ namespace MixedRealityExtension.Core
 			public UnityEngine.Vector3 lastValidAngularVelocity;
 
 			/// <summary> true if this rigid body is owned by this client </summary>
-			public bool Ownership; 
+			public bool Ownership;
+
+			public bool IsKeyframed;
 		}
 
 		public Guid _appId;
@@ -153,10 +157,12 @@ namespace MixedRealityExtension.Core
 
 			if (ownership)
 			{
+				rigidbody.isKinematic = false;
 				_countOwnedTransforms++;
 			}
 			else
 			{
+				rigidbody.isKinematic = true;
 				_countStreamedTransforms++;
 			}
 		}
@@ -198,6 +204,18 @@ namespace MixedRealityExtension.Core
 			_rigidBodies[id].Ownership = ownership;
 		}
 
+		public void setKeyframed(Guid id, bool isKeyFramed)
+		{
+			if (_rigidBodies.ContainsKey(id))
+			{
+				var rb = _rigidBodies[id];
+				if (rb.Ownership)
+				{
+					rb.IsKeyframed = isKeyFramed;
+				}
+			}
+		}
+
 		#endregion
 
 		#region Transform Streaming
@@ -227,8 +245,18 @@ namespace MixedRealityExtension.Core
 			{
 				if (rb.Ownership)
 				{
+					if (rb.IsKeyframed)
+					{
+						rb.RigidBody.isKinematic = true;
+					}
+					else
+					{
+						rb.RigidBody.isKinematic = false;
+					}
+
 					continue;
 				}
+
 				float timeOfSnapshot;
 
 				Snapshot.SnapshotTransform transform = _snapshotBuffer.getTransform(rb.Id, out timeOfSnapshot);
