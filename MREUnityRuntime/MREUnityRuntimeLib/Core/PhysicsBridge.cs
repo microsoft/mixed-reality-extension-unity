@@ -120,7 +120,8 @@ namespace MixedRealityExtension.Core
 			public UnityEngine.Vector3 lastValidLinerVelocity;
 			public UnityEngine.Vector3 lastValidAngularVelocity;
 
-			public bool Ownership; ///< true if this rigid body is owned by this client
+			/// <summary> true if this rigid body is owned by this client </summary>
+			public bool Ownership; 
 		}
 
 		public Guid _appId;
@@ -135,7 +136,7 @@ namespace MixedRealityExtension.Core
 		/// when we update a body we compute the implicit velocity. This velocity is needed, in case of collisions to switch from kinematic to kinematic=false
 		List<CollisionSwitchInfo> _switchCollisionInfos = new List<CollisionSwitchInfo>();
 
-		/// <todo> the input should be GuidXGuid since one body could collide with multiple other, or one collision is enough (?)
+		/// <todo> the input should be GuidXGuid since one body could collide with multiple other, or one collision is enough (?) </todo>
 		Dictionary<Guid, CollisionMonitorInfo> _monitorCollisionInfo = new Dictionary<Guid, CollisionMonitorInfo>();
 
 		public PhysicsBridge()
