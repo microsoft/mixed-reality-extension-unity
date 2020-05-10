@@ -375,7 +375,7 @@ namespace MixedRealityExtension.Core
 								invInterpolationTimeWindows * (timeSinceCollisionStart - startInterpolatingBack);
 #if MRE_PHYSICS_DEBUG
 							Debug.Log(" doing interpolation new:" + collisionMonitorInfo.keyframedInterpolationRatio +
-								" old:" + oldVal);
+								" old:" + oldVal + " relative distance:" + collisionMonitorInfo.relativeDistance);
 #endif
 							// stop interpolation
 							if (collisionMonitorInfo.relativeDistance < 0.8f
@@ -384,9 +384,11 @@ namespace MixedRealityExtension.Core
 #if MRE_PHYSICS_DEBUG
 								Debug.Log(" Stop interpolation time with DT:" + DT +
 									" Ratio:" + collisionMonitorInfo.keyframedInterpolationRatio +
-									" relDist:" + collisionMonitorInfo.relativeDistance);
+									" relDist:" + collisionMonitorInfo.relativeDistance +
+									" t=" + collisionMonitorInfo.timeFromStartCollision);
 #endif
-								collisionMonitorInfo.timeFromStartCollision -= DT;
+								collisionMonitorInfo.timeFromStartCollision -=
+									Math.Min( 3.0f, ( (1.0f/0.2f) * collisionMonitorInfo.keyframedInterpolationRatio) )* DT;
 							}
 						}
 
