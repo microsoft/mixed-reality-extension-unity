@@ -119,8 +119,8 @@ namespace MixedRealityExtension.Core
 			public float lastTimeKeyFramedUpdate;
 			public UnityEngine.Vector3 lastValidLinerVelocity;
 			public UnityEngine.Vector3 lastValidAngularVelocity;
-
-			public bool Ownership; ///< true if this rigid body is owned by this client
+			/// true if this rigid body is owned by this client
+			public bool Ownership; 
 		}
 
 		public Guid _appId;
@@ -218,7 +218,12 @@ namespace MixedRealityExtension.Core
 			const float startInterpolatingBack = 0.6f; // time in seconds
 			const float endInterpolatingBack = 2.0f; // time in seconds
 			const float invInterpolationTimeWindows = 1.0f / (endInterpolatingBack - startInterpolatingBack);
+			const float limitCollisionInterpolation = 0.2f;
+			const float collisionRelDistLimit = 0.8f;
 
+#if MRE_PHYSICS_DEBUG
+			Debug.Log(" ------------ ");
+#endif
 			// delete all the previous collisions
 			_switchCollisionInfos.Clear();
 
@@ -240,8 +245,23 @@ namespace MixedRealityExtension.Core
 					collisionInfo.startOrientation = rb.RigidBody.transform.rotation;
 					collisionInfo.rigidBodyId = rb.Id;
 
+					// no previous collision, keep key framed
+					UnityEngine.Vector3 keyFramedPos = rootTransform.TransformPoint(transform.Position);
+					UnityEngine.Quaternion keyFramedOrientation = rootTransform.rotation * transform.Rotation;
+					// if there is a really new update then also store the implicit velocity
+					if (rb.lastTimeKeyFramedUpdate < timeOfSnapshot)
+					{
+						// <todo> for long running times this could be a problem 
+						float invUpdateDT = 1.0f / (timeOfSnapshot - rb.lastTimeKeyFramedUpdate);
+						rb.lastValidLinerVelocity = (keyFramedPos - collisionInfo.startPosition) * invUpdateDT;
+						rb.lastValidAngularVelocity = (UnityEngine.Quaternion.Inverse(collisionInfo.startOrientation)
+						 * keyFramedOrientation).eulerAngles * invUpdateDT;
+					}
+					rb.lastTimeKeyFramedUpdate = timeOfSnapshot;
+
 					if (_monitorCollisionInfo.ContainsKey(rb.Id))
 					{
+						// dynamic
 						rb.RigidBody.isKinematic = false;
 						collisionInfo.monitorInfo = _monitorCollisionInfo[rb.Id];
 						collisionInfo.monitorInfo.timeFromStartCollision += DT;
@@ -255,48 +275,44 @@ namespace MixedRealityExtension.Core
 
 						// if time passes by then make a transformation between key framed and dynamic
 						// but only change the positions not the velocity
-						if (collisionInfo.monitorInfo.keyframedInterpolationRatio > 0.001f)
+						if (collisionInfo.monitorInfo.keyframedInterpolationRatio > 0.05f)
 						{
 							// interpolate between key framed and dynamic transforms
 							float t = collisionInfo.monitorInfo.keyframedInterpolationRatio;
-							UnityEngine.Vector3 keyFramedPos = rootTransform.TransformPoint(transform.Position), interpolatedPos;
-							UnityEngine.Quaternion keyFramedOrientation = rootTransform.rotation * transform.Rotation, interpolatedQuad;
+							UnityEngine.Vector3 interpolatedPos;
+							UnityEngine.Quaternion interpolatedQuad;
 							interpolatedPos = t * keyFramedPos + (1.0f - t) * rb.RigidBody.transform.position;
 							interpolatedQuad = UnityEngine.Quaternion.Slerp(keyFramedOrientation, rb.RigidBody.transform.rotation, t);
 #if MRE_PHYSICS_DEBUG
 							Debug.Log(" Interpolate body " + rb.Id.ToString() + " t=" + t
+								+ " time=" + UnityEngine.Time.time
 								+ " pos KF:" + keyFramedPos
 								+ " dyn:" + rb.RigidBody.transform.position
-							    + " interp pos:" + interpolatedPos);
+							    + " interp pos:" + interpolatedPos
+								+ " rb vel:" + rb.RigidBody.velocity
+								+ " KF vel:" + rb.lastValidLinerVelocity);
 #endif
 							rb.RigidBody.transform.position = interpolatedPos;
 							rb.RigidBody.transform.rotation = interpolatedQuad;
+							//rb.RigidBody.velocity = rb.lastValidLinerVelocity;
+							rb.RigidBody.angularVelocity.Set(0.0f, 0.0f, 0.0f);
 						}
 					}
 					else
 					{
-						// no previous collision, keep key framed
-						UnityEngine.Vector3 newPosition = rootTransform.TransformPoint(transform.Position);
-						UnityEngine.Quaternion newOrientation = rootTransform.rotation * transform.Rotation;
+						// 100% key framing
 						rb.RigidBody.isKinematic = true;
-						// if there is a really new update then also store the implicit velocity
-						if (rb.lastTimeKeyFramedUpdate < timeOfSnapshot)
-						{
-							// <todo> for long running times this could be a problem 
-							float invUpdateDT = 1.0f/(timeOfSnapshot - rb.lastTimeKeyFramedUpdate);
-							rb.lastValidLinerVelocity = (newPosition - collisionInfo.startPosition) * invUpdateDT;
-							rb.lastValidAngularVelocity = (UnityEngine.Quaternion.Inverse(collisionInfo.startOrientation)
-							 * newOrientation).eulerAngles * invUpdateDT;
-						}
-						rb.RigidBody.transform.position = newPosition;
-						rb.RigidBody.transform.rotation = newOrientation;
-						rb.lastTimeKeyFramedUpdate = timeOfSnapshot;
-
+						rb.RigidBody.transform.position = keyFramedPos;
+						rb.RigidBody.transform.rotation = keyFramedOrientation;
+						rb.RigidBody.velocity.Set(0.0f, 0.0f, 0.0f);
+						rb.RigidBody.angularVelocity.Set(0.0f, 0.0f, 0.0f);
 						collisionInfo.linearVelocity = rb.lastValidLinerVelocity;
 						collisionInfo.angularVelocity = rb.lastValidAngularVelocity;
 						collisionInfo.monitorInfo = new CollisionMonitorInfo();
 #if MRE_PHYSICS_DEBUG
-						Debug.Log(" Remote body: " + rb.Id.ToString() + " is key framed:");
+						Debug.Log(" Remote body: " + rb.Id.ToString() + " is key framed:"
+							+ " linvel:" + collisionInfo.linearVelocity
+							+ " angvel:" + collisionInfo.angularVelocity);
 #endif
 					}
 					// <todo> add more filtering here to cancel out unnecessary items,
@@ -307,6 +323,9 @@ namespace MixedRealityExtension.Core
 
 			// clear here all the monitoring since we will re add them
 			_monitorCollisionInfo.Clear();
+#if MRE_PHYSICS_DEBUG
+			Debug.Log(" ===================== ");
+#endif
 
 			// test collisions of each owned body with each not owned body
 			foreach (var rb in _rigidBodies.Values)
@@ -339,15 +358,15 @@ namespace MixedRealityExtension.Core
 						collisionMonitorInfo.relativeDistance = lastApproxDistance / totalDistance;
 
 						bool addToMonitor = false;
-						bool isWithinCollisionRange = (projectedComDist < totalDistance || comDist < totalDistance || addToMonitor);
+						bool isWithinCollisionRange = (projectedComDist < totalDistance || comDist < totalDistance);
 						float timeSinceCollisionStart = collisionMonitorInfo.timeFromStartCollision;
-
+						bool isAlreadyInMonitor = _monitorCollisionInfo.ContainsKey(remoteBodyInfo.rigidBodyId);
 #if MRE_PHYSICS_DEBUG
 						Debug.Log("prprojectedComDistoj: " + projectedComDist + " comDist:" + comDist
 							+ " totalDistance:" + totalDistance + " remote body pos:" + remoteBodyInfo.startPosition.ToString()
 							+ "input lin vel:" + remoteBodyInfo.linearVelocity + " radiousRemote:" + radiousRemote +
 							" radiusOwnedBody:" + radiusOwnedBody + " relative dist:" + collisionMonitorInfo.relativeDistance
-							+ " timeSinceCollisionStart:" + timeSinceCollisionStart);
+							+ " timeSinceCollisionStart:" + timeSinceCollisionStart + " isAlreadyInMonitor:" + isAlreadyInMonitor);
 #endif
 
 						// unconditionally add to the monitor stream if this is a reasonable collision and we are only at the beginning
@@ -364,6 +383,7 @@ namespace MixedRealityExtension.Core
 						// switch over smoothly to the key framing
 						if (!addToMonitor &&
 							timeSinceCollisionStart > 5*DT && // some basic check for lower limit
+							(!isAlreadyInMonitor || collisionMonitorInfo.relativeDistance > 1.2f) && // if this is already added then ignore large values
 							timeSinceCollisionStart <= endInterpolatingBack)
 						{
 							addToMonitor = true;
@@ -378,8 +398,8 @@ namespace MixedRealityExtension.Core
 								" old:" + oldVal + " relative distance:" + collisionMonitorInfo.relativeDistance);
 #endif
 							// stop interpolation
-							if (collisionMonitorInfo.relativeDistance < 0.8f
-								&& collisionMonitorInfo.keyframedInterpolationRatio > 0.2f)
+							if (collisionMonitorInfo.relativeDistance < collisionRelDistLimit
+								&& collisionMonitorInfo.keyframedInterpolationRatio > limitCollisionInterpolation)
 							{
 #if MRE_PHYSICS_DEBUG
 								Debug.Log(" Stop interpolation time with DT:" + DT +
@@ -387,8 +407,11 @@ namespace MixedRealityExtension.Core
 									" relDist:" + collisionMonitorInfo.relativeDistance +
 									" t=" + collisionMonitorInfo.timeFromStartCollision);
 #endif
-								collisionMonitorInfo.timeFromStartCollision -=
-									Math.Min( 3.0f, ( (1.0f/0.2f) * collisionMonitorInfo.keyframedInterpolationRatio) )* DT;
+								//collisionMonitorInfo.timeFromStartCollision -=
+								//	Math.Min( 3.0f, ( (1.0f/limitCollisionInterpolation) * collisionMonitorInfo.keyframedInterpolationRatio) )* DT;
+								collisionMonitorInfo.timeFromStartCollision = startInterpolatingBack
+									+ limitCollisionInterpolation * (endInterpolatingBack - startInterpolatingBack);
+								collisionMonitorInfo.keyframedInterpolationRatio = limitCollisionInterpolation;
 							}
 						}
 
@@ -396,20 +419,36 @@ namespace MixedRealityExtension.Core
 						if (isWithinCollisionRange || addToMonitor)
 						{
 							// add to the monitor stream
-							if (_monitorCollisionInfo.ContainsKey(remoteBodyInfo.rigidBodyId))
+							if (isAlreadyInMonitor)
 							{
 								// if there is existent collision already with this remote body, then build the minimum
 								var existingMonitorInfo = _monitorCollisionInfo[remoteBodyInfo.rigidBodyId];
+#if MRE_PHYSICS_DEBUG
+								Debug.Log(" START merge collision info: " + remoteBodyInfo.rigidBodyId.ToString() +
+									" r:" + existingMonitorInfo.keyframedInterpolationRatio + " d:" + existingMonitorInfo.relativeDistance);
+#endif
 								existingMonitorInfo.timeFromStartCollision =
 									Math.Min(existingMonitorInfo.timeFromStartCollision, collisionMonitorInfo.timeFromStartCollision);
 								existingMonitorInfo.relativeDistance =
 									Math.Min(existingMonitorInfo.relativeDistance, collisionMonitorInfo.relativeDistance);
 								existingMonitorInfo.keyframedInterpolationRatio =
 									Math.Min(existingMonitorInfo.keyframedInterpolationRatio, collisionMonitorInfo.keyframedInterpolationRatio);
+								collisionMonitorInfo = existingMonitorInfo;
+								_monitorCollisionInfo[remoteBodyInfo.rigidBodyId] = collisionMonitorInfo;
+								existingMonitorInfo = _monitorCollisionInfo[remoteBodyInfo.rigidBodyId];
+#if MRE_PHYSICS_DEBUG
+								Debug.Log(" merge collision info: " + remoteBodyInfo.rigidBodyId.ToString() +
+									" r:" + existingMonitorInfo.keyframedInterpolationRatio + " d:" + existingMonitorInfo.relativeDistance);
+#endif
 							}
 							else
 							{
 								_monitorCollisionInfo.Add(remoteBodyInfo.rigidBodyId, collisionMonitorInfo);
+#if MRE_PHYSICS_DEBUG
+								var existingMonitorInfo = _monitorCollisionInfo[remoteBodyInfo.rigidBodyId];
+								Debug.Log(" Add collision info: " + remoteBodyInfo.rigidBodyId.ToString() +
+									" r:" + existingMonitorInfo.keyframedInterpolationRatio + " d:" + existingMonitorInfo.relativeDistance);
+#endif
 							}
 
 							// this is a new collision
@@ -422,8 +461,9 @@ namespace MixedRealityExtension.Core
 								remoteBody.velocity = remoteBodyInfo.linearVelocity;
 								remoteBody.angularVelocity = remoteBodyInfo.angularVelocity;
 #if MRE_PHYSICS_DEBUG
-								Debug.Log(" remote body velocity SWITCH collision: " + remoteBody.velocity.ToString() +
-	                               "  start position:" + remoteBody.transform.position.ToString());
+								Debug.Log(" remote body velocity SWITCH collision: " + remoteBody.velocity.ToString()
+	                               + "  start position:" + remoteBody.transform.position.ToString()
+								   + " linVel:" + remoteBody.velocity + " angVel:" + remoteBody.angularVelocity);
 #endif
 							}
 							else
