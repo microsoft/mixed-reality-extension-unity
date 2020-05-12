@@ -135,7 +135,7 @@ namespace MixedRealityExtension.Core
 		/// when we update a body we compute the implicit velocity. This velocity is needed, in case of collisions to switch from kinematic to kinematic=false
 		List<CollisionSwitchInfo> _switchCollisionInfos = new List<CollisionSwitchInfo>();
 
-		/// <todo> the input should be GuidXGuid since one body could collide with multiple other, or one collision is enough (?)
+		/// input is Guid from the remote body (in case of multiple collisions take the minimum
 		Dictionary<Guid, CollisionMonitorInfo> _monitorCollisionInfo = new Dictionary<Guid, CollisionMonitorInfo>();
 
 		public PhysicsBridge()
@@ -221,6 +221,12 @@ namespace MixedRealityExtension.Core
 			const float limitCollisionInterpolation = 0.2f;
 			const float collisionRelDistLimit = 0.8f;
 
+			const float radiusExpansionFactor = 1.3f; // to detect potential collisions
+			const float inCollisionRangeRelativeDistanceFactor = 1.25f;
+
+			const float interpolationPosEpsilon = 0.01f;
+			const float interpolationAngularEps = 3.0f;
+
 #if MRE_PHYSICS_DEBUG
 			Debug.Log(" ------------ ");
 #endif
@@ -245,7 +251,7 @@ namespace MixedRealityExtension.Core
 					collisionInfo.startOrientation = rb.RigidBody.transform.rotation;
 					collisionInfo.rigidBodyId = rb.Id;
 
-					// no previous collision, keep key framed
+					// get the key framed stream, and compute implicit velocities
 					UnityEngine.Vector3 keyFramedPos = rootTransform.TransformPoint(transform.Position);
 					UnityEngine.Quaternion keyFramedOrientation = rootTransform.rotation * transform.Rotation;
 					// if there is a really new update then also store the implicit velocity
@@ -259,6 +265,7 @@ namespace MixedRealityExtension.Core
 					}
 					rb.lastTimeKeyFramedUpdate = timeOfSnapshot;
 
+					// test is this remote body is in the monitor stream
 					if (_monitorCollisionInfo.ContainsKey(rb.Id))
 					{
 						// dynamic
@@ -291,19 +298,19 @@ namespace MixedRealityExtension.Core
 								+ " rb vel:" + rb.RigidBody.velocity
 								+ " KF vel:" + rb.lastValidLinerVelocity);
 #endif
+							// apply these changes only if they are significant in order to not to bother the physics engine
+							// for settled objects
 							UnityEngine.Vector3 posdiff = rb.RigidBody.transform.position - interpolatedPos;
-							if (posdiff.magnitude > 0.01f)
+							if (posdiff.magnitude > interpolationPosEpsilon)
 							{
 								rb.RigidBody.transform.position = interpolatedPos;
 							}
 							float angleDiff = Math.Abs(
 								UnityEngine.Quaternion.Angle(rb.RigidBody.transform.rotation, interpolatedQuad) );
-							if (angleDiff > 3.0f)
+							if (angleDiff > interpolationAngularEps)
 							{
 								rb.RigidBody.transform.rotation = interpolatedQuad;
 							}
-							//rb.RigidBody.velocity = rb.lastValidLinerVelocity;
-							//rb.RigidBody.angularVelocity.Set(0.0f, 0.0f, 0.0f);
 						}
 					}
 					else
@@ -352,8 +359,8 @@ namespace MixedRealityExtension.Core
 						var remoteRelativeHitP = (remoteHitPoint - remoteBody.transform.position);
 						var ownedRelativeHitP = (ownedHitPoint - rb.RigidBody.transform.position);
 
-						var radiousRemote = 1.3f * remoteRelativeHitP.magnitude;
-						var radiusOwnedBody = 1.3f * ownedRelativeHitP.magnitude;
+						var radiousRemote = radiusExpansionFactor * remoteRelativeHitP.magnitude;
+						var radiusOwnedBody = radiusExpansionFactor * ownedRelativeHitP.magnitude;
 
 						var totalDistance = radiousRemote + radiusOwnedBody + 0.0001f; // avoid division by zero
 
@@ -380,7 +387,7 @@ namespace MixedRealityExtension.Core
 						// unconditionally add to the monitor stream if this is a reasonable collision and we are only at the beginning
 						if (collisionMonitorInfo.timeFromStartCollision > halfDT &&
 							timeSinceCollisionStart <= startInterpolatingBack &&
-							collisionMonitorInfo.relativeDistance < 1.25f)
+							collisionMonitorInfo.relativeDistance < inCollisionRangeRelativeDistanceFactor)
 						{
 #if MRE_PHYSICS_DEBUG
 							Debug.Log(" unconditionally add to collision stream time:" + timeSinceCollisionStart +
@@ -415,8 +422,11 @@ namespace MixedRealityExtension.Core
 									" relDist:" + collisionMonitorInfo.relativeDistance +
 									" t=" + collisionMonitorInfo.timeFromStartCollision);
 #endif
+								// --- this is a different way to drop the percentage for key framing ---
 								//collisionMonitorInfo.timeFromStartCollision -=
-								//	Math.Min( 3.0f, ( (1.0f/limitCollisionInterpolation) * collisionMonitorInfo.keyframedInterpolationRatio) )* DT;
+								//	Math.Min( 4.0f, ( (1.0f/limitCollisionInterpolation) * collisionMonitorInfo.keyframedInterpolationRatio) )* DT;
+
+								// this version just drops the percentage back to the limit 
 								collisionMonitorInfo.timeFromStartCollision = startInterpolatingBack
 									+ limitCollisionInterpolation * (endInterpolatingBack - startInterpolatingBack);
 								collisionMonitorInfo.keyframedInterpolationRatio = limitCollisionInterpolation;
@@ -443,6 +453,7 @@ namespace MixedRealityExtension.Core
 									Math.Min(existingMonitorInfo.keyframedInterpolationRatio, collisionMonitorInfo.keyframedInterpolationRatio);
 								collisionMonitorInfo = existingMonitorInfo;
 #if MRE_PHYSICS_DEBUG
+								// <todo> check why is this working sometimes weired.
 								_monitorCollisionInfo[remoteBodyInfo.rigidBodyId] = collisionMonitorInfo;
 								existingMonitorInfo = _monitorCollisionInfo[remoteBodyInfo.rigidBodyId];
 								Debug.Log(" merge collision info: " + remoteBodyInfo.rigidBodyId.ToString() +
@@ -469,7 +480,7 @@ namespace MixedRealityExtension.Core
 								remoteBody.velocity = remoteBodyInfo.linearVelocity;
 								remoteBody.angularVelocity = remoteBodyInfo.angularVelocity;
 #if MRE_PHYSICS_DEBUG
-								Debug.Log(" remote body velocity SWITCH collision: " + remoteBody.velocity.ToString()
+								Debug.Log(" remote body velocity SWITCH to collision: " + remoteBody.velocity.ToString()
 	                               + "  start position:" + remoteBody.transform.position.ToString()
 								   + " linVel:" + remoteBody.velocity + " angVel:" + remoteBody.angularVelocity);
 #endif
