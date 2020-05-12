@@ -32,6 +32,9 @@ namespace MixedRealityExtension.Core
 		public delegate void RigidBodyRemovedHandler(Guid id);
 		internal event RigidBodyRemovedHandler RigidBodyRemoved;
 
+		public delegate void RigidBodyGrabbedHandler(Guid id, bool isGrabbed);
+		internal event RigidBodyGrabbedHandler RigidBodyGrabbed;
+
 		internal ActorManager(MixedRealityExtensionApp app)
 		{
 			_app = app;
@@ -47,12 +50,20 @@ namespace MixedRealityExtension.Core
 			RigidBodyRemoved?.Invoke(id);
 		}
 
+		private void Actor_RigidBodyGrabbed(Guid id, bool isGrabbed)
+		{
+			RigidBodyGrabbed?.Invoke(id, isGrabbed);
+		}
+
 		internal Actor AddActor(Guid id, Actor actor)
 		{
 			actor.Initialize(id, _app);
 			_actorMapping[id] = actor;
+
 			actor.RigidBodyAdded += OnRigidBodyAdded;
 			actor.RigidBodyRemoved += OnRigidBodyRemoved;
+			actor.RigidBodyGrabbed += Actor_RigidBodyGrabbed;
+
 			OnActorCreated?.Invoke(actor);
 			return actor;
 		}

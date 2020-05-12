@@ -179,6 +179,7 @@ namespace MixedRealityExtension.App
 			_assetCache = new AssetCache(cacheRoot);
 			_actorManager.RigidBodyAdded += OnRigidBodyAdded;
 			_actorManager.RigidBodyRemoved += OnRigidBodyRemoved;
+			_actorManager.RigidBodyGrabbed += OnRigidBodyGrabbed;
 
 			var cacheRoot = new GameObject("MRE Cache");
 			cacheRoot.transform.SetParent(_ownerScript.gameObject.transform);
@@ -194,6 +195,11 @@ namespace MixedRealityExtension.App
 #else
 			Logger = logger ?? new ConsoleLogger(this);
 #endif
+		}
+
+		private void OnRigidBodyGrabbed(Guid id, bool isGrabbed)
+		{
+			_physicsBridge.setKeyframed(id, isGrabbed);
 		}
 
 		private void OnRigidBodyAdded(Guid id, Rigidbody rigidbody, bool isOwned)
