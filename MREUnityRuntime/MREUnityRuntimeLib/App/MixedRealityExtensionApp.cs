@@ -299,7 +299,7 @@ namespace MixedRealityExtension.App
 
 		private void SendPhysicsUpdate()
 		{
-			PhysicsBridgePatch physicsPatch = new PhysicsBridgePatch(InstanceId, _physicsBridge.Update(SceneRoot.transform));
+			PhysicsBridgePatch physicsPatch = new PhysicsBridgePatch(InstanceId, _physicsBridge.GenerateSnapshot(UnityEngine.Time.fixedTime, SceneRoot.transform));
 			EventManager.QueueEvent(new PhysicsBridgeUpdated(InstanceId, physicsPatch));
 		}
 
