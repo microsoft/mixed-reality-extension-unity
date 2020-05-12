@@ -34,7 +34,7 @@ namespace MixedRealityExtension.Patching.Types
 			bridgeTransforms = new List<TransformPatchInfo>();
 		}
 
-		internal PhysicsBridgePatch(Guid sourceId, Snapshot_WIP snapshot)
+		internal PhysicsBridgePatch(Guid sourceId, Snapshot snapshot)
 		{
 			Id = sourceId;
 			Time = snapshot.Time;
@@ -46,9 +46,9 @@ namespace MixedRealityExtension.Patching.Types
 			}
 		}
 
-		internal Snapshot_WIP ToSnapshot()
+		internal Snapshot ToSnapshot()
 		{
-			List<Snapshot_WIP.TransformInfo> transforms = new List<Snapshot_WIP.TransformInfo>(bridgeTransforms.Count);
+			List<Snapshot.TransformInfo> transforms = new List<Snapshot.TransformInfo>(bridgeTransforms.Count);
 
 			if (bridgeTransforms != null)
 			{
@@ -68,11 +68,11 @@ namespace MixedRealityExtension.Patching.Types
 							bridgeTransform.Transform.Rotation.W.Value);
 					}
 
-					transforms.Add(new Snapshot_WIP.TransformInfo(bridgeTransform.Id, snapshotTranform));
+					transforms.Add(new Snapshot.TransformInfo(bridgeTransform.Id, snapshotTranform));
 				}
 			}
 
-			return new Snapshot_WIP(Time, transforms);
+			return new Snapshot(Time, transforms);
 		}
 
 		/// <summary>

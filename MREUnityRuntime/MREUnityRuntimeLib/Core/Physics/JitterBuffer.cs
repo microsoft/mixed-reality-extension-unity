@@ -28,7 +28,7 @@ namespace MixedRealityExtension.Core.Physics
 	/// <summary>
 	/// Snapshot of rigid body transforms at specified point in time.
 	/// </summary>
-	public class Snapshot_WIP
+	public class Snapshot
 	{
 		/// <summary>
 		/// Trnasform identifier and respective transform.
@@ -41,12 +41,15 @@ namespace MixedRealityExtension.Core.Physics
 				Transform = transform;
 			}
 
+			/// <todo>
+			/// use int as transform id
+			/// </todo>
 			public Guid Id { get; private set; }
 
 			public RigidBodyTransform Transform { get; private set; }
 		}
 
-		public Snapshot_WIP(float time, List<TransformInfo> transforms)
+		public Snapshot(float time, List<TransformInfo> transforms)
 		{
 			Time = time;
 			Transforms = transforms;
@@ -66,12 +69,12 @@ namespace MixedRealityExtension.Core.Physics
 	/// <summary>
 	/// Stored snapshots from a single source.
 	/// </summary>
-	public class SnapsotBuffer_WIP
+	public class SnapsotBuffer
 	{
 		/// <summary>
 		/// Add snapshot to buffer if snapshot with same timestamp exists in buffer.
 		/// </summary>
-		public void addSnapshot(Snapshot_WIP snapshot)
+		public void addSnapshot(Snapshot snapshot)
 		{
 			if (!Snapshots.ContainsKey(snapshot.Time))
 			{
@@ -83,7 +86,7 @@ namespace MixedRealityExtension.Core.Physics
 		/// Get previous and next snapshot for specified timestamp.
 		/// Snapshots older than previous will be deleted.
 		/// </summary>
-		public void step(float time, out Snapshot_WIP previous, out Snapshot_WIP next)
+		public void step(float time, out Snapshot previous, out Snapshot next)
 		{
 			// find appropriate snapshots
 			int index = 0;
@@ -99,7 +102,7 @@ namespace MixedRealityExtension.Core.Physics
 		/// <summary>
 		/// Snapshots sorted by snapshot timestamp.
 		/// </summary>
-		public SortedList<float, Snapshot_WIP> Snapshots = new SortedList<float, Snapshot_WIP>();
+		public SortedList<float, Snapshot> Snapshots = new SortedList<float, Snapshot>();
 	}
 
 	public class MultiSourceCombinedSnapshot
@@ -187,7 +190,7 @@ namespace MixedRealityExtension.Core.Physics
 				CurrentLocalTime = float.MinValue;
 			}
 
-			public void addSnapshot(Snapshot_WIP snapshot)
+			public void addSnapshot(Snapshot snapshot)
 			{
 				SnapshotBuffer.addSnapshot(snapshot);
 			}
@@ -196,6 +199,8 @@ namespace MixedRealityExtension.Core.Physics
 			List<float> mean = new List<float>(5000);
 			List<float> variance = new List<float>(5000);
 			List<float> stddev = new List<float>(5000);
+			List<float> target = new List<float>(5000);
+			List<float> biasedTarget = new List<float>(5000);
 
 			float bufferedTimeRunningAerage = 0.0f;
 
@@ -203,7 +208,7 @@ namespace MixedRealityExtension.Core.Physics
 			{
 				if (_mode == Mode.Init)
 				{
-					if (SnapshotBuffer.Snapshots.Count >= 10)
+					if (SnapshotBuffer.Snapshots.Count >= 4)
 					{
 						_mode = Mode.Play;
 
@@ -229,19 +234,31 @@ namespace MixedRealityExtension.Core.Physics
 					variance.Add(_stats.getVariance());
 					stddev.Add(_stats.getStandardDeviation());
 
+
+					float targetValue = _stats.getAverage() - _stats.getStandardDeviation();
+
+					target.Add(targetValue);
+
+					const float dt = 1.0f / 60;
+					float biasedTargetValue = ((int)(targetValue / dt)) * dt;
+
+					biasedTarget.Add(biasedTargetValue);
+
 					if (delay.Count > 5000)
 					{
 						delay.RemoveRange(0, delay.Count - 5000);
 						mean.RemoveRange(0, delay.Count - 5000);
 						variance.RemoveRange(0, delay.Count - 5000);
 						stddev.RemoveRange(0, delay.Count - 5000);
+						target.RemoveRange(0, delay.Count - 5000);
+						biasedTarget.RemoveRange(0, delay.Count - 5000);
 					}
 
 					if (nextTime <= SnapshotBuffer.Snapshots.Last().Value.Time)
 					{
 						HasUpdate = true;
 
-						Snapshot_WIP prev, next;
+						Snapshot prev, next;
 						SnapshotBuffer.step(nextTime, out prev, out next);
 
 						if (Math.Abs(next.Time - nextTime) < 0.001)
@@ -262,7 +279,7 @@ namespace MixedRealityExtension.Core.Physics
 							{
 								float frac = (nextTime - prev.Time) / (next.Time - prev.Time);
 
-								List<Snapshot_WIP.TransformInfo> transforms = new List<Snapshot_WIP.TransformInfo>(next.Transforms.Count);
+								List<Snapshot.TransformInfo> transforms = new List<Snapshot.TransformInfo>(next.Transforms.Count);
 
 								int prevIndex = 0;
 								int nextIndex = 0;
@@ -280,17 +297,17 @@ namespace MixedRealityExtension.Core.Physics
 											t.Lerp(prev.Transforms[prevIndex].Transform, next.Transforms[nextIndex].Transform, frac);
 										}
 
-										transforms.Add(new Snapshot_WIP.TransformInfo(next.Transforms[nextIndex].Id, t));
+										transforms.Add(new Snapshot.TransformInfo(next.Transforms[nextIndex].Id, t));
 									}
 									else
 									{
-										transforms.Add(new Snapshot_WIP.TransformInfo(next.Transforms[nextIndex].Id, next.Transforms[nextIndex].Transform));
+										transforms.Add(new Snapshot.TransformInfo(next.Transforms[nextIndex].Id, next.Transforms[nextIndex].Transform));
 									}
 								}
 
 								// interpolated snapshot
 								CurrentLocalTime = nextTime;
-								CurrentSnapshot = new Snapshot_WIP(nextTime, transforms);
+								CurrentSnapshot = new Snapshot(nextTime, transforms);
 							}
 						}
 						else
@@ -305,7 +322,7 @@ namespace MixedRealityExtension.Core.Physics
 					else
 					{
 						CurrentLocalTime += timestep;
-						CurrentSnapshot = new Snapshot_WIP(CurrentLocalTime, CurrentSnapshot.Transforms);
+						CurrentSnapshot = new Snapshot(CurrentLocalTime, CurrentSnapshot.Transforms);
 
 						HasUpdate = false;
 					}
@@ -325,7 +342,7 @@ namespace MixedRealityExtension.Core.Physics
 			/// <summary>
 			/// This source snapshots.
 			/// </summary>
-			private SnapsotBuffer_WIP SnapshotBuffer = new SnapsotBuffer_WIP();
+			private SnapsotBuffer SnapshotBuffer = new SnapsotBuffer();
 
 
 			private float _targetBufferSize = 2.0f;
@@ -337,7 +354,7 @@ namespace MixedRealityExtension.Core.Physics
 
 			float CurrentLocalTime;
 
-			public Snapshot_WIP CurrentSnapshot { get; private set; }
+			public Snapshot CurrentSnapshot { get; private set; }
 		}
 
 		/// <summary>
@@ -346,7 +363,7 @@ namespace MixedRealityExtension.Core.Physics
 		/// </summary>
 		/// <param name="sourceId">Snapshot owner.</param>
 		/// <param name="snapshot">List of transform at specified timestamp.</param>
-		public void addSnapshot(Guid sourceId, Snapshot_WIP snapshot)
+		public void addSnapshot(Guid sourceId, Snapshot snapshot)
 		{
 			if (!Sources.ContainsKey(sourceId))
 			{
