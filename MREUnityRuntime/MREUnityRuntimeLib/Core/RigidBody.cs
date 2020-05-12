@@ -23,12 +23,6 @@ namespace MixedRealityExtension.Core
 		private Queue<Action<Rigidbody>> _updateActions = new Queue<Action<Rigidbody>>();
 
 		/// <inheritdoc />
-		//public MWVector3 Velocity { get; set; } = new MWVector3();
-
-		/// <inheritdoc />
-		//public MWVector3 AngularVelocity { get; set; } = new MWVector3();
-
-		/// <inheritdoc />
 		public float Mass { get; set; }
 
 		/// <inheritdoc />
