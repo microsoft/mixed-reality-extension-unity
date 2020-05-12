@@ -106,16 +106,19 @@ namespace MixedRealityExtension.Core.Physics
 	{
 		public struct RigidBodyState
 		{
-			public RigidBodyState(Guid id, float time, RigidBodyTransform transform)
+			public RigidBodyState(Guid id, float time, RigidBodyTransform transform, bool hasUpdate)
 			{
 				Id = id;
 				LocalTime = time;
 				Transform = transform;
+				HasUpdate = hasUpdate;
 			}
 
 			public Guid Id;
 
 			public float LocalTime;
+
+			public bool HasUpdate;
 
 			public RigidBodyTransform Transform;
 		}
@@ -195,7 +198,6 @@ namespace MixedRealityExtension.Core.Physics
 			List<float> stddev = new List<float>(5000);
 
 			float bufferedTimeRunningAerage = 0.0f;
-			float _QoS = 0.5f;
 
 			public void step(float timestep)
 			{
@@ -237,6 +239,8 @@ namespace MixedRealityExtension.Core.Physics
 
 					if (nextTime <= SnapshotBuffer.Snapshots.Last().Value.Time)
 					{
+						HasUpdate = true;
+
 						Snapshot_WIP prev, next;
 						SnapshotBuffer.step(nextTime, out prev, out next);
 
@@ -266,7 +270,7 @@ namespace MixedRealityExtension.Core.Physics
 								for (; nextIndex < next.Transforms.Count; nextIndex++)
 								{
 									// find corresponding transform in prev snapshot
-									while (prevIndex < prev.Transforms.Count && prev.Transforms[prevIndex].Id.CompareTo(next.Transforms[nextIndex].Id) >= 0) prevIndex++;
+									while (prevIndex < prev.Transforms.Count && prev.Transforms[prevIndex].Id.CompareTo(next.Transforms[nextIndex].Id) < 0) prevIndex++;
 
 									if (prevIndex < prev.Transforms.Count &&
 										prev.Transforms[prevIndex].Id == next.Transforms[nextIndex].Id)
@@ -296,16 +300,17 @@ namespace MixedRealityExtension.Core.Physics
 							CurrentSnapshot = next;
 						}
 
-						_QoS = Math.Min(1.0f, _QoS + 1.0f / 120);
-						output.Add(CurrentLocalTime);
+						HasUpdate = true;
 					}
 					else
 					{
-						_QoS -= 1.0f / 120;
+						CurrentLocalTime += timestep;
+						CurrentSnapshot = new Snapshot_WIP(CurrentLocalTime, CurrentSnapshot.Transforms);
 
-						CurrentLocalTime += _QoS * timestep;
-						CurrentSnapshot = new Snapshot_WIP(CurrentLocalTime, new List<Snapshot_WIP.TransformInfo>());
+						HasUpdate = false;
 					}
+
+					output.Add(CurrentLocalTime);
 				}
 			}
 
@@ -328,6 +333,7 @@ namespace MixedRealityExtension.Core.Physics
 
 			Mode _mode = Mode.Init;
 
+			public bool HasUpdate = false;
 
 			float CurrentLocalTime;
 
@@ -370,7 +376,7 @@ namespace MixedRealityExtension.Core.Physics
 					foreach (var t in source.CurrentSnapshot.Transforms)
 					{
 						snapshot.RigidBodies.Add(t.Id,
-							new MultiSourceCombinedSnapshot.RigidBodyState(t.Id, source.CurrentSnapshot.Time, t.Transform));
+							new MultiSourceCombinedSnapshot.RigidBodyState(t.Id, source.CurrentSnapshot.Time, t.Transform, source.HasUpdate));
 					}
 				}
 			}

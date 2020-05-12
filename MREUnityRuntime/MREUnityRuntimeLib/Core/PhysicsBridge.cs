@@ -168,10 +168,16 @@ namespace MixedRealityExtension.Core
 				}
 
 				// Find corresponding rigid body info.
-				while (index < snapshot.RigidBodies.Count && rb.Id != snapshot.RigidBodies.Values[index].Id) index++;
+				while (index < snapshot.RigidBodies.Count && rb.Id.CompareTo(snapshot.RigidBodies.Values[index].Id) > 0) index++;
 
-				if (index < snapshot.RigidBodies.Count)
+				if (index < snapshot.RigidBodies.Count && rb.Id == snapshot.RigidBodies.Values[index].Id)
 				{
+					if (!snapshot.RigidBodies.Values[index].HasUpdate)
+					{
+						rb.RigidBody.isKinematic = false;
+						continue;
+					}
+
 					RigidBodyTransform transform = snapshot.RigidBodies.Values[index].Transform;
 					float timeOfSnapshot = snapshot.RigidBodies.Values[index].LocalTime;
 
@@ -218,7 +224,7 @@ namespace MixedRealityExtension.Core
 						if (rb.lastTimeKeyFramedUpdate < timeOfSnapshot)
 						{
 							// <todo> for long running times this could be a problem 
-							float invUpdateDT = 1.0f/(timeOfSnapshot - rb.lastTimeKeyFramedUpdate);
+							float invUpdateDT = 1.0f / (timeOfSnapshot - rb.lastTimeKeyFramedUpdate);
 							rb.lastValidLinerVelocity = (newPosition - collisionInfo.startPosition) * invUpdateDT;
 							rb.lastValidAngularVelocity = (UnityEngine.Quaternion.Inverse(collisionInfo.startOrientation)
 							 * newOrientation).eulerAngles * invUpdateDT;
@@ -244,6 +250,7 @@ namespace MixedRealityExtension.Core
 			_monitorCollisionInfo.Clear();
 
 			// test collisions of each owned body with each not owned body
+			if (false)
 			foreach (var rb in _rigidBodies.Values)
 			{
 				if (rb.Ownership)
