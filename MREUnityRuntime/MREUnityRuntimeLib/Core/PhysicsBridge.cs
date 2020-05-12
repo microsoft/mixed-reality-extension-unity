@@ -395,6 +395,7 @@ namespace MixedRealityExtension.Core
 #endif
 							addToMonitor = true;
 						}
+
 						// switch over smoothly to the key framing
 						if (!addToMonitor &&
 							timeSinceCollisionStart > 5 * DT && // some basic check for lower limit
