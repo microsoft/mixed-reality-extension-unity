@@ -154,7 +154,7 @@ namespace MixedRealityExtension.Core
 		/// </summary>
 		/// <param name="sourceId">Snapshot source identifier.</param>
 		/// <param name="snapshot">List of transform at specified timestamp.</param>
-		public void addSnapshot(Guid sourceId, Snapshot_WIP snapshot)
+		public void addSnapshot(Guid sourceId, Snapshot snapshot)
 		{
 			_snapshotManager.addSnapshot(sourceId, snapshot);
 		}
@@ -485,12 +485,12 @@ namespace MixedRealityExtension.Core
 		/// <param name="time">Snapshot timestamp.</param>
 		/// <param name="rootTransform">Root transform.</param>
 		/// <returns>Generated snapshot.</returns>
-		public Snapshot_WIP GenerateSnapshot(float time, UnityEngine.Transform rootTransform)
+		public Snapshot GenerateSnapshot(float time, UnityEngine.Transform rootTransform)
 		{
 			// collect transforms from owned rigid bodies
 			// and generate update packet/snapshot
 
-			List<Snapshot_WIP.TransformInfo> transforms = new List<Snapshot_WIP.TransformInfo>(_rigidBodies.Count);
+			List<Snapshot.TransformInfo> transforms = new List<Snapshot.TransformInfo>(_rigidBodies.Count);
 
 			foreach (var rb in _rigidBodies.Values)
 			{
@@ -505,10 +505,10 @@ namespace MixedRealityExtension.Core
 					transform.Rotation = UnityEngine.Quaternion.Inverse(rootTransform.rotation) * rb.RigidBody.transform.rotation;
 				}
 
-				transforms.Add(new Snapshot_WIP.TransformInfo(rb.Id, transform));
+				transforms.Add(new Snapshot.TransformInfo(rb.Id, transform));
 			}
 
-			return new Snapshot_WIP(time, transforms);
+			return new Snapshot(time, transforms);
 		}
 
 		public void LateUpdate()
