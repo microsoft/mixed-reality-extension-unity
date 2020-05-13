@@ -1,11 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using UnityEngine;
-
-using MixedRealityExtension.Core.Physics;
 
 namespace MixedRealityExtension.Core.Physics
 {
@@ -154,6 +150,11 @@ namespace MixedRealityExtension.Core.Physics
 				public void shift(float time)
 				{
 					average += time;
+
+					//if (time > 0)
+					//{
+					//	variance += time;
+					//}
 				}
 
 				public void add(float value)
@@ -210,6 +211,8 @@ namespace MixedRealityExtension.Core.Physics
 			List<float> target = new List<float>(5000);
 			List<float> biasedTarget = new List<float>(5000);
 
+			List<float> ts = new List<float>(5000);
+
 			float bufferedTimeRunningAerage = 0.0f;
 
 			public void step(float timestep)
@@ -230,18 +233,6 @@ namespace MixedRealityExtension.Core.Physics
 
 					float nextTime = CurrentLocalTime + timestep;
 
-					float bufferedTime = SnapshotBuffer.Snapshots.Last().Value.Time - nextTime;
-
-					bufferedTimeRunningAerage -= bufferedTimeRunningAerage / 120;
-					bufferedTimeRunningAerage += bufferedTime / 120;
-
-					_stats.add(bufferedTime);
-
-					delay.Add(bufferedTime);
-					mean.Add(_stats.getAverage());
-					variance.Add(_stats.getVariance());
-					stddev.Add(_stats.getStandardDeviation());
-
 
 					float targetValue = _stats.getAverage() - _stats.getStandardDeviation();
 
@@ -259,6 +250,18 @@ namespace MixedRealityExtension.Core.Physics
 						biasedTargetValue = ((int)biasedTargetValue-1) * dt;
 					}
 
+					float bufferedTime = SnapshotBuffer.Snapshots.Last().Value.Time - nextTime;
+
+					bufferedTimeRunningAerage -= bufferedTimeRunningAerage / 120;
+					bufferedTimeRunningAerage += bufferedTime / 120;
+
+					delay.Add(bufferedTime);
+					mean.Add(_stats.getAverage());
+					variance.Add(_stats.getVariance());
+					stddev.Add(_stats.getStandardDeviation());
+
+					_stats.add(bufferedTime);
+
 					biasedTarget.Add(biasedTargetValue);
 
 					if (delay.Count >= 5000)
@@ -274,22 +277,34 @@ namespace MixedRealityExtension.Core.Physics
 					float biasedTargetDiff = /*bufferedTime -*/ biasedTargetValue;
 
 					// check if time shift is required
-					if (Math.Abs(biasedTargetDiff) > 0.001)
+					if (/*false &&*/ Math.Abs(biasedTargetDiff) > 0.001)
 					{
-						float shift = Math.Min(0.5f * timestep, 0.2f * Math.Abs(biasedTargetDiff));
+						//float timeShift = Math.Min(0.5f * timestep, 0.2f * Math.Abs(biasedTargetDiff));
 
 						if (biasedTargetDiff > 0)
 						{
-							nextTime += shift;
+							float timeShift = 0.2f * Math.Abs(biasedTargetDiff);
 
-							_stats.shift(-shift);
+							nextTime += timeShift;
+
+							_stats.shift(-timeShift);
+
+							ts.Add(-timeShift);
 						}
 						else
 						{
-							nextTime -= shift;
+							float timeShift = 0.5f * Math.Abs(biasedTargetDiff);
 
-							_stats.shift(+shift);
+							nextTime -= timeShift;
+
+							_stats.shift(timeShift);
+
+							ts.Add(timeShift);
 						}
+					}
+					else
+					{
+						ts.Add(0.0f);
 					}
 
 					if (nextTime <= SnapshotBuffer.Snapshots.Last().Value.Time)
