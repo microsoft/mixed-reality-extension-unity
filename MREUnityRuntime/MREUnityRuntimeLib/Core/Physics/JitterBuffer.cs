@@ -151,6 +151,11 @@ namespace MixedRealityExtension.Core.Physics
 				float average = 0.0f;
 				float variance = 0.0f;
 
+				public void shift(float time)
+				{
+					average += time;
+				}
+
 				public void add(float value)
 				{
 					count = Math.Min(windowSize, count + 1);
@@ -180,6 +185,9 @@ namespace MixedRealityExtension.Core.Physics
 					return (float) Math.Sqrt(getVariance());
 				}
 			}
+
+			int interpolate = 0;
+			int predict = 0;
 
 			private RunningStats _stats = new RunningStats();
 
@@ -240,11 +248,20 @@ namespace MixedRealityExtension.Core.Physics
 					target.Add(targetValue);
 
 					const float dt = 1.0f / 60;
-					float biasedTargetValue = ((int)(targetValue / dt)) * dt;
+					float biasedTargetValue = targetValue / dt;
+
+					if (biasedTargetValue > 0)
+					{
+						biasedTargetValue = ((int)biasedTargetValue) * dt;
+					}
+					else
+					{
+						biasedTargetValue = ((int)biasedTargetValue-1) * dt;
+					}
 
 					biasedTarget.Add(biasedTargetValue);
 
-					if (delay.Count > 5000)
+					if (delay.Count >= 5000)
 					{
 						delay.RemoveRange(0, delay.Count - 5000);
 						mean.RemoveRange(0, delay.Count - 5000);
@@ -254,8 +271,31 @@ namespace MixedRealityExtension.Core.Physics
 						biasedTarget.RemoveRange(0, delay.Count - 5000);
 					}
 
+					float biasedTargetDiff = /*bufferedTime -*/ biasedTargetValue;
+
+					// check if time shift is required
+					if (Math.Abs(biasedTargetDiff) > 0.001)
+					{
+						float shift = Math.Min(0.5f * timestep, 0.2f * Math.Abs(biasedTargetDiff));
+
+						if (biasedTargetDiff > 0)
+						{
+							nextTime += shift;
+
+							_stats.shift(-shift);
+						}
+						else
+						{
+							nextTime -= shift;
+
+							_stats.shift(+shift);
+						}
+					}
+
 					if (nextTime <= SnapshotBuffer.Snapshots.Last().Value.Time)
 					{
+						interpolate++;
+
 						HasUpdate = true;
 
 						Snapshot prev, next;
@@ -321,7 +361,9 @@ namespace MixedRealityExtension.Core.Physics
 					}
 					else
 					{
-						CurrentLocalTime += timestep;
+						predict++;
+
+						CurrentLocalTime = nextTime;
 						CurrentSnapshot = new Snapshot(CurrentLocalTime, CurrentSnapshot.Transforms);
 
 						HasUpdate = false;
