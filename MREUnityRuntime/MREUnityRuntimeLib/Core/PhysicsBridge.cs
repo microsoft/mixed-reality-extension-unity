@@ -1,4 +1,7 @@
-﻿using MixedRealityExtension.Core.Physics;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+using MixedRealityExtension.Core.Physics;
 using System;
 using System.Collections.Generic;
 
