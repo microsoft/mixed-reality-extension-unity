@@ -1,80 +1,14 @@
-﻿using System;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+using MixedRealityExtension.Core.Physics;
+using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using UnityEngine;
 
 namespace MixedRealityExtension.Core
 {
 	public class PhysicsBridge
 	{
-		public class SnapshotBuffer
-		{
-			/// <summary>
-			/// this stores the snapshots received from all other clients, each client sends the owned updates of the actors (RBs)
-			/// </summary>
-			/// If one wants an updated for a remote body then needs to go though all these separate updates and one of the updates from one client we should find the actor ID
-			Dictionary<Guid, Snapshot> _snapshots = new Dictionary<Guid, Snapshot>();
-
-			public void addSnapshot(Snapshot snapshot)
-			{
-				// currently keep only the latest snapshot from same source
-
-				if (_snapshots.ContainsKey(snapshot.SourceAppId))
-				{
-					var oldSnapshot = _snapshots[snapshot.SourceAppId];
-
-					if (snapshot.Time > oldSnapshot.Time)
-					{
-						_snapshots[snapshot.SourceAppId] = snapshot;
-					}
-				}
-				else
-				{
-					_snapshots.Add(snapshot.SourceAppId, snapshot);
-				}
-			}
-
-			public Snapshot.SnapshotTransform getTransform(Guid rbId, out float timeOfSnapshot)
-			{
-				timeOfSnapshot = -float.MaxValue;
-				foreach (var s in _snapshots.Values)
-				{
-					foreach (var t in s.snapshotTransforms)
-					{
-						if (t.Id == rbId)
-						{
-							timeOfSnapshot = s.Time;
-							return t.sTransform;
-						}
-					}
-				}
-				return null;
-			}
-		}
-
-		public class Snapshot
-		{
-			public class SnapshotTransform
-			{
-				public UnityEngine.Vector3 Position;
-				public UnityEngine.Quaternion Rotation;
-			}
-
-			public class SnapshotTrasformInfo
-			{
-				public Guid Id;
-				public SnapshotTransform sTransform = new SnapshotTransform();
-			}
-
-			public Guid SourceAppId;
-
-			public float Time;
-
-			public List<SnapshotTrasformInfo> snapshotTransforms = new List<SnapshotTrasformInfo>();
-		}
-
 		/// <summary>
 		/// to monitor the collisions between frames this we need to store per contact pair. 
 		/// </summary>
@@ -128,14 +62,12 @@ namespace MixedRealityExtension.Core
 			public bool IsKeyframed;
 		}
 
-		public Guid _appId;
-
 		private int _countOwnedTransforms = 0;
 		private int _countStreamedTransforms = 0;
 
-		private Dictionary<Guid, RigidBodyInfo> _rigidBodies = new Dictionary<Guid, RigidBodyInfo>();
+		private SortedList<Guid, RigidBodyInfo> _rigidBodies = new SortedList<Guid, RigidBodyInfo>();
 
-		private SnapshotBuffer _snapshotBuffer = new SnapshotBuffer();
+		TimeSnapshotManager _snapshotManager = new TimeSnapshotManager();
 
 		/// when we update a body we compute the implicit velocity. This velocity is needed, in case of collisions to switch from kinematic to kinematic=false
 		List<CollisionSwitchInfo> _switchCollisionInfos = new List<CollisionSwitchInfo>();
@@ -220,9 +152,14 @@ namespace MixedRealityExtension.Core
 
 		#region Transform Streaming
 
-		public void addSnapshot(Snapshot snapshot)
+		/// <summary>
+		/// Add transform snapshot from specified source.
+		/// </summary>
+		/// <param name="sourceId">Snapshot source identifier.</param>
+		/// <param name="snapshot">List of transform at specified timestamp.</param>
+		public void addSnapshot(Guid sourceId, Snapshot snapshot)
 		{
-			_snapshotBuffer.addSnapshot(snapshot);
+			_snapshotManager.addSnapshot(sourceId, snapshot);
 		}
 
 		#endregion
@@ -252,6 +189,9 @@ namespace MixedRealityExtension.Core
 			// delete all the previous collisions
 			_switchCollisionInfos.Clear();
 
+			int index = 0;
+			MultiSourceCombinedSnapshot snapshot = _snapshotManager.GetNextSnapshot(DT);
+
 			foreach (var rb in _rigidBodies.Values)
 			{
 				if (rb.Ownership)
@@ -268,12 +208,20 @@ namespace MixedRealityExtension.Core
 					continue;
 				}
 
-				float timeOfSnapshot;
+				// Find corresponding rigid body info.
+				while (index < snapshot.RigidBodies.Count && rb.Id.CompareTo(snapshot.RigidBodies.Values[index].Id) > 0) index++;
 
-				Snapshot.SnapshotTransform transform = _snapshotBuffer.getTransform(rb.Id, out timeOfSnapshot);
-
-				if (transform != null)
+				if (index < snapshot.RigidBodies.Count && rb.Id == snapshot.RigidBodies.Values[index].Id)
 				{
+					if (!snapshot.RigidBodies.Values[index].HasUpdate)
+					{
+						rb.RigidBody.isKinematic = false;
+						continue;
+					}
+
+					RigidBodyTransform transform = snapshot.RigidBodies.Values[index].Transform;
+					float timeOfSnapshot = snapshot.RigidBodies.Values[index].LocalTime;
+
 					var collisionInfo = new CollisionSwitchInfo();
 
 					collisionInfo.startPosition = rb.RigidBody.transform.position;
@@ -532,15 +480,18 @@ namespace MixedRealityExtension.Core
 
 		}
 
-		public Snapshot Update(UnityEngine.Transform rootTransform)
+		/// <summary>
+		/// Generate rigid body transform snapshot for owned transforms with specified timestamp.
+		/// </summary>
+		/// <param name="time">Snapshot timestamp.</param>
+		/// <param name="rootTransform">Root transform.</param>
+		/// <returns>Generated snapshot.</returns>
+		public Snapshot GenerateSnapshot(float time, UnityEngine.Transform rootTransform)
 		{
 			// collect transforms from owned rigid bodies
 			// and generate update packet/snapshot
 
-			Snapshot snapshot = new Snapshot();
-			snapshot.SourceAppId = _appId;
-			snapshot.Time = UnityEngine.Time.fixedTime + UnityEngine.Time.fixedDeltaTime;
-			snapshot.snapshotTransforms.Capacity = _countOwnedTransforms;
+			List<Snapshot.TransformInfo> transforms = new List<Snapshot.TransformInfo>(_rigidBodies.Count);
 
 			foreach (var rb in _rigidBodies.Values)
 			{
@@ -549,22 +500,16 @@ namespace MixedRealityExtension.Core
 					continue;
 				}
 
-				var ti = new Snapshot.SnapshotTrasformInfo();
-				ti.Id = rb.Id;
+				RigidBodyTransform transform;
+				{
+					transform.Position = rootTransform.InverseTransformPoint(rb.RigidBody.transform.position);
+					transform.Rotation = UnityEngine.Quaternion.Inverse(rootTransform.rotation) * rb.RigidBody.transform.rotation;
+				}
 
-				//Position = new Vector3Patch(App.SceneRoot.transform.InverseTransformPoint(transform.position)),
-				//Rotation = new QuaternionPatch(Quaternion.Inverse(App.SceneRoot.transform.rotation) * transform.rotation)
-
-				//ti.Transform.Position = rb.RigidBody.transform.position - rootTransform.position;
-				//ti.Transform.Rotation = UnityEngine.Quaternion.Inverse(rootTransform.rotation) * rb.RigidBody.transform.rotation;
-
-				ti.sTransform.Position = rootTransform.InverseTransformPoint(rb.RigidBody.transform.position);
-				ti.sTransform.Rotation = UnityEngine.Quaternion.Inverse(rootTransform.rotation) * rb.RigidBody.transform.rotation;
-
-				snapshot.snapshotTransforms.Add(ti);
+				transforms.Add(new Snapshot.TransformInfo(rb.Id, transform));
 			}
 
-			return snapshot;
+			return new Snapshot(time, transforms);
 		}
 
 		public void LateUpdate()

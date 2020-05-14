@@ -1,20 +1,19 @@
-﻿using System;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using MixedRealityExtension.Animation;
-using MixedRealityExtension.Core;
+using MixedRealityExtension.Core.Physics;
 using Newtonsoft.Json.Linq;
 
 namespace MixedRealityExtension.Patching.Types
 {
-
 	public class TransformPatchInfo
 	{
 		public TransformPatchInfo() { }
 
-		internal TransformPatchInfo(Guid id, PhysicsBridge.Snapshot.SnapshotTransform transform)
+		internal TransformPatchInfo(Guid id, RigidBodyTransform transform)
 		{
 			Id = id;
 
@@ -33,49 +32,50 @@ namespace MixedRealityExtension.Patching.Types
 
 	public class PhysicsBridgePatch : IPatchable
 	{
-		public PhysicsBridgePatch() { }
-
-		internal PhysicsBridgePatch(PhysicsBridge.Snapshot snapshot)
+		public PhysicsBridgePatch()
 		{
-			Id = snapshot.SourceAppId;
-			Time = snapshot.Time;
-			bridgeTransforms = new List<TransformPatchInfo>(snapshot.snapshotTransforms.Count);
+			bridgeTransforms = new List<TransformPatchInfo>();
+		}
 
-			foreach (var ti in snapshot.snapshotTransforms)
+		internal PhysicsBridgePatch(Guid sourceId, Snapshot snapshot)
+		{
+			Id = sourceId;
+			Time = snapshot.Time;
+
+			bridgeTransforms = new List<TransformPatchInfo>(snapshot.Transforms.Count);
+			foreach (var snapshotTransform in snapshot.Transforms)
 			{
-				bridgeTransforms.Add(new TransformPatchInfo(ti.Id, ti.sTransform));
+				bridgeTransforms.Add(new TransformPatchInfo(snapshotTransform.Id, snapshotTransform.Transform));
 			}
 		}
 
-		internal PhysicsBridge.Snapshot ToSnapshot()
+		internal Snapshot ToSnapshot()
 		{
-			var snapshot = new PhysicsBridge.Snapshot();
-
-			snapshot.SourceAppId = Id;
-			snapshot.Time = Time;
+			List<Snapshot.TransformInfo> transforms = new List<Snapshot.TransformInfo>(bridgeTransforms.Count);
 
 			if (bridgeTransforms != null)
 			{
-				snapshot.snapshotTransforms = new List<PhysicsBridge.Snapshot.SnapshotTrasformInfo>(bridgeTransforms.Count);
-
-				foreach (var ti in bridgeTransforms)
+				foreach (var bridgeTransform in bridgeTransforms)
 				{
-					var t = new PhysicsBridge.Snapshot.SnapshotTrasformInfo();
-					t.Id = ti.Id;
+					RigidBodyTransform snapshotTranform;
+					{
+						snapshotTranform.Position = new UnityEngine.Vector3(
+							bridgeTransform.Transform.Position.X.Value,
+							bridgeTransform.Transform.Position.Y.Value,
+							bridgeTransform.Transform.Position.Z.Value);
 
-					t.sTransform = new PhysicsBridge.Snapshot.SnapshotTransform();
-					t.sTransform.Position = new UnityEngine.Vector3(ti.Transform.Position.X.Value, ti.Transform.Position.Y.Value, ti.Transform.Position.Z.Value);
-					t.sTransform.Rotation = new UnityEngine.Quaternion(ti.Transform.Rotation.X.Value, ti.Transform.Rotation.Y.Value, ti.Transform.Rotation.Z.Value, ti.Transform.Rotation.W.Value);
+						snapshotTranform.Rotation = new UnityEngine.Quaternion(
+							bridgeTransform.Transform.Rotation.X.Value,
+							bridgeTransform.Transform.Rotation.Y.Value,
+							bridgeTransform.Transform.Rotation.Z.Value,
+							bridgeTransform.Transform.Rotation.W.Value);
+					}
 
-					snapshot.snapshotTransforms.Add(t);
+					transforms.Add(new Snapshot.TransformInfo(bridgeTransform.Id, snapshotTranform));
 				}
 			}
-			else
-			{
-				snapshot.snapshotTransforms = new List<PhysicsBridge.Snapshot.SnapshotTrasformInfo>();
-			}
 
-			return snapshot;
+			return new Snapshot(Time, transforms);
 		}
 
 		/// <summary>

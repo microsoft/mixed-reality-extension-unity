@@ -837,7 +837,6 @@ namespace MixedRealityExtension.Core
 
 				RigidBodyAdded?.Invoke(Id, _rigidbody, isOwner);
 
-
 				var behaviorComponent = GetActorComponent<BehaviorComponent>();
 				if (behaviorComponent != null && behaviorComponent.Behavior is ITargetBehavior targetBehavior)
 				{
