@@ -91,16 +91,6 @@ namespace MixedRealityExtension.Core.Interfaces
 	/// </summary>
 	public interface IRigidBody
 	{
-		///// <summary>
-		///// Gets the velocity of the rigid body.
-		///// </summary>
-		//MWVector3 Velocity { get; }
-
-		///// <summary>
-		///// Gets the angular velocity of the rigid body.
-		///// </summary>
-		//MWVector3 AngularVelocity { get; }
-
 		/// <summary>
 		/// Gets the mass of the rigid body.
 		/// </summary>

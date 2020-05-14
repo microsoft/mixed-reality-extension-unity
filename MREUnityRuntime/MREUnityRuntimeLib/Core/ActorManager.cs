@@ -86,14 +86,7 @@ namespace MixedRealityExtension.Core
 					_actorMapping.Remove(id);
 					try
 					{
-						//bool hasRB = actor.RigidBody != null;
-
 						actor.Destroy();
-
-						//if (hasRB)
-						//{
-						//	RigidBodyRemoved?.Invoke(id);
-						//}
 					}
 					catch (Exception e)
 					{

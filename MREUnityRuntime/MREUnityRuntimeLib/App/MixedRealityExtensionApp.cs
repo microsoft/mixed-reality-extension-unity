@@ -172,11 +172,6 @@ namespace MixedRealityExtension.App
 				{ typeof(AnimationManager), AnimationManager }
 			});
 
-			var cacheRoot = new GameObject("MRE Cache");
-			cacheRoot.transform.SetParent(_ownerScript.gameObject.transform);
-			cacheRoot.SetActive(false);
-
-			_assetCache = new AssetCache(cacheRoot);
 			_actorManager.RigidBodyAdded += OnRigidBodyAdded;
 			_actorManager.RigidBodyRemoved += OnRigidBodyRemoved;
 			_actorManager.RigidBodyGrabbed += OnRigidBodyGrabbed;

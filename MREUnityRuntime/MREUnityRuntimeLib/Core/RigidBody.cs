@@ -131,8 +131,6 @@ namespace MixedRealityExtension.Core
 		internal void Update(Rigidbody rigidbody)
 		{
 			// No need to read Position or Rotation. They're write-only from the patch to the component.
-			//Velocity.FromUnityVector3(_sceneRoot.InverseTransformDirection(rigidbody.velocity));
-			//AngularVelocity.FromUnityVector3(_sceneRoot.InverseTransformDirection(rigidbody.angularVelocity));
 			Mass = rigidbody.mass;
 			DetectCollisions = rigidbody.detectCollisions;
 			CollisionDetectionMode = (MRECollisionDetectionMode)Enum.Parse(typeof(MRECollisionDetectionMode), rigidbody.collisionDetectionMode.ToString());
@@ -144,14 +142,6 @@ namespace MixedRealityExtension.Core
 		internal void ApplyPatch(RigidBodyPatch patch)
 		{
 			// Apply any changes made to the state of the mixed reality extension runtime version of the rigid body.
-			//if (patch.Velocity != null && patch.Velocity.IsPatched())
-			//{
-			//	_rigidbody.velocity = _rigidbody.velocity.GetPatchApplied(_sceneRoot.TransformDirection(Velocity.ApplyPatch(patch.Velocity).ToVector3()));
-			//}
-			//if (patch.AngularVelocity != null && patch.AngularVelocity.IsPatched())
-			//{
-			//	_rigidbody.angularVelocity = _rigidbody.angularVelocity.GetPatchApplied(_sceneRoot.TransformDirection(AngularVelocity.ApplyPatch(patch.AngularVelocity).ToVector3()));
-			//}
 			if (patch.Mass.HasValue)
 			{
 				_rigidbody.mass = _rigidbody.mass.GetPatchApplied(Mass.ApplyPatch(patch.Mass));
