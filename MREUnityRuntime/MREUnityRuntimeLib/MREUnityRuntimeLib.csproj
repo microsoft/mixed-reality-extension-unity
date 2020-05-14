@@ -134,9 +134,6 @@
     <Compile Include="Patching\Types\AnimationPatch.cs" />
     <Compile Include="Patching\Types\AppearancePatch.cs" />
     <Compile Include="Patching\Types\LookAtPatch.cs" />
-    <Compile Include="Patching\Types\ActorTransformPatch.cs" />
-    <Compile Include="PluginInterfaces\Behaviors\IToolBehavior.cs" />
-    <Compile Include="PluginInterfaces\Behaviors\IPenBehavior.cs" />
     <Compile Include="Patching\Types\PhysicsBridgePatch.cs" />
     <Compile Include="Patching\Types\ActorTransformPatch.cs" />
     <Compile Include="PluginInterfaces\Behaviors\IToolBehavior.cs" />
