@@ -1,4 +1,9 @@
-﻿using System;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+//#define DEBUG_JITTER_BUFFER
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -101,6 +106,9 @@ namespace MixedRealityExtension.Core.Physics
 		public SortedList<float, Snapshot> Snapshots = new SortedList<float, Snapshot>();
 	}
 
+	/// <todo>
+	/// add comments
+	/// </todo>
 	public class MultiSourceCombinedSnapshot
 	{
 		public struct RigidBodyState
@@ -132,65 +140,99 @@ namespace MixedRealityExtension.Core.Physics
 	{
 		public class SourceInfo
 		{
+			/// <todo>
+			/// is this required?
+			/// </todo>
 			private enum Mode
 			{
 				Init,
 				Play,
 			}
 
+			/// <todo>
+			/// add comments
+			/// </todo>
 			class RunningStats
 			{
-				int count = 0;
+				int _count = 0;
 
-				int windowSize = 120;
+				float _mean = 0.0f;
+				float _variance = 0.0f;
 
-				float average = 0.0f;
-				float variance = 0.0f;
+				// todo: expose as a parameter
+				int _windowSize = 120;
 
-				public void shift(float time)
+				public void shiftTime(float time)
 				{
-					average += time;
-
-					//if (time > 0)
-					//{
-					//	variance += time;
-					//}
+					_mean += time;
 				}
 
-				public void add(float value)
+				public void addSample(float value)
 				{
-					count = Math.Min(windowSize, count + 1);
+					_count = Math.Min(_windowSize, _count + 1);
 
-					float averageOld = average;
-					float varianceOld = variance;
+					float averageOld = _mean;
+					float varianceOld = _variance;
 
-					average -= average / count;
-					average += value / count;
+					float oldDiff = value - _mean;
 
-					float varianceOld2 = varianceOld - varianceOld / count;
-					variance = varianceOld2 + (value - averageOld) * (value - average);
+					_mean -= _mean / _count;
+					_mean += value / _count;
+
+					float newDiff = value - _mean;
+
+					_variance -= _variance / _count;
+					_variance += oldDiff * newDiff;
 				}
 
-				public float getAverage()
+				public float mean() { return _mean; }
+
+				public float variance()
 				{
-					return average;
+					return ((_count > 1) ? _variance / (_count - 1) : 0.0f);
 				}
 
-				public float getVariance()
+				public float deviation()
 				{
-					return ((count > 1) ? variance/(count - 1) : 0.0f );
-				}
-
-				public float getStandardDeviation()
-				{
-					return (float) Math.Sqrt(getVariance());
+					return (float)Math.Sqrt(variance());
 				}
 			}
 
-			int interpolate = 0;
-			int predict = 0;
+#if DEBUG_JITTER_BUFFER
+			private class DebugStats
+			{
+				private class StepDebugItem
+				{
+					public StepDebugItem(float bufferTime, float meanBufferTime, float targetBufferTime, float biasedTargetBufferTime, float timeShift, float outputTime)
+					{
+						_bufferTime = bufferTime;
+						_meanBufferTime = meanBufferTime;
+						_targetBufferTie = targetBufferTime;
+						_biasedTargetBufferTime = biasedTargetBufferTime;
+						_timeShift = timeShift;
+						_outputTime = outputTime;
+					}
 
-			private RunningStats _stats = new RunningStats();
+					float _bufferTime;
+					float _meanBufferTime;
+					float _targetBufferTie;
+					float _biasedTargetBufferTime;
+					float _timeShift;
+					float _outputTime;
+				}
+
+				const int _capacity = 5000;
+
+				public void add(float bufferTime, float meanBufferTime, float targetBufferTime, float biasedTargetBufferTime, float timeShift, float outputTime)
+				{
+					_stepDebugStats.Add(new StepDebugItem(bufferTime, meanBufferTime, targetBufferTime, biasedTargetBufferTime, timeShift, outputTime));
+				}
+
+				List<StepDebugItem> _stepDebugStats = new List<StepDebugItem>(_capacity);
+			}
+
+			private DebugStats _debugStats = new DebugStats();
+#endif
 
 			public SourceInfo(Guid id)
 			{
@@ -204,21 +246,11 @@ namespace MixedRealityExtension.Core.Physics
 				SnapshotBuffer.addSnapshot(snapshot);
 			}
 
-			List<float> delay = new List<float>(5000);
-			List<float> mean = new List<float>(5000);
-			List<float> variance = new List<float>(5000);
-			List<float> stddev = new List<float>(5000);
-			List<float> target = new List<float>(5000);
-			List<float> biasedTarget = new List<float>(5000);
-
-			List<float> ts = new List<float>(5000);
-
-			float bufferedTimeRunningAerage = 0.0f;
-
 			public void step(float timestep)
 			{
 				if (_mode == Mode.Init)
 				{
+					// todo: do we need this warm up?
 					if (SnapshotBuffer.Snapshots.Count >= 4)
 					{
 						_mode = Mode.Play;
@@ -229,94 +261,49 @@ namespace MixedRealityExtension.Core.Physics
 				}
 				else if (_mode != Mode.Init)
 				{
-					count++;
+					// todo: consider exposing as a parameter or calculating based on local and remote timesteps.
+					const float bufferTimeBiasTimeUnit = 1.0f / 60;
 
-					float nextTime = CurrentLocalTime + timestep;
+					float targetBufferTime = _stats.mean() - _stats.deviation();
+					float biasedTargetBufferTime = targetBufferTime / bufferTimeBiasTimeUnit;
 
+					biasedTargetBufferTime = biasedTargetBufferTime > 0 ?
+						((int)biasedTargetBufferTime) * bufferTimeBiasTimeUnit : ((int)biasedTargetBufferTime - 1) * bufferTimeBiasTimeUnit;
 
-					float targetValue = _stats.getAverage() - _stats.getStandardDeviation();
+					float nextTimestamp = CurrentLocalTime + timestep;
+					float bufferedTime = SnapshotBuffer.Snapshots.Last().Value.Time - nextTimestamp;
 
-					target.Add(targetValue);
-
-					const float dt = 1.0f / 60;
-					float biasedTargetValue = targetValue / dt;
-
-					if (biasedTargetValue > 0)
-					{
-						biasedTargetValue = ((int)biasedTargetValue) * dt;
-					}
-					else
-					{
-						biasedTargetValue = ((int)biasedTargetValue-1) * dt;
-					}
-
-					float bufferedTime = SnapshotBuffer.Snapshots.Last().Value.Time - nextTime;
-
-					bufferedTimeRunningAerage -= bufferedTimeRunningAerage / 120;
-					bufferedTimeRunningAerage += bufferedTime / 120;
-
-					delay.Add(bufferedTime);
-					mean.Add(_stats.getAverage());
-					variance.Add(_stats.getVariance());
-					stddev.Add(_stats.getStandardDeviation());
-
-					_stats.add(bufferedTime);
-
-					biasedTarget.Add(biasedTargetValue);
-
-					if (delay.Count >= 5000)
-					{
-						delay.RemoveRange(0, delay.Count - 5000);
-						mean.RemoveRange(0, delay.Count - 5000);
-						variance.RemoveRange(0, delay.Count - 5000);
-						stddev.RemoveRange(0, delay.Count - 5000);
-						target.RemoveRange(0, delay.Count - 5000);
-						biasedTarget.RemoveRange(0, delay.Count - 5000);
-					}
-
-					float biasedTargetDiff = /*bufferedTime -*/ biasedTargetValue;
+					_stats.addSample(bufferedTime);
 
 					// check if time shift is required
-					if (/*false &&*/ Math.Abs(biasedTargetDiff) > 0.001)
+					float timeShift;
+					if (Math.Abs(biasedTargetBufferTime) > 0.001)
 					{
-						//float timeShift = Math.Min(0.5f * timestep, 0.2f * Math.Abs(biasedTargetDiff));
+						// todo: limit slow-down, don't allow time to move to the past
+						timeShift = biasedTargetBufferTime > 0 ?
+							_speedUpCoef * biasedTargetBufferTime : _speedDownCoef * biasedTargetBufferTime;
 
-						if (biasedTargetDiff > 0)
-						{
-							float timeShift = 0.2f * Math.Abs(biasedTargetDiff);
-
-							nextTime += timeShift;
-
-							_stats.shift(-timeShift);
-
-							ts.Add(-timeShift);
-						}
-						else
-						{
-							float timeShift = 0.5f * Math.Abs(biasedTargetDiff);
-
-							nextTime -= timeShift;
-
-							_stats.shift(timeShift);
-
-							ts.Add(timeShift);
-						}
+						nextTimestamp += timeShift;
+						_stats.shiftTime(-timeShift);
 					}
 					else
 					{
-						ts.Add(0.0f);
+						timeShift = 0;
 					}
 
-					if (nextTime <= SnapshotBuffer.Snapshots.Last().Value.Time)
-					{
-						interpolate++;
+#if DEBUG_JITTER_BUFFER
+					_debugStats.add(bufferedTime, _stats.mean(), targetBufferTime, biasedTargetBufferTime, timeShift, nextTimestamp);
+#endif
 
+					if (nextTimestamp <= SnapshotBuffer.Snapshots.Last().Value.Time)
+					{
+						// Snapshot can be interpolated from the buffers
 						HasUpdate = true;
 
 						Snapshot prev, next;
-						SnapshotBuffer.step(nextTime, out prev, out next);
+						SnapshotBuffer.step(nextTimestamp, out prev, out next);
 
-						if (Math.Abs(next.Time - nextTime) < 0.001)
+						if (Math.Abs(next.Time - nextTimestamp) < 0.001)
 						{
 							// if offset is less than a millisecond, just use 'next' snapshot time
 							CurrentLocalTime = next.Time;
@@ -324,7 +311,7 @@ namespace MixedRealityExtension.Core.Physics
 						}
 						else if (prev != null)
 						{
-							if (Math.Abs(prev.Time - nextTime) < 0.001)
+							if (Math.Abs(prev.Time - nextTimestamp) < 0.001)
 							{
 								// if offset is less than a millisecond, just use 'prev' snapshot time
 								CurrentLocalTime = prev.Time;
@@ -332,7 +319,7 @@ namespace MixedRealityExtension.Core.Physics
 							}
 							else
 							{
-								float frac = (nextTime - prev.Time) / (next.Time - prev.Time);
+								float frac = (nextTimestamp - prev.Time) / (next.Time - prev.Time);
 
 								List<Snapshot.TransformInfo> transforms = new List<Snapshot.TransformInfo>(next.Transforms.Count);
 
@@ -361,35 +348,27 @@ namespace MixedRealityExtension.Core.Physics
 								}
 
 								// interpolated snapshot
-								CurrentLocalTime = nextTime;
-								CurrentSnapshot = new Snapshot(nextTime, transforms);
+								CurrentLocalTime = nextTimestamp;
+								CurrentSnapshot = new Snapshot(nextTimestamp, transforms);
 							}
 						}
 						else
 						{
 							// if prev snapshot is missing, just use current transforms with past timestamp
-							CurrentLocalTime = nextTime;
+							CurrentLocalTime = nextTimestamp;
 							CurrentSnapshot = next;
 						}
-
-						HasUpdate = true;
 					}
 					else
 					{
-						predict++;
-
-						CurrentLocalTime = nextTime;
-						CurrentSnapshot = new Snapshot(CurrentLocalTime, CurrentSnapshot.Transforms);
-
+						// Snapshot can not be interpolated from the buffers
 						HasUpdate = false;
-					}
 
-					output.Add(CurrentLocalTime);
+						CurrentLocalTime = nextTimestamp;
+						CurrentSnapshot = new Snapshot(CurrentLocalTime, CurrentSnapshot.Transforms);
+					}
 				}
 			}
-
-			List<float> output = new List<float>();
-			int count = 0;
 
 			/// <summary>
 			/// Source identifier.
@@ -401,16 +380,39 @@ namespace MixedRealityExtension.Core.Physics
 			/// </summary>
 			private SnapsotBuffer SnapshotBuffer = new SnapsotBuffer();
 
+			/// <todo>
+			/// can this be avoided?
+			/// </todo>
+			private Mode _mode = Mode.Init;
 
-			private float _targetBufferSize = 2.0f;
-			private float _averageBufferDelay = 0.0f;
+			/// <summary>
+			/// Calc running average buffered time and deviation.
+			/// </summary>
+			private RunningStats _stats = new RunningStats();
 
-			Mode _mode = Mode.Init;
+			/// <summary>
+			/// todo: add comment
+			/// </summary>
+			private float _speedUpCoef = 0.2f;
 
+			/// <summary>
+			/// todo: add comment
+			/// </summary>
+			private float _speedDownCoef = 0.5f;
+
+			/// <summary>
+			/// Specifies if there is an update since the last step.
+			/// </summary>
 			public bool HasUpdate = false;
 
-			float CurrentLocalTime;
+			/// <summary>
+			/// Timestamp of the snapshot in local time of the source.
+			/// </summary>
+			float CurrentLocalTime = float.MinValue;
 
+			/// <summary>
+			/// Timestamp and list of rigid body transforms.
+			/// </summary>
 			public Snapshot CurrentSnapshot { get; private set; }
 		}
 
