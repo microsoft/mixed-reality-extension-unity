@@ -253,7 +253,6 @@ namespace MixedRealityExtension.Core
 			_monitorCollisionInfo.Clear();
 
 			// test collisions of each owned body with each not owned body
-			if (false)
 			foreach (var rb in _rigidBodies.Values)
 			{
 				if (rb.Ownership)
