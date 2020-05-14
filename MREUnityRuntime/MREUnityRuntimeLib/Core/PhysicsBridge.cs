@@ -213,11 +213,12 @@ namespace MixedRealityExtension.Core
 
 				if (index < snapshot.RigidBodies.Count && rb.Id == snapshot.RigidBodies.Values[index].Id)
 				{
-					if (!snapshot.RigidBodies.Values[index].HasUpdate)
-					{
-						rb.RigidBody.isKinematic = false;
-						continue;
-					}
+					// todo: kick-in prediction if we are missing an update for this rigid body
+					//if (!snapshot.RigidBodies.Values[index].HasUpdate)
+					//{
+					//	rb.RigidBody.isKinematic = false;
+					//	continue;
+					//}
 
 					RigidBodyTransform transform = snapshot.RigidBodies.Values[index].Transform;
 					float timeOfSnapshot = snapshot.RigidBodies.Values[index].LocalTime;

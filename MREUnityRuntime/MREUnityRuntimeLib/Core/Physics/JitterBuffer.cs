@@ -201,34 +201,24 @@ namespace MixedRealityExtension.Core.Physics
 #if DEBUG_JITTER_BUFFER
 			private class DebugStats
 			{
-				private class StepDebugItem
-				{
-					public StepDebugItem(float bufferTime, float meanBufferTime, float targetBufferTime, float biasedTargetBufferTime, float timeShift, float outputTime)
-					{
-						_bufferTime = bufferTime;
-						_meanBufferTime = meanBufferTime;
-						_targetBufferTie = targetBufferTime;
-						_biasedTargetBufferTime = biasedTargetBufferTime;
-						_timeShift = timeShift;
-						_outputTime = outputTime;
-					}
-
-					float _bufferTime;
-					float _meanBufferTime;
-					float _targetBufferTie;
-					float _biasedTargetBufferTime;
-					float _timeShift;
-					float _outputTime;
-				}
-
 				const int _capacity = 5000;
 
 				public void add(float bufferTime, float meanBufferTime, float targetBufferTime, float biasedTargetBufferTime, float timeShift, float outputTime)
 				{
-					_stepDebugStats.Add(new StepDebugItem(bufferTime, meanBufferTime, targetBufferTime, biasedTargetBufferTime, timeShift, outputTime));
+					_bufferTime.Add(bufferTime);
+					_meanBufferTime.Add(meanBufferTime);
+					_targetBufferTime.Add(targetBufferTime);
+					_biasedTargetBufferTime.Add(biasedTargetBufferTime);
+					_timeShift.Add(timeShift);
+					_outputTime.Add(outputTime);
 				}
 
-				List<StepDebugItem> _stepDebugStats = new List<StepDebugItem>(_capacity);
+				List<float> _bufferTime = new List<float>(_capacity);
+				List<float> _meanBufferTime = new List<float>(_capacity);
+				List<float> _targetBufferTime = new List<float>(_capacity);
+				List<float> _biasedTargetBufferTime = new List<float>(_capacity);
+				List<float> _timeShift = new List<float>(_capacity);
+				List<float> _outputTime = new List<float>(_capacity);
 			}
 
 			private DebugStats _debugStats = new DebugStats();
