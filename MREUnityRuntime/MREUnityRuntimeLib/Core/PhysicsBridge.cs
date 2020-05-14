@@ -208,7 +208,6 @@ namespace MixedRealityExtension.Core
 					continue;
 				}
 
-
 				// Find corresponding rigid body info.
 				while (index < snapshot.RigidBodies.Count && rb.Id.CompareTo(snapshot.RigidBodies.Values[index].Id) > 0) index++;
 
