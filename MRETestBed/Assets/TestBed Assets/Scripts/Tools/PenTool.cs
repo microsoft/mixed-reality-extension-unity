@@ -26,7 +26,7 @@ namespace Assets.Scripts.Tools
 					var mwUser = penBehavior.GetMWUnityUser(inputSource.UserGameObject);
 					if (mwUser != null)
 					{
-						penBehavior.Using.StartAction(mwUser);
+						penBehavior.Context.StartUsing(mwUser);
 					}
 				}
 			}
@@ -38,7 +38,7 @@ namespace Assets.Scripts.Tools
 					var mwUser = penBehavior.GetMWUnityUser(inputSource.UserGameObject);
 					if (mwUser != null)
 					{
-						penBehavior.Using.StopAction(mwUser);
+						penBehavior.Context.EndUsing(mwUser);
 					}
 				}
 			}
@@ -56,11 +56,11 @@ namespace Assets.Scripts.Tools
 				{
 					if (newGrabState == GrabState.Grabbed)
 					{
-						penBehavior.Holding.StartAction(mwUser);
+						penBehavior.Context.StartHolding(mwUser);
 					}
 					else
 					{
-						penBehavior.Holding.StopAction(mwUser);
+						penBehavior.Context.EndHolding(mwUser);
 					}
 				}
 			}

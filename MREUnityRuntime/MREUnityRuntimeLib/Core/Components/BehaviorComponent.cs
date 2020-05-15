@@ -1,54 +1,55 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 using MixedRealityExtension.Behaviors;
+using MixedRealityExtension.Behaviors.Contexts;
 using MixedRealityExtension.PluginInterfaces.Behaviors;
 
 namespace MixedRealityExtension.Core.Components
 {
 	internal class BehaviorComponent : ActorComponentBase
 	{
-		private IBehaviorHandler _behaviorHandler;
+		private BehaviorContextBase _behaviorContext;
 
-		internal IBehavior Behavior => _behaviorHandler?.Behavior;
+		internal IBehavior Behavior => _behaviorContext?.Behavior;
 
-		internal void SetBehaviorHandler(IBehaviorHandler behaviorHandler)
+		internal void SetBehaviorContext(BehaviorContextBase behaviorContext)
 		{
-			if (_behaviorHandler != null && _behaviorHandler.BehaviorType != behaviorHandler.BehaviorType)
+			if (_behaviorContext != null && _behaviorContext.BehaviorType != behaviorContext.BehaviorType)
 			{
-				ClearBehaviorHandler();
+				ClearBehaviorContext();
 			}
 
-			_behaviorHandler = behaviorHandler;
+			_behaviorContext = behaviorContext;
 		}
 
-		internal void ClearBehaviorHandler()
+		internal void ClearBehaviorContext()
 		{
-			if (_behaviorHandler != null)
+			if (_behaviorContext != null)
 			{
-				_behaviorHandler.CleanUp();
-				_behaviorHandler = null;
+				_behaviorContext.CleanUp();
+				_behaviorContext = null;
 			}
 		}
 
-		internal bool ContainsBehaviorHandler()
+		internal bool ContainsBehaviorContext()
 		{
-			return _behaviorHandler != null;
+			return _behaviorContext != null;
 		}
 
 		internal override void CleanUp()
 		{
 			base.CleanUp();
-			ClearBehaviorHandler();
+			ClearBehaviorContext();
 		}
 
 		internal override void SynchronizeComponent()
 		{
-			_behaviorHandler?.SynchronizeBehavior();
+			_behaviorContext?.SynchronizeBehavior();
 		}
 
 		private void FixedUpdate()
 		{
-			_behaviorHandler?.FixedUpdate();
+			_behaviorContext?.FixedUpdate();
 		}
 	}
 }

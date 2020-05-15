@@ -83,12 +83,12 @@ namespace MixedRealityExtension.Behaviors
 			var behaviorEnumType = typeof(BehaviorType);
 			foreach (var name in behaviorEnumType.GetEnumNames())
 			{
-				var behaviorHandlerTypeAttr = behaviorEnumType.GetField(name)
+				var behaviorContextTypeAttr = behaviorEnumType.GetField(name)
 					.GetCustomAttributes(false)
-					.OfType<BehaviorHandlerType>()
+					.OfType<BehaviorContextType>()
 					.SingleOrDefault();
 		
-				if (this.GetType() == behaviorHandlerTypeAttr?.HandlerType)
+				if (this.GetType() == behaviorContextTypeAttr?.ContextType)
 				{
 					return (BehaviorType)Enum.Parse(typeof(BehaviorType), name);
 				}

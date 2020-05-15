@@ -25,6 +25,8 @@ using UnityCollider = UnityEngine.Collider;
 using MixedRealityExtension.PluginInterfaces.Behaviors;
 using MixedRealityExtension.Util;
 using IVideoPlayer = MixedRealityExtension.PluginInterfaces.IVideoPlayer;
+using MixedRealityExtension.Behaviors.Contexts;
+
 namespace MixedRealityExtension.Core
 {
 	/// <summary>
@@ -1344,15 +1346,15 @@ namespace MixedRealityExtension.Core
 					// to be able to be grabbed on all controller types for host apps.  This will be a base Target behavior once we
 					// update host apps to handle button conflicts.
 					behaviorComponent = GetOrCreateActorComponent<BehaviorComponent>();
-					var handler = BehaviorHandlerFactory.CreateBehaviorHandler(BehaviorType.Button, this, new WeakReference<MixedRealityExtensionApp>(App));
+					var context = BehaviorContextFactory.CreateContext(BehaviorType.Button, this, new WeakReference<MixedRealityExtensionApp>(App));
 
-					if (handler == null)
+					if (context == null)
 					{
-						Debug.LogError("Failed to create a behavior handler.  Grab will not work without one.");
+						Debug.LogError("Failed to create a behavior context.  Grab will not work without one.");
 						return;
 					}
 
-					behaviorComponent.SetBehaviorHandler(handler);
+					behaviorComponent.SetBehaviorContext(context);
 				}
 
 				((ITargetBehavior)behaviorComponent.Behavior).Grabbable = grabbable.Value;
@@ -1710,26 +1712,26 @@ namespace MixedRealityExtension.Core
 		{
 			var behaviorComponent = GetOrCreateActorComponent<BehaviorComponent>();
 
-			if (behaviorComponent.ContainsBehaviorHandler())
+			if (behaviorComponent.ContainsBehaviorContext())
 			{
-				behaviorComponent.ClearBehaviorHandler();
+				behaviorComponent.ClearBehaviorContext();
 			}
 
 			if (payload.BehaviorType != BehaviorType.None)
 			{
-				var handler = BehaviorHandlerFactory.CreateBehaviorHandler(payload.BehaviorType, this, new WeakReference<MixedRealityExtensionApp>(App));
+				var context = BehaviorContextFactory.CreateContext(payload.BehaviorType, this, new WeakReference<MixedRealityExtensionApp>(App));
 
-				if (handler == null)
+				if (context == null)
 				{
 					Debug.LogError($"Failed to create behavior for behavior type {payload.BehaviorType.ToString()}");
 					onCompleteCallback?.Invoke();
 					return;
 				}
 
-				behaviorComponent.SetBehaviorHandler(handler);
+				behaviorComponent.SetBehaviorContext(context);
 
 				// We need to update the new behavior's grabbable flag from the actor so that it can be grabbed in the case we cleared the previous behavior.
-				((ITargetBehavior)handler.Behavior).Grabbable = Grabbable;
+				((ITargetBehavior)context.Behavior).Grabbable = Grabbable;
 			}
 			onCompleteCallback?.Invoke();
 		}

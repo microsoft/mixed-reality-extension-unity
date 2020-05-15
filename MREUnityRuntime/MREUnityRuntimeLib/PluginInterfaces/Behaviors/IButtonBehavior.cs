@@ -9,19 +9,6 @@ namespace MixedRealityExtension.PluginInterfaces.Behaviors
 	/// </summary>
 	public interface IButtonBehavior : ITargetBehavior
 	{
-		/// <summary>
-		/// The hover action in the target platform..
-		/// </summary>
-		MWAction Hover { get; }
 
-		/// <summary>
-		/// The click action in the target platform.
-		/// </summary>
-		MWAction Click { get; }
-
-		/// <summary>
-		/// The button down/up action in the target platform.
-		/// </summary>
-		MWAction Button { get; }
 	}
 }

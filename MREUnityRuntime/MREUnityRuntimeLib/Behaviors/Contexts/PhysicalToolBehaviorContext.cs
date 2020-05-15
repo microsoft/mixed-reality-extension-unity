@@ -1,50 +1,61 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
-// Licensed under the MIT License.
-using MixedRealityExtension.App;
+﻿using MixedRealityExtension.App;
 using MixedRealityExtension.Behaviors.ActionData;
 using MixedRealityExtension.Behaviors.Actions;
 using MixedRealityExtension.Core.Interfaces;
 using MixedRealityExtension.PluginInterfaces.Behaviors;
 using System;
 
-namespace MixedRealityExtension.Behaviors.Handlers
+namespace MixedRealityExtension.Behaviors.Contexts
 {
-	internal abstract class ToolHandler<ToolDataT> : BehaviorHandlerBase
+	public abstract class PhysicalToolBehaviorContext<ToolDataT> : BehaviorContextBase
 		where ToolDataT : BaseToolData, new()
 	{
-		private readonly IToolBehavior<ToolDataT> _toolBehavior;
-
 		private ToolDataT _queuedToolData;
+		private MWAction<ToolDataT> _holding = new MWAction<ToolDataT>();
+		private MWAction<ToolDataT> _using = new MWAction<ToolDataT>();
+
+		public void StartHolding(IUser user)
+		{
+			_holding.StartAction(user);
+		}
+
+		public void EndHolding(IUser user)
+		{
+			_holding.StopAction(user);
+		}
+
+		public void StartUsing(IUser user)
+		{
+			IsUsing = true;
+			_using.StartAction(user);
+		}
+
+		public void EndUsing(IUser user)
+		{
+			IsUsing = false;
+			_using.StopAction(user);
+		}
 
 		internal ToolDataT ToolData { get; private set; }
 
 		internal bool IsUsing { get; private set; }
 
-		internal ToolHandler(IToolBehavior<ToolDataT> tool, WeakReference<MixedRealityExtensionApp> appRef, IActor attachedActor)
-			: base(tool, appRef, attachedActor)
-		{
-			RegisterActionHandler(tool.Holding, nameof(tool.Holding));
-			RegisterActionHandler(tool.Using, nameof(tool.Using));
 
-			_toolBehavior = tool;
-			_toolBehavior.Using.ActionStateChanging += OnUsingStateChanging;
+		internal PhysicalToolBehaviorContext()
+			: base()
+		{
+			RegisterActionHandler(_holding, nameof(_holding));
+			RegisterActionHandler(_using, nameof(_using));
 
 			ToolData = new ToolDataT();
 		}
 
-		protected override sealed void SynchronizeBehavior()
+		internal override sealed void SynchronizeBehavior()
 		{
 			if (IsUsing)
 			{
 				PerformUsingAction();
 			}
-		}
-
-		protected override void CleanUp()
-		{
-			// Clean up our action listeners first then let the base handler cleanup the behavior.
-			_toolBehavior.Using.ActionStateChanging -= OnUsingStateChanging;
-			base.CleanUp();
 		}
 
 		private void OnUsingStateChanging(object sender, ActionStateChangedArgs args)
@@ -64,7 +75,7 @@ namespace MixedRealityExtension.Behaviors.Handlers
 			{
 				_queuedToolData = ToolData;
 				ToolData = new ToolDataT();
-				_toolBehavior.Using.PerformActionUpdate(_queuedToolData);
+				_using.PerformActionUpdate(_queuedToolData);
 			}
 		}
 	}

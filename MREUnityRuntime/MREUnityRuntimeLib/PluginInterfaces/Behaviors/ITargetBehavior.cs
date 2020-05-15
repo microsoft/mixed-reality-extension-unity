@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
-using MixedRealityExtension.Behaviors.Actions;
+
+using MixedRealityExtension.Behaviors.Contexts;
 
 namespace MixedRealityExtension.PluginInterfaces.Behaviors
 {
@@ -18,15 +19,5 @@ namespace MixedRealityExtension.PluginInterfaces.Behaviors
 		/// Whether the target behavior grab is active.
 		/// </summary>
 		bool IsGrabbed { get; set; }
-
-		/// <summary>
-		/// The target action in the target platform.
-		/// </summary>
-		MWAction Target { get; }
-
-		/// <summary>
-		/// The grab action in the target platform.
-		/// </summary>
-		MWAction Grab { get; }
 	}
 }
