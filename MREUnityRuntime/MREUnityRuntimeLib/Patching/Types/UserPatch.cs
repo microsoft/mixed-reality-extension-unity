@@ -11,7 +11,7 @@ using System.Collections.Generic;
 
 namespace MixedRealityExtension.Patching.Types
 {
-	public class UserPatch : IPatchable
+	public class UserPatch : PatchPropertyCache<UserPatch>, IPatchable
 	{
 		public Guid Id { get; set; }
 

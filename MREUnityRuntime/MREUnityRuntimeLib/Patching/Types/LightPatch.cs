@@ -7,7 +7,7 @@ using Newtonsoft.Json.Linq;
 
 namespace MixedRealityExtension.Patching.Types
 {
-	public class LightPatch : IPatchable
+	public class LightPatch : PatchPropertyCache<LightPatch>, IPatchable
 	{
 		[PatchProperty]
 		public bool? Enabled { get; set; }

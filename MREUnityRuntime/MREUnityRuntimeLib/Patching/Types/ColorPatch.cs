@@ -7,7 +7,7 @@ using System;
 
 namespace MixedRealityExtension.Patching.Types
 {
-	public class ColorPatch : IEquatable<ColorPatch>, IPatchable
+	public class ColorPatch : PatchPropertyCache<ColorPatch>, IEquatable<ColorPatch>, IPatchable
 	{
 		[PatchProperty]
 		public float? R { get; set; }

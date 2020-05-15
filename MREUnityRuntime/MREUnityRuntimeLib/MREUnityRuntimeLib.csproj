@@ -128,6 +128,8 @@
     <Compile Include="Messaging\Events\Types\ColliderEvent.cs" />
     <Compile Include="Messaging\Events\Types\TriggerEvent.cs" />
     <Compile Include="Messaging\Payloads\Converters\UnsignedConverter.cs" />
+    <Compile Include="Patching\PatchProperty.cs" />
+    <Compile Include="Patching\PatchPropertyCache.cs" />
     <Compile Include="Patching\Types\AnimationPatch.cs" />
     <Compile Include="Patching\Types\AppearancePatch.cs" />
     <Compile Include="Patching\Types\LookAtPatch.cs" />

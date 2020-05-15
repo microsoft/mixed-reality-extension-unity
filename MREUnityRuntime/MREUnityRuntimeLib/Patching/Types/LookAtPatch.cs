@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace MixedRealityExtension.Patching.Types
 {
-	public class LookAtPatch : IPatchable
+	public class LookAtPatch : PatchPropertyCache<LookAtPatch>, IPatchable
 	{
 		[PatchProperty]
 		public Guid? ActorId { get; set; }

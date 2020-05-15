@@ -13,7 +13,7 @@ using MRERigidBodyConstraints = MixedRealityExtension.Core.Interfaces.RigidBodyC
 namespace MixedRealityExtension.Patching.Types
 {
 	[JsonObject(MemberSerialization.OptOut)]
-	public class RigidBodyPatch : IPatchable
+	public class RigidBodyPatch : PatchPropertyCache<RigidBodyPatch>, IPatchable
 	{
 		private MRERigidBodyConstraints? _constraintFlags;
 		private MRERigidBodyConstraints[] _constraints;

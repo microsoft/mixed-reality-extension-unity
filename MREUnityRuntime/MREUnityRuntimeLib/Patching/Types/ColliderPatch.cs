@@ -8,7 +8,7 @@ using System.Collections.Generic;
 
 namespace MixedRealityExtension.Patching.Types
 {
-	public class ColliderPatch : IPatchable
+	public class ColliderPatch : PatchPropertyCache<ColliderPatch>, IPatchable
 	{
 		[PatchProperty]
 		public bool? Enabled { get; set; }

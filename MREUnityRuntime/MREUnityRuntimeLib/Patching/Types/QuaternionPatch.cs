@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace MixedRealityExtension.Patching.Types
 {
-	public class QuaternionPatch : IEquatable<QuaternionPatch>, IPatchable
+	public class QuaternionPatch : PatchPropertyCache<QuaternionPatch>, IEquatable<QuaternionPatch>, IPatchable
 	{
 		// TODO: Make X, Y, Z, and W fields non-optional, since you can't just specify one and maintain a valid unit quaternion
 		[PatchProperty]

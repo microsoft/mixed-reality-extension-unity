@@ -8,7 +8,7 @@ using System.Collections.Generic;
 
 namespace MixedRealityExtension.Patching.Types
 {
-	public class ActorPatch : IPatchable
+	public class ActorPatch : PatchPropertyCache<ActorPatch>, IPatchable
 	{
 		public Guid Id { get; set; }
 

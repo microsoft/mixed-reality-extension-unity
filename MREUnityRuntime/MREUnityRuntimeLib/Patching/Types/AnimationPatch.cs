@@ -11,7 +11,7 @@ namespace MixedRealityExtension.Patching.Types
 	/// <summary>
 	/// A serialized animation definition
 	/// </summary>
-	public class AnimationPatch : IPatchable
+	public class AnimationPatch : PatchPropertyCache<AnimationPatch>, IPatchable
 	{
 		/// <summary>
 		/// Generated unique ID of this animation

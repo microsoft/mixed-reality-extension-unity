@@ -13,7 +13,7 @@ namespace MixedRealityExtension.Patching.Types
 	/// <summary>
 	/// Attachment patch.
 	/// </summary>
-	public class AttachmentPatch : IEquatable<AttachmentPatch>, IPatchable
+	public class AttachmentPatch : PatchPropertyCache<AttachmentPatch>, IEquatable<AttachmentPatch>, IPatchable
 	{
 		public string AttachPoint { get; set; }
 

@@ -357,6 +357,7 @@ namespace MixedRealityExtension.Assets
 			{
 				var result = await AssetFetcher<UnityEngine.Texture>.LoadTask(_owner, new Uri(def.Texture.Value.Uri));
 				unityAsset = result.Asset;
+				result.Asset.filterMode = FilterMode.Bilinear;
 				if (result.FailureMessage != null)
 				{
 					response.FailureMessage = result.FailureMessage;

@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace MixedRealityExtension.Patching.Types
 {
-	public class Vector3Patch : IEquatable<Vector3Patch>, IPatchable
+	public class Vector3Patch : PatchPropertyCache<Vector3Patch>, IEquatable<Vector3Patch>, IPatchable
 	{
 		[PatchProperty]
 		public float? X { get; set; }

@@ -8,7 +8,7 @@ using Newtonsoft.Json.Linq;
 
 namespace MixedRealityExtension.Patching.Types
 {
-	public class AppearancePatch : IPatchable
+	public class AppearancePatch : PatchPropertyCache<AppearancePatch>, IPatchable
 	{
 		[PatchProperty]
 		[JsonConverter(typeof(UnsignedConverter))]
