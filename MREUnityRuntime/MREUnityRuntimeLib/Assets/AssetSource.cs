@@ -20,6 +20,12 @@ namespace MixedRealityExtension.Assets
 		/// </summary>
 		public string Uri { get; set; }
 
+		/// <summary>
+		/// The version of the resource at the Uri that this asset came from. Will typically be an HTTP ETag.
+		/// </summary>
+		[Newtonsoft.Json.JsonIgnore]
+		public string Version { get; set; }
+
 		private Uri parsedUri;
 		/// <summary>
 		/// The parsed URI of the asset's container.

@@ -3,7 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using MixedRealityExtension.PluginInterfaces;
+using MixedRealityExtension.API;
 using MixedRealityExtension.Util;
 using UnityEngine;
 using Object = UnityEngine.Object;
@@ -177,7 +177,7 @@ namespace MixedRealityExtension.Assets
 		/// <param name="containerId"></param>
 		public void Unload(Guid containerId)
 		{
-			var assets = Assets.Values.Where(c => c.ContainerId == containerId && c.Asset != null).ToArray();
+			var assets = Assets.Values.Where(c => c.ContainerId == containerId && c.Asset != null);
 			foreach (var asset in assets)
 			{
 				Assets.Remove(asset.Id);
@@ -199,7 +199,7 @@ namespace MixedRealityExtension.Assets
 				// asset is shared with other MRE instances, just return asset to cache
 				else
 				{
-
+					MREAPI.AppsAPI.AssetCache.StoreAssets(asset.Source.Uri, new Object[]{ asset.Asset }, asset.Source.Version);
 				}
 			}
 		}

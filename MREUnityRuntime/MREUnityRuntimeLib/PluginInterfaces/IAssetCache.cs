@@ -1,72 +1,52 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
-using System;
 using System.Collections.Generic;
-using MixedRealityExtension.Assets;
-using UnityEngine;
-using ColliderGeometry = MixedRealityExtension.Core.ColliderGeometry;
+using System.Threading.Tasks;
 
 namespace MixedRealityExtension.PluginInterfaces
 {
 	/// <summary>
-	/// Stores assets loaded by MREs.
+	/// This is a system-wide class instance that is responsible for caching assets beyond the lifetime of a single
+	/// MRE instance. This could possibly be backed by persistent storage instead of memory. This is primarily
+	/// intended for assets loaded via an HTTP request.
 	/// </summary>
 	public interface IAssetCache
 	{
-		/// <returns>The GameObject all cache assets should be beneath</returns>
-		GameObject CacheRootGO();
-
-		/// <returns>The GameObject cloned by Actor.CreateEmpty calls</returns>
-		GameObject EmptyTemplate();
+		/// <summary>
+		/// The GameObject that assets requiring a parent should be put.
+		/// </summary>
+		UnityEngine.GameObject CacheRootGO { get; }
 
 		/// <summary>
-		/// Retrieve an asset from the cache by ID, or null if an asset with that ID is not loaded.
+		/// If either the cache contains no assets for the resource, or the cached
+		/// version is older than what is provided, this method stores all provided assets in the cache, overwriting
+		/// any currently cached assets. Otherwise, the internal reference counter for this resource is decremented
+		/// by the number of provided assets.
 		/// </summary>
-		/// <param name="id">The ID of a loaded asset.</param>
-		/// <returns>A native Unity asset</returns>
-		UnityEngine.Object GetAsset(Guid? id);
+		/// <param name="uri">The resource identifier</param>
+		/// <param name="assets">The collection of assets generated from the given resource</param>
+		/// <param name="version">
+		/// The version of the loaded resource. Will typically be the HTTP response's ETag header.
+		/// </param>
+		void StoreAssets(string uri, IEnumerable<UnityEngine.Object> assets, string version);
 
 		/// <summary>
-		/// Retrieve an asset's predetermined collider shape
+		/// Asynchronously return the cached assets at the given URI, and increment the internal reference counter
+		/// for this resource. Will return null if no assets are cached for that resource, or if ifMatchesVersion
+		/// does not match the stored assets' version. This needs to be async in case the asset needs to be loaded
+		/// from persistent storage.
 		/// </summary>
-		/// <param name="id">The ID of a loaded asset.</param>
+		/// <param name="uri">The resource identifier</param>
+		/// <param name="ifMatchesVersion">Return null if the cached assets are not of this version</param>
 		/// <returns></returns>
-		ColliderGeometry GetColliderGeometry(Guid? id);
+		Task<IEnumerable<UnityEngine.Object>> LeaseAssets(string uri, string ifMatchesVersion = null);
 
 		/// <summary>
-		/// If an asset is in the cache, return its ID. Otherwise return null.
+		/// Returns the stored version of the given resource, or null if not cached. We'll need this for If-Not-Match
+		/// HTTP headers.
 		/// </summary>
-		/// <param name="asset">The asset whose ID should be returned</param>
+		/// <param name="uri">The resource identifier</param>
 		/// <returns></returns>
-		Guid? GetId(UnityEngine.Object asset);
-
-		/// <summary>
-		/// Get notified when an asset gets created
-		/// </summary>
-		/// <param name="id">The ID of an asset</param>
-		/// <param name="callback">A function to run once when the asset is registered</param>
-		void OnCached(Guid id, Action<UnityEngine.Object> callback);
-
-		/// <summary>
-		/// Cache an asset with the given lookup values. Cache a null asset to indicate it will never be loaded.
-		/// </summary>
-		/// <param name="asset">The native Unity asset</param>
-		/// <param name="id">The ID of the asset.</param>
-		/// <param name="containerId">The container ID of the asset.</param>
-		/// <param name="source">The origin container.</param>
-		void CacheAsset(UnityEngine.Object asset, Guid id, Guid containerId, AssetSource source = null, ColliderGeometry colliderGeometry = null);
-
-		/// <summary>
-		/// Remove assets from the cache with the given container ID.
-		/// </summary>
-		/// <param name="containerId">The container ID.</param>
-		/// <returns>The list of assets removed from the cache</returns>
-		IEnumerable<UnityEngine.Object> UncacheAssets(Guid containerId);
-
-		/// <summary>
-		/// Remove assets from the cache and unload them from memory
-		/// </summary>
-		/// <param name="containerId">The asset container ID to be unloaded</param>
-		void UncacheAssetsAndDestroy(Guid containerId);
+		string GetVersion(string uri);
 	}
 }
