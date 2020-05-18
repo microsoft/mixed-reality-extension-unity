@@ -153,17 +153,31 @@ namespace MixedRealityExtension.Assets
 		{
 			WebRequestLoader loader = null;
 			Stream stream = null;
-			IList<Asset> assets = new List<Asset>();
+			IList<Asset> assetDefs = new List<Asset>();
+			var assets = new List<UnityEngine.Object>(10);
 			DeterministicGuids guidGenerator = new DeterministicGuids(UtilMethods.StringToGuid(
 				$"{containerId}:{source.ParsedUri.AbsoluteUri}"));
+			string version;
 
 			// Wait asynchronously until the load throttler lets us through.
 			using (var scope = await AssetLoadThrottling.AcquireLoadScope())
 			{
 				// download file
 				var rootUrl = URIHelper.GetDirectoryName(source.ParsedUri.AbsoluteUri);
+				var cachedVersion = MREAPI.AppsAPI.AssetCache.GetVersion(rootUrl);
 				loader = new WebRequestLoader(rootUrl);
+				if (!string.IsNullOrEmpty(cachedVersion))
+				{
+					loader.BeforeRequestCallback = (msg) =>
+					{
+						if (msg.RequestUri.AbsoluteUri == rootUrl)
+						{
+							msg.Headers.Add("If-None-Match", cachedVersion);
+						}
+					};
+				}
 				stream = await loader.LoadStreamAsync(URIHelper.GetFileFromUri(source.ParsedUri));
+				version = loader.LastResponse.Headers.ETag.Tag;
 			}
 
 			// pre-parse glTF document so we can get a scene count
@@ -189,7 +203,7 @@ namespace MixedRealityExtension.Assets
 			using (GLTFSceneImporter importer =
 				MREAPI.AppsAPI.GLTFImporterFactory.CreateImporter(gltfRoot, loader, _asyncHelper, stream))
 			{
-				importer.SceneParent = _app.AssetManager.CacheRootGO().transform;
+				importer.SceneParent = MREAPI.AppsAPI.AssetCache.CacheRootGO.transform;
 				importer.Collider = colliderType.ToGLTFColliderType();
 
 				// load textures
@@ -200,12 +214,13 @@ namespace MixedRealityExtension.Assets
 						await importer.LoadTextureAsync(gltfRoot.Textures[i], i, true);
 						var texture = importer.GetTexture(i);
 						texture.name = gltfRoot.Textures[i].Name ?? $"texture:{i}";
+						assets.Add(texture);
 
 						var asset = GenerateAssetPatch(texture, guidGenerator.Next());
 						asset.Name = texture.name;
-						asset.Source = new AssetSource(source.ContainerType, source.Uri, $"texture:{i}");
+						asset.Source = new AssetSource(source.ContainerType, source.Uri, $"texture:{i}", version);
 						_app.AssetManager.Set(asset.Id, containerId, texture, source: source);
-						assets.Add(asset);
+						assetDefs.Add(asset);
 					}
 				}
 
@@ -217,15 +232,16 @@ namespace MixedRealityExtension.Assets
 					{
 						var mesh = await importer.LoadMeshAsync(i, cancellationSource.Token);
 						mesh.name = gltfRoot.Meshes[i].Name ?? $"mesh:{i}";
+						assets.Add(mesh);
 
 						var asset = GenerateAssetPatch(mesh, guidGenerator.Next());
 						asset.Name = mesh.name;
-						asset.Source = new AssetSource(source.ContainerType, source.Uri, $"mesh:{i}");
+						asset.Source = new AssetSource(source.ContainerType, source.Uri, $"mesh:{i}", version);
 						var colliderGeo = colliderType == ColliderType.Mesh ?
 							(ColliderGeometry)new MeshColliderGeometry() { MeshId = asset.Id } :
 							(ColliderGeometry)new BoxColliderGeometry() { Size = (mesh.bounds.size * 0.8f).CreateMWVector3() };
 						_app.AssetManager.Set(asset.Id, containerId, mesh, colliderGeo, source);
-						assets.Add(asset);
+						assetDefs.Add(asset);
 					}
 				}
 
@@ -237,12 +253,13 @@ namespace MixedRealityExtension.Assets
 						var matdef = gltfRoot.Materials[i];
 						var material = await importer.LoadMaterialAsync(i);
 						material.name = matdef.Name ?? $"material:{i}";
+						assets.Add(material);
 
 						var asset = GenerateAssetPatch(material, guidGenerator.Next());
 						asset.Name = material.name;
-						asset.Source = new AssetSource(source.ContainerType, source.Uri, $"material:{i}");
+						asset.Source = new AssetSource(source.ContainerType, source.Uri, $"material:{i}", version);
 						_app.AssetManager.Set(asset.Id, containerId, material, source: source);
-						assets.Add(asset);
+						assetDefs.Add(asset);
 					}
 				}
 
@@ -271,16 +288,18 @@ namespace MixedRealityExtension.Assets
 							go.layer = MREAPI.AppsAPI.LayerApplicator.DefaultLayer;
 						});
 
+						assets.Add(rootObject);
+
 						var def = GenerateAssetPatch(rootObject, guidGenerator.Next());
 						def.Name = rootObject.name;
-						def.Source = new AssetSource(source.ContainerType, source.Uri, $"scene:{i}");
+						def.Source = new AssetSource(source.ContainerType, source.Uri, $"scene:{i}", version);
 						_app.AssetManager.Set(def.Id, containerId, rootObject, source: source);
-						assets.Add(def);
+						assetDefs.Add(def);
 					}
 				}
 			}
 
-			return assets;
+			return assetDefs;
 		}
 
 		[CommandHandler(typeof(AssetUpdate))]

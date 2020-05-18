@@ -87,7 +87,9 @@ namespace MixedRealityExtension.Assets
 				// the submitted version is not in history (i.e. is a new version), update cache
 				else
 				{
-					Cache[uri] = new CacheItem(uri, assets.ToArray(), version, 0, previousVersion: cacheItem);
+					Cache[uri] = new CacheItem(uri, assets.ToArray(), version,
+						referenceCount: assets.Count(),
+						previousVersion: cacheItem);
 				}
 
 			}

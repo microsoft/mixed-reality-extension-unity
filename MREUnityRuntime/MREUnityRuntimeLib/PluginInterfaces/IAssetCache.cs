@@ -20,8 +20,8 @@ namespace MixedRealityExtension.PluginInterfaces
 		/// <summary>
 		/// If either the cache contains no assets for the resource, or the cached
 		/// version is older than what is provided, this method stores all provided assets in the cache, overwriting
-		/// any currently cached assets. Otherwise, the internal reference counter for this resource is decremented
-		/// by the number of provided assets.
+		/// any currently cached assets, and sets the reference count to the number of assets. Otherwise, the internal
+		/// reference counter for this resource is decremented by the number of provided assets.
 		/// </summary>
 		/// <param name="uri">The resource identifier</param>
 		/// <param name="assets">The collection of assets generated from the given resource</param>

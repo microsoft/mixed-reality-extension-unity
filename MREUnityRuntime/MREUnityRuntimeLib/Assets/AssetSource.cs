@@ -40,11 +40,16 @@ namespace MixedRealityExtension.Assets
 
 		public AssetSource() { }
 
-		public AssetSource(AssetContainerType containerType = AssetContainerType.GLTF, string uri = null, string internalId = null)
+		public AssetSource(
+			AssetContainerType containerType = AssetContainerType.GLTF,
+			string uri = null,
+			string internalId = null,
+			string version = null)
 		{
 			ContainerType = containerType;
 			Uri = uri;
 			InternalId = internalId;
+			Version = version;
 		}
 
 		public override bool Equals(object other)
