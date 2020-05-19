@@ -172,9 +172,8 @@ namespace MixedRealityExtension.Core
 					continue;
 				}
 
-				// <todo> make sure that this will always hit this loop ???
 				// Find corresponding rigid body info.
-				index = 0;
+				// since both are sorted list this should hit without index=0 at the beginning
 				while (index < snapshot.RigidBodies.Count && rb.Id.CompareTo(snapshot.RigidBodies.Values[index].Id) > 0)
 				{
 					index++;
