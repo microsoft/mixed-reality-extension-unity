@@ -1593,6 +1593,12 @@ namespace MixedRealityExtension.Core
 							if (asset is AudioClip audioClip)
 							{
 								AudioSource soundInstance = App.SoundManager.AddSoundInstance(this, payload.Id, audioClip, payload.Options);
+
+								if (MREAPI.AppsAPI.AudioController != null)
+								{
+									MREAPI.AppsAPI.AudioController.ModifyAudioSource(soundInstance);
+								}
+
 								if (soundInstance)
 								{
 									mediaInstance.Instance = soundInstance;
@@ -1642,6 +1648,10 @@ namespace MixedRealityExtension.Core
 									if (mediaInstance.Instance is AudioSource soundInstance)
 									{
 										App.SoundManager.ApplyMediaStateOptions(this, soundInstance, payload.Options, payload.Id, false);
+										if (MREAPI.AppsAPI.AudioController != null)
+										{
+											MREAPI.AppsAPI.AudioController.ModifyAudioSource(soundInstance);
+										}
 									}
 									else if (mediaInstance.Instance is IVideoPlayer videoPlayer)
 									{

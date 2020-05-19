@@ -34,6 +34,7 @@ namespace MixedRealityExtension.API
 		/// <param name="videoPlayerFactory"></param>
 		/// <param name="userInfoProvider">Provides appId/sessionId scoped IUserInfo instances.</param>
 		/// <param name="dialogFactory"></param>
+		/// <param name="audioController">Provides a way to override and control the audio sources created for the MRE from the client</param>
 		/// <param name="logger">The logger to be used by the MRE SDK.</param>
 		public static void InitializeAPI(
 			UnityEngine.Material defaultMaterial,
@@ -47,6 +48,7 @@ namespace MixedRealityExtension.API
 			IVideoPlayerFactory videoPlayerFactory = null,
 			IUserInfoProvider userInfoProvider = null,
 			IDialogFactory dialogFactory = null,
+			IAudioController audioController = null,
 			IMRELogger logger = null)
 		{
 			AppsAPI.DefaultMaterial = defaultMaterial;
@@ -112,6 +114,8 @@ namespace MixedRealityExtension.API
 		internal IGLTFImporterFactory GLTFImporterFactory { get; set; }
 
 		internal IMaterialPatcher MaterialPatcher { get; set; }
+
+		internal IAudioController AudioController { get; set; }
 
 		/// <summary>
 		/// Provider of app/session scoped IUserInfo interfaces.
