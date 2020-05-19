@@ -1,14 +1,10 @@
-﻿using MixedRealityExtension.Core.Types;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
 
 namespace MixedRealityExtension.Behaviors.ActionData
 {
 	internal class ButtonData : BaseActionData
 	{
-		public MWVector3[] targetedPoints;
+		public PointData[] targetedPoints;
 	}
 }

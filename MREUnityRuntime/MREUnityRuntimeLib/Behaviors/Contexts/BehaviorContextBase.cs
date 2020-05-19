@@ -1,4 +1,6 @@
-﻿using MixedRealityExtension.App;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+using MixedRealityExtension.App;
 using MixedRealityExtension.Behaviors.Actions;
 using MixedRealityExtension.Core.Interfaces;
 using MixedRealityExtension.PluginInterfaces.Behaviors;
@@ -12,6 +14,19 @@ namespace MixedRealityExtension.Behaviors.Contexts
 		private WeakReference<MixedRealityExtensionApp> _appRef;
 		private Guid _attachedActorId;
 		private BehaviorType? _behaviorType;
+
+		internal MixedRealityExtensionApp App
+		{
+			get
+			{
+				if (_appRef.TryGetTarget(out MixedRealityExtensionApp app))
+				{
+					return app;
+				}
+
+				return null;
+			}
+		}
 
 		internal IBehavior Behavior { get; private set; }
 

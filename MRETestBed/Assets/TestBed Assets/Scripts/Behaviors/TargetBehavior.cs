@@ -9,15 +9,22 @@ namespace Assets.Scripts.Behaviors
 {
 	public class TargetBehavior : BehaviorBase, ITargetBehavior
 	{
+		protected TargetBehaviorContext _context;
+
 		public bool Grabbable { get; set; }
 
 		public bool IsGrabbed { get; set; }
 
-		public TargetBehaviorContext Context { get; set; }
+		public TargetBehaviorContext Context => _context;
 
 		public override Type GetDesiredToolType()
 		{
 			return typeof(TargetTool);
+		}
+
+		public void SetContext(TargetBehaviorContext context)
+		{
+			_context = context;
 		}
 	}
 }

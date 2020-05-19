@@ -111,6 +111,12 @@ namespace MixedRealityExtension.Util.Unity
 			_this.Rotation.FromUnityQuaternion(Quaternion.Inverse(appRoot.rotation) * transform.rotation);
 		}
 
+		public static MWVector3 ToLocalMWVector3(this MWVector3 _this, Vector3 point, Transform objectRoot)
+		{
+			_this.FromUnityVector3(objectRoot.InverseTransformPoint(point));
+			return _this;
+		}
+
 		public static Vector2 ToVector2(this MWVector2 _this)
 		{
 			return new Vector2()

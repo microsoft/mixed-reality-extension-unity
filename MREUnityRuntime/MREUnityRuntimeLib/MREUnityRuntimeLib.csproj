@@ -102,6 +102,7 @@
     <Compile Include="Behaviors\ActionData\BaseToolData.cs" />
     <Compile Include="Behaviors\ActionData\ButtonData.cs" />
     <Compile Include="Behaviors\ActionData\PenData.cs" />
+    <Compile Include="Behaviors\ActionData\PointData.cs" />
     <Compile Include="Behaviors\ActionData\TargetData.cs" />
     <Compile Include="Behaviors\Contexts\BehaviorContextFactory.cs" />
     <Compile Include="Behaviors\Contexts\BehaviorContextBase.cs" />

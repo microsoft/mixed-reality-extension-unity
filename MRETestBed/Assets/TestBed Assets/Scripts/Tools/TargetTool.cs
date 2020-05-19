@@ -77,13 +77,13 @@ namespace Assets.Scripts.Tools
 
 			Vector3? hitPoint;
 			var newTarget = FindTarget(inputSource, out hitPoint);
+			if (Target == null && newTarget == null)
+			{
+				return;
+			}
+
 			if (Target == newTarget)
 			{
-				if (Target == null)
-				{
-					return;
-				}
-
 				var mwUser = _currentTargetBehavior.GetMWUnityUser(inputSource.UserGameObject);
 				if (mwUser == null)
 				{
@@ -124,6 +124,8 @@ namespace Assets.Scripts.Tools
 					Vector3.zero,
 					null,
 					inputSource);
+
+				inputSource.DropTool();
 			}
 		}
 
@@ -135,21 +137,14 @@ namespace Assets.Scripts.Tools
 			TargetBehavior newBehavior,
 			InputSource inputSource)
 		{
-			var mwUser = _currentTargetBehavior?.GetMWUnityUser(inputSource.gameObject) ??
-				newBehavior?.GetMWUnityUser(inputSource.gameObject) ?? null;
-			if (mwUser == null)
-			{
-				return;
-			}
-
 			if (oldTarget != null)
 			{
-				_currentTargetBehavior.Context.EndTargeting(mwUser, oldTargetPoint);
+				_currentTargetBehavior.Context.EndTargeting(_currentTargetBehavior.GetMWUnityUser(inputSource.UserGameObject), oldTargetPoint);
 			}
 
 			if (newTarget != null)
 			{
-				newBehavior.Context.StartTargeting(mwUser, newTargetPoint);
+				newBehavior.Context.StartTargeting(newBehavior.GetMWUnityUser(inputSource.UserGameObject), newTargetPoint);
 			}
 
 			CurrentTargetPoint = newTargetPoint;

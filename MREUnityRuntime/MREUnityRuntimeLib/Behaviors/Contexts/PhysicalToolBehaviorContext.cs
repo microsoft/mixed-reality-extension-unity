@@ -1,10 +1,12 @@
-﻿using MixedRealityExtension.Behaviors.ActionData;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+using MixedRealityExtension.Behaviors.ActionData;
 using MixedRealityExtension.Behaviors.Actions;
 using MixedRealityExtension.Core.Interfaces;
 
 namespace MixedRealityExtension.Behaviors.Contexts
 {
-	public abstract class PhysicalToolBehaviorContext<ToolDataT> : BehaviorContextBase
+	public abstract class PhysicalToolBehaviorContext<ToolDataT> : TargetBehaviorContext
 		where ToolDataT : BaseToolData, new()
 	{
 		private ToolDataT _queuedToolData;
@@ -54,8 +56,8 @@ namespace MixedRealityExtension.Behaviors.Contexts
 
 		protected override void OnInitialized()
 		{
-			RegisterActionHandler(_holding, nameof(_holding));
-			RegisterActionHandler(_using, nameof(_using));
+			RegisterActionHandler(_holding, "holding");
+			RegisterActionHandler(_using, "using");
 		}
 
 		private void OnUsingStateChanging(object sender, ActionStateChangedArgs args)

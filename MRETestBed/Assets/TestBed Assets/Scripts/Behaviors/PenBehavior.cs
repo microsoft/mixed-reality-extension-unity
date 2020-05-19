@@ -9,7 +9,7 @@ namespace Assets.Scripts.Behaviors
 {
 	public class PenBehavior : TargetBehavior, IPenBehavior
 	{
-		public new PenBehaviorContext Context { get; set; }
+		public new PenBehaviorContext Context => _context as PenBehaviorContext;
 
 		public override Type GetDesiredToolType()
 		{

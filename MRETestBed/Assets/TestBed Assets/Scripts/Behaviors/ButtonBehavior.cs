@@ -9,7 +9,7 @@ namespace Assets.Scripts.Behaviors
 {
 	public class ButtonBehavior : TargetBehavior, IButtonBehavior
 	{
-		public new ButtonBehaviorContext Context { get; set; }
+		public new ButtonBehaviorContext Context => _context as ButtonBehaviorContext;
 
 		public override Type GetDesiredToolType()
 		{

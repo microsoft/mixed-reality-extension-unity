@@ -1,9 +1,8 @@
-﻿using MixedRealityExtension.App;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
 using MixedRealityExtension.Behaviors.ActionData;
 using MixedRealityExtension.Behaviors.Actions;
 using MixedRealityExtension.Core.Interfaces;
-using MixedRealityExtension.Core.Types;
-using MixedRealityExtension.Util.Unity;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -15,32 +14,59 @@ namespace MixedRealityExtension.Behaviors.Contexts
 		private MWAction<ButtonData> _hoverAction = new MWAction<ButtonData>();
 		private MWAction<ButtonData> _clickAction = new MWAction<ButtonData>();
 		private MWAction<ButtonData> _buttonAction = new MWAction<ButtonData>();
-		private List<MWVector3> _buttonPressedPoints = new List<MWVector3>();
-		private List<MWVector3> _hoverPoints = new List<MWVector3>();
+		private List<Vector3> _buttonPressedPoints = new List<Vector3>();
+		private List<Vector3> _hoverPoints = new List<Vector3>();
 
 		public bool IsPressed { get; private set; } 
 
 		public void StartHover(IUser user, Vector3 hoverPoint)
 		{
+			var app = App;
+			if (app == null)
+			{
+				return;
+			}
+
 			_hoverAction.StartAction(user, new ButtonData()
 			{
-				targetedPoints = new MWVector3[1] { hoverPoint.CreateMWVector3() }
+				targetedPoints = new PointData[1]
+				{
+					PointData.CreateFromUnityVector3(hoverPoint, Behavior.Actor.GameObject.transform, App.SceneRoot.transform)
+				}
 			});
 		}
 
 		public void EndHover(IUser user, Vector3 hoverPoint)
 		{
+			var app = App;
+			if (app == null)
+			{
+				return;
+			}
+
 			_hoverAction.StopAction(user, new ButtonData()
 			{
-				targetedPoints = new MWVector3[1] { hoverPoint.CreateMWVector3() }
+				targetedPoints = new PointData[1]
+				{
+					PointData.CreateFromUnityVector3(hoverPoint, Behavior.Actor.GameObject.transform, App.SceneRoot.transform)
+				}
 			});
 		}
 
 		public void StartButton(IUser user, Vector3 buttonStartPoint)
 		{
+			var app = App;
+			if (app == null)
+			{
+				return;
+			}
+
 			_buttonAction.StartAction(user, new ButtonData()
 			{
-				targetedPoints = new MWVector3[1] { buttonStartPoint.CreateMWVector3() }
+				targetedPoints = new PointData[1]
+				{
+					PointData.CreateFromUnityVector3(buttonStartPoint, Behavior.Actor.GameObject.transform, App.SceneRoot.transform)
+				}
 			});
 
 			IsPressed = true;
@@ -48,9 +74,18 @@ namespace MixedRealityExtension.Behaviors.Contexts
 
 		public void EndButton(IUser user, Vector3 buttonEndPoint)
 		{
-			_buttonAction.StartAction(user, new ButtonData()
+			var app = App;
+			if (app == null)
 			{
-				targetedPoints = new MWVector3[1] { buttonEndPoint.CreateMWVector3() }
+				return;
+			}
+
+			_buttonAction.StopAction(user, new ButtonData()
+			{
+				targetedPoints = new PointData[1]
+				{
+					PointData.CreateFromUnityVector3(buttonEndPoint, Behavior.Actor.GameObject.transform, App.SceneRoot.transform)
+				}
 			});
 
 			IsPressed = false;
@@ -58,9 +93,18 @@ namespace MixedRealityExtension.Behaviors.Contexts
 
 		public void Click(IUser user, Vector3 clickPoint)
 		{
+			var app = App;
+			if (app == null)
+			{
+				return;
+			}
+
 			_clickAction.StartAction(user, new ButtonData()
 			{
-				targetedPoints = new MWVector3[1] { clickPoint.CreateMWVector3() }
+				targetedPoints = new PointData[1]
+				{
+					PointData.CreateFromUnityVector3(clickPoint, Behavior.Actor.GameObject.transform, App.SceneRoot.transform)
+				}
 			});
 		}
 
@@ -74,11 +118,20 @@ namespace MixedRealityExtension.Behaviors.Contexts
 		{
 			base.SynchronizeBehavior();
 
+			var app = App;
+			if (app == null)
+			{
+				return;
+			}
+
 			if (_hoverPoints.Any())
 			{
 				_hoverAction.PerformActionUpdate(new ButtonData()
 				{
-					targetedPoints = _hoverPoints.ToArray()
+					targetedPoints = _hoverPoints.Select((point) =>
+					{
+						return PointData.CreateFromUnityVector3(point, Behavior.Actor.GameObject.transform, App.SceneRoot.transform);
+					}).ToArray()
 				});
 
 				_hoverPoints.Clear();
@@ -88,7 +141,10 @@ namespace MixedRealityExtension.Behaviors.Contexts
 			{
 				_buttonAction.PerformActionUpdate(new ButtonData()
 				{
-					targetedPoints = _buttonPressedPoints.ToArray()
+					targetedPoints = _buttonPressedPoints.Select((point) =>
+					{
+						return PointData.CreateFromUnityVector3(point, Behavior.Actor.GameObject.transform, App.SceneRoot.transform);
+					}).ToArray()
 				});
 
 				_buttonPressedPoints.Clear();
@@ -99,20 +155,20 @@ namespace MixedRealityExtension.Behaviors.Contexts
 		{
 			if (IsPressed)
 			{
-				_buttonPressedPoints.Add(targetPoint.CreateMWVector3());
+				_buttonPressedPoints.Add(targetPoint);
 			}
 			else
 			{
-				_hoverPoints.Add(targetPoint.CreateMWVector3());
+				_hoverPoints.Add(targetPoint);
 			}
 		}
 
 		protected override void OnInitialized()
 		{
 			base.OnInitialized();
-			RegisterActionHandler(_hoverAction, nameof(_hoverAction));
-			RegisterActionHandler(_clickAction, nameof(_clickAction));
-			RegisterActionHandler(_buttonAction, nameof(_buttonAction));
+			RegisterActionHandler(_hoverAction, "hover");
+			RegisterActionHandler(_clickAction, "click");
+			RegisterActionHandler(_buttonAction, "button");
 		}
 	}
 }
