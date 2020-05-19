@@ -16,7 +16,7 @@ namespace Assets.Scripts.Tools
 
 		public bool TargetGrabbed => _grabTool.GrabActive;
 
-		protected Vector3? CurrentTargetPoint { get; private set; }
+		protected Vector3 CurrentTargetPoint { get; private set; }
 
 		public TargetTool()
 		{
@@ -40,25 +40,27 @@ namespace Assets.Scripts.Tools
 			}
 
 			var newBehavior = newTarget.GetBehavior<TargetBehavior>();
-			var mwUser = newBehavior.GetMWUnityUser(inputSource.UserGameObject);
-			if (mwUser != null)
-			{
-				newBehavior.Context.StartTargeting(mwUser, hitPoint.Value);
-			}
 
-			CurrentTargetPoint = hitPoint.Value;
-			OnTargetChanged(null, newTarget, inputSource);
-			Target = newTarget;
-			_currentTargetBehavior = newBehavior;
+			OnTargetChanged(
+				Target,
+				CurrentTargetPoint,
+				newTarget,
+				hitPoint.Value,
+				newBehavior,
+				inputSource);
 		}
 
 		public override void OnToolDropped(InputSource inputSource)
 		{
 			base.OnToolDropped(inputSource);
 
-			CurrentTargetPoint = null;
-			Target = null;
-			_currentTargetBehavior = null;
+			OnTargetChanged(
+				Target,
+				CurrentTargetPoint,
+				null,
+				Vector3.zero,
+				null,
+				inputSource);
 		}
 
 		protected override void UpdateTool(InputSource inputSource)
@@ -72,28 +74,25 @@ namespace Assets.Scripts.Tools
 					return;
 				}
 			}
-			
-			var mwUser = _currentTargetBehavior.GetMWUnityUser(inputSource.UserGameObject);
-			if (mwUser == null)
-			{
-				return;
-			}
 
 			Vector3? hitPoint;
 			var newTarget = FindTarget(inputSource, out hitPoint);
 			if (Target == newTarget)
 			{
-				CurrentTargetPoint = hitPoint;
-				_currentTargetBehavior.Context.UpdateTargetPoint(mwUser, CurrentTargetPoint.Value);
-				return;
-			}
-
-			if (Target != null && _currentTargetBehavior != null)
-			{
-				if (mwUser != null)
+				if (Target == null)
 				{
-					_currentTargetBehavior.Context.EndTargeting(mwUser, CurrentTargetPoint.Value);
+					return;
 				}
+
+				var mwUser = _currentTargetBehavior.GetMWUnityUser(inputSource.UserGameObject);
+				if (mwUser == null)
+				{
+					return;
+				}
+
+				CurrentTargetPoint = hitPoint.Value;
+				_currentTargetBehavior.Context.UpdateTargetPoint(mwUser, CurrentTargetPoint);
+				return;
 			}
 
 			TargetBehavior newBehavior = null;
@@ -107,27 +106,65 @@ namespace Assets.Scripts.Tools
 				}
 				else
 				{
-					if (mwUser != null)
-					{
-						newBehavior.Context.StartTargeting(mwUser, hitPoint.Value);
-					}
-
-					CurrentTargetPoint = hitPoint.Value;
-					OnTargetChanged(Target, newTarget, inputSource);
-					Target = newTarget;
-					_currentTargetBehavior = newBehavior;
+					OnTargetChanged(
+						Target,
+						CurrentTargetPoint,
+						newTarget,
+						hitPoint.Value,
+						newBehavior, 
+						inputSource);
 				}
+			}
+			else
+			{
+				OnTargetChanged(
+					Target,
+					CurrentTargetPoint,
+					null,
+					Vector3.zero,
+					null,
+					inputSource);
 			}
 		}
 
-		protected virtual void OnTargetChanged(GameObject oldTarget, GameObject newTarget, InputSource inputSource)
+		protected virtual void OnTargetChanged(
+			GameObject oldTarget,
+			Vector3 oldTargetPoint,
+			GameObject newTarget,
+			Vector3 newTargetPoint,
+			TargetBehavior newBehavior,
+			InputSource inputSource)
 		{
+			var mwUser = _currentTargetBehavior?.GetMWUnityUser(inputSource.gameObject) ??
+				newBehavior?.GetMWUnityUser(inputSource.gameObject) ?? null;
+			if (mwUser == null)
+			{
+				return;
+			}
 
+			if (oldTarget != null)
+			{
+				_currentTargetBehavior.Context.EndTargeting(mwUser, oldTargetPoint);
+			}
+
+			if (newTarget != null)
+			{
+				newBehavior.Context.StartTargeting(mwUser, newTargetPoint);
+			}
+
+			CurrentTargetPoint = newTargetPoint;
+			Target = newTarget;
+			_currentTargetBehavior = newBehavior;
 		}
 
 		protected virtual void OnGrabStateChanged(GrabState oldGrabState, GrabState newGrabState, InputSource inputSource)
 		{
 
+		}
+
+		protected BehaviorT GetCurrentTargetBehavior<BehaviorT>() where BehaviorT : TargetBehavior
+		{
+			return _currentTargetBehavior as BehaviorT;
 		}
 
 		private void OnGrabStateChanged(object sender, GrabStateChangedArgs args)

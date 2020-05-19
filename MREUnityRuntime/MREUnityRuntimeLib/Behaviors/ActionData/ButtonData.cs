@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace MixedRealityExtension.Behaviors.ActionData
 {
-	internal class TargetData : BaseActionData
+	internal class ButtonData : BaseActionData
 	{
 		public MWVector3[] targetedPoints;
 	}

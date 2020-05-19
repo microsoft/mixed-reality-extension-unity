@@ -39,6 +39,8 @@ namespace MixedRealityExtension.Behaviors.Contexts
 			_attachedActorId = attachedActor.Id;
 
 			Behavior.Actor = attachedActor;
+
+			OnInitialized();
 		}
 
 		internal virtual void FixedUpdate()
@@ -61,9 +63,12 @@ namespace MixedRealityExtension.Behaviors.Contexts
 
 		protected void RegisterActionHandler(MWActionBase action, string name)
 		{
-			var handler = new BehaviorActionHandler(((IBehaviorHandler)this).BehaviorType, name, _appRef, _attachedActorId);
+			if (Behavior == null) throw new InvalidOperationException("Cannot register action handlers to an uninitialized behavior context.");
+			var handler = new BehaviorActionHandler(BehaviorType, name, _appRef, _attachedActorId);
 			action.Handler = handler;
 		}
+
+		protected abstract void OnInitialized();
 
 		private BehaviorType GetBehaviorType()
 		{

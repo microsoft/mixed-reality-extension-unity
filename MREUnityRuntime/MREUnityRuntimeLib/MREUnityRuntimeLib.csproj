@@ -100,6 +100,7 @@
     <Compile Include="Assets\PrefabAnimationTargets.cs" />
     <Compile Include="Behaviors\ActionData\BaseActionData.cs" />
     <Compile Include="Behaviors\ActionData\BaseToolData.cs" />
+    <Compile Include="Behaviors\ActionData\ButtonData.cs" />
     <Compile Include="Behaviors\ActionData\PenData.cs" />
     <Compile Include="Behaviors\ActionData\TargetData.cs" />
     <Compile Include="Behaviors\Contexts\BehaviorContextFactory.cs" />
@@ -163,8 +164,6 @@
     <Compile Include="Behaviors\Actions\Action.cs" />
     <Compile Include="Behaviors\Behaviors.cs" />
     <Compile Include="Behaviors\Actions\BehaviorActionHandler.cs" />
-    <Compile Include="Behaviors\BehaviorHandlerBase.cs" />
-    <Compile Include="Behaviors\IBehaviorHandler.cs" />
     <Compile Include="Core\Components\LookAtComponent.cs" />
     <Compile Include="Core\Text.cs" />
     <Compile Include="Factories\MWTextFactory.cs" />

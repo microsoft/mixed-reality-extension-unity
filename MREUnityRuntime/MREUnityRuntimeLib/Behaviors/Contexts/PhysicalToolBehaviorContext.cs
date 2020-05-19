@@ -1,9 +1,6 @@
-﻿using MixedRealityExtension.App;
-using MixedRealityExtension.Behaviors.ActionData;
+﻿using MixedRealityExtension.Behaviors.ActionData;
 using MixedRealityExtension.Behaviors.Actions;
 using MixedRealityExtension.Core.Interfaces;
-using MixedRealityExtension.PluginInterfaces.Behaviors;
-using System;
 
 namespace MixedRealityExtension.Behaviors.Contexts
 {
@@ -44,9 +41,6 @@ namespace MixedRealityExtension.Behaviors.Contexts
 		internal PhysicalToolBehaviorContext()
 			: base()
 		{
-			RegisterActionHandler(_holding, nameof(_holding));
-			RegisterActionHandler(_using, nameof(_using));
-
 			ToolData = new ToolDataT();
 		}
 
@@ -56,6 +50,12 @@ namespace MixedRealityExtension.Behaviors.Contexts
 			{
 				PerformUsingAction();
 			}
+		}
+
+		protected override void OnInitialized()
+		{
+			RegisterActionHandler(_holding, nameof(_holding));
+			RegisterActionHandler(_using, nameof(_using));
 		}
 
 		private void OnUsingStateChanging(object sender, ActionStateChangedArgs args)
