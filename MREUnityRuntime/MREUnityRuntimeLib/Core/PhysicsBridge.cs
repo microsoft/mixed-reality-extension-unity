@@ -147,7 +147,7 @@ namespace MixedRealityExtension.Core
 			// -set transforms/velocities for key framed bodies
 
 			// get all the prediction time infos in this struct
-			PreditionTimeInterface timeInfo = new PreditionTimeInterface(UnityEngine.Time.fixedDeltaTime);
+			PredictionTimeParameters timeInfo = new PredictionTimeParameters(UnityEngine.Time.fixedDeltaTime);
 
 			// start the predictor
 			_predictor.StartBodyPredicitonForNextFrame();

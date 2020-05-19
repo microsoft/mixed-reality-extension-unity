@@ -8,9 +8,9 @@ using MixedRealityExtension.Core;
 namespace MixedRealityExtension.Core.Physics
 {
 	/// interface struct to pass time step informations
-	public class PreditionTimeInterface
+	public class PredictionTimeParameters
 	{
-		public PreditionTimeInterface(float timeStep)
+		public PredictionTimeParameters(float timeStep)
 		{
 			setFromDT(timeStep);
 		}
@@ -43,10 +43,10 @@ namespace MixedRealityExtension.Core.Physics
 		void AddAndProcessRemoteBodyForPrediction(RigidBodyPhysicsBridgeInfo rb,
 			RigidBodyTransform transform, UnityEngine.Vector3 keyFramedPos,
 			UnityEngine.Quaternion keyFramedOrientation, float timeOfSnapshot,
-			PreditionTimeInterface timeInfo);
+			PredictionTimeParameters timeInfo);
 
 		/// In the last step within the frame the owned bodies are added to the prediction
 		void PredictAllRemoteBodiesWithOwnedBodies(ref SortedList<Guid, RigidBodyPhysicsBridgeInfo> allRigidBodiesOfThePhysicsBridge,
-			PreditionTimeInterface timeInfo);
+			PredictionTimeParameters timeInfo);
 	}
 }

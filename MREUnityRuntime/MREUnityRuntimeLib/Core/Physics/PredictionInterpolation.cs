@@ -71,7 +71,7 @@ namespace MixedRealityExtension.Core.Physics
 		public void AddAndProcessRemoteBodyForPrediction(RigidBodyPhysicsBridgeInfo rb,
 	        RigidBodyTransform transform, UnityEngine.Vector3 keyFramedPos,
 			UnityEngine.Quaternion keyFramedOrientation, float timeOfSnapshot,
-			PreditionTimeInterface timeInfo)
+			PredictionTimeParameters timeInfo)
 		{
 			var collisionInfo = new CollisionSwitchInfo();
 			collisionInfo.startPosition = rb.RigidBody.transform.position;
@@ -151,7 +151,7 @@ namespace MixedRealityExtension.Core.Physics
 
 		public void PredictAllRemoteBodiesWithOwnedBodies(
 			ref SortedList<Guid, RigidBodyPhysicsBridgeInfo> allRigidBodiesOfThePhysicsBridge,
-			PreditionTimeInterface timeInfo)
+			PredictionTimeParameters timeInfo)
 		{
 			// clear here all the monitoring since we will re add them
 			_monitorCollisionInfo.Clear();
