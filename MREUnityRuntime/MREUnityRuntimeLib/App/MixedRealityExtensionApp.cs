@@ -41,6 +41,7 @@ namespace MixedRealityExtension.App
 		private readonly AssetCache _assetCache;
 
 		private PhysicsBridge _physicsBridge;
+		private bool _shouldSendPhysicsUpdate = false;
 
 		private readonly MonoBehaviour _ownerScript;
 
@@ -300,7 +301,15 @@ namespace MixedRealityExtension.App
 		/// <inheritdoc />
 		public void FixedUpdate()
 		{
+			if (_shouldSendPhysicsUpdate)
+			{
+				SendPhysicsUpdate();
+				_shouldSendPhysicsUpdate = false;
+			}
+
 			_physicsBridge.FixedUpdate(SceneRoot.transform);
+
+			_shouldSendPhysicsUpdate = true;
 		}
 
 		private void SendPhysicsUpdate()
@@ -323,7 +332,13 @@ namespace MixedRealityExtension.App
 			}
 			// Process actor queues after connection update.
 			_actorManager.Update();
-			SendPhysicsUpdate();
+
+			if (_shouldSendPhysicsUpdate)
+			{
+				SendPhysicsUpdate();
+				_shouldSendPhysicsUpdate = false;
+			}
+
 			SoundManager.Update();
 			_commandManager.Update();
 			AnimationManager.Update();

@@ -34,7 +34,8 @@ namespace MixedRealityExtension.Patching.Types
 	{
 		public PhysicsBridgePatch()
 		{
-			bridgeTransforms = new List<TransformPatchInfo>();
+			TransformCount = 0;
+			TransformsBLOB = null;
 		}
 
 		internal PhysicsBridgePatch(Guid sourceId, Snapshot snapshot)
@@ -42,40 +43,33 @@ namespace MixedRealityExtension.Patching.Types
 			Id = sourceId;
 			Time = snapshot.Time;
 
-			bridgeTransforms = new List<TransformPatchInfo>(snapshot.Transforms.Count);
-			foreach (var snapshotTransform in snapshot.Transforms)
+			TransformCount = snapshot.Transforms.Count;
+
+			if (TransformCount > 0)
 			{
-				bridgeTransforms.Add(new TransformPatchInfo(snapshotTransform.Id, snapshotTransform.Transform));
+				// copy transform to native array to reinterpret it to byte array without 'unsafe' code
+				// todo: we should use native array in snapshot anyway.
+				Unity.Collections.NativeArray<Snapshot.TransformInfo> transforms =
+						new Unity.Collections.NativeArray<Snapshot.TransformInfo>(snapshot.Transforms.ToArray(), Unity.Collections.Allocator.Temp);
+
+				int sizeOfTransformInfo = Unity.Collections.LowLevel.Unsafe.UnsafeUtility.SizeOf<Snapshot.TransformInfo>();
+				TransformsBLOB = transforms.Reinterpret<byte>(sizeOfTransformInfo).ToArray();
 			}
 		}
 
 		internal Snapshot ToSnapshot()
 		{
-			List<Snapshot.TransformInfo> transforms = new List<Snapshot.TransformInfo>(bridgeTransforms.Count);
-
-			if (bridgeTransforms != null)
+			if (TransformCount > 0)
 			{
-				foreach (var bridgeTransform in bridgeTransforms)
-				{
-					RigidBodyTransform snapshotTranform;
-					{
-						snapshotTranform.Position = new UnityEngine.Vector3(
-							bridgeTransform.Transform.Position.X.Value,
-							bridgeTransform.Transform.Position.Y.Value,
-							bridgeTransform.Transform.Position.Z.Value);
+					Unity.Collections.NativeArray<byte> blob =
+						new Unity.Collections.NativeArray<byte>(TransformsBLOB, Unity.Collections.Allocator.Temp);
 
-						snapshotTranform.Rotation = new UnityEngine.Quaternion(
-							bridgeTransform.Transform.Rotation.X.Value,
-							bridgeTransform.Transform.Rotation.Y.Value,
-							bridgeTransform.Transform.Rotation.Z.Value,
-							bridgeTransform.Transform.Rotation.W.Value);
-					}
-
-					transforms.Add(new Snapshot.TransformInfo(bridgeTransform.Id, snapshotTranform));
-				}
+					// todo: use native array in snapshot
+					Unity.Collections.NativeArray<Snapshot.TransformInfo> transforms = blob.Reinterpret<Snapshot.TransformInfo>(1);
+					return new Snapshot(Time, new List<Snapshot.TransformInfo>(transforms.ToArray()));
 			}
 
-			return new Snapshot(Time, transforms);
+			return new Snapshot(Time, new List<Snapshot.TransformInfo>());
 		}
 
 		/// <summary>
@@ -85,7 +79,9 @@ namespace MixedRealityExtension.Patching.Types
 
 		public float Time { get; set; }
 
-		public List<TransformPatchInfo> bridgeTransforms { get; set; }
+		public int TransformCount { get; set; }
+
+		public byte[] TransformsBLOB { get; set; }
 
 		public void WriteToPath(TargetPath path, JToken value, int depth)
 		{
