@@ -1,5 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
+using MixedRealityExtension.API;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -119,6 +120,11 @@ namespace MixedRealityExtension.IPC.Connections
 
 			_sendQueue.Add(async () =>
 			{
+				if (MREAPI.AppsAPI.VerboseLogging)
+				{
+					MREAPI.Logger.LogDebug($"Send: {message}");
+				}
+
 				var buffer = new ArraySegment<byte>(Encoding.UTF8.GetBytes(message));
 				try
 				{
@@ -168,10 +174,20 @@ namespace MixedRealityExtension.IPC.Connections
 				{
 					connectFailedReason = ConnectFailedReason.UnsupportedProtocol;
 				}
+
+				if (MREAPI.AppsAPI.VerboseLogging)
+				{
+					MREAPI.Logger.LogDebug($"WebSocketException: {e}");
+				}
 			}
-			catch (Exception)
+			catch (Exception e)
 			{
 				connectFailedReason = ConnectFailedReason.ConnectionFailed;
+
+				if (MREAPI.AppsAPI.VerboseLogging)
+				{
+					MREAPI.Logger.LogDebug($"WebSocketException: {e}");
+				}
 			}
 
 			// If the connect attempt failed, raise the ConnectFailed event.
@@ -230,6 +246,11 @@ namespace MixedRealityExtension.IPC.Connections
 
 						// Connection has successfully established.
 						wasOpen = true;
+
+						if (MREAPI.AppsAPI.VerboseLogging)
+						{
+							MREAPI.Logger.LogDebug($"WebSocketLifeCycle: Connection has successfully established, starting send worker");
+						}
 
 						// Once connected, start the send worker.
 						sendWorkerCancellationSource = new CancellationTokenSource();
