@@ -34,6 +34,12 @@ namespace MixedRealityExtension.Core
 		{
 			actor.Initialize(id, _app);
 			_actorMapping[id] = actor;
+
+			if (MREAPI.AppsAPI.VerboseLogging)
+			{
+				MREAPI.Logger.LogDebug($"Actor Added: {actor.gameObject}");
+			}
+
 			OnActorCreated?.Invoke(actor);
 			return actor;
 		}
