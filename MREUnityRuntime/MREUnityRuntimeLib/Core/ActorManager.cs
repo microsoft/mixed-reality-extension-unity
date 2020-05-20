@@ -25,7 +25,6 @@ namespace MixedRealityExtension.Core
 
 		internal Dictionary<Guid, Actor>.ValueCollection Actors => _actorMapping.Values;
 
-
 		public delegate void RigidBodyAddedHandler(Guid id, UnityEngine.Rigidbody rigidbody, bool isOwned);
 		internal event RigidBodyAddedHandler RigidBodyAdded;
 
@@ -174,15 +173,8 @@ namespace MixedRealityExtension.Core
 			bool removed = false;
 			if (_actorMapping.ContainsKey(id))
 			{
-				//bool hasRigidBody = _actorMapping[id].RigidBody != null;
-
 				_actorMapping.Remove(id);
 				removed = true;
-
-				//if (hasRigidBody)
-				//{
-				//	RigidBodyRemoved?.Invoke(id);
-				//}
 			}
 
 			if (_actorCommandQueues.TryGetValue(id, out ActorCommandQueue queue))

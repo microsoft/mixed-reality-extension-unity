@@ -5,6 +5,7 @@ using MixedRealityExtension.Animation;
 using MixedRealityExtension.API;
 using MixedRealityExtension.App;
 using MixedRealityExtension.Behaviors;
+using MixedRealityExtension.Behaviors.Actions;
 using MixedRealityExtension.Core.Components;
 using MixedRealityExtension.Core.Interfaces;
 using MixedRealityExtension.Core.Types;
@@ -25,7 +26,6 @@ using UnityCollider = UnityEngine.Collider;
 using MixedRealityExtension.PluginInterfaces.Behaviors;
 using MixedRealityExtension.Util;
 using IVideoPlayer = MixedRealityExtension.PluginInterfaces.IVideoPlayer;
-using MixedRealityExtension.Behaviors.Actions;
 
 namespace MixedRealityExtension.Core
 {
@@ -816,7 +816,7 @@ namespace MixedRealityExtension.Core
 			return Light;
 		}
 
-		void test(object sender, ActionStateChangedArgs args)
+		void onGrabbed(object sender, ActionStateChangedArgs args)
 		{
 			if (args.NewState != ActionState.Performing)
 			{
@@ -842,7 +842,7 @@ namespace MixedRealityExtension.Core
 				{
 					if (targetBehavior.Grabbable)
 					{
-						targetBehavior.Grab.ActionStateChanged += test;
+						targetBehavior.Grab.ActionStateChanged += onGrabbed;
 					}
 				}
 			}
@@ -1408,9 +1408,8 @@ namespace MixedRealityExtension.Core
 					behaviorComponent.SetBehaviorHandler(handler);
 				}
 
-				((ITargetBehavior)behaviorComponent.Behavior).Grab.ActionStateChanged += test;
-
 				((ITargetBehavior)behaviorComponent.Behavior).Grabbable = grabbable.Value;
+				((ITargetBehavior)behaviorComponent.Behavior).Grab.ActionStateChanged += onGrabbed;
 
 				Grabbable = grabbable.Value;
 			}
