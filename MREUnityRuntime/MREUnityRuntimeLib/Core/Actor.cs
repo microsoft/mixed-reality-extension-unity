@@ -818,7 +818,7 @@ namespace MixedRealityExtension.Core
 
 			if (colliderType == ColliderType.Auto)
 			{
-				colliderGeometry = MREAPI.AppsAPI.AssetCache.GetColliderGeometry(MeshId);
+				colliderGeometry = App.AssetCache.GetColliderGeometry(MeshId);
 				colliderType = colliderGeometry.Shape;
 			}
 
@@ -828,7 +828,7 @@ namespace MixedRealityExtension.Core
 				{
 					// We have a collider already of the same type as the desired new geometry.
 					// Update its values instead of removing and adding a new one.
-					colliderGeometry.Patch(_collider);
+					colliderGeometry.Patch(App, _collider);
 					return;
 				}
 				else
@@ -844,22 +844,22 @@ namespace MixedRealityExtension.Core
 			{
 				case ColliderType.Box:
 					var boxCollider = gameObject.AddComponent<BoxCollider>();
-					colliderGeometry.Patch(boxCollider);
+					colliderGeometry.Patch(App, boxCollider);
 					unityCollider = boxCollider;
 					break;
 				case ColliderType.Sphere:
 					var sphereCollider = gameObject.AddComponent<SphereCollider>();
-					colliderGeometry.Patch(sphereCollider);
+					colliderGeometry.Patch(App, sphereCollider);
 					unityCollider = sphereCollider;
 					break;
 				case ColliderType.Capsule:
 					var capsuleCollider = gameObject.AddComponent<CapsuleCollider>();
-					colliderGeometry.Patch(capsuleCollider);
+					colliderGeometry.Patch(App, capsuleCollider);
 					unityCollider = capsuleCollider;
 					break;
 				case ColliderType.Mesh:
 					var meshCollider = gameObject.AddComponent<MeshCollider>();
-					colliderGeometry.Patch(meshCollider);
+					colliderGeometry.Patch(App, meshCollider);
 					unityCollider = meshCollider;
 					break;
 				default:
@@ -974,7 +974,7 @@ namespace MixedRealityExtension.Core
 
 					// look up and assign mesh
 					var updatedMeshId = MeshId;
-					MREAPI.AppsAPI.AssetCache.OnCached(MeshId, sharedMesh =>
+					App.AssetCache.OnCached(MeshId, sharedMesh =>
 					{
 						if (!this || MeshId != updatedMeshId) return;
 						UnityMesh = (Mesh)sharedMesh;
@@ -991,7 +991,7 @@ namespace MixedRealityExtension.Core
 					if (MaterialId != Guid.Empty)
 					{
 						var updatedMaterialId = MaterialId;
-						MREAPI.AppsAPI.AssetCache.OnCached(MaterialId, sharedMat =>
+						App.AssetCache.OnCached(MaterialId, sharedMat =>
 						{
 							if (!this || !Renderer || MaterialId != updatedMaterialId) return;
 							Renderer.sharedMaterial = (Material)sharedMat ?? MREAPI.AppsAPI.DefaultMaterial;
@@ -1266,11 +1266,11 @@ namespace MixedRealityExtension.Core
 					var runningGeneration = ++colliderGeneration;
 
 					// must wait for mesh load before auto type will work
-					if (colliderPatch.Geometry.Shape == ColliderType.Auto && MREAPI.AppsAPI.AssetCache.GetColliderGeometry(MeshId) == null)
+					if (colliderPatch.Geometry.Shape == ColliderType.Auto && App.AssetCache.GetColliderGeometry(MeshId) == null)
 					{
 						var runningMeshId = MeshId;
 						_pendingColliderPatch = colliderPatch;
-						MREAPI.AppsAPI.AssetCache.OnCached(MeshId, _ =>
+						App.AssetCache.OnCached(MeshId, _ =>
 						{
 							if (runningMeshId != MeshId || runningGeneration != colliderGeneration) return;
 							SetCollider(_pendingColliderPatch);
@@ -1590,7 +1590,7 @@ namespace MixedRealityExtension.Core
 						MediaInstance mediaInstance = new MediaInstance(payload.MediaAssetId);
 						_mediaInstances.Add(payload.Id, mediaInstance);
 
-						MREAPI.AppsAPI.AssetCache.OnCached(payload.MediaAssetId, asset =>
+						App.AssetCache.OnCached(payload.MediaAssetId, asset =>
 						{
 							if (asset is AudioClip audioClip)
 							{
@@ -1625,7 +1625,7 @@ namespace MixedRealityExtension.Core
 					{
 						if (_mediaInstances.TryGetValue(payload.Id, out MediaInstance mediaInstance))
 						{
-							MREAPI.AppsAPI.AssetCache.OnCached(mediaInstance.MediaAssetId, asset =>
+							App.AssetCache.OnCached(mediaInstance.MediaAssetId, asset =>
 							{
 								_mediaInstances.Remove(payload.Id);
 								DestroyMediaById(payload.Id, mediaInstance);
@@ -1637,7 +1637,7 @@ namespace MixedRealityExtension.Core
 					{
 						if (_mediaInstances.TryGetValue(payload.Id, out MediaInstance mediaInstance))
 						{
-							MREAPI.AppsAPI.AssetCache.OnCached(mediaInstance.MediaAssetId, asset =>
+							App.AssetCache.OnCached(mediaInstance.MediaAssetId, asset =>
 							{
 								if (mediaInstance.Instance != null)
 								{
