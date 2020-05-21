@@ -80,7 +80,7 @@ namespace MixedRealityExtension.Core.Physics
 			collisionInfo.startOrientation = rb.RigidBody.transform.rotation;
 			collisionInfo.rigidBodyId = rb.Id;
 			collisionInfo.isKeyframed = rb.IsKeyframed;
-
+			
 			// test is this remote body is in the monitor stream or if this is grabbed & key framed then this should not be dynamic
 			if (_monitorCollisionInfo.ContainsKey(rb.Id) && !rb.IsKeyframed)
 			{
