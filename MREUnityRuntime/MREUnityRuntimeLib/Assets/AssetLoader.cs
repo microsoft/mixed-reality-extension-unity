@@ -29,7 +29,7 @@ namespace MixedRealityExtension.Assets
 {
 	using LoaderFunction = Func<AssetSource, Guid, ColliderType, Task<IList<Asset>>>;
 
-	internal class AssetLoader : ICommandHandlerContext
+	internal class AssetLoader : CommandHandlerContext<AssetLoader>
 	{
 		private readonly MonoBehaviour _owner;
 		private readonly MixedRealityExtensionApp _app;
