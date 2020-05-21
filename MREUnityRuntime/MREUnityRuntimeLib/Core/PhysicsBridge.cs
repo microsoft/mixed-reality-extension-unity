@@ -4,6 +4,7 @@
 using MixedRealityExtension.Core.Physics;
 using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace MixedRealityExtension.Core
 {
@@ -118,7 +119,8 @@ namespace MixedRealityExtension.Core
 			if (_rigidBodies.ContainsKey(id))
 			{
 				var rb = _rigidBodies[id];
-				if (rb.Ownership)
+				Debug.Log(" set key framed: " + rb.Id);
+				//if (rb.Ownership)
 				{
 					rb.IsKeyframed = isKeyFramed;
 				}
@@ -200,11 +202,31 @@ namespace MixedRealityExtension.Core
 						// <todo> for long running times this could be a problem 
 						float invUpdateDT = 1.0f / (timeOfSnapshot - rb.lastTimeKeyFramedUpdate);
 						rb.lastValidLinerVelocity = (keyFramedPos - rb.RigidBody.transform.position) * invUpdateDT;
+						// todo limit the angular changes to maximal 
 						rb.lastValidAngularVelocity = (
 							UnityEngine.Quaternion.Inverse(rb.RigidBody.transform.rotation)
 						 * keyFramedOrientation).eulerAngles * invUpdateDT;
+#if MRE_PHYSICS_DEBUG
+						Debug.Log(" Remote body: " + rb.Id.ToString() + " got update lin vel:"
+							+ rb.lastValidLinerVelocity + " ang vel:" + rb.lastValidAngularVelocity
+							+ " time:" + timeOfSnapshot + " newp:" + keyFramedPos
+							+ " newR:" + keyFramedOrientation
+							+ " incUpdateDt:" + invUpdateDT
+							+ " oldP:" + rb.RigidBody.transform.position
+							+ " oldR:" + rb.RigidBody.transform.rotation
+							+ " OriginalRot:" + transform.Rotation
+							+ " keyF:" + rb.RigidBody.isKinematic
+							+ " KF:" + rb.IsKeyframed);
+#endif
 					}
 					rb.lastTimeKeyFramedUpdate = timeOfSnapshot;
+
+					// code to disable prediction and to use just key framing 
+					//rb.RigidBody.isKinematic = true;
+					//rb.RigidBody.transform.position = keyFramedPos;
+					//rb.RigidBody.transform.rotation = keyFramedOrientation;
+					//rb.RigidBody.velocity.Set(0.0f, 0.0f, 0.0f);
+					//rb.RigidBody.angularVelocity.Set(0.0f, 0.0f, 0.0f);
 
 					// call the predictor with this remotely owned body
 					_predictor.AddAndProcessRemoteBodyForPrediction(rb, transform,
@@ -242,7 +264,10 @@ namespace MixedRealityExtension.Core
 					transform.Position = rootTransform.InverseTransformPoint(rb.RigidBody.transform.position);
 					transform.Rotation = UnityEngine.Quaternion.Inverse(rootTransform.rotation) * rb.RigidBody.transform.rotation;
 				}
-
+#if MRE_PHYSICS_DEBUG
+				Debug.Log(" SEND Remote body: " + rb.Id.ToString() + " OriginalRot:" + transform.Rotation
+					+ " RigidBodyRot:" + rb.RigidBody.transform.rotation);
+#endif
 				transforms.Add(new Snapshot.TransformInfo(rb.Id, transform));
 			}
 

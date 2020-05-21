@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using UnityEngine;
 
 namespace MixedRealityExtension.Core.Physics
 {
@@ -25,6 +26,7 @@ namespace MixedRealityExtension.Core.Physics
 		public UnityEngine.Vector3 angularVelocity;
 		public Guid rigidBodyId;
 		public CollisionMonitorInfo monitorInfo;
+		public bool isKeyframed;
 	}
 
 	/// This class implements one strategy for the prediction where in the neighborhood of the
@@ -69,7 +71,7 @@ namespace MixedRealityExtension.Core.Physics
 
 
 		public void AddAndProcessRemoteBodyForPrediction(RigidBodyPhysicsBridgeInfo rb,
-	        RigidBodyTransform transform, UnityEngine.Vector3 keyFramedPos,
+			RigidBodyTransform transform, UnityEngine.Vector3 keyFramedPos,
 			UnityEngine.Quaternion keyFramedOrientation, float timeOfSnapshot,
 			PredictionTimeParameters timeInfo)
 		{
@@ -77,9 +79,10 @@ namespace MixedRealityExtension.Core.Physics
 			collisionInfo.startPosition = rb.RigidBody.transform.position;
 			collisionInfo.startOrientation = rb.RigidBody.transform.rotation;
 			collisionInfo.rigidBodyId = rb.Id;
+			collisionInfo.isKeyframed = rb.IsKeyframed;
 
-			// test is this remote body is in the monitor stream
-			if (_monitorCollisionInfo.ContainsKey(rb.Id))
+			// test is this remote body is in the monitor stream or if this is grabbed & keyframed then this should not be dynamic
+			if (_monitorCollisionInfo.ContainsKey(rb.Id) && !rb.IsKeyframed)
 			{
 				// dynamic
 				rb.RigidBody.isKinematic = false;
@@ -137,11 +140,14 @@ namespace MixedRealityExtension.Core.Physics
 				collisionInfo.linearVelocity = rb.lastValidLinerVelocity;
 				collisionInfo.angularVelocity = rb.lastValidAngularVelocity;
 				collisionInfo.monitorInfo = new CollisionMonitorInfo();
-#if MRE_PHYSICS_DEBUG
+//#if MRE_PHYSICS_DEBUG
+				if (rb.IsKeyframed)
+				{
 						Debug.Log(" Remote body: " + rb.Id.ToString() + " is key framed:"
 							+ " linvel:" + collisionInfo.linearVelocity
 							+ " angvel:" + collisionInfo.angularVelocity);
-#endif
+				}
+//#endif
 			}
 			// <todo> add more filtering here to cancel out unnecessary items,
 			// but for small number of bodies should be OK
@@ -168,6 +174,13 @@ namespace MixedRealityExtension.Core.Physics
 					foreach (var remoteBodyInfo in _switchCollisionInfos)
 					{
 						var remoteBody = allRigidBodiesOfThePhysicsBridge[remoteBodyInfo.rigidBodyId].RigidBody;
+
+						// if this is key framed then also on the remote side it will stay key framed
+						if (remoteBodyInfo.isKeyframed)
+						{
+							continue;
+						}
+
 						var comDist = (remoteBody.transform.position - rb.RigidBody.transform.position).magnitude;
 
 						var remoteHitPoint = remoteBody.ClosestPointOnBounds(rb.RigidBody.transform.position);
@@ -193,23 +206,29 @@ namespace MixedRealityExtension.Core.Physics
 						bool isWithinCollisionRange = (projectedComDist < totalDistance || comDist < totalDistance);
 						float timeSinceCollisionStart = collisionMonitorInfo.timeFromStartCollision;
 						bool isAlreadyInMonitor = _monitorCollisionInfo.ContainsKey(remoteBodyInfo.rigidBodyId);
-#if MRE_PHYSICS_DEBUG
-						Debug.Log("prprojectedComDistoj: " + projectedComDist + " comDist:" + comDist
-							+ " totalDistance:" + totalDistance + " remote body pos:" + remoteBodyInfo.startPosition.ToString()
-							+ "input lin vel:" + remoteBodyInfo.linearVelocity + " radiousRemote:" + radiousRemote +
-							" radiusOwnedBody:" + radiusOwnedBody + " relative dist:" + collisionMonitorInfo.relativeDistance
-							+ " timeSinceCollisionStart:" + timeSinceCollisionStart + " isAlreadyInMonitor:" + isAlreadyInMonitor);
-#endif
+						//#if MRE_PHYSICS_DEBUG
+						if (remoteBodyInfo.isKeyframed)
+						{
+							Debug.Log("prprojectedComDistoj: " + projectedComDist + " comDist:" + comDist
+								+ " totalDistance:" + totalDistance + " remote body pos:" + remoteBodyInfo.startPosition.ToString()
+								+ "input lin vel:" + remoteBodyInfo.linearVelocity + " radiousRemote:" + radiousRemote +
+								" radiusOwnedBody:" + radiusOwnedBody + " relative dist:" + collisionMonitorInfo.relativeDistance
+								+ " timeSinceCollisionStart:" + timeSinceCollisionStart + " isAlreadyInMonitor:" + isAlreadyInMonitor);
+						}
+						//#endif
 
 						// unconditionally add to the monitor stream if this is a reasonable collision and we are only at the beginning
 						if (collisionMonitorInfo.timeFromStartCollision > timeInfo.halfDT &&
 							timeSinceCollisionStart <= startInterpolatingBack &&
 							collisionMonitorInfo.relativeDistance < inCollisionRangeRelativeDistanceFactor)
 						{
-#if MRE_PHYSICS_DEBUG
-							Debug.Log(" unconditionally add to collision stream time:" + timeSinceCollisionStart +
-								" relative dist:" + collisionMonitorInfo.relativeDistance);
-#endif
+							//#if MRE_PHYSICS_DEBUG
+							if (remoteBodyInfo.isKeyframed)
+							{
+								Debug.Log(" unconditionally add to collision stream time:" + timeSinceCollisionStart +
+									" relative dist:" + collisionMonitorInfo.relativeDistance);
+							}
+							//#endif
 							addToMonitor = true;
 						}
 
@@ -281,11 +300,14 @@ namespace MixedRealityExtension.Core.Physics
 							else
 							{
 								_monitorCollisionInfo.Add(remoteBodyInfo.rigidBodyId, collisionMonitorInfo);
-#if MRE_PHYSICS_DEBUG
-								var existingMonitorInfo = _monitorCollisionInfo[remoteBodyInfo.rigidBodyId];
-								Debug.Log(" Add collision info: " + remoteBodyInfo.rigidBodyId.ToString() +
-									" r:" + existingMonitorInfo.keyframedInterpolationRatio + " d:" + existingMonitorInfo.relativeDistance);
-#endif
+								//#if MRE_PHYSICS_DEBUG
+								if (remoteBodyInfo.isKeyframed)
+								{
+									var existingMonitorInfo = _monitorCollisionInfo[remoteBodyInfo.rigidBodyId];
+									Debug.Log(" Add collision info: " + remoteBodyInfo.rigidBodyId.ToString() +
+										" r:" + existingMonitorInfo.keyframedInterpolationRatio + " d:" + existingMonitorInfo.relativeDistance);
+								}
+								//#endif
 							}
 
 							// this is a new collision
@@ -297,17 +319,20 @@ namespace MixedRealityExtension.Core.Physics
 								remoteBody.transform.rotation = remoteBodyInfo.startOrientation;
 								remoteBody.velocity = remoteBodyInfo.linearVelocity;
 								remoteBody.angularVelocity = remoteBodyInfo.angularVelocity;
-#if MRE_PHYSICS_DEBUG
-								Debug.Log(" remote body velocity SWITCH to collision: " + remoteBody.velocity.ToString()
-	                               + "  start position:" + remoteBody.transform.position.ToString()
-								   + " linVel:" + remoteBody.velocity + " angVel:" + remoteBody.angularVelocity);
-#endif
+								//#if MRE_PHYSICS_DEBUG
+								if (remoteBodyInfo.isKeyframed)
+								{
+									Debug.Log(" remote body velocity SWITCH to collision: " + remoteBody.velocity.ToString()
+									   + "  start position:" + remoteBody.transform.position.ToString()
+									   + " linVel:" + remoteBody.velocity + " angVel:" + remoteBody.angularVelocity);
+								}
+								//#endif
 							}
 							else
 							{
 #if MRE_PHYSICS_DEBUG
 								// this is a previous collision so do nothing just leave dynamic
-								Debug.Log(" remote body velocity stay collision: " + remoteBody.velocity.ToString() +
+								Debug.Log(" remote body velocity stay in collision: " + remoteBody.velocity.ToString() +
 									"  start position:" + remoteBody.transform.position.ToString() +
 									" relative dist:" + collisionMonitorInfo.relativeDistance +
 									" Ratio:" + collisionMonitorInfo.keyframedInterpolationRatio );
