@@ -69,7 +69,9 @@ namespace MixedRealityExtension.PluginInterfaces
 		/// </summary>
 		void ForceCleanCache();
 
-		void CacheGLTFImporter(Guid id, GLTFSceneImporter importer, GLTF.Schema.GLTFRoot root);
-		void TryGetGLTFImporter(Guid id, out GLTFSceneImporter importer, out GLTF.Schema.GLTFRoot root);
+		/// Remove assets from the cache and unload them from memory
+		/// </summary>
+		/// <param name="containerId">The asset container ID to be unloaded</param>
+		void UncacheAssetsAndDestroy(Guid containerId);
 	}
 }

@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 using MixedRealityExtension.Behaviors;
+using MixedRealityExtension.Behaviors.ActionData;
 using MixedRealityExtension.Behaviors.Actions;
 using MixedRealityExtension.Core.Collision;
 using MixedRealityExtension.Patching.Types;
@@ -271,6 +272,11 @@ namespace MixedRealityExtension.Messaging.Payloads
 		/// The state of the action being performed.
 		/// </summary>
 		public ActionState ActionState;
+
+		/// <summary>
+		/// The optional action data to be passed along with the action event.
+		/// </summary>
+		public BaseActionData ActionData;
 	}
 
 	/// <summary>

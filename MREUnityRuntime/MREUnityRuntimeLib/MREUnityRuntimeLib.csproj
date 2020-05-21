@@ -96,7 +96,13 @@
     <Compile Include="Animation\MWSetAnimationStateOptions.cs" />
     <Compile Include="Animation\NativeAnimation.cs" />
     <Compile Include="Animation\TargetPath.cs" />
+    <Compile Include="Assets\AssetLoadThrottling.cs" />
     <Compile Include="Assets\PrefabAnimationTargets.cs" />
+    <Compile Include="Behaviors\ActionData\BaseActionData.cs" />
+    <Compile Include="Behaviors\ActionData\BaseToolData.cs" />
+    <Compile Include="Behaviors\ActionData\PenData.cs" />
+    <Compile Include="Behaviors\Handlers\PenHandler.cs" />
+    <Compile Include="Behaviors\Handlers\ToolHandler.cs" />
     <Compile Include="Core\CollisionLayers.cs" />
     <Compile Include="Assets\AssetCache.cs" />
     <Compile Include="Assets\AssetGroup.cs" />
@@ -128,6 +134,8 @@
     <Compile Include="Patching\Types\AppearancePatch.cs" />
     <Compile Include="Patching\Types\LookAtPatch.cs" />
     <Compile Include="Patching\Types\ActorTransformPatch.cs" />
+    <Compile Include="PluginInterfaces\Behaviors\IToolBehavior.cs" />
+    <Compile Include="PluginInterfaces\Behaviors\IPenBehavior.cs" />
     <Compile Include="PluginInterfaces\IDialogFactory.cs" />
     <Compile Include="PluginInterfaces\ILayerApplicator.cs" />
     <Compile Include="PluginInterfaces\IAudioController.cs" />
@@ -290,7 +298,7 @@
     <Compile Include="Util\Unity\MWGOTreeWalker.cs" />
     <Compile Include="Util\Unity\MWUnityHelpers.cs" />
     <Compile Include="Util\Unity\MWUnityTypeExtensions.cs" />
-    <Compile Include="Util\Unity\AssetFetcher.cs" />
+    <Compile Include="Assets\AssetFetcher.cs" />
     <Compile Include="Util\UtilMethods.cs" />
   </ItemGroup>
   <ItemGroup />

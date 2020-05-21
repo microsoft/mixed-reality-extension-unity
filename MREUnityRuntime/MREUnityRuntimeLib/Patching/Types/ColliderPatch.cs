@@ -17,6 +17,15 @@ namespace MixedRealityExtension.Patching.Types
 		public bool? IsTrigger { get; set; }
 
 		[PatchProperty]
+		public float? Bounciness { get; set; }
+
+		[PatchProperty]
+		public float? StaticFriction { get; set; }
+
+		[PatchProperty]
+		public float? DynamicFriction { get; set; }
+
+		[PatchProperty]
 		public CollisionLayer? Layer { get; set; }
 
 		[PatchProperty]

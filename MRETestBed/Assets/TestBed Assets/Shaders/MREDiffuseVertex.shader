@@ -117,7 +117,6 @@ Shader "MRE/DiffuseVertex" {
 			fixed4 frag(v2f i) : COLOR
 			{
 				UNITY_SETUP_INSTANCE_ID(i);
-				UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
 				float4 color =
 					fixed4(_EmissiveColor.rgb, 0.0) * tex2D(_EmissiveTex, TRANSFORM_TEX(i.uv, _EmissiveTex)) +
 					i.diffuse * tex2D(_MainTex, TRANSFORM_TEX(i.uv, _MainTex));
