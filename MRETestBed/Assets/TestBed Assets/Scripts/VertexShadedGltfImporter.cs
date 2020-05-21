@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 using GLTF.Schema;
 using UnityGLTF;
@@ -24,52 +24,29 @@ public class VertexShadedGltfImporter : GLTFSceneImporter
 		: base(gltfFileName, options)
 	{
 		_templateMaterial = templateMaterial;
+		IsMultithreaded = true;
 	}
 
 	public VertexShadedGltfImporter(Material templateMaterial, GLTFRoot root, Stream stream, ImportOptions options)
 		: base (root, stream, options)
 	{
 		_templateMaterial = templateMaterial;
-	}
-
-	protected override async Task ConstructScene(GLTFScene scene, bool showSceneObj, CancellationToken cancellationToken)
-	{
-		// calc total vert/poly count
-		/* int vertCount = 0, polyCount = 0;
-		foreach (var mesh in _gltfRoot.Meshes)
-		{
-			foreach (var prim in mesh.Primitives)
-			{
-				var localVertCount = (int) prim.Attributes[SemanticProperties.POSITION].Value.Count;
-				vertCount += localVertCount;
-				polyCount += ((int?)prim.Indices?.Value.Count ?? localVertCount) / 3;
-			}
-		}
-
-		if (vertCount > VERTEX_LIMIT)
-		{
-			throw new Exception($"Requested glTF {_gltfFileName} has too many vertices ({vertCount:N} > {VERTEX_LIMIT:N})");
-		}
-
-		if (polyCount > POLYGON_LIMIT)
-		{
-			throw new Exception($"Requested glTF {_gltfFileName} has too many polygons ({polyCount:N} > {POLYGON_LIMIT:N})");
-		} */
-
-		await base.ConstructScene(scene, showSceneObj, cancellationToken);
-
-		foreach(var skin in CreatedObject.GetComponentsInChildren<SkinnedMeshRenderer>(true))
-		{
-			skin.quality = SkinQuality.Bone2;
-		}
+		IsMultithreaded = true;
 	}
 
 	protected override async Task ConstructMaterialImageBuffers(GLTFMaterial def)
 	{
-		if (def.PbrMetallicRoughness?.BaseColorTexture == null) return;
+		if (def.EmissiveTexture != null)
+		{
+			var textureId = def.EmissiveTexture.Index;
+			await ConstructImageBuffer(textureId.Value, textureId.Id);
+		}
 
-		var textureId = def.PbrMetallicRoughness?.BaseColorTexture.Index;
-		await ConstructImageBuffer(textureId.Value, textureId.Id);
+		if (def.PbrMetallicRoughness?.BaseColorTexture != null)
+		{
+			var textureId = def.PbrMetallicRoughness.BaseColorTexture.Index;
+			await ConstructImageBuffer(textureId.Value, textureId.Id);
+		}
 	}
 
 	protected override async Task ConstructMaterial(GLTFMaterial def, int materialIndex)
@@ -118,6 +95,21 @@ public class VertexShadedGltfImporter : GLTFSceneImporter
 						material.mainTextureScale = new Vector2(ext.Scale.X, ext.Scale.Y);
 					}
 				}
+			}
+		}
+
+		material.SetColor("_EmissiveColor", def.EmissiveFactor.ToUnityColorRaw());
+		if (def.EmissiveTexture != null)
+		{
+			TextureId textureId = def.EmissiveTexture.Index;
+			await ConstructTexture(textureId.Value, textureId.Id, false, false);
+			material.SetTexture("_EmissiveTex", _assetCache.TextureCache[textureId.Id].Texture);
+
+			var ext = GetTextureTransform(def.EmissiveTexture);
+			if (ext != null)
+			{
+				material.SetTextureOffset("_EmissiveTex", new Vector2(ext.Offset.X, 1 - ext.Scale.Y - ext.Offset.Y));
+				material.SetTextureScale("_EmissiveTex", new Vector2(ext.Scale.X, ext.Scale.Y));
 			}
 		}
 

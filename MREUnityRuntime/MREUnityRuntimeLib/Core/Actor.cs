@@ -66,9 +66,31 @@ namespace MixedRealityExtension.Core
 		private ActorTransformPatch _rbTransformPatch;
 
 		private new Renderer renderer = null;
-		internal Renderer Renderer => renderer = renderer ?? GetComponent<Renderer>();
-		private MeshFilter filter = null;
-		internal MeshFilter MeshFilter => filter = filter ?? GetComponent<MeshFilter>();
+		internal Renderer Renderer
+		{
+			get
+			{
+				if (renderer == null)
+				{
+					var t = GetComponent<Renderer>();
+					renderer = t;
+				}
+				return renderer;
+			}
+		}
+		private MeshFilter meshFilter = null;
+		internal MeshFilter MeshFilter
+		{
+			get
+			{
+				if (meshFilter == null)
+				{
+					var t = GetComponent<MeshFilter>();
+					meshFilter = t;
+				}
+				return meshFilter;
+			}
+		}
 
 		#region IActor Properties - Public
 
@@ -196,9 +218,15 @@ namespace MixedRealityExtension.Core
 		}
 
 		internal UInt32 appearanceEnabled = UInt32.MaxValue;
-		internal bool activeAndEnabled =>
-			((Parent as Actor)?.activeAndEnabled ?? true)
-			&& ((App.LocalUser?.Groups ?? 1) & appearanceEnabled) > 0;
+		internal bool activeAndEnabled
+		{
+			get
+			{
+				bool parentEnabled = (Parent != null) ? (Parent as Actor).activeAndEnabled : true;
+				uint userGroups = (App.LocalUser?.Groups ?? 1);
+				return parentEnabled && (userGroups & appearanceEnabled) > 0;
+			}
+		}
 
 		#endregion
 
@@ -238,7 +266,7 @@ namespace MixedRealityExtension.Core
 
 				// We need to detect for changes in parent on the client, and handle updating the server.
 				// But only update if the identified parent is not pending.
-				var parentId = Parent?.Id ?? Guid.Empty;
+				var parentId = (Parent != null) ? Parent.Id : Guid.Empty;
 				if (ParentId != parentId && App.FindActor(ParentId) != null)
 				{
 					// TODO @tombu - Determine if the new parent is an actor in OUR MRE.
@@ -339,58 +367,128 @@ namespace MixedRealityExtension.Core
 			Destroy(gameObject);
 		}
 
-		internal ActorPatch GenerateInitialPatch()
+		internal ActorPatch GeneratePatch(ActorPatch output = null, TargetPath path = null)
 		{
-			LocalTransform.ToLocalTransform(transform);
-			AppTransform.ToAppTransform(transform, App.SceneRoot.transform);
-
-			var localTransform = new ScaledTransformPatch()
+			if (output == null)
 			{
-				Position = new Vector3Patch(transform.localPosition),
-				Rotation = new QuaternionPatch(transform.localRotation),
-				Scale = new Vector3Patch(transform.localScale)
-			};
-
-			var appTransform = new TransformPatch()
-			{
-				Position = new Vector3Patch(App.SceneRoot.transform.InverseTransformPoint(transform.position)),
-				Rotation = new QuaternionPatch(Quaternion.Inverse(App.SceneRoot.transform.rotation) * transform.rotation)
-			};
-
-			var rigidBody = PatchingUtilMethods.GeneratePatch(RigidBody, (Rigidbody)null, App.SceneRoot.transform);
-
-			ColliderPatch collider = null;
-			_collider = gameObject.GetComponent<UnityCollider>();
-			if (_collider != null)
-			{
-				if (Collider == null)
-				{
-					Collider = gameObject.AddComponent<Collider>();
-				}
-				Collider.Initialize(_collider);
-				collider = Collider.GenerateInitialPatch();
+				output = new ActorPatch(Id);
 			}
 
-			var actorPatch = new ActorPatch(Id)
+			var generateAll = path == null;
+			if (!generateAll)
 			{
-				ParentId = ParentId,
-				Name = Name,
-				Transform = new ActorTransformPatch()
+				if (path.AnimatibleType != "actor") return output;
+				output.Restore(path, 0);
+			}
+			else
+			{
+				output.RestoreAll();
+			}
+
+			if (generateAll || path.PathParts[0] == "transform")
+			{
+				if (generateAll || path.PathParts[1] == "local")
 				{
-					Local = localTransform,
-					App = appTransform
-				},
-				RigidBody = rigidBody,
-				Collider = collider,
-				Appearance = new AppearancePatch()
+					LocalTransform.ToLocalTransform(transform);
+					if (generateAll || path.PathParts[2] == "position")
+					{
+						var localPos = transform.localPosition;
+						if (generateAll || path.PathParts.Length == 3 || path.PathParts[3] == "x")
+						{
+							output.Transform.Local.Position.X = localPos.x;
+						}
+						if (generateAll || path.PathParts.Length == 3 || path.PathParts[3] == "y")
+						{
+							output.Transform.Local.Position.Y = localPos.y;
+						}
+						if (generateAll || path.PathParts.Length == 3 || path.PathParts[3] == "z")
+						{
+							output.Transform.Local.Position.Z = localPos.z;
+						}
+					}
+					if (generateAll || path.PathParts[2] == "rotation")
+					{
+						var localRot = transform.localRotation;
+						output.Transform.Local.Rotation.X = localRot.x;
+						output.Transform.Local.Rotation.Y = localRot.y;
+						output.Transform.Local.Rotation.Z = localRot.z;
+						output.Transform.Local.Rotation.W = localRot.w;
+					}
+					if (generateAll || path.PathParts[2] == "scale")
+					{
+						var localScale = transform.localScale;
+						if (generateAll || path.PathParts.Length == 3 || path.PathParts[3] == "x")
+						{
+							output.Transform.Local.Scale.X = localScale.x;
+						}
+						if (generateAll || path.PathParts.Length == 3 || path.PathParts[3] == "y")
+						{
+							output.Transform.Local.Scale.Y = localScale.y;
+						}
+						if (generateAll || path.PathParts.Length == 3 || path.PathParts[3] == "z")
+						{
+							output.Transform.Local.Scale.Z = localScale.z;
+						}
+					}
+				}
+				if (generateAll || path.PathParts[1] == "app")
+				{
+					AppTransform.ToAppTransform(transform, App.SceneRoot.transform);
+					if (generateAll || path.PathParts[2] == "position")
+					{
+						if (generateAll || path.PathParts.Length == 3 || path.PathParts[3] == "x")
+						{
+							output.Transform.App.Position.X = AppTransform.Position.X;
+						}
+						if (generateAll || path.PathParts.Length == 3 || path.PathParts[3] == "y")
+						{
+							output.Transform.App.Position.Y = AppTransform.Position.Y;
+						}
+						if (generateAll || path.PathParts.Length == 3 || path.PathParts[3] == "z")
+						{
+							output.Transform.App.Position.Z = AppTransform.Position.Z;
+						}
+					}
+					if (generateAll || path.PathParts[2] == "rotation")
+					{
+						var localRot = transform.localRotation;
+						output.Transform.App.Rotation.X = AppTransform.Rotation.X;
+						output.Transform.App.Rotation.Y = AppTransform.Rotation.Y;
+						output.Transform.App.Rotation.Z = AppTransform.Rotation.Z;
+						output.Transform.App.Rotation.W = AppTransform.Rotation.W;
+					}
+				}
+			}
+
+			if (generateAll)
+			{
+				var rigidBody = PatchingUtilMethods.GeneratePatch(RigidBody, (Rigidbody)null, App.SceneRoot.transform);
+
+				ColliderPatch collider = null;
+				_collider = gameObject.GetComponent<UnityCollider>();
+				if (_collider != null)
+				{
+					if (Collider == null)
+					{
+						Collider = gameObject.AddComponent<Collider>();
+					}
+					Collider.Initialize(_collider);
+					collider = Collider.GenerateInitialPatch();
+				}
+
+				output.ParentId = ParentId;
+				output.Name = Name;
+				output.RigidBody = rigidBody;
+				output.Collider = collider;
+				output.Appearance = new AppearancePatch()
 				{
 					Enabled = appearanceEnabled,
 					MaterialId = MaterialId,
 					MeshId = MeshId
-				}
-			};
+				};
+			}
 
-			return (!actorPatch.IsPatched()) ? null : actorPatch;
+			return output;
 		}
 
 		internal OperationResult EnableRigidBody(RigidBodyPatch rigidBodyPatch)
@@ -531,11 +629,17 @@ namespace MixedRealityExtension.Core
 				{
 					_nextUpdateTime = Time.time + 0.2f + UnityEngine.Random.Range(-0.1f, 0.1f);
 					SynchronizeApp();
+
+					// Give components the opportunity to synchronize the app.
+					foreach (var component in _components.Values)
+					{
+						component.SynchronizeComponent();
+					}
 				}
 			}
 			catch (Exception e)
 			{
-				App.Logger.LogError($"Failed to synchronize app.  Exception: {e.Message}\nStackTrace: {e.StackTrace}");
+				App?.Logger.LogError($"Failed to synchronize app.  Exception: {e.Message}\nStackTrace: {e.StackTrace}");
 			}
 
 			_transformLerper?.Update();
@@ -712,7 +816,7 @@ namespace MixedRealityExtension.Core
 
 			if (colliderType == ColliderType.Auto)
 			{
-				colliderGeometry = MREAPI.AppsAPI.AssetCache.GetColliderGeometry(MeshId);
+				colliderGeometry = App.AssetCache.GetColliderGeometry(MeshId);
 				colliderType = colliderGeometry.Shape;
 			}
 
@@ -722,7 +826,7 @@ namespace MixedRealityExtension.Core
 				{
 					// We have a collider already of the same type as the desired new geometry.
 					// Update its values instead of removing and adding a new one.
-					colliderGeometry.Patch(_collider);
+					colliderGeometry.Patch(App, _collider);
 					return;
 				}
 				else
@@ -738,22 +842,22 @@ namespace MixedRealityExtension.Core
 			{
 				case ColliderType.Box:
 					var boxCollider = gameObject.AddComponent<BoxCollider>();
-					colliderGeometry.Patch(boxCollider);
+					colliderGeometry.Patch(App, boxCollider);
 					unityCollider = boxCollider;
 					break;
 				case ColliderType.Sphere:
 					var sphereCollider = gameObject.AddComponent<SphereCollider>();
-					colliderGeometry.Patch(sphereCollider);
+					colliderGeometry.Patch(App, sphereCollider);
 					unityCollider = sphereCollider;
 					break;
 				case ColliderType.Capsule:
 					var capsuleCollider = gameObject.AddComponent<CapsuleCollider>();
-					colliderGeometry.Patch(capsuleCollider);
+					colliderGeometry.Patch(App, capsuleCollider);
 					unityCollider = capsuleCollider;
 					break;
 				case ColliderType.Mesh:
 					var meshCollider = gameObject.AddComponent<MeshCollider>();
-					colliderGeometry.Patch(meshCollider);
+					colliderGeometry.Patch(App, meshCollider);
 					unityCollider = meshCollider;
 					break;
 				default:
@@ -763,6 +867,15 @@ namespace MixedRealityExtension.Core
 			}
 
 			_collider = unityCollider;
+
+			// update bounciness and frictions 
+			if (colliderPatch.Bounciness.HasValue)
+				_collider.material.bounciness = colliderPatch.Bounciness.Value;
+			if (colliderPatch.StaticFriction.HasValue)
+				_collider.material.staticFriction = colliderPatch.StaticFriction.Value;
+			if (colliderPatch.DynamicFriction.HasValue)
+				_collider.material.dynamicFriction = colliderPatch.DynamicFriction.Value;
+
 			if (Collider == null)
 			{
 				Collider = gameObject.AddComponent<Collider>();
@@ -852,14 +965,14 @@ namespace MixedRealityExtension.Core
 						forceUpdateRenderer = true;
 					}
 					// guarantee mesh filter (unless it has a skinned mesh renderer)
-					if (renderer is MeshRenderer && filter == null)
+					if (renderer is MeshRenderer && meshFilter == null)
 					{
-						filter = gameObject.AddComponent<MeshFilter>();
+						meshFilter = gameObject.AddComponent<MeshFilter>();
 					}
 
 					// look up and assign mesh
 					var updatedMeshId = MeshId;
-					MREAPI.AppsAPI.AssetCache.OnCached(MeshId, sharedMesh =>
+					App.AssetCache.OnCached(MeshId, sharedMesh =>
 					{
 						if (!this || MeshId != updatedMeshId) return;
 						UnityMesh = (Mesh)sharedMesh;
@@ -876,7 +989,7 @@ namespace MixedRealityExtension.Core
 					if (MaterialId != Guid.Empty)
 					{
 						var updatedMaterialId = MaterialId;
-						MREAPI.AppsAPI.AssetCache.OnCached(MaterialId, sharedMat =>
+						App.AssetCache.OnCached(MaterialId, sharedMat =>
 						{
 							if (!this || !Renderer || MaterialId != updatedMaterialId) return;
 							Renderer.sharedMaterial = (Material)sharedMat ?? MREAPI.AppsAPI.DefaultMaterial;
@@ -974,13 +1087,13 @@ namespace MixedRealityExtension.Core
 				if (transformPatch.Local.Position != null)
 				{
 					var localPosition = transform.localPosition.GetPatchApplied(LocalTransform.Position.ApplyPatch(transformPatch.Local.Position));
-					transformUpdate.Position = transform.TransformPoint(localPosition);
+					transformUpdate.Position = transform.parent.TransformPoint(localPosition);
 				}
 
 				if (transformPatch.Local.Rotation != null)
 				{
 					var localRotation = transform.localRotation.GetPatchApplied(LocalTransform.Rotation.ApplyPatch(transformPatch.Local.Rotation));
-					transformUpdate.Rotation = transform.rotation * localRotation;
+					transformUpdate.Rotation = transform.parent.rotation * localRotation;
 				}
 			}
 
@@ -1151,11 +1264,11 @@ namespace MixedRealityExtension.Core
 					var runningGeneration = ++colliderGeneration;
 
 					// must wait for mesh load before auto type will work
-					if (colliderPatch.Geometry.Shape == ColliderType.Auto && MREAPI.AppsAPI.AssetCache.GetColliderGeometry(MeshId) == null)
+					if (colliderPatch.Geometry.Shape == ColliderType.Auto && App.AssetCache.GetColliderGeometry(MeshId) == null)
 					{
 						var runningMeshId = MeshId;
 						_pendingColliderPatch = colliderPatch;
-						MREAPI.AppsAPI.AssetCache.OnCached(MeshId, _ =>
+						App.AssetCache.OnCached(MeshId, _ =>
 						{
 							if (runningMeshId != MeshId || runningGeneration != colliderGeneration) return;
 							SetCollider(_pendingColliderPatch);
@@ -1179,6 +1292,14 @@ namespace MixedRealityExtension.Core
 						_pendingColliderPatch.Enabled = colliderPatch.Enabled.Value;
 					if (colliderPatch.IsTrigger.HasValue)
 						_pendingColliderPatch.IsTrigger = colliderPatch.IsTrigger.Value;
+
+					// update bounciness and frictions 
+					if (colliderPatch.Bounciness.HasValue)
+						_collider.material.bounciness = colliderPatch.Bounciness.Value;
+					if (colliderPatch.StaticFriction.HasValue)
+						_collider.material.staticFriction = colliderPatch.StaticFriction.Value;
+					if (colliderPatch.DynamicFriction.HasValue)
+						_collider.material.dynamicFriction = colliderPatch.DynamicFriction.Value;
 				}
 				else if (_pendingColliderPatch == null)
 				{
@@ -1224,6 +1345,13 @@ namespace MixedRealityExtension.Core
 					// update host apps to handle button conflicts.
 					behaviorComponent = GetOrCreateActorComponent<BehaviorComponent>();
 					var handler = BehaviorHandlerFactory.CreateBehaviorHandler(BehaviorType.Button, this, new WeakReference<MixedRealityExtensionApp>(App));
+
+					if (handler == null)
+					{
+						Debug.LogError("Failed to create a behavior handler.  Grab will not work without one.");
+						return;
+					}
+
 					behaviorComponent.SetBehaviorHandler(handler);
 				}
 
@@ -1310,7 +1438,7 @@ namespace MixedRealityExtension.Core
 
 			Attachment attachmentInHierarchy = FindAttachmentInHierarchy();
 			bool inAttachmentHeirarchy = (attachmentInHierarchy != null);
-			bool inOwnedAttachmentHierarchy = (inAttachmentHeirarchy && attachmentInHierarchy.UserId == LocalUser.Id);
+			bool inOwnedAttachmentHierarchy = (inAttachmentHeirarchy && LocalUser != null && attachmentInHierarchy.UserId == LocalUser.Id);
 
 			// Don't sync anything if the actor is in an attachment hierarchy on a remote avatar.
 			if (inAttachmentHeirarchy && !inOwnedAttachmentHierarchy)
@@ -1341,7 +1469,7 @@ namespace MixedRealityExtension.Core
 
 			Attachment attachmentInHierarchy = FindAttachmentInHierarchy();
 			bool inAttachmentHeirarchy = (attachmentInHierarchy != null);
-			bool inOwnedAttachmentHierarchy = (inAttachmentHeirarchy && attachmentInHierarchy.UserId == LocalUser.Id);
+			bool inOwnedAttachmentHierarchy = (inAttachmentHeirarchy && LocalUser != null && attachmentInHierarchy.UserId == LocalUser.Id);
 
 			// We can send actor updates to the app if we're operating in a server-authoritative model,
 			// or if we're in a peer-authoritative model and we've been designated the authoritative peer.
@@ -1408,7 +1536,7 @@ namespace MixedRealityExtension.Core
 							payload.AnimationId.Value,
 							unityAnim,
 							unityState);
-						nativeAnim.targetActors = new List<Actor>() { this };
+						nativeAnim.TargetIds = new List<Guid>() { Id };
 						App.AnimationManager.RegisterAnimation(nativeAnim);
 
 						Trace trace = new Trace()
@@ -1460,7 +1588,7 @@ namespace MixedRealityExtension.Core
 						MediaInstance mediaInstance = new MediaInstance(payload.MediaAssetId);
 						_mediaInstances.Add(payload.Id, mediaInstance);
 
-						MREAPI.AppsAPI.AssetCache.OnCached(payload.MediaAssetId, asset =>
+						App.AssetCache.OnCached(payload.MediaAssetId, asset =>
 						{
 							if (asset is AudioClip audioClip)
 							{
@@ -1495,7 +1623,7 @@ namespace MixedRealityExtension.Core
 					{
 						if (_mediaInstances.TryGetValue(payload.Id, out MediaInstance mediaInstance))
 						{
-							MREAPI.AppsAPI.AssetCache.OnCached(mediaInstance.MediaAssetId, asset =>
+							App.AssetCache.OnCached(mediaInstance.MediaAssetId, asset =>
 							{
 								_mediaInstances.Remove(payload.Id);
 								DestroyMediaById(payload.Id, mediaInstance);
@@ -1507,7 +1635,7 @@ namespace MixedRealityExtension.Core
 					{
 						if (_mediaInstances.TryGetValue(payload.Id, out MediaInstance mediaInstance))
 						{
-							MREAPI.AppsAPI.AssetCache.OnCached(mediaInstance.MediaAssetId, asset =>
+							App.AssetCache.OnCached(mediaInstance.MediaAssetId, asset =>
 							{
 								if (mediaInstance.Instance != null)
 								{
@@ -1590,6 +1718,14 @@ namespace MixedRealityExtension.Core
 			if (payload.BehaviorType != BehaviorType.None)
 			{
 				var handler = BehaviorHandlerFactory.CreateBehaviorHandler(payload.BehaviorType, this, new WeakReference<MixedRealityExtensionApp>(App));
+
+				if (handler == null)
+				{
+					Debug.LogError($"Failed to create behavior for behavior type {payload.BehaviorType.ToString()}");
+					onCompleteCallback?.Invoke();
+					return;
+				}
+
 				behaviorComponent.SetBehaviorHandler(handler);
 
 				// We need to update the new behavior's grabbable flag from the actor so that it can be grabbed in the case we cleared the previous behavior.

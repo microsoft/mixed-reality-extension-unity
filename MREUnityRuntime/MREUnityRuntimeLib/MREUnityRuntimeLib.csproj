@@ -84,14 +84,25 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Animation\Animation.cs" />
+    <Compile Include="Animation\BaseAnimation.cs" />
+    <Compile Include="Animation\Interpolations.cs" />
+    <Compile Include="Animation\Definitions.cs" />
     <Compile Include="Animation\AnimationEvent.cs" />
     <Compile Include="Animation\AnimationKeyframe.cs" />
     <Compile Include="Animation\AnimationManager.cs" />
     <Compile Include="Animation\AnimationState.cs" />
     <Compile Include="Animation\AnimationWrapMode.cs" />
+    <Compile Include="Animation\JTokenPool.cs" />
     <Compile Include="Animation\MWSetAnimationStateOptions.cs" />
     <Compile Include="Animation\NativeAnimation.cs" />
+    <Compile Include="Animation\TargetPath.cs" />
+    <Compile Include="Assets\AssetLoadThrottling.cs" />
     <Compile Include="Assets\PrefabAnimationTargets.cs" />
+    <Compile Include="Behaviors\ActionData\BaseActionData.cs" />
+    <Compile Include="Behaviors\ActionData\BaseToolData.cs" />
+    <Compile Include="Behaviors\ActionData\PenData.cs" />
+    <Compile Include="Behaviors\Handlers\PenHandler.cs" />
+    <Compile Include="Behaviors\Handlers\ToolHandler.cs" />
     <Compile Include="Core\CollisionLayers.cs" />
     <Compile Include="Assets\AssetCache.cs" />
     <Compile Include="Assets\AssetGroup.cs" />
@@ -120,6 +131,9 @@
     <Compile Include="Patching\Types\AnimationPatch.cs" />
     <Compile Include="Patching\Types\AppearancePatch.cs" />
     <Compile Include="Patching\Types\LookAtPatch.cs" />
+    <Compile Include="Patching\Types\ActorTransformPatch.cs" />
+    <Compile Include="PluginInterfaces\Behaviors\IToolBehavior.cs" />
+    <Compile Include="PluginInterfaces\Behaviors\IPenBehavior.cs" />
     <Compile Include="PluginInterfaces\IDialogFactory.cs" />
     <Compile Include="PluginInterfaces\ILayerApplicator.cs" />
     <Compile Include="PluginInterfaces\IUserInfoProvider.cs" />
@@ -281,7 +295,7 @@
     <Compile Include="Util\Unity\MWGOTreeWalker.cs" />
     <Compile Include="Util\Unity\MWUnityHelpers.cs" />
     <Compile Include="Util\Unity\MWUnityTypeExtensions.cs" />
-    <Compile Include="Util\Unity\AssetFetcher.cs" />
+    <Compile Include="Assets\AssetFetcher.cs" />
     <Compile Include="Util\UtilMethods.cs" />
   </ItemGroup>
   <ItemGroup />

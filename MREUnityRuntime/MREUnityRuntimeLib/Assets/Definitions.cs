@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 using System;
+using MixedRealityExtension.Animation;
 using MixedRealityExtension.Core.Types;
 using MixedRealityExtension.Patching.Types;
 using Newtonsoft.Json;
@@ -57,6 +58,11 @@ namespace MixedRealityExtension.Assets
 		/// If this asset is a video, contains those properties
 		/// </summary>
 		public VideoStream? VideoStream;
+
+		/// <summary>
+		/// Only populated when this asset is animation data. An asset will only have one of these types specified.
+		/// </summary>
+		public AnimationData? AnimationData;
 	}
 
 	/// <summary>
@@ -130,6 +136,26 @@ namespace MixedRealityExtension.Assets
 		/// Scale the texture by this amount in each axis
 		/// </summary>
 		public Vector2Patch MainTextureScale;
+
+		/// <summary>
+		/// The lighting-independent color
+		/// </summary>
+		public ColorPatch EmissiveColor;
+
+		/// <summary>
+		/// The ID of the main texture asset
+		/// </summary>
+		public Guid? EmissiveTextureId;
+
+		/// <summary>
+		/// Offset the texture by this amount as a fraction of the resolution
+		/// </summary>
+		public Vector2Patch EmissiveTextureOffset;
+
+		/// <summary>
+		/// Scale the texture by this amount in each axis
+		/// </summary>
+		public Vector2Patch EmissiveTextureScale;
 
 		/// <summary>
 		/// How this material should treat the color/texture alpha channel

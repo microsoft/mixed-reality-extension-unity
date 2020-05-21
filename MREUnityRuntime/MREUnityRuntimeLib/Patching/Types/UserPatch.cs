@@ -1,9 +1,11 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
+using MixedRealityExtension.Animation;
 using MixedRealityExtension.Core;
 using MixedRealityExtension.Core.Types;
 using MixedRealityExtension.Messaging.Payloads.Converters;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 
@@ -37,6 +39,31 @@ namespace MixedRealityExtension.Patching.Types
 			Name = user.Name;
 			Groups = user.Groups;
 			Properties = user.UserInfo.Properties;
+		}
+
+		public void WriteToPath(TargetPath path, JToken value, int depth)
+		{
+
+		}
+
+		public bool ReadFromPath(TargetPath path, ref JToken value, int depth)
+		{
+			return false;
+		}
+
+		public void Clear()
+		{
+
+		}
+
+		public void Restore(TargetPath path, int depth)
+		{
+
+		}
+
+		public void RestoreAll()
+		{
+
 		}
 	}
 }

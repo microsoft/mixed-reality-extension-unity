@@ -133,5 +133,23 @@ namespace MixedRealityExtension.Assets
 			cache.RemoveAll(c => c.ContainerId == containerId);
 			return assets;
 		}
+
+		/// <inheritdoc cref="UncacheAssetsAndDestroy(Guid)"/>
+		public void UncacheAssetsAndDestroy(Guid containerId)
+		{
+			foreach (var asset in UncacheAssets(containerId))
+			{
+				// workaround: unload meshes implicitly
+				if (asset is GameObject prefab)
+				{
+					var filters = prefab.GetComponentsInChildren<MeshFilter>();
+					foreach (var f in filters)
+					{
+						Object.Destroy(f.sharedMesh);
+					}
+				}
+				Object.Destroy(asset);
+			}
+		}
 	}
 }

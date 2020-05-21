@@ -41,7 +41,22 @@ namespace MixedRealityExtension.Behaviors
 			Behavior.Actor = attachedActor;
 		}
 
-		protected void RegisterActionHandler(MWAction action, string name)
+		protected virtual void FixedUpdate()
+		{
+
+		}
+
+		protected virtual void SynchronizeBehavior()
+		{
+
+		}
+
+		protected virtual void CleanUp()
+		{
+
+		}
+
+		protected void RegisterActionHandler(MWActionBase action, string name)
 		{
 			var handler = new BehaviorActionHandler(((IBehaviorHandler)this).BehaviorType, name, _appRef, _attachedActorId);
 			action.Handler = handler;
@@ -61,19 +76,7 @@ namespace MixedRealityExtension.Behaviors
 		{
 			return ((IBehaviorHandler)this).BehaviorType.GetHashCode();
 		}
-
-		void IBehaviorHandler.CleanUp()
-		{
-			var behavior = Behavior;
-			Behavior = null;
-
-			behavior.CleanUp();
-		}
-
-		bool IEquatable<IBehaviorHandler>.Equals(IBehaviorHandler other)
-		{
-			return ((IBehaviorHandler)this).BehaviorType == other.BehaviorType;
-		}
+		
 
 		private BehaviorType GetBehaviorType()
 		{
@@ -93,5 +96,32 @@ namespace MixedRealityExtension.Behaviors
 		
 			return BehaviorType.None;
 		}
+
+		#region IBehaviorHandler Interface
+
+		void IBehaviorHandler.FixedUpdate()
+		{
+			FixedUpdate();
+		}
+
+		void IBehaviorHandler.SynchronizeBehavior()
+		{
+			SynchronizeBehavior();
+		}
+
+		void IBehaviorHandler.CleanUp()
+		{
+			var behavior = Behavior;
+			Behavior = null;
+
+			behavior.CleanUp();
+		}
+
+		bool IEquatable<IBehaviorHandler>.Equals(IBehaviorHandler other)
+		{
+			return ((IBehaviorHandler)this).BehaviorType == other.BehaviorType;
+		}
+
+		#endregion
 	}
 }

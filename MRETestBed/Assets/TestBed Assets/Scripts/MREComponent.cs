@@ -12,6 +12,7 @@ using MixedRealityExtension.PluginInterfaces;
 using MixedRealityExtension.PluginInterfaces.Behaviors;
 using MixedRealityExtension.RPC;
 using Newtonsoft.Json.Linq;
+using TMPro;
 using UnityEngine;
 
 class TestLogMessage
@@ -85,10 +86,19 @@ public class MREComponent : MonoBehaviour
 	private static bool _apiInitialized = false;
 
 	[SerializeField]
-	private Font SerifFont;
+	private TMP_FontAsset DefaultFont;
 
 	[SerializeField]
-	private Font SansSerifFont;
+	private TMP_FontAsset SerifFont;
+
+	[SerializeField]
+	private TMP_FontAsset SansSerifFont;
+
+	[SerializeField]
+	private TMP_FontAsset MonospaceFont;
+
+	[SerializeField]
+	private TMP_FontAsset CursiveFont;
 
 	[SerializeField]
 	private UnityEngine.Material DefaultPrimMaterial;
@@ -115,15 +125,19 @@ public class MREComponent : MonoBehaviour
 	{
 		if (!_apiInitialized)
 		{
-			var behaviorFactory = (EnableMRTK) ? new MRTKBehaviorFactory() as IBehaviorFactory : new BehaviorFactory();
-
 			MREAPI.InitializeAPI(
 				defaultMaterial: DefaultPrimMaterial,
 				layerApplicator: new SimpleLayerApplicator(0, 9, 10, 5),
-				behaviorFactory: behaviorFactory,
-				textFactory: new MWTextFactory(SerifFont, SansSerifFont),
+				behaviorFactory: new MRTKBehaviorFactory(),
+				textFactory: new TmpTextFactory()
+				{
+					DefaultFont = DefaultFont,
+					SerifFont = SerifFont,
+					SansSerifFont = SansSerifFont,
+					MonospaceFont = MonospaceFont,
+					CursiveFont = CursiveFont
+				},
 				libraryFactory: new ResourceFactory(),
-				assetCache: new AssetCache(new GameObject("MRE Asset Cache")),
 				userInfoProvider: new UserInfoProvider(),
 				dialogFactory: DialogFactory,
 				logger: new MRELogger(),

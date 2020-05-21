@@ -16,6 +16,8 @@ namespace Assets.Scripts.Tools
 			}
 		}
 
+		public abstract void CleanUp();
+
 		protected abstract void UpdateTool(InputSource inputSource);
 	}
 }

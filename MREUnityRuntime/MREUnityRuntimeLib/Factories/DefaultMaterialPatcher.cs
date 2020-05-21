@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 using MixedRealityExtension.API;
+using MixedRealityExtension.App;
 using MixedRealityExtension.Core.Types;
 using MixedRealityExtension.Patching;
 using MixedRealityExtension.Patching.Types;
@@ -19,14 +20,14 @@ namespace MixedRealityExtension.Factories
 	/// </summary>
 	public class DefaultMaterialPatcher : IMaterialPatcher
 	{
-		protected Dictionary<int, Guid> textureAssignments = new Dictionary<int, Guid>(20);
+		protected Dictionary<int, Guid> mainTextureAssignments = new Dictionary<int, Guid>(20);
 
 		private MWColor _materialColor = new MWColor();
 		private MWVector2 _textureOffset = new MWVector2();
 		private MWVector2 _textureScale = new MWVector2();
 
 		/// <inheritdoc />
-		public virtual void ApplyMaterialPatch(Material material, MWMaterial patch)
+		public virtual void ApplyMaterialPatch(IMixedRealityExtensionApp app, Material material, MWMaterial patch)
 		{
 			if (patch.Color != null)
 			{
@@ -52,16 +53,16 @@ namespace MixedRealityExtension.Factories
 			if (patch.MainTextureId != null)
 			{
 				var textureId = patch.MainTextureId.Value;
-				textureAssignments[material.GetInstanceID()] = textureId;
+				mainTextureAssignments[material.GetInstanceID()] = textureId;
 				if (patch.MainTextureId == Guid.Empty)
 				{
 					material.mainTexture = null;
 				}
 				else
 				{
-					MREAPI.AppsAPI.AssetCache.OnCached(textureId, tex =>
+					app.AssetCache.OnCached(textureId, tex =>
 					{
-						if (!material || textureAssignments[material.GetInstanceID()] != textureId) return;
+						if (!material || mainTextureAssignments[material.GetInstanceID()] != textureId) return;
 						material.mainTexture = (Texture)tex;
 					});
 				}
@@ -69,12 +70,12 @@ namespace MixedRealityExtension.Factories
 		}
 
 		/// <inheritdoc />
-		public virtual MWMaterial GeneratePatch(Material material)
+		public virtual MWMaterial GeneratePatch(IMixedRealityExtensionApp app, Material material)
 		{
 			return new MWMaterial()
 			{
 				Color = new ColorPatch(material.color),
-				MainTextureId = MREAPI.AppsAPI.AssetCache.GetId(material.mainTexture),
+				MainTextureId = app.AssetCache.GetId(material.mainTexture),
 				MainTextureOffset = new Vector2Patch(material.mainTextureOffset),
 				MainTextureScale = new Vector2Patch(material.mainTextureScale)
 			};

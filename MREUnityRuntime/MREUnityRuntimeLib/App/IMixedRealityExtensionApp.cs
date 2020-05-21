@@ -5,6 +5,7 @@ using MixedRealityExtension.IPC;
 using MixedRealityExtension.RPC;
 using MixedRealityExtension.PluginInterfaces;
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace MixedRealityExtension.App
@@ -70,7 +71,7 @@ namespace MixedRealityExtension.App
 		string SessionId { get; }
 
 		/// <summary>
-		/// Gets the local user
+		/// Gets the local user. Will be null if the local client has not joined as a user.
 		/// </summary>
 		IUser LocalUser { get; }
 
@@ -88,6 +89,11 @@ namespace MixedRealityExtension.App
 		/// The game object that serves as the scene root.
 		/// </summary>
 		GameObject SceneRoot { get; set; }
+
+		/// <summary>
+		/// Where assets for this app instance are stored
+		/// </summary>
+		IAssetCache AssetCache { get; }
 
 		/// <summary>
 		/// The RPC interface for registering handlers and invoking remote procedure calls.
@@ -159,5 +165,17 @@ namespace MixedRealityExtension.App
 		/// </summary>
 		/// <param name="actorId"></param>
 		void OnActorDestroyed(Guid actorId);
+
+		/// <summary>
+		/// Declare pre-allocated game objects as MRE actors. Note: Since these actors are not created via an MRE message, the app has
+		/// no means to create them on clients that have not preallocated them. Thus cross-host compatibility will be reduced for these actors.
+		/// </summary>
+		/// <param name="objects">An array of GameObjects that this MRE should be aware of. GameObjects cannot already be owned by an MRE.</param>
+		/// <param name="guidSeed">The seed for generating the new actors' IDs. Must be the same value across all clients
+		/// in the session for this batch of actors, or the preallocated actors will not synchronize correctly. Must be unique for this MRE session.
+		/// </param>
+		/// <exception cref="Exception">Thrown when the app is not in the Started state.</exception>
+		/// <exception cref="ArgumentOutOfRangeException">Thrown when the value of the guidSeed argument has already been used this session.</exception>
+		void DeclarePreallocatedActors(GameObject[] objects, string guidSeed);
 	}
 }

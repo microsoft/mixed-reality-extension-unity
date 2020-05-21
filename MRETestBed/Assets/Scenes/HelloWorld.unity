@@ -235,7 +235,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c08c6a44e83210c48bc797284376afc5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  MREURL: ws://mre-helloworld.us.openode.io
+  MREURL: ws://mres.altvr.com/helloworld
   SessionID: testbed
   AppID: helloworld
   UserProperties: []
@@ -244,10 +244,14 @@ MonoBehaviour:
   SceneRoot: {fileID: 1141388990}
   PlaceholderObject: {fileID: 0}
   UserGameObject: {fileID: 276664683}
-  SerifFont: {fileID: 12800000, guid: 70daac12c1ea27648bb12988a837e0a6, type: 3}
-  SansSerifFont: {fileID: 12800000, guid: 7a83a8b8d6810db4aa50e3bde952e2c4, type: 3}
+  DefaultFont: {fileID: 11400000, guid: d7e232a6e5fd0c9448e57831beff4d85, type: 2}
+  SerifFont: {fileID: 11400000, guid: 633eba92913f20449b8f7bd1e9f9d905, type: 2}
+  SansSerifFont: {fileID: 11400000, guid: d7e232a6e5fd0c9448e57831beff4d85, type: 2}
+  MonospaceFont: {fileID: 11400000, guid: 0d3f42309929b8d44a322e20f52a0343, type: 2}
+  CursiveFont: {fileID: 11400000, guid: b31d2923d654c0e49b3e196355c7878e, type: 2}
   DefaultPrimMaterial: {fileID: 2100000, guid: 265cb5b418966a64ea212597d469fa33, type: 2}
-  DialogFactory: {fileID: 0}
+  DialogFactory: {fileID: 114153473817070278, guid: f1f77a0b742ec0841858c35dc9348515,
+    type: 3}
 --- !u!114 &1141388992
 MonoBehaviour:
   m_ObjectHideFlags: 0
