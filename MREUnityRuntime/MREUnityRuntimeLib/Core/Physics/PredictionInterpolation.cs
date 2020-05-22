@@ -81,7 +81,7 @@ namespace MixedRealityExtension.Core.Physics
 			collisionInfo.rigidBodyId = rb.Id;
 			collisionInfo.isKeyframed = rb.IsKeyframed;
 
-			// test is this remote body is in the monitor stream or if this is grabbed & keyframed then this should not be dynamic
+			// test is this remote body is in the monitor stream or if this is grabbed & key framed then this should not be dynamic
 			if (_monitorCollisionInfo.ContainsKey(rb.Id) && !rb.IsKeyframed)
 			{
 				// dynamic
@@ -140,14 +140,14 @@ namespace MixedRealityExtension.Core.Physics
 				collisionInfo.linearVelocity = rb.lastValidLinerVelocity;
 				collisionInfo.angularVelocity = rb.lastValidAngularVelocity;
 				collisionInfo.monitorInfo = new CollisionMonitorInfo();
-//#if MRE_PHYSICS_DEBUG
+#if MRE_PHYSICS_DEBUG
 				if (rb.IsKeyframed)
 				{
 						Debug.Log(" Remote body: " + rb.Id.ToString() + " is key framed:"
 							+ " linvel:" + collisionInfo.linearVelocity
 							+ " angvel:" + collisionInfo.angularVelocity);
 				}
-//#endif
+#endif
 			}
 			// <todo> add more filtering here to cancel out unnecessary items,
 			// but for small number of bodies should be OK
