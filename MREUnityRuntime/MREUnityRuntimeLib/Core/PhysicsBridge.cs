@@ -57,6 +57,28 @@ namespace MixedRealityExtension.Core
 		{
 		}
 
+
+		#region Angle Helper Function
+		/// helper function to transform an Euler angle to radian
+		public static float TransformEulerAngleToRadian(float eulerAngle)
+		{
+			float ret = eulerAngle;
+			ret = (ret >= 180) ? (ret - 360.0f) : ret;
+			ret = (ret <= -180) ? (360 + ret) : ret;
+			ret = ret * ((float)Math.PI / 180.0f);
+			return ret;
+		}
+		/// helper function to transform an Euler angle to radians
+		public static UnityEngine.Vector3 TransformEulerAnglesToRadians(UnityEngine.Vector3 eulerAngles)
+		{
+			UnityEngine.Vector3 ret = eulerAngles;
+			ret.x = TransformEulerAngleToRadian(ret.x);
+			ret.y = TransformEulerAngleToRadian(ret.y);
+			ret.z = TransformEulerAngleToRadian(ret.z);
+			return ret;
+		}
+		#endregion
+
 		#region Rigid Body Management
 
 		public void addRigidBody(Guid id, UnityEngine.Rigidbody rigidbody, bool ownership)
@@ -200,13 +222,17 @@ namespace MixedRealityExtension.Core
 						// <todo> for long running times this could be a problem 
 						float invUpdateDT = 1.0f / (timeOfSnapshot - rb.lastTimeKeyFramedUpdate);
 						rb.lastValidLinerVelocity = (keyFramedPos - rb.RigidBody.transform.position) * invUpdateDT;
-						// todo limit the angular changes to maximal 
-						rb.lastValidAngularVelocity = (
-							UnityEngine.Quaternion.Inverse(rb.RigidBody.transform.rotation)
-						 * keyFramedOrientation).eulerAngles * invUpdateDT;
+						// todo limit the angular changes to maximal
+						UnityEngine.Vector3 eulerAngles = (
+						      UnityEngine.Quaternion.Inverse(rb.RigidBody.transform.rotation)
+						    * keyFramedOrientation).eulerAngles;
+						// transform to radians and take the angular velocity 
+						UnityEngine.Vector3 radianAngles = TransformEulerAnglesToRadians(eulerAngles);
+						rb.lastValidAngularVelocity = radianAngles * invUpdateDT;
 #if MRE_PHYSICS_DEBUG
 						Debug.Log(" Remote body: " + rb.Id.ToString() + " got update lin vel:"
 							+ rb.lastValidLinerVelocity + " ang vel:" + rb.lastValidAngularVelocity
+							//+ " DangE:" + eulerAngles + " DangR:" + radianAngles
 							+ " time:" + timeOfSnapshot + " newp:" + keyFramedPos
 							+ " newR:" + keyFramedOrientation
 							+ " incUpdateDt:" + invUpdateDT

@@ -17,7 +17,7 @@ namespace MixedRealityExtension.Core.Physics
 		public float keyframedInterpolationRatio = 0.0f;
 	}
 
-	/// for interactive collisions we need to store the implicit velocities and other stuff to know	
+	/// for interactive collisions we need to store the implicit velocities and other information	
 	public class CollisionSwitchInfo
 	{
 		public UnityEngine.Vector3 startPosition;
@@ -26,15 +26,15 @@ namespace MixedRealityExtension.Core.Physics
 		public UnityEngine.Vector3 angularVelocity;
 		public Guid rigidBodyId;
 		public CollisionMonitorInfo monitorInfo;
-		public bool isKeyframed;
+		/// if a body is really key framed on the owner side then we should not turn it to dynamic on the remote side
+		public bool isKeyframed; 
 	}
 
 	/// This class implements one strategy for the prediction where in the neighborhood of the
 	/// remote-owned body collision switches to both dynamic strategies and after some time tries to
-	/// interpolate back to the streamed transform positions . 
+	/// interpolate back to the streamed transform positions. 
 	class PredictionInterpolation : IPrediction
 	{
-
 		/// when we update a body we compute the implicit velocity. This velocity is needed, in case of collisions to switch from kinematic to kinematic=false
 		List<CollisionSwitchInfo> _switchCollisionInfos = new List<CollisionSwitchInfo>();
 
