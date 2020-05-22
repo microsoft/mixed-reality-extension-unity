@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using MixedRealityExtension.Animation;
 using MixedRealityExtension.Core.Physics;
 using Newtonsoft.Json.Linq;
+using Unity.Collections;
 
 namespace MixedRealityExtension.Patching.Types
 {
@@ -52,8 +53,8 @@ namespace MixedRealityExtension.Patching.Types
 				Unity.Collections.NativeArray<Snapshot.TransformInfo> transforms =
 						new Unity.Collections.NativeArray<Snapshot.TransformInfo>(snapshot.Transforms.ToArray(), Unity.Collections.Allocator.Temp);
 
-				int sizeOfTransformInfo = Unity.Collections.LowLevel.Unsafe.UnsafeUtility.SizeOf<Snapshot.TransformInfo>();
-				TransformsBLOB = transforms.Reinterpret<byte>(sizeOfTransformInfo).ToArray();
+				NativeSlice<byte> blob = new NativeSlice<Snapshot.TransformInfo>(transforms).SliceConvert<byte>();
+				TransformsBLOB = blob.ToArray();
 			}
 		}
 
@@ -61,12 +62,12 @@ namespace MixedRealityExtension.Patching.Types
 		{
 			if (TransformCount > 0)
 			{
-					Unity.Collections.NativeArray<byte> blob =
-						new Unity.Collections.NativeArray<byte>(TransformsBLOB, Unity.Collections.Allocator.Temp);
+				Unity.Collections.NativeArray<byte> blob =
+				new Unity.Collections.NativeArray<byte>(TransformsBLOB, Unity.Collections.Allocator.Temp);
 
-					// todo: use native array in snapshot
-					Unity.Collections.NativeArray<Snapshot.TransformInfo> transforms = blob.Reinterpret<Snapshot.TransformInfo>(1);
-					return new Snapshot(Time, new List<Snapshot.TransformInfo>(transforms.ToArray()));
+				// todo: use native array in snapshot
+				Unity.Collections.NativeSlice<Snapshot.TransformInfo> transforms = new NativeSlice<byte>(blob).SliceConvert<Snapshot.TransformInfo>();
+				return new Snapshot(Time, new List<Snapshot.TransformInfo>(transforms.ToArray()));
 			}
 
 			return new Snapshot(Time, new List<Snapshot.TransformInfo>());
