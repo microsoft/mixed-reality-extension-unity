@@ -49,7 +49,7 @@ namespace MixedRealityExtension.Core
 			RigidBodyRemoved?.Invoke(id);
 		}
 
-		private void Actor_RigidBodyGrabbed(Guid id, bool isGrabbed)
+		private void OnActorRigidBodyGrabbed(Guid id, bool isGrabbed)
 		{
 			RigidBodyGrabbed?.Invoke(id, isGrabbed);
 		}
@@ -61,7 +61,7 @@ namespace MixedRealityExtension.Core
 
 			actor.RigidBodyAdded += OnRigidBodyAdded;
 			actor.RigidBodyRemoved += OnRigidBodyRemoved;
-			actor.RigidBodyGrabbed += Actor_RigidBodyGrabbed;
+			actor.RigidBodyGrabbed += OnActorRigidBodyGrabbed;
 
 			OnActorCreated?.Invoke(actor);
 			return actor;

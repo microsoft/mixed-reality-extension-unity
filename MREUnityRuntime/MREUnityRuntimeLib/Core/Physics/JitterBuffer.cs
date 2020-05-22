@@ -75,7 +75,7 @@ namespace MixedRealityExtension.Core.Physics
 	/// <summary>
 	/// Stored snapshots from a single source.
 	/// </summary>
-	public class SnapsotBuffer
+	public class SnapshotBuffer
 	{
 		/// <summary>
 		/// Add snapshot to buffer if snapshot with same timestamp exists in buffer.
@@ -386,7 +386,7 @@ namespace MixedRealityExtension.Core.Physics
 			/// <summary>
 			/// This source snapshots.
 			/// </summary>
-			private SnapsotBuffer SnapshotBuffer = new SnapsotBuffer();
+			private SnapshotBuffer SnapshotBuffer = new SnapshotBuffer();
 
 			/// <todo>
 			/// can this be avoided?
