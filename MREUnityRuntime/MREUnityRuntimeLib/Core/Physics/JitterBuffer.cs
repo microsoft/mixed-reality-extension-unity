@@ -86,14 +86,6 @@ namespace MixedRealityExtension.Core.Physics
 			{
 				Snapshots.Add(snapshot.Time, snapshot);
 			}
-
-			foreach (var tmp in snapshot.Transforms)
-			{
-				if (tmp.motionType == MotionType.Keyframed)
-				{
-					Debug.Log(" KEYFRAMED:" + tmp.Id);
-				}
-			}
 		}
 
 		/// <summary>
