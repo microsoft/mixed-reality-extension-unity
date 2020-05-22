@@ -119,7 +119,6 @@ namespace MixedRealityExtension.Core
 			if (_rigidBodies.ContainsKey(id))
 			{
 				var rb = _rigidBodies[id];
-				//Debug.Log(" set key framed: " + rb.Id + " ownership:" + rb.Ownership);
 				if (rb.Ownership)
 				{
 					rb.IsKeyframed = isKeyFramed;
