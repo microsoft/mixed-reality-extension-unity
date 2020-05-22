@@ -1117,66 +1117,10 @@ namespace MixedRealityExtension.Core
 				}
 				else
 				{
-					PatchTransformWithRigidBody(transformPatch);
+					// <todo> do we need this, since with physics we have a different chanel for this
+					//PatchTransformWithRigidBody(transformPatch);
 				}
 			}
-		}
-
-		private void PatchTransformWithRigidBody(ActorTransformPatch transformPatch)
-		{
-			if (_rigidbody == null)
-			{
-				return;
-			}
-
-			RigidBody.RigidBodyTransformUpdate transformUpdate = new RigidBody.RigidBodyTransformUpdate();
-			if (transformPatch.Local != null)
-			{
-				// In case of rigid body:
-				// - Apply scale directly.
-				transform.localScale = transform.localScale.GetPatchApplied(LocalTransform.Scale.ApplyPatch(transformPatch.Local.Scale));
-
-				// - Apply position and rotation via rigid body from local to world space.
-				if (transformPatch.Local.Position != null)
-				{
-					var localPosition = transform.localPosition.GetPatchApplied(LocalTransform.Position.ApplyPatch(transformPatch.Local.Position));
-					transformUpdate.Position = transform.parent.TransformPoint(localPosition);
-				}
-
-				if (transformPatch.Local.Rotation != null)
-				{
-					var localRotation = transform.localRotation.GetPatchApplied(LocalTransform.Rotation.ApplyPatch(transformPatch.Local.Rotation));
-					transformUpdate.Rotation = transform.parent.rotation * localRotation;
-				}
-			}
-
-			if (transformPatch.App != null)
-			{
-				var appTransform = App.SceneRoot.transform;
-
-				if (transformPatch.App.Position != null)
-				{
-					// New app space position.
-					var newAppPos = appTransform.InverseTransformPoint(transform.position)
-						.GetPatchApplied(AppTransform.Position.ApplyPatch(transformPatch.App.Position));
-
-					// Transform new position to world space.
-					transformUpdate.Position = appTransform.TransformPoint(newAppPos);
-				}
-
-				if (transformPatch.App.Rotation != null)
-				{
-					// New app space rotation
-					var newAppRot = (transform.rotation * appTransform.rotation)
-						.GetPatchApplied(AppTransform.Rotation.ApplyPatch(transformPatch.App.Rotation));
-
-					// Transform new app rotation to world space.
-					transformUpdate.Rotation = newAppRot * transform.rotation;
-				}
-			}
-
-			// Queue update to happen in the fixed update
-			RigidBody.SynchronizeEngine(transformUpdate);
 		}
 
 		private void CorrectAppTransform(MWTransform transform)
@@ -1223,44 +1167,7 @@ namespace MixedRealityExtension.Core
 			}
 			else
 			{
-				// Lerping and correction needs to happen at the rigid body level here to
-				// not interfere with physics simulation.  This will change with kinematic being
-				// enabled on a rigid body for when it is grabbed.  We do not support this currently,
-				// and thus do not interpolate the actor.  Just set the position for the rigid body.
-
-				_rbTransformPatch = _rbTransformPatch ?? new ActorTransformPatch()
-				{
-					App = new TransformPatch()
-					{
-						Position = new Vector3Patch(),
-						Rotation = new QuaternionPatch()
-					}
-				};
-
-				if (transform.Position != null)
-				{
-					_rbTransformPatch.App.Position.X = transform.Position.X;
-					_rbTransformPatch.App.Position.Y = transform.Position.Y;
-					_rbTransformPatch.App.Position.Z = transform.Position.Z;
-				}
-				else
-				{
-					_rbTransformPatch.App.Position = null;
-				}
-
-				if (transform.Rotation != null)
-				{
-					_rbTransformPatch.App.Rotation.W = transform.Rotation.W;
-					_rbTransformPatch.App.Rotation.X = transform.Rotation.X;
-					_rbTransformPatch.App.Rotation.Y = transform.Rotation.Y;
-					_rbTransformPatch.App.Rotation.Z = transform.Rotation.Z;
-				}
-				else
-				{
-					_rbTransformPatch.App.Rotation = null;
-				}
-
-				PatchTransformWithRigidBody(_rbTransformPatch);
+				// nothing to do this should be handled by the physics channel 
 			}
 		}
 
@@ -1541,9 +1448,9 @@ namespace MixedRealityExtension.Core
 			return false;
 		}
 
-		#endregion
+#endregion
 
-		#region Command Handlers
+#region Command Handlers
 
 		[CommandHandler(typeof(LocalCommand))]
 		private void OnLocalCommand(LocalCommand payload, Action onCompleteCallback)
@@ -1788,9 +1695,9 @@ namespace MixedRealityExtension.Core
 			onCompleteCallback?.Invoke();
 		}
 
-		#endregion
+#endregion
 
-		#region Command Handlers - Rigid Body Commands
+#region Command Handlers - Rigid Body Commands
 
 		[CommandHandler(typeof(RBMovePosition))]
 		private void OnRBMovePosition(RBMovePosition payload, Action onCompleteCallback)
@@ -1841,6 +1748,6 @@ namespace MixedRealityExtension.Core
 			onCompleteCallback?.Invoke();
 		}
 
-		#endregion
+#endregion
 	}
 }

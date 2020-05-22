@@ -3,6 +3,7 @@
 
 //#define DEBUG_JITTER_BUFFER
 
+using MixedRealityExtension.Patching.Types;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -36,16 +37,20 @@ namespace MixedRealityExtension.Core.Physics
 		/// </summary>
 		public struct TransformInfo
 		{
-			public TransformInfo(Guid id, RigidBodyTransform transform)
+			public TransformInfo(Guid id, RigidBodyTransform transform, MotionType mType)
 			{
 				Id = id;
 				Transform = transform;
+				motionType = mType;
 			}
 
 			/// <todo>
 			/// use int as transform id
 			/// </todo>
 			public Guid Id { get; private set; }
+
+			/// the type of the motion
+			public MotionType motionType { get; set; }
 
 			public RigidBodyTransform Transform { get; private set; }
 		}
@@ -81,6 +86,14 @@ namespace MixedRealityExtension.Core.Physics
 			{
 				Snapshots.Add(snapshot.Time, snapshot);
 			}
+
+			foreach (var tmp in snapshot.Transforms)
+			{
+				if (tmp.motionType == MotionType.Keyframed)
+				{
+					Debug.Log(" KEYFRAMED:" + tmp.Id);
+				}
+			}
 		}
 
 		/// <summary>
@@ -113,17 +126,20 @@ namespace MixedRealityExtension.Core.Physics
 	{
 		public struct RigidBodyState
 		{
-			public RigidBodyState(Guid id, float time, RigidBodyTransform transform, bool hasUpdate)
+			public RigidBodyState(Guid id, float time, RigidBodyTransform transform, bool hasUpdate, MotionType mType)
 			{
 				Id = id;
 				LocalTime = time;
 				Transform = transform;
 				HasUpdate = hasUpdate;
+				motionType = mType;
 			}
 
 			public Guid Id;
 
 			public float LocalTime;
+
+			public MotionType motionType;
 
 			public bool HasUpdate;
 
@@ -329,11 +345,13 @@ namespace MixedRealityExtension.Core.Physics
 											t.Lerp(prev.Transforms[prevIndex].Transform, next.Transforms[nextIndex].Transform, frac);
 										}
 
-										transforms.Add(new Snapshot.TransformInfo(next.Transforms[nextIndex].Id, t));
+										transforms.Add(new Snapshot.TransformInfo(next.Transforms[nextIndex].Id, t,
+											next.Transforms[nextIndex].motionType ));
 									}
 									else
 									{
-										transforms.Add(new Snapshot.TransformInfo(next.Transforms[nextIndex].Id, next.Transforms[nextIndex].Transform));
+										transforms.Add(new Snapshot.TransformInfo(next.Transforms[nextIndex].Id,
+											next.Transforms[nextIndex].Transform, next.Transforms[nextIndex].motionType));
 									}
 								}
 
@@ -442,7 +460,8 @@ namespace MixedRealityExtension.Core.Physics
 					foreach (var t in source.CurrentSnapshot.Transforms)
 					{
 						snapshot.RigidBodies.Add(t.Id,
-							new MultiSourceCombinedSnapshot.RigidBodyState(t.Id, source.CurrentSnapshot.Time, t.Transform, source.HasUpdate));
+							new MultiSourceCombinedSnapshot.RigidBodyState(t.Id, source.CurrentSnapshot.Time,
+							t.Transform, source.HasUpdate, t.motionType));
 					}
 				}
 			}

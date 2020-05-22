@@ -10,14 +10,21 @@ using Unity.Collections;
 
 namespace MixedRealityExtension.Patching.Types
 {
+	/// type of the motion that helps on the other side to predict its trajectory
+	public enum MotionType : int
+	{
+		Dynamic,
+		Keyframed
+	};
+
 	public class TransformPatchInfo
 	{
 		public TransformPatchInfo() { }
 
-		internal TransformPatchInfo(Guid id, RigidBodyTransform transform)
+		internal TransformPatchInfo(Guid id, RigidBodyTransform transform, MotionType mType)
 		{
 			Id = id;
-
+			motionType = mType;
 			Transform = new TransformPatch();
 			Transform.Position = new Vector3Patch(transform.Position);
 			Transform.Rotation = new QuaternionPatch(transform.Rotation);
@@ -27,6 +34,9 @@ namespace MixedRealityExtension.Patching.Types
 		/// ID of the actor (of the RB)
 		/// </summary>
 		public Guid Id { get; set; }
+
+		/// the type of the motion
+		public MotionType motionType { get; set; }
 
 		public TransformPatch Transform { get; set; }
 	}
