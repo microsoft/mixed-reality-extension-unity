@@ -119,8 +119,8 @@ namespace MixedRealityExtension.Core
 			if (_rigidBodies.ContainsKey(id))
 			{
 				var rb = _rigidBodies[id];
-				Debug.Log(" set key framed: " + rb.Id);
-				//if (rb.Ownership)
+				//Debug.Log(" set key framed: " + rb.Id + " ownership:" + rb.Ownership);
+				if (rb.Ownership)
 				{
 					rb.IsKeyframed = isKeyFramed;
 				}
@@ -228,13 +228,6 @@ namespace MixedRealityExtension.Core
 					//rb.RigidBody.velocity.Set(0.0f, 0.0f, 0.0f);
 					//rb.RigidBody.angularVelocity.Set(0.0f, 0.0f, 0.0f);
 
-					// code to disable prediction and to use just key framing 
-					//rb.RigidBody.isKinematic = true;
-					//rb.RigidBody.transform.position = keyFramedPos;
-					//rb.RigidBody.transform.rotation = keyFramedOrientation;
-					//rb.RigidBody.velocity.Set(0.0f, 0.0f, 0.0f);
-					//rb.RigidBody.angularVelocity.Set(0.0f, 0.0f, 0.0f);
-
 					// call the predictor with this remotely owned body
 					_predictor.AddAndProcessRemoteBodyForPrediction(rb, transform,
 						keyFramedPos, keyFramedOrientation, timeOfSnapshot, timeInfo);
@@ -271,6 +264,7 @@ namespace MixedRealityExtension.Core
 					transform.Position = rootTransform.InverseTransformPoint(rb.RigidBody.transform.position);
 					transform.Rotation = UnityEngine.Quaternion.Inverse(rootTransform.rotation) * rb.RigidBody.transform.rotation;
 				}
+
 				Patching.Types.MotionType mType = (rb.IsKeyframed) ? (Patching.Types.MotionType.Keyframed)
 					: (Patching.Types.MotionType.Dynamic);
 				
