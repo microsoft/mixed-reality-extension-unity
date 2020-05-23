@@ -65,8 +65,6 @@ namespace MixedRealityExtension.Core
 
 		private ActorComponentType _subscriptions = ActorComponentType.None;
 
-		private ActorTransformPatch _rbTransformPatch;
-
 		private new Renderer renderer = null;
 		internal Renderer Renderer
 		{
