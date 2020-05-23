@@ -222,11 +222,10 @@ namespace MixedRealityExtension.Core
 						// <todo> for long running times this could be a problem 
 						float invUpdateDT = 1.0f / (timeOfSnapshot - rb.lastTimeKeyFramedUpdate);
 						rb.lastValidLinerVelocity = (keyFramedPos - rb.RigidBody.transform.position) * invUpdateDT;
-						// todo limit the angular changes to maximal
+						// transform to radians and take the angular velocity 
 						UnityEngine.Vector3 eulerAngles = (
 						      UnityEngine.Quaternion.Inverse(rb.RigidBody.transform.rotation)
 						    * keyFramedOrientation).eulerAngles;
-						// transform to radians and take the angular velocity 
 						UnityEngine.Vector3 radianAngles = TransformEulerAnglesToRadians(eulerAngles);
 						rb.lastValidAngularVelocity = radianAngles * invUpdateDT;
 #if MRE_PHYSICS_DEBUG
