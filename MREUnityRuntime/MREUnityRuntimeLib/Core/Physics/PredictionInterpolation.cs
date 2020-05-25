@@ -54,7 +54,7 @@ namespace MixedRealityExtension.Core.Physics
 		const float interpolationPosEpsilon = 0.01f;
 		const float interpolationAngularEps = 3.0f;
 
-		const float velocityDampingForInterpolation = 0.95f; //damp velocities during interpolation
+		const float velocityDampingForInterpolation = 0.98f; //damp velocities during interpolation
 		const float velocityDampingInterpolationValueStart = 0.1f; // starting from this interpolation value we start velocity damping (should be smaller than 0.2)
 
 
