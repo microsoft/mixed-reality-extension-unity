@@ -1,5 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
+using MixedRealityExtension.Messaging;
 using System;
 
 namespace MixedRealityExtension.IPC
@@ -60,7 +61,7 @@ namespace MixedRealityExtension.IPC
 		/// <summary>
 		/// Invoked after the connection receives a message;
 		/// </summary>
-		event MWEventHandler<string> OnReceive;
+		event MWEventHandler<Message> OnReceive;
 
 		/// <summary>
 		/// Invoked when an error occurred on the connection.
@@ -85,8 +86,8 @@ namespace MixedRealityExtension.IPC
 		/// <summary>
 		/// Sends a message to the remote endpoint.
 		/// </summary>
-		/// <param name="message"></param>
-		void Send(string message);
+		/// <param name="message">The message to send.</param>
+		void Send(Message message);
 	}
 
 	internal interface IConnectionInternal : IConnection

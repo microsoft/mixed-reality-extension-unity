@@ -58,7 +58,7 @@ namespace MixedRealityExtension.RPC
 			app.Protocol.Send(new EngineToAppRPC()
 			{
 				ProcName = procName,
-				Args = args.ToList()
+				Args = (new List<object>(args)).ToArray()
 			});
 		}
 
@@ -76,7 +76,7 @@ namespace MixedRealityExtension.RPC
 				ChannelName = channelName,
 				ProcName = procName,
 				UserId = userId,
-				Args = args.ToList()
+				Args = (new List<object>(args)).ToArray()
 			});
 		}
 	}
