@@ -12,6 +12,11 @@ namespace Assets.Scripts.Behaviors
 			return actor.GameObject.GetComponent<MRTKButtonBehavior>() ?? actor.GameObject.AddComponent<MRTKButtonBehavior>();
 		}
 
+		public IPenBehavior GetOrCreatePenBehavior(IActor actor)
+		{
+			throw new System.NotImplementedException();
+		}
+
 		public ITargetBehavior GetOrCreateTargetBehavior(IActor actor)
 		{
 			return actor.GameObject.GetComponent<MRTKTargetBehavior>() ?? actor.GameObject.AddComponent<MRTKTargetBehavior>();
