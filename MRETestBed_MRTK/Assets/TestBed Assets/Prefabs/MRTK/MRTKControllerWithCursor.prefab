@@ -117,7 +117,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   canvas: {fileID: 218233153321845027}
-  controller: {fileID: 8871041712592257}
+  controller: {fileID: 0}
   inputSource: {fileID: 493551995785397551}
   label: {fileID: 110373597697952955}
   input: {fileID: 110856400987772393}
@@ -1305,7 +1305,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8871041723726913}
   - component: {fileID: 8871041718212001}
-  - component: {fileID: 8871041712592257}
+  - component: {fileID: 567300738961813810}
   - component: {fileID: 8871041727103745}
   - component: {fileID: 8871041724184961}
   m_Layer: 2
@@ -1352,16 +1352,16 @@ CharacterController:
   m_SkinWidth: 0.08
   m_MinMoveDistance: 0
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &8871041712592257
+--- !u!114 &567300738961813810
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8871041723883617}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 05ec5cf00ca181d45a42ba1870e148c3, type: 3}
+  m_Script: {fileID: 11500000, guid: 58da6490a57a89047a772a35a3fd1314, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   m_IsWalking: 0
@@ -1369,15 +1369,6 @@ MonoBehaviour:
   m_RunSpeed: 10
   m_StickToGroundForce: 10
   m_GravityMultiplier: 0
-  m_MouseLook:
-    XSensitivity: 2
-    YSensitivity: 2
-    clampVerticalRotation: 1
-    MinimumX: -90
-    MaximumX: 90
-    smooth: 0
-    smoothTime: 5
-    lockCursor: 1
 --- !u!54 &8871041727103745
 Rigidbody:
   m_ObjectHideFlags: 0
