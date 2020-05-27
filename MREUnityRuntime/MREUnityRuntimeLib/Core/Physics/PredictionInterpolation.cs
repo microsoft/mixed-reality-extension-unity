@@ -54,6 +54,10 @@ namespace MixedRealityExtension.Core.Physics
 		const float interpolationPosEpsilon = 0.01f;
 		const float interpolationAngularEps = 3.0f;
 
+		const float velocityDampingForInterpolation = 0.95f; //damp velocities during interpolation
+		const float velocityDampingInterpolationValueStart = 0.1f; // starting from this interpolation value we start velocity damping (should be smaller than 0.2)
+
+
 		/// empty Ctor
 		public PredictionInterpolation()
 		{
@@ -125,6 +129,13 @@ namespace MixedRealityExtension.Core.Physics
 					if (angleDiff > interpolationAngularEps)
 					{
 						rb.RigidBody.transform.rotation = interpolatedQuad;
+					}
+
+					// apply velocity damping if we are in the interpolation phase 
+					if (collisionInfo.monitorInfo.keyframedInterpolationRatio >= velocityDampingInterpolationValueStart)
+					{
+						rb.RigidBody.velocity *= velocityDampingForInterpolation;
+						rb.RigidBody.angularVelocity *= velocityDampingForInterpolation;
 					}
 				}
 			}
