@@ -92,6 +92,10 @@ namespace MixedRealityExtension.Patching.Types
 
 		public int TransformCount { get; set; }
 
+		/// <summary>
+		/// Serialized as a string in Json.
+		/// https://www.newtonsoft.com/json/help/html/SerializationGuide.htm
+		/// </summary>
 		public byte[] TransformsBLOB { get; set; }
 
 		public void WriteToPath(TargetPath path, JToken value, int depth)
