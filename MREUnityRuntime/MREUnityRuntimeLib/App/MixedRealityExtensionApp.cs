@@ -260,6 +260,14 @@ namespace MixedRealityExtension.App
 					_conn.OnError -= Connection_OnError;
 					_conn.Dispose();
 				}
+
+				if (_actorManager != null)
+				{
+					_actorManager.RigidBodyAdded -= OnRigidBodyAdded;
+					_actorManager.RigidBodyRemoved -= OnRigidBodyRemoved;
+					_actorManager.RigidBodyGrabbed -= OnRigidBodyGrabbed;
+					// ?_actorManager.OnActorCreated
+				}
 			}
 			catch { }
 			finally
@@ -682,7 +690,7 @@ namespace MixedRealityExtension.App
 				_actorManager.UpdateAllVisibility();
 				onCompleteCallback?.Invoke();
 			}
-			catch(Exception e)
+			catch (Exception e)
 			{
 				Debug.LogException(e);
 			}
