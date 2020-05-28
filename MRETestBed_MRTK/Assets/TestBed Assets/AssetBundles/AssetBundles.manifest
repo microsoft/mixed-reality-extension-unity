@@ -1,0 +1,10 @@
+ManifestFileVersion: 0
+CRC: 430589897
+AssetBundleManifest:
+  AssetBundleInfos:
+    Info_0:
+      Name: lamp
+      Dependencies: {}
+    Info_1:
+      Name: physics_test
+      Dependencies: {}
