@@ -155,7 +155,7 @@ namespace MixedRealityExtension.Messaging.Payloads
 		/// <summary>
 		/// Enumeration of results from an operation.
 		/// </summary>
-		public IEnumerable<OperationResult> Results { get; set; }
+		public OperationResult[] Results { get; set; }
 	}
 
 	/// <summary>
@@ -181,7 +181,7 @@ namespace MixedRealityExtension.Messaging.Payloads
 		/// <summary>
 		/// The arguments to that procedure call.
 		/// </summary>
-		public IEnumerable<object> Args { get; set; }
+		public object[] Args { get; set; }
 	}
 
 	/// <summary>
@@ -197,12 +197,12 @@ namespace MixedRealityExtension.Messaging.Payloads
 		/// <summary>
 		/// The enumeration of actors created during the object spawn command operation.
 		/// </summary>
-		public IEnumerable<ActorPatch> Actors { get; set; }
+		public ActorPatch[] Actors { get; set; }
 
 		/// <summary>
 		/// The enumeration of animations created during the object spawn.
 		/// </summary>
-		public IEnumerable<AnimationPatch> Animations { get; set; }
+		public AnimationPatch[] Animations { get; set; }
 	}
 
 	/// <summary>

@@ -1,5 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
+using MixedRealityExtension.Messaging;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -8,7 +10,6 @@ using System.Net.WebSockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using UnityEngine;
 using UnityEngine.Networking;
 
 namespace MixedRealityExtension.IPC.Connections
@@ -43,7 +44,7 @@ namespace MixedRealityExtension.IPC.Connections
 		public event MWEventHandler<Exception> OnError;
 
 		/// <inheritdoc />
-		public event MWEventHandler<string> OnReceive;
+		public event MWEventHandler<Message> OnReceive;
 
 		/// <inheritdoc />
 		public bool IsActive => _cancellationTokenSource != null;
@@ -102,7 +103,7 @@ namespace MixedRealityExtension.IPC.Connections
 		}
 
 		/// <inheritdoc />
-		public void Send(string message)
+		public void Send(Message message)
 		{
 			if (disposed)
 			{
@@ -119,13 +120,16 @@ namespace MixedRealityExtension.IPC.Connections
 
 			_sendQueue.Add(async () =>
 			{
-				var buffer = new ArraySegment<byte>(Encoding.UTF8.GetBytes(message));
 				try
 				{
+					var json = JsonConvert.SerializeObject(message, Constants.SerializerSettings);
+					var buffer = new ArraySegment<byte>(Encoding.UTF8.GetBytes(json));
 					await ws.SendAsync(buffer, WebSocketMessageType.Text, true, CancellationToken).ConfigureAwait(false);
 				}
 				catch (Exception)
-				{ }
+				{
+					// TODO: Log the exception, once the global MREAPI logger exists.
+				}
 			});
 		}
 
@@ -287,8 +291,8 @@ namespace MixedRealityExtension.IPC.Connections
 							// Dispatch the message.
 							if (result != null && result.EndOfMessage && stream.Length > 0)
 							{
-								var message = Encoding.UTF8.GetString(stream.GetBuffer(), 0, (int)stream.Length);
-								Invoke_OnReceive(message);
+								var json = Encoding.UTF8.GetString(stream.GetBuffer(), 0, (int)stream.Length);
+								Invoke_OnReceive(json);
 							}
 
 							// Reset accumulation buffer.
@@ -327,7 +331,7 @@ namespace MixedRealityExtension.IPC.Connections
 				Invoke_OnError(e);
 			}
 		}
-		
+
 		void IConnectionInternal.Update()
 		{
 			while (_eventQueue.TryTake(out Action action))
@@ -361,9 +365,24 @@ namespace MixedRealityExtension.IPC.Connections
 			_eventQueue.Add(() => OnError?.Invoke(e));
 		}
 
-		private void Invoke_OnReceive(string message)
+		private void Invoke_OnReceive(string json)
 		{
-			_eventQueue.Add(() => OnReceive?.Invoke(message));
+			// TODO: verbose log the message, once MREAPI global logger exists
+			// if (MREAPI.AppsAPI.VerboseLogging)
+			// {
+			// 	MREAPI.Logger.LogDebug($"Recv: {json}");
+			// }
+
+			try
+			{
+				Message message = JsonConvert.DeserializeObject<Message>(json, Constants.SerializerSettings);
+				_eventQueue.Add(() => OnReceive?.Invoke(message));
+			}
+			catch (Exception)
+			{
+				// TODO: Log the error, once MREAPI global logger exists
+				// MREAPI.Logger.LogDebug($"Error deserializing message.Json: {json}\nException: {e.Message}\nStackTrace: {e.StackTrace}");
+			}
 		}
 
 		private void StartWorker()
