@@ -388,7 +388,7 @@ namespace MixedRealityExtension.App
 			{
 				Protocol.Send(new DestroyActors()
 				{
-					ActorIds = new List<Guid>() { actorId }
+					ActorIds = new Guid[] { actorId }
 				});
 			}
 		}
@@ -829,8 +829,8 @@ namespace MixedRealityExtension.App
 						Message = trace.Message
 					},
 					Traces = new List<Trace>() { trace },
-					Actors = actors?.Select((actor) => actor.GeneratePatch()) ?? new ActorPatch[] { },
-					Animations = anims?.Select(anim => anim.GeneratePatch()) ?? new AnimationPatch[] { }
+					Actors = actors?.Select((actor) => actor.GeneratePatch()).ToArray() ?? new ActorPatch[] { },
+					Animations = anims?.Select(anim => anim.GeneratePatch()).ToArray() ?? new AnimationPatch[] { }
 				},
 				originalMessage?.MessageId
 			);
@@ -860,7 +860,7 @@ namespace MixedRealityExtension.App
 					}
 					Protocol.Send(new SyncAnimations()
 					{
-						AnimationStates = animationStates.ToList()
+						AnimationStates = animationStates.ToArray()
 					}, payload.MessageId);
 					onCompleteCallback?.Invoke();
 				});

@@ -53,16 +53,10 @@ namespace MixedRealityExtension.Messaging.Protocols
 			}
 		}
 
-		private void Conn_OnReceive(string json)
+		private void Conn_OnReceive(Message message)
 		{
 			try
 			{
-#if ANDROID_DEBUG
-				App.Logger.LogDebug($"Recv: {json}");
-#endif
-
-				var message = JsonConvert.DeserializeObject<Message>(json, Constants.SerializerSettings);
-
 				if (message.Payload is Payloads.Heartbeat payload)
 				{
 					App.UpdateServerTimeOffset(payload.ServerTime);
@@ -75,18 +69,19 @@ namespace MixedRealityExtension.Messaging.Protocols
 			}
 			catch (Exception ex)
 			{
-				var message = $"Failed to process message: {json}\nError: {ex.Message}\nStackTrace: {ex.StackTrace}";
-				App.Logger.LogDebug(message);
+				var errorMessage = $"Failed to process message: {message?.Payload?.Type}\nError: {ex.Message}\nStackTrace: {ex.StackTrace}";
+				App.Logger.LogDebug(errorMessage);
 				try
 				{
-					// In case of failure: make a best effort to send a reply message, so promises don't hang and the app can know something about what went wrong.
-					var jtoken = JToken.Parse(json);
-					var replyToId = jtoken["id"].ToString();
-					Send(new OperationResult()
+					if (message != null && !string.IsNullOrWhiteSpace(message.Id))
 					{
-						Message = message,
-						ResultCode = OperationResultCode.Error
-					}, replyToId);
+						// In case of failure: make a best effort to send a reply message, so promises don't hang and the app can know something about what went wrong.
+						Send(new OperationResult()
+						{
+							Message = errorMessage,
+							ResultCode = OperationResultCode.Error
+						}, message.Id);
+					}
 				}
 				catch
 				{ }
@@ -121,20 +116,11 @@ namespace MixedRealityExtension.Messaging.Protocols
 
 				try
 				{
-					var json = JsonConvert.SerializeObject(message, Constants.SerializerSettings);
-					try
-					{
-						Conn.Send(json);
-					}
-					catch (Exception e)
-					{
-						// Don't log to App.Logger here. The WebSocket might be disconnected.
-						Debug.LogError($"Error sending message {json}\nException: {e.Message}\nStackTrace: {e.StackTrace}");
-					}
+					Conn.Send(message);
 				}
 				catch (Exception e)
 				{
-					App.Logger.LogDebug($"Error serializing message. Exception: {e.Message}\nStackTrace: {e.StackTrace}");
+					App.Logger.LogDebug($"Error sending message. Exception: {e.Message}\nStackTrace: {e.StackTrace}");
 				}
 			}
 		}
