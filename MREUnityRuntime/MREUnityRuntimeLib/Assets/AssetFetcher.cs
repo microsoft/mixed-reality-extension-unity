@@ -30,7 +30,7 @@ namespace MixedRealityExtension.Assets
 				Asset = null,
 				FailureMessage = null
 			};
-			var ifNoneMatch = MREAPI.AppsAPI.AssetCache.GetVersion(uri.AbsoluteUri);
+			var ifNoneMatch = await MREAPI.AppsAPI.AssetCache.GetVersion(uri);
 
 			runner.StartCoroutine(LoadCoroutine());
 
@@ -43,13 +43,13 @@ namespace MixedRealityExtension.Assets
 			// handle caching
 			if (ifNoneMatch != null && result.ReturnCode == 304)
 			{
-				var assets = await MREAPI.AppsAPI.AssetCache.LeaseAssets(uri.AbsoluteUri);
+				var assets = await MREAPI.AppsAPI.AssetCache.LeaseAssets(uri);
 				result.Asset = assets.FirstOrDefault() as T;
 			}
 			else if (result.Asset != null)
 			{
 				MREAPI.AppsAPI.AssetCache.StoreAssets(
-					uri.AbsoluteUri,
+					uri,
 					new UnityEngine.Object[] { result.Asset as UnityEngine.Object },
 					result.ETag);
 			}

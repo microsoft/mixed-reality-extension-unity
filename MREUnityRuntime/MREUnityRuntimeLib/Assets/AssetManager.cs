@@ -177,9 +177,10 @@ namespace MixedRealityExtension.Assets
 		/// <param name="containerId"></param>
 		public void Unload(Guid containerId)
 		{
-			var assets = Assets.Values.Where(c => c.ContainerId == containerId && c.Asset != null);
-			foreach (var asset in assets)
+			var assets = Assets.Values.Where(c => c.ContainerId == containerId && c.Asset != null).ToArray();
+			for (var i = 0; i < assets.Length; i++)
 			{
+				var asset = assets[i];
 				Assets.Remove(asset.Id);
 
 				// asset is a one-off, just destroy it
@@ -199,7 +200,7 @@ namespace MixedRealityExtension.Assets
 				// asset is shared with other MRE instances, just return asset to cache
 				else
 				{
-					MREAPI.AppsAPI.AssetCache.StoreAssets(asset.Source.Uri, new Object[]{ asset.Asset }, asset.Source.Version);
+					MREAPI.AppsAPI.AssetCache.StoreAssets(asset.Source.ParsedUri, new Object[]{ asset.Asset }, asset.Source.Version);
 				}
 			}
 		}

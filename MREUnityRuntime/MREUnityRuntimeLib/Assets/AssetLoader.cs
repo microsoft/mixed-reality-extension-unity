@@ -155,22 +155,26 @@ namespace MixedRealityExtension.Assets
 		{
 			WebRequestLoader loader = null;
 			Stream stream = null;
-			string version;
 
-			var rootUrl = URIHelper.GetDirectoryName(source.ParsedUri.AbsoluteUri);
-			var cachedVersion = MREAPI.AppsAPI.AssetCache.GetVersion(source.ParsedUri.AbsoluteUri);
+			source.ParsedUri = new Uri(_app.ServerAssetUri, source.ParsedUri);
+			Debug.LogFormat("Getting cached etag for {0}", source.ParsedUri.AbsoluteUri);
+			var rootUri = URIHelper.GetDirectoryName(source.ParsedUri.AbsoluteUri);
+			var cachedVersion = await MREAPI.AppsAPI.AssetCache.GetVersion(source.ParsedUri);
 
 			// Wait asynchronously until the load throttler lets us through.
 			using (var scope = await AssetLoadThrottling.AcquireLoadScope())
 			{
 				// set up loader
-				loader = new WebRequestLoader(rootUrl);
+				loader = new WebRequestLoader(rootUri);
+				Debug.LogFormat("Should hook up BeforeRequestCallback? IsNull: {0}, IsEmpty: {1}", cachedVersion == null, cachedVersion == "");
 				if (!string.IsNullOrEmpty(cachedVersion))
 				{
-					loader.BeforeRequestCallback = (msg) =>
+					loader.BeforeRequestCallback += (msg) =>
 					{
+						Debug.LogFormat("Running BeforeRequestCallback");
 						if (msg.RequestUri == source.ParsedUri)
 						{
+							Debug.LogFormat("Adding If-None-Match {0}", cachedVersion);
 							msg.Headers.Add("If-None-Match", cachedVersion);
 						}
 					};
@@ -180,13 +184,13 @@ namespace MixedRealityExtension.Assets
 				try
 				{
 					stream = await loader.LoadStreamAsync(URIHelper.GetFileFromUri(source.ParsedUri));
-					version = loader.LastResponse.Headers.ETag.Tag;
+					source.Version = loader.LastResponse.Headers.ETag.Tag;
 				}
 				catch (HttpRequestException httpErr)
 				{
 					if (loader.LastResponse.StatusCode == System.Net.HttpStatusCode.NotModified)
 					{
-						version = cachedVersion;
+						source.Version = cachedVersion;
 					}
 					else
 					{
@@ -194,6 +198,7 @@ namespace MixedRealityExtension.Assets
 					}
 				}
 			}
+			Debug.LogFormat("Returned {0}, new version is {1}", (int)loader.LastResponse.StatusCode, source.Version);
 
 			IList<Asset> assetDefs = new List<Asset>(30);
 			DeterministicGuids guidGenerator = new DeterministicGuids(UtilMethods.StringToGuid(
@@ -201,15 +206,14 @@ namespace MixedRealityExtension.Assets
 			IList<UnityEngine.Object> assets;
 
 			// fetch assets from glTF stream or cache (grab latest version post-load)
-			cachedVersion = MREAPI.AppsAPI.AssetCache.GetVersion(source.ParsedUri.AbsoluteUri);
-			if (version != cachedVersion)
+			if (source.Version != cachedVersion)
 			{
 				assets = await LoadGltfFromStream(loader, stream, colliderType);
-				MREAPI.AppsAPI.AssetCache.StoreAssets(source.ParsedUri.AbsoluteUri, assets, version);
+				MREAPI.AppsAPI.AssetCache.StoreAssets(source.ParsedUri, assets, source.Version);
 			}
 			else
 			{
-				var assetsEnum = await MREAPI.AppsAPI.AssetCache.LeaseAssets(source.ParsedUri.AbsoluteUri);
+				var assetsEnum = await MREAPI.AppsAPI.AssetCache.LeaseAssets(source.ParsedUri);
 				assets = assetsEnum.ToList();
 			}
 
@@ -238,17 +242,21 @@ namespace MixedRealityExtension.Assets
 				{
 					internalId = $"scene:{prefabIndex++}";
 				}
-				assetDef.Source = new AssetSource(source.ContainerType, source.Uri, internalId, version);
+				assetDef.Source = new AssetSource(source.ContainerType, source.ParsedUri.AbsoluteUri, internalId, source.Version);
 
 				ColliderGeometry colliderGeo = null;
 				if (asset is UnityEngine.Mesh mesh)
 				{
 					colliderGeo = colliderType == ColliderType.Mesh ?
 						(ColliderGeometry)new MeshColliderGeometry() { MeshId = assetDef.Id } :
-						(ColliderGeometry)new BoxColliderGeometry() { Size = (mesh.bounds.size * 0.8f).CreateMWVector3() };
+						(ColliderGeometry)new BoxColliderGeometry()
+						{
+							Size = (mesh.bounds.size * 0.8f).CreateMWVector3(),
+							Center = mesh.bounds.center.CreateMWVector3()
+						};
 				}
 
-				_app.AssetManager.Set(assetDef.Id, containerId, asset, colliderGeo, source);
+				_app.AssetManager.Set(assetDef.Id, containerId, asset, colliderGeo, assetDef.Source);
 				assetDefs.Add(assetDef);
 			}
 
@@ -424,8 +432,9 @@ namespace MixedRealityExtension.Assets
 			// create textures
 			else if (unityAsset == null && def.Texture != null)
 			{
-				source = new AssetSource(AssetContainerType.None, def.Texture.Value.Uri);
-				var result = await AssetFetcher<UnityEngine.Texture>.LoadTask(_owner, new Uri(def.Texture.Value.Uri));
+				var texUri = new Uri(_app.ServerAssetUri, def.Texture.Value.Uri);
+				source = new AssetSource(AssetContainerType.None, texUri.AbsoluteUri);
+				var result = await AssetFetcher<UnityEngine.Texture>.LoadTask(_owner, texUri);
 				unityAsset = result.Asset;
 				source.Version = result.ETag;
 				if (result.FailureMessage != null)
@@ -460,8 +469,9 @@ namespace MixedRealityExtension.Assets
 			// create sounds
 			else if (unityAsset == null && def.Sound != null)
 			{
-				source = new AssetSource(AssetContainerType.None, def.Sound.Value.Uri);
-				var result = await AssetFetcher<UnityEngine.AudioClip>.LoadTask(_owner, new Uri(def.Sound.Value.Uri));
+				var soundUri = new Uri(_app.ServerAssetUri, def.Sound.Value.Uri);
+				source = new AssetSource(AssetContainerType.None, soundUri.AbsoluteUri);
+				var result = await AssetFetcher<UnityEngine.AudioClip>.LoadTask(_owner, soundUri);
 				unityAsset = result.Asset;
 				source.Version = result.ETag;
 				if (result.FailureMessage != null)
@@ -475,7 +485,8 @@ namespace MixedRealityExtension.Assets
 			{
 				if (MREAPI.AppsAPI.VideoPlayerFactory != null)
 				{
-					PluginInterfaces.FetchResult result2 = MREAPI.AppsAPI.VideoPlayerFactory.PreloadVideoAsset(def.VideoStream.Value.Uri);
+					var videoUri = new Uri(_app.ServerAssetUri, def.VideoStream.Value.Uri);
+					PluginInterfaces.FetchResult result2 = MREAPI.AppsAPI.VideoPlayerFactory.PreloadVideoAsset(videoUri.AbsoluteUri);
 					unityAsset = result2.Asset;
 					if (result2.FailureMessage != null)
 					{

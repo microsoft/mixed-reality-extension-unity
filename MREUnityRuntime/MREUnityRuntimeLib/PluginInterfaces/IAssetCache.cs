@@ -1,5 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -28,7 +29,7 @@ namespace MixedRealityExtension.PluginInterfaces
 		/// <param name="version">
 		/// The version of the loaded resource. Will typically be the HTTP response's ETag header.
 		/// </param>
-		void StoreAssets(string uri, IEnumerable<UnityEngine.Object> assets, string version);
+		void StoreAssets(Uri uri, IEnumerable<UnityEngine.Object> assets, string version);
 
 		/// <summary>
 		/// Asynchronously return the cached assets at the given URI, and increment the internal reference counter
@@ -39,7 +40,7 @@ namespace MixedRealityExtension.PluginInterfaces
 		/// <param name="uri">The resource identifier</param>
 		/// <param name="ifMatchesVersion">Return null if the cached assets are not of this version</param>
 		/// <returns></returns>
-		Task<IEnumerable<UnityEngine.Object>> LeaseAssets(string uri, string ifMatchesVersion = null);
+		Task<IEnumerable<UnityEngine.Object>> LeaseAssets(Uri uri, string ifMatchesVersion = null);
 
 		/// <summary>
 		/// Returns the stored version of the given resource, or null if not cached. We'll need this for If-Not-Match
@@ -47,6 +48,6 @@ namespace MixedRealityExtension.PluginInterfaces
 		/// </summary>
 		/// <param name="uri">The resource identifier</param>
 		/// <returns></returns>
-		string GetVersion(string uri);
+		Task<string> GetVersion(Uri uri);
 	}
 }

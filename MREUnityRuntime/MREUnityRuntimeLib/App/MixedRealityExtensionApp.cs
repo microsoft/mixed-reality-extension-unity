@@ -28,6 +28,7 @@ using System.Threading.Tasks;
 using UnityEngine;
 
 using Trace = MixedRealityExtension.Messaging.Trace;
+using Regex = System.Text.RegularExpressions.Regex;
 
 namespace MixedRealityExtension.App
 {
@@ -107,7 +108,12 @@ namespace MixedRealityExtension.App
 		public bool IsActive => _conn?.IsActive ?? false;
 
 		/// <inheritdoc />
-		public string ServerUrl { get; private set; }
+		public Uri ServerUri { get; private set; }
+
+		/// <summary>
+		/// Same as ServerUrl, but with ws(s): substituted for http(s):
+		/// </summary>
+		public Uri ServerAssetUri { get; private set; }
 
 		/// <inheritdoc />
 		public GameObject SceneRoot { get; set; }
@@ -188,7 +194,8 @@ namespace MixedRealityExtension.App
 		/// <inheritdoc />
 		public void Startup(string url, string sessionId, string platformId)
 		{
-			ServerUrl = url;
+			ServerUri = new Uri(url, UriKind.Absolute);
+			ServerAssetUri = new Uri(Regex.Replace(ServerUri.AbsoluteUri, "^ws(s?):", "http$1:"));
 
 			if (_conn == null)
 			{
