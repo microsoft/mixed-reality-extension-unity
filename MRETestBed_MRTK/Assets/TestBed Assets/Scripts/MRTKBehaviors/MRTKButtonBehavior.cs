@@ -1,8 +1,9 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
+
 using Assets.TestBed_Assets.Scripts.UserInput;
 using Microsoft.MixedReality.Toolkit.Input;
-using MixedRealityExtension.Behaviors.Actions;
+using MixedRealityExtension.Behaviors.Contexts;
 using MixedRealityExtension.PluginInterfaces.Behaviors;
 
 namespace Assets.Scripts.Behaviors
@@ -11,11 +12,7 @@ namespace Assets.Scripts.Behaviors
 	{
 		private MREInputActionHandler _primaryActionHandler;
 
-		public MWAction Hover { get; } = new MWAction();
-
-		public MWAction Click { get; } = new MWAction();
-
-		public MWAction Button { get; } = new MWAction();
+		public new ButtonBehaviorContext Context => _context as ButtonBehaviorContext;
 
 		protected override void InitializeActions()
 		{
@@ -44,25 +41,24 @@ namespace Assets.Scripts.Behaviors
 
 		private void OnPrimaryActionStarted(BaseInputEventData eventData)
 		{
-			var user = GetMWUnityUser();
-			Button.StartAction(user);
+			Context.StartButton(GetMWUnityUser(), CurrentFocusedPoint);
 		}
 
 		private void OnPrimaryActionEnded(BaseInputEventData eventData)
 		{
 			var user = GetMWUnityUser();
-			Button.StopAction(user);
-			Click.StartAction(user);
+			Context.EndButton(user, CurrentFocusedPoint);
+			Context.Click(user, CurrentFocusedPoint);
 		}
 
-		private void OnHoverStarted()
+		private void OnHoverStarted(object sender, TargetChangedEventArgs args)
 		{
-			Hover.StartAction(GetMWUnityUser());
+			Context.StartHover(GetMWUnityUser(), args.Point);
 		}
 
-		private void OnHoverEnded()
+		private void OnHoverEnded(object sender, TargetChangedEventArgs args)
 		{
-			Hover.StopAction(GetMWUnityUser());
+			Context.EndHover(GetMWUnityUser(), args.Point);
 		}
 	}
 }
