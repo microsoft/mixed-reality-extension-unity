@@ -173,10 +173,6 @@ namespace MixedRealityExtension.App
 				{ typeof(AnimationManager), AnimationManager }
 			});
 
-			_actorManager.RigidBodyAdded += OnRigidBodyAdded;
-			_actorManager.RigidBodyRemoved += OnRigidBodyRemoved;
-			_actorManager.RigidBodyGrabbed += OnRigidBodyGrabbed;
-
 			var cacheRoot = new GameObject("MRE Cache");
 			cacheRoot.transform.SetParent(_ownerScript.gameObject.transform);
 			cacheRoot.SetActive(false);
@@ -238,6 +234,13 @@ namespace MixedRealityExtension.App
 				_conn = connection;
 			}
 			_conn.Open();
+
+			if (_actorManager != null)
+			{
+				_actorManager.RigidBodyAdded += OnRigidBodyAdded;
+				_actorManager.RigidBodyRemoved += OnRigidBodyRemoved;
+				_actorManager.RigidBodyGrabbed += OnRigidBodyGrabbed;
+			}
 		}
 
 		/// <inheritdoc />
@@ -266,7 +269,6 @@ namespace MixedRealityExtension.App
 					_actorManager.RigidBodyAdded -= OnRigidBodyAdded;
 					_actorManager.RigidBodyRemoved -= OnRigidBodyRemoved;
 					_actorManager.RigidBodyGrabbed -= OnRigidBodyGrabbed;
-					// ?_actorManager.OnActorCreated
 				}
 			}
 			catch { }

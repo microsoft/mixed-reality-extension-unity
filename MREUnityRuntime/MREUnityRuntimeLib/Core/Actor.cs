@@ -1313,8 +1313,8 @@ namespace MixedRealityExtension.Core
 					behaviorComponent.SetBehaviorHandler(handler);
 				}
 
-				((ITargetBehavior)behaviorComponent.Behavior).Grabbable = grabbable.Value;
 				((ITargetBehavior)behaviorComponent.Behavior).Grab.ActionStateChanged += onGrabbed;
+				((ITargetBehavior)behaviorComponent.Behavior).Grabbable = grabbable.Value;
 
 				Grabbable = grabbable.Value;
 			}
