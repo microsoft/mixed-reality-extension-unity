@@ -30,8 +30,8 @@ sysinfo.txt
 /*.tmp
 /*.svd
  
-Assets/Assemblies/MREUnity*.*
-!Assets/Assemblies/*.dll.meta
+# Assets/Assemblies/MREUnity*.*
+# !Assets/Assemblies/*.dll.meta
 
 # ============ #
 # OS generated #
