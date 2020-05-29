@@ -87,6 +87,7 @@ namespace MixedRealityExtension.Assets
 		/// <returns></returns>
 		public AssetMetadata? GetById(Guid? id, bool writeSafe = false)
 		{
+			// TODO: copy sourced assets if requesting write-safe
 			if (id != null && Assets.TryGetValue(id.Value, out AssetMetadata metadata))
 			{
 				return metadata;
@@ -148,7 +149,6 @@ namespace MixedRealityExtension.Assets
 		public void Set(Guid id, Guid containerId, Object asset,
 			ColliderGeometry colliderGeo = null, AssetSource source = null)
 		{
-
 			if (!Assets.ContainsKey(id))
 			{
 				Assets[id] = new AssetMetadata(id, containerId, asset, colliderGeo, source);

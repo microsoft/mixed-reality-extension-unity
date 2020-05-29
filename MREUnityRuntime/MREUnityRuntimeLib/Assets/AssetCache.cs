@@ -63,7 +63,7 @@ namespace MixedRealityExtension.Assets
 		public int CleanInterval { get; set; } = 30;
 
 		///<inheritdoc/>
-		public GameObject CacheRootGO => gameObject;
+		public GameObject CacheRootGO { get; set; }
 
 		///<inheritdoc/>
 		public void StoreAssets(string uri, IEnumerable<Object> assets, string version)
