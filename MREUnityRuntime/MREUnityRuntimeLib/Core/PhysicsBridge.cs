@@ -4,7 +4,6 @@
 using MixedRealityExtension.Core.Physics;
 using System;
 using System.Collections.Generic;
-using UnityEngine;
 using MixedRealityExtension.Util;
 
 namespace MixedRealityExtension.Core
