@@ -237,13 +237,6 @@ namespace MixedRealityExtension.App
 				_conn = connection;
 			}
 			_conn.Open();
-
-			if (_actorManager != null)
-			{
-				_actorManager.RigidBodyAdded += OnRigidBodyAdded;
-				_actorManager.RigidBodyRemoved += OnRigidBodyRemoved;
-				_actorManager.RigidBodyGrabbed += OnRigidBodyGrabbed;
-			}
 		}
 
 		/// <inheritdoc />
