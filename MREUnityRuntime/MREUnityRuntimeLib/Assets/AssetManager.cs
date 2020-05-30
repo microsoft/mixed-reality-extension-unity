@@ -42,14 +42,18 @@ namespace MixedRealityExtension.Assets
 			}
 		}
 
+		public event Action<Guid> AssetReferenceChanged;
+
+		private App.IMixedRealityExtensionApp App;
 		private readonly Dictionary<Guid, AssetMetadata> Assets = new Dictionary<Guid, AssetMetadata>(50);
 		private readonly Dictionary<Guid, List<AssetCallback>> Callbacks
 			= new Dictionary<Guid, List<AssetCallback>>(50);
 		private readonly GameObject cacheRoot;
 		private readonly GameObject emptyTemplate;
 
-		public AssetManager(GameObject root = null)
+		public AssetManager(App.IMixedRealityExtensionApp app, GameObject root = null)
 		{
+			App = app;
 			cacheRoot = root ?? new GameObject("MRE Cache Root");
 			cacheRoot.SetActive(false);
 
@@ -87,10 +91,14 @@ namespace MixedRealityExtension.Assets
 		/// <returns></returns>
 		public AssetMetadata? GetById(Guid? id, bool writeSafe = false)
 		{
-			// TODO: copy sourced assets if requesting write-safe
 			if (id != null && Assets.TryGetValue(id.Value, out AssetMetadata metadata))
 			{
-				return metadata;
+				// copy sourced assets if requesting write-safe
+				if (writeSafe)
+				{
+					MakeWriteSafe(metadata);
+				}
+				return Assets[id.Value];
 			}
 			else return null;
 		}
@@ -200,9 +208,111 @@ namespace MixedRealityExtension.Assets
 				// asset is shared with other MRE instances, just return asset to cache
 				else
 				{
-					MREAPI.AppsAPI.AssetCache.StoreAssets(asset.Source.ParsedUri, new Object[]{ asset.Asset }, asset.Source.Version);
+					MREAPI.AppsAPI.AssetCache.StoreAssets(
+						asset.Source.ParsedUri,
+						new Object[]{ asset.Asset },
+						asset.Source.Version);
 				}
 			}
+		}
+
+		/// <summary>
+		/// Recursively copy shared assets from cache into manager so the app can modify them.
+		/// </summary>
+		/// <param name="metadata"></param>
+		private void MakeWriteSafe(AssetMetadata metadata, AssetMetadata? dependency = null, AssetMetadata? updatedDependency = null)
+		{
+			if (metadata.Source == null) return;
+
+			// copy asset
+			var originalAsset = metadata.Asset;
+			var copyAsset = Object.Instantiate(originalAsset);
+			var copyMetadata = new AssetMetadata(
+				metadata.Id,
+				metadata.ContainerId,
+				asset: copyAsset,
+				metadata.ColliderGeometry,
+				source: null);
+			Assets[metadata.Id] = copyMetadata;
+
+			IEnumerable<AssetMetadata> dependents;
+			if (originalAsset is UnityEngine.Texture tex)
+			{
+				// identify materials that use this texture
+				dependents = Assets.Values.Where(a =>
+				{
+					if (a.Asset is UnityEngine.Material mat)
+					{
+						return MREAPI.AppsAPI.MaterialPatcher.UsesTexture(App, mat, tex);
+					}
+					else return false;
+				});
+			}
+			else if (originalAsset is UnityEngine.Material mat)
+			{
+				// update material's texture reference to the new copy
+				if (dependency != null && updatedDependency != null)
+				{
+					var matDef = MREAPI.AppsAPI.MaterialPatcher.GeneratePatch(App, mat);
+					var updatePatch = new Material();
+					if (matDef.MainTextureId == dependency.Value.Id)
+					{
+						updatePatch.MainTextureId = dependency.Value.Id;
+					}
+					if (matDef.EmissiveTextureId == dependency.Value.Id)
+					{
+						updatePatch.EmissiveTextureId = dependency.Value.Id;
+					}
+					MREAPI.AppsAPI.MaterialPatcher.ApplyMaterialPatch(App, mat, updatePatch);
+				}
+
+				// update actors that use this material
+				AssetReferenceChanged?.Invoke(metadata.Id);
+
+				// identify prefabs that reference this material
+				dependents = Assets.Values.Where(a =>
+				{
+					if (a.Asset is GameObject prefab)
+					{
+						var renderers = prefab.GetComponentsInChildren<Renderer>();
+						return renderers.Any(r => r.sharedMaterial == mat);
+					}
+					else return false;
+				});
+			}
+			else if (copyAsset is GameObject prefab)
+			{
+				// copy prefab into local cache
+				prefab.transform.SetParent(CacheRootGO().transform, false);
+
+				// update materials
+				if (dependency != null && updatedDependency != null)
+				{
+					var renderers = prefab.GetComponentsInChildren<Renderer>();
+					foreach (var r in renderers)
+					{
+						if (r.sharedMaterial == (UnityEngine.Material)dependency.Value.Asset)
+						{
+							r.sharedMaterial = (UnityEngine.Material)updatedDependency.Value.Asset;
+						}
+					}
+				}
+
+				dependents = new AssetMetadata[0];
+			}
+			else
+			{
+				dependents = new AssetMetadata[0];
+			}
+
+			// update dependents
+			foreach (var dependent in dependents)
+			{
+				MakeWriteSafe(dependent, metadata, copyMetadata);
+			}
+
+			// return original assets to cache
+			MREAPI.AppsAPI.AssetCache.StoreAssets(metadata.Source.ParsedUri, new Object[] { originalAsset }, metadata.Source.Version);
 		}
 	}
 }

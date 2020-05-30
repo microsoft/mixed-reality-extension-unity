@@ -157,7 +157,6 @@ namespace MixedRealityExtension.Assets
 			Stream stream = null;
 
 			source.ParsedUri = new Uri(_app.ServerAssetUri, source.ParsedUri);
-			Debug.LogFormat("Getting cached etag for {0}", source.ParsedUri.AbsoluteUri);
 			var rootUri = URIHelper.GetDirectoryName(source.ParsedUri.AbsoluteUri);
 			var cachedVersion = await MREAPI.AppsAPI.AssetCache.GetVersion(source.ParsedUri);
 
@@ -166,15 +165,12 @@ namespace MixedRealityExtension.Assets
 			{
 				// set up loader
 				loader = new WebRequestLoader(rootUri);
-				Debug.LogFormat("Should hook up BeforeRequestCallback? IsNull: {0}, IsEmpty: {1}", cachedVersion == null, cachedVersion == "");
 				if (!string.IsNullOrEmpty(cachedVersion))
 				{
 					loader.BeforeRequestCallback += (msg) =>
 					{
-						Debug.LogFormat("Running BeforeRequestCallback");
 						if (msg.RequestUri == source.ParsedUri)
 						{
-							Debug.LogFormat("Adding If-None-Match {0}", cachedVersion);
 							msg.Headers.Add("If-None-Match", cachedVersion);
 						}
 					};
@@ -198,7 +194,6 @@ namespace MixedRealityExtension.Assets
 					}
 				}
 			}
-			Debug.LogFormat("Returned {0}, new version is {1}", (int)loader.LastResponse.StatusCode, source.Version);
 
 			IList<Asset> assetDefs = new List<Asset>(30);
 			DeterministicGuids guidGenerator = new DeterministicGuids(UtilMethods.StringToGuid(

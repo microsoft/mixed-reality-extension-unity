@@ -178,7 +178,7 @@ namespace MixedRealityExtension.App
 			var cacheRoot = new GameObject("MRE Cache");
 			cacheRoot.transform.SetParent(_ownerScript.gameObject.transform);
 			cacheRoot.SetActive(false);
-			_assetManager = new AssetManager(cacheRoot);
+			_assetManager = new AssetManager(this, cacheRoot);
 
 			RPC = new RPCInterface(this);
 			RPCChannels = new RPCChannelInterface();

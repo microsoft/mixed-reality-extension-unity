@@ -75,18 +75,15 @@ namespace MixedRealityExtension.Assets
 		///<inheritdoc/>
 		public void StoreAssets(Uri uri, IEnumerable<Object> assets, string version)
 		{
-			Debug.LogFormat("Storing {0} (version {1})", uri, version);
 			// already a cached asset for this uri
 			if (Cache.TryGetValue(uri, out CacheItem cacheItem))
 			{
-				Debug.Log("Cached version found");
 				// Note: might be same as cacheItem
 				CacheItem oldItem = cacheItem.FindInHistory(version);
 
 				// these assets are already in the cache, just dereference
 				if (oldItem != null)
 				{
-					Debug.Log("Cached version == stored version, updating");
 					var newRefCount = oldItem.ReferenceCount - assets.Count();
 					oldItem.ReferenceCount = newRefCount >= 0 ? newRefCount : 0;
 					if (oldItem.ReferenceCount == 0)
@@ -97,7 +94,6 @@ namespace MixedRealityExtension.Assets
 				// the submitted version is not in history (i.e. is a new version), update cache
 				else
 				{
-					Debug.Log("Cached version != stored version, replacing");
 					Cache[uri] = new CacheItem(uri, assets.ToArray(), version,
 						referenceCount: assets.Count(),
 						previousVersion: cacheItem);
@@ -107,7 +103,6 @@ namespace MixedRealityExtension.Assets
 			else
 			{
 				cacheItem = new CacheItem(uri, assets.ToArray(), version, assets.Count());
-				Debug.LogFormat("Caching {0}", cacheItem);
 				Cache.Add(uri, cacheItem);
 			}
 		}
@@ -131,12 +126,10 @@ namespace MixedRealityExtension.Assets
 		{
 			if (Cache.TryGetValue(uri, out CacheItem cacheItem))
 			{
-				Debug.LogFormat("Cache hit: {0}", cacheItem);
 				return Task.FromResult(cacheItem.Version);
 			}
 			else
 			{
-				Debug.LogFormat("{0} not found in cache", uri);
 				return Task.FromResult<string>(null);
 			}
 		}

@@ -596,6 +596,16 @@ namespace MixedRealityExtension.Core
 		{
 			_rigidbody = gameObject.GetComponent<Rigidbody>();
 			_light = gameObject.GetComponent<UnityLight>();
+
+			App.AssetManager.AssetReferenceChanged += CheckMaterialReferenceChanged;
+		}
+
+		private void CheckMaterialReferenceChanged(Guid id)
+		{
+			if (this != null && MaterialId == id && Renderer != null)
+			{
+				Renderer.sharedMaterial = (Material)App.AssetManager.GetById(id).Value.Asset;
+			}
 		}
 
 		protected override void OnDestroyed()
@@ -618,6 +628,8 @@ namespace MixedRealityExtension.Core
 					DestroyMediaById(mediaInstance.Key, mediaInstance.Value);
 				}
 			}
+
+			App.AssetManager.AssetReferenceChanged -= CheckMaterialReferenceChanged;
 		}
 
 		protected override void InternalUpdate()

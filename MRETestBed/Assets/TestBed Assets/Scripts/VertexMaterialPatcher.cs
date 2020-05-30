@@ -125,4 +125,10 @@ public class VertexMaterialPatcher : MixedRealityExtension.Factories.DefaultMate
 
 		return patch;
 	}
+
+	/// <inheritdoc />
+	public override bool UsesTexture(IMixedRealityExtensionApp app, Material material, Texture texture)
+	{
+		return base.UsesTexture(app, material, texture) || material.GetTexture(EmissiveTexProp) == texture;
+	}
 }

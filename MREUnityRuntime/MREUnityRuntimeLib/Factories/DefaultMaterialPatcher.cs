@@ -80,5 +80,11 @@ namespace MixedRealityExtension.Factories
 				MainTextureScale = new Vector2Patch(material.mainTextureScale)
 			};
 		}
+
+		/// <inheritdoc />
+		public virtual bool UsesTexture(IMixedRealityExtensionApp app, Material material, Texture texture)
+		{
+			return material.mainTexture == texture;
+		}
 	}
 }
