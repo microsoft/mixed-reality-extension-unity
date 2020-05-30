@@ -814,7 +814,7 @@ namespace MixedRealityExtension.Core
 			return Light;
 		}
 
-		void onGrabbed(object sender, ActionStateChangedArgs args)
+		void OnRigidBodyGrabbed(object sender, ActionStateChangedArgs args)
 		{
 			if (args.NewState != ActionState.Performing)
 			{
@@ -840,7 +840,7 @@ namespace MixedRealityExtension.Core
 				{
 					if (targetBehavior.Grabbable)
 					{
-						targetBehavior.Grab.ActionStateChanged += onGrabbed;
+						targetBehavior.Grab.ActionStateChanged += OnRigidBodyGrabbed;
 					}
 				}
 			}
@@ -1313,8 +1313,23 @@ namespace MixedRealityExtension.Core
 					behaviorComponent.SetBehaviorHandler(handler);
 				}
 
-				((ITargetBehavior)behaviorComponent.Behavior).Grabbable = grabbable.Value;
-				((ITargetBehavior)behaviorComponent.Behavior).Grab.ActionStateChanged += onGrabbed;
+				if (RigidBody != null && behaviorComponent.Behavior is ITargetBehavior targetBehavior)
+				{
+					bool wasGrabbable = targetBehavior.Grabbable;
+					targetBehavior.Grabbable = grabbable.Value;
+
+					if (wasGrabbable != grabbable.Value)
+					{
+						if (grabbable.Value)
+						{
+							targetBehavior.Grab.ActionStateChanged += OnRigidBodyGrabbed;
+						}
+						else
+						{
+							targetBehavior.Grab.ActionStateChanged -= OnRigidBodyGrabbed;
+						}
+					}
+				}
 
 				Grabbable = grabbable.Value;
 			}
@@ -1372,6 +1387,15 @@ namespace MixedRealityExtension.Core
 
 		private void CleanUp()
 		{
+			var behaviorComponent = GetActorComponent<BehaviorComponent>();
+			if (behaviorComponent != null && behaviorComponent.Behavior is ITargetBehavior targetBehavior)
+			{
+				if (RigidBody != null && Grabbable)
+				{
+					targetBehavior.Grab.ActionStateChanged -= OnRigidBodyGrabbed;
+				}
+			}
+
 			foreach (var component in _components.Values)
 			{
 				component.CleanUp();

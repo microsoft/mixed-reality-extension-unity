@@ -24,7 +24,6 @@ using MixedRealityExtension.Util.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using UnityEngine;
 
 using Trace = MixedRealityExtension.Messaging.Trace;
@@ -173,10 +172,6 @@ namespace MixedRealityExtension.App
 				{ typeof(AnimationManager), AnimationManager }
 			});
 
-			_actorManager.RigidBodyAdded += OnRigidBodyAdded;
-			_actorManager.RigidBodyRemoved += OnRigidBodyRemoved;
-			_actorManager.RigidBodyGrabbed += OnRigidBodyGrabbed;
-
 			var cacheRoot = new GameObject("MRE Cache");
 			cacheRoot.transform.SetParent(_ownerScript.gameObject.transform);
 			cacheRoot.SetActive(false);
@@ -212,6 +207,10 @@ namespace MixedRealityExtension.App
 		public void Startup(string url, string sessionId, string platformId)
 		{
 			ServerUrl = url;
+
+			_actorManager.RigidBodyAdded += OnRigidBodyAdded;
+			_actorManager.RigidBodyRemoved += OnRigidBodyRemoved;
+			_actorManager.RigidBodyGrabbed += OnRigidBodyGrabbed;
 
 			if (_conn == null)
 			{
@@ -287,6 +286,11 @@ namespace MixedRealityExtension.App
 			{
 				UnityEngine.Object.Destroy(go);
 			}
+
+			_actorManager.RigidBodyAdded -= OnRigidBodyAdded;
+			_actorManager.RigidBodyRemoved -= OnRigidBodyRemoved;
+			_actorManager.RigidBodyGrabbed -= OnRigidBodyGrabbed;
+
 			_ownedGameObjects.Clear();
 			_actorManager.Reset();
 			AnimationManager.Reset();
@@ -682,7 +686,7 @@ namespace MixedRealityExtension.App
 				_actorManager.UpdateAllVisibility();
 				onCompleteCallback?.Invoke();
 			}
-			catch(Exception e)
+			catch (Exception e)
 			{
 				Debug.LogException(e);
 			}

@@ -4,7 +4,7 @@
 using MixedRealityExtension.Core.Physics;
 using System;
 using System.Collections.Generic;
-using UnityEngine;
+using MixedRealityExtension.Util;
 
 namespace MixedRealityExtension.Core
 {
@@ -56,28 +56,6 @@ namespace MixedRealityExtension.Core
 		public PhysicsBridge()
 		{
 		}
-
-
-		#region Angle Helper Function
-		/// helper function to transform an Euler angle to radian
-		public static float TransformEulerAngleToRadian(float eulerAngle)
-		{
-			float ret = eulerAngle;
-			ret = (ret >= 180) ? (ret - 360.0f) : ret;
-			ret = (ret <= -180) ? (360 + ret) : ret;
-			ret = ret * ((float)Math.PI / 180.0f);
-			return ret;
-		}
-		/// helper function to transform an Euler angle to radians
-		public static UnityEngine.Vector3 TransformEulerAnglesToRadians(UnityEngine.Vector3 eulerAngles)
-		{
-			UnityEngine.Vector3 ret = eulerAngles;
-			ret.x = TransformEulerAngleToRadian(ret.x);
-			ret.y = TransformEulerAngleToRadian(ret.y);
-			ret.z = TransformEulerAngleToRadian(ret.z);
-			return ret;
-		}
-		#endregion
 
 		#region Rigid Body Management
 
@@ -226,7 +204,7 @@ namespace MixedRealityExtension.Core
 						UnityEngine.Vector3 eulerAngles = (
 						      UnityEngine.Quaternion.Inverse(rb.RigidBody.transform.rotation)
 						    * keyFramedOrientation).eulerAngles;
-						UnityEngine.Vector3 radianAngles = TransformEulerAnglesToRadians(eulerAngles);
+						UnityEngine.Vector3 radianAngles = UtilMethods.TransformEulerAnglesToRadians(eulerAngles);
 						rb.lastValidAngularVelocity = radianAngles * invUpdateDT;
 #if MRE_PHYSICS_DEBUG
 						Debug.Log(" Remote body: " + rb.Id.ToString() + " got update lin vel:"

@@ -92,12 +92,23 @@ namespace MixedRealityExtension.Core
 						_app.Logger.LogError(e.ToString());
 					}
 					// Is there any other cleanup?  Do it here.
+
+					actor.RigidBodyAdded -= OnRigidBodyAdded;
+					actor.RigidBodyRemoved -= OnRigidBodyRemoved;
+					actor.RigidBodyGrabbed -= OnActorRigidBodyGrabbed;
 				}
 			}
 		}
 
 		internal void Reset()
 		{
+			foreach (var actor in _actorMapping.Values)
+			{
+				actor.RigidBodyAdded -= OnRigidBodyAdded;
+				actor.RigidBodyRemoved -= OnRigidBodyRemoved;
+				actor.RigidBodyGrabbed -= OnActorRigidBodyGrabbed;
+			}
+
 			_actorMapping.Clear();
 			_actorCommandQueues.Clear();
 			_uponStable.Clear();
@@ -173,6 +184,12 @@ namespace MixedRealityExtension.Core
 			bool removed = false;
 			if (_actorMapping.ContainsKey(id))
 			{
+				var actor = _actorMapping[id];
+
+				actor.RigidBodyAdded -= OnRigidBodyAdded;
+				actor.RigidBodyRemoved -= OnRigidBodyRemoved;
+				actor.RigidBodyGrabbed -= OnActorRigidBodyGrabbed;
+
 				_actorMapping.Remove(id);
 				removed = true;
 			}
