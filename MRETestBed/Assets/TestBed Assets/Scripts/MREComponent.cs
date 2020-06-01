@@ -241,6 +241,11 @@ public class MREComponent : MonoBehaviour
 		}
 	}
 
+	private void FixedUpdate()
+	{
+		MREApp?.FixedUpdate();
+	}
+
 	void Update()
 	{
 		if (Input.GetButtonUp("Jump"))

@@ -24,7 +24,6 @@ using MixedRealityExtension.Util.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using UnityEngine;
 
 using Trace = MixedRealityExtension.Messaging.Trace;
@@ -40,6 +39,9 @@ namespace MixedRealityExtension.App
 		private readonly CommandManager _commandManager;
 		internal readonly AnimationManager AnimationManager;
 		private readonly AssetManager _assetManager;
+
+		private PhysicsBridge _physicsBridge;
+		private bool _shouldSendPhysicsUpdate = false;
 
 		private readonly MonoBehaviour _ownerScript;
 
@@ -164,6 +166,7 @@ namespace MixedRealityExtension.App
 			_assetLoader = new AssetLoader(ownerScript, this);
 			_userManager = new UserManager(this);
 			_actorManager = new ActorManager(this);
+			_physicsBridge = new PhysicsBridge();
 			SoundManager = new SoundManager(this);
 			AnimationManager = new AnimationManager(this);
 			_commandManager = new CommandManager(new Dictionary<Type, ICommandHandlerContext>()
@@ -191,11 +194,30 @@ namespace MixedRealityExtension.App
 #endif
 		}
 
+		private void OnRigidBodyGrabbed(Guid id, bool isGrabbed)
+		{
+			_physicsBridge.setKeyframed(id, isGrabbed);
+		}
+
+		private void OnRigidBodyAdded(Guid id, Rigidbody rigidbody, bool isOwned)
+		{
+			_physicsBridge.addRigidBody(id, rigidbody, isOwned);
+		}
+
+		private void OnRigidBodyRemoved(Guid id)
+		{
+			_physicsBridge.removeRigidBody(id);
+		}
+
 		/// <inheritdoc />
 		public void Startup(string url, string sessionId, string platformId)
 		{
 			ServerUri = new Uri(url, UriKind.Absolute);
 			ServerAssetUri = new Uri(Regex.Replace(ServerUri.AbsoluteUri, "^ws(s?):", "http$1:"));
+
+			_actorManager.RigidBodyAdded += OnRigidBodyAdded;
+			_actorManager.RigidBodyRemoved += OnRigidBodyRemoved;
+			_actorManager.RigidBodyGrabbed += OnRigidBodyGrabbed;
 
 			if (_conn == null)
 			{
@@ -271,6 +293,11 @@ namespace MixedRealityExtension.App
 			{
 				UnityEngine.Object.Destroy(go);
 			}
+
+			_actorManager.RigidBodyAdded -= OnRigidBodyAdded;
+			_actorManager.RigidBodyRemoved -= OnRigidBodyRemoved;
+			_actorManager.RigidBodyGrabbed -= OnRigidBodyGrabbed;
+
 			_ownedGameObjects.Clear();
 			_actorManager.Reset();
 			AnimationManager.Reset();
@@ -280,6 +307,26 @@ namespace MixedRealityExtension.App
 				AssetManager.Unload(id);
 			}
 			_assetLoader.ActiveContainers.Clear();
+		}
+
+		/// <inheritdoc />
+		public void FixedUpdate()
+		{
+			if (_shouldSendPhysicsUpdate)
+			{
+				SendPhysicsUpdate();
+				_shouldSendPhysicsUpdate = false;
+			}
+
+			_physicsBridge.FixedUpdate(SceneRoot.transform);
+
+			_shouldSendPhysicsUpdate = true;
+		}
+
+		private void SendPhysicsUpdate()
+		{
+			PhysicsBridgePatch physicsPatch = new PhysicsBridgePatch(InstanceId, _physicsBridge.GenerateSnapshot(UnityEngine.Time.fixedTime, SceneRoot.transform));
+			EventManager.QueueEvent(new PhysicsBridgeUpdated(InstanceId, physicsPatch));
 		}
 
 		/// <inheritdoc />
@@ -296,6 +343,13 @@ namespace MixedRealityExtension.App
 			}
 			// Process actor queues after connection update.
 			_actorManager.Update();
+
+			if (_shouldSendPhysicsUpdate)
+			{
+				SendPhysicsUpdate();
+				_shouldSendPhysicsUpdate = false;
+			}
+
 			SoundManager.Update();
 			_commandManager.Update();
 			AnimationManager.Update();
@@ -639,7 +693,7 @@ namespace MixedRealityExtension.App
 				_actorManager.UpdateAllVisibility();
 				onCompleteCallback?.Invoke();
 			}
-			catch(Exception e)
+			catch (Exception e)
 			{
 				Debug.LogException(e);
 			}
@@ -916,6 +970,13 @@ namespace MixedRealityExtension.App
 					onCompleteCallback?.Invoke();
 				});
 			}
+		}
+
+		[CommandHandler(typeof(PhysicsBridgeUpdate))]
+		private void OnTransformsUpdate(PhysicsBridgeUpdate payload, Action onCompleteCallback)
+		{
+			_physicsBridge.addSnapshot(payload.PhysicsBridge.Id, payload.PhysicsBridge.ToSnapshot());
+			onCompleteCallback?.Invoke();
 		}
 
 		#endregion

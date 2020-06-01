@@ -25,15 +25,44 @@ namespace MixedRealityExtension.Core
 
 		internal Dictionary<Guid, Actor>.ValueCollection Actors => _actorMapping.Values;
 
+		public delegate void RigidBodyAddedHandler(Guid id, UnityEngine.Rigidbody rigidbody, bool isOwned);
+		internal event RigidBodyAddedHandler RigidBodyAdded;
+
+		public delegate void RigidBodyRemovedHandler(Guid id);
+		internal event RigidBodyRemovedHandler RigidBodyRemoved;
+
+		public delegate void RigidBodyGrabbedHandler(Guid id, bool isGrabbed);
+		internal event RigidBodyGrabbedHandler RigidBodyGrabbed;
+
 		internal ActorManager(MixedRealityExtensionApp app)
 		{
 			_app = app;
+		}
+
+		private void OnRigidBodyAdded(Guid id, UnityEngine.Rigidbody rigidbody, bool isOwned)
+		{
+			RigidBodyAdded?.Invoke(id, rigidbody, isOwned);
+		}
+
+		private void OnRigidBodyRemoved(Guid id)
+		{
+			RigidBodyRemoved?.Invoke(id);
+		}
+
+		private void OnActorRigidBodyGrabbed(Guid id, bool isGrabbed)
+		{
+			RigidBodyGrabbed?.Invoke(id, isGrabbed);
 		}
 
 		internal Actor AddActor(Guid id, Actor actor)
 		{
 			actor.Initialize(id, _app);
 			_actorMapping[id] = actor;
+
+			actor.RigidBodyAdded += OnRigidBodyAdded;
+			actor.RigidBodyRemoved += OnRigidBodyRemoved;
+			actor.RigidBodyGrabbed += OnActorRigidBodyGrabbed;
+
 			OnActorCreated?.Invoke(actor);
 			return actor;
 		}
@@ -63,12 +92,23 @@ namespace MixedRealityExtension.Core
 						_app.Logger.LogError(e.ToString());
 					}
 					// Is there any other cleanup?  Do it here.
+
+					actor.RigidBodyAdded -= OnRigidBodyAdded;
+					actor.RigidBodyRemoved -= OnRigidBodyRemoved;
+					actor.RigidBodyGrabbed -= OnActorRigidBodyGrabbed;
 				}
 			}
 		}
 
 		internal void Reset()
 		{
+			foreach (var actor in _actorMapping.Values)
+			{
+				actor.RigidBodyAdded -= OnRigidBodyAdded;
+				actor.RigidBodyRemoved -= OnRigidBodyRemoved;
+				actor.RigidBodyGrabbed -= OnActorRigidBodyGrabbed;
+			}
+
 			_actorMapping.Clear();
 			_actorCommandQueues.Clear();
 			_uponStable.Clear();
@@ -144,6 +184,12 @@ namespace MixedRealityExtension.Core
 			bool removed = false;
 			if (_actorMapping.ContainsKey(id))
 			{
+				var actor = _actorMapping[id];
+
+				actor.RigidBodyAdded -= OnRigidBodyAdded;
+				actor.RigidBodyRemoved -= OnRigidBodyRemoved;
+				actor.RigidBodyGrabbed -= OnActorRigidBodyGrabbed;
+
 				_actorMapping.Remove(id);
 				removed = true;
 			}
