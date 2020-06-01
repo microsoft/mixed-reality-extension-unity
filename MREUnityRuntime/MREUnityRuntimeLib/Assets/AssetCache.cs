@@ -72,6 +72,9 @@ namespace MixedRealityExtension.Assets
 		///<inheritdoc/>
 		public GameObject CacheRootGO { get; set; }
 
+		/// <inheritdoc />
+		public bool SupportsSync { get; } = true;
+
 		///<inheritdoc/>
 		public void StoreAssets(Uri uri, IEnumerable<Object> assets, string version)
 		{
@@ -107,30 +110,42 @@ namespace MixedRealityExtension.Assets
 			}
 		}
 
-		///<inheritdoc/>
+		/// <inheritdoc />
 		public Task<IEnumerable<Object>> LeaseAssets(Uri uri, string ifMatchesVersion = null)
+		{
+			return Task.FromResult(LeaseAssetsSync(uri, ifMatchesVersion));
+		}
+
+		///<inheritdoc/>
+		public IEnumerable<Object> LeaseAssetsSync(Uri uri, string ifMatchesVersion = null)
 		{
 			if (Cache.TryGetValue(uri, out CacheItem cacheItem))
 			{
 				cacheItem.ReferenceCount += cacheItem.Assets.Count();
-				return Task.FromResult(cacheItem.Assets);
+				return cacheItem.Assets;
 			}
 			else
 			{
-				return Task.FromResult<IEnumerable<Object>>(null);
+				return null;
 			}
 		}
 
-		///<inheritdoc/>
+		/// <inheritdoc />
 		public Task<string> GetVersion(Uri uri)
+		{
+			return Task.FromResult(GetVersionSync(uri));
+		}
+
+		///<inheritdoc/>
+		public string GetVersionSync(Uri uri)
 		{
 			if (Cache.TryGetValue(uri, out CacheItem cacheItem))
 			{
-				return Task.FromResult(cacheItem.Version);
+				return cacheItem.Version;
 			}
 			else
 			{
-				return Task.FromResult<string>(null);
+				return null;
 			}
 		}
 

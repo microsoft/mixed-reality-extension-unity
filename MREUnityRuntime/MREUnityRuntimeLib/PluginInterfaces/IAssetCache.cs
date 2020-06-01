@@ -14,6 +14,11 @@ namespace MixedRealityExtension.PluginInterfaces
 	public interface IAssetCache
 	{
 		/// <summary>
+		/// Specifies whether the cache supports synchronous reads
+		/// </summary>
+		bool SupportsSync { get; }
+
+		/// <summary>
 		/// The GameObject that assets requiring a parent should be put.
 		/// </summary>
 		UnityEngine.GameObject CacheRootGO { get; }
@@ -34,13 +39,21 @@ namespace MixedRealityExtension.PluginInterfaces
 		/// <summary>
 		/// Asynchronously return the cached assets at the given URI, and increment the internal reference counter
 		/// for this resource. Will return null if no assets are cached for that resource, or if ifMatchesVersion
-		/// does not match the stored assets' version. This needs to be async in case the asset needs to be loaded
-		/// from persistent storage.
+		/// does not match the stored assets' version. This should be async in case the asset needs to be loaded
+		/// from persistent storage, but that's not implemented yet.
 		/// </summary>
 		/// <param name="uri">The resource identifier</param>
 		/// <param name="ifMatchesVersion">Return null if the cached assets are not of this version</param>
 		/// <returns></returns>
 		Task<IEnumerable<UnityEngine.Object>> LeaseAssets(Uri uri, string ifMatchesVersion = null);
+
+		/// <summary>
+		/// Same as LeaseAssets, but is only valid if SupportsSync is true.
+		/// </summary>
+		/// <param name="uri">The resource identifier</param>
+		/// <param name="ifMatchesVersion">Return null if the cached assets are not of this version</param>
+		/// <returns></returns>
+		IEnumerable<UnityEngine.Object> LeaseAssetsSync(Uri uri, string ifMatchesVersion = null);
 
 		/// <summary>
 		/// Returns the stored version of the given resource, or null if not cached. We'll need this for If-Not-Match
@@ -49,5 +62,12 @@ namespace MixedRealityExtension.PluginInterfaces
 		/// <param name="uri">The resource identifier</param>
 		/// <returns></returns>
 		Task<string> GetVersion(Uri uri);
+
+		/// <summary>
+		/// Same as GetVersion, but is only valid if SupportsSync is true.
+		/// </summary>
+		/// <param name="uri"></param>
+		/// <returns></returns>
+		string GetVersionSync(Uri uri);
 	}
 }

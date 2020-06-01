@@ -158,7 +158,9 @@ namespace MixedRealityExtension.Assets
 
 			source.ParsedUri = new Uri(_app.ServerAssetUri, source.ParsedUri);
 			var rootUri = URIHelper.GetDirectoryName(source.ParsedUri.AbsoluteUri);
-			var cachedVersion = await MREAPI.AppsAPI.AssetCache.GetVersion(source.ParsedUri);
+			var cachedVersion = MREAPI.AppsAPI.AssetCache.SupportsSync ?
+				MREAPI.AppsAPI.AssetCache.GetVersionSync(source.ParsedUri) :
+				await MREAPI.AppsAPI.AssetCache.GetVersion(source.ParsedUri);
 
 			// Wait asynchronously until the load throttler lets us through.
 			using (var scope = await AssetLoadThrottling.AcquireLoadScope())
@@ -200,7 +202,7 @@ namespace MixedRealityExtension.Assets
 				$"{containerId}:{source.ParsedUri.AbsoluteUri}"));
 			IList<UnityEngine.Object> assets;
 
-			// fetch assets from glTF stream or cache (grab latest version post-load)
+			// fetch assets from glTF stream or cache
 			if (source.Version != cachedVersion)
 			{
 				assets = await LoadGltfFromStream(loader, stream, colliderType);
@@ -208,7 +210,9 @@ namespace MixedRealityExtension.Assets
 			}
 			else
 			{
-				var assetsEnum = await MREAPI.AppsAPI.AssetCache.LeaseAssets(source.ParsedUri);
+				var assetsEnum = MREAPI.AppsAPI.AssetCache.SupportsSync ?
+					MREAPI.AppsAPI.AssetCache.LeaseAssetsSync(source.ParsedUri) :
+					await MREAPI.AppsAPI.AssetCache.LeaseAssets(source.ParsedUri);
 				assets = assetsEnum.ToList();
 			}
 

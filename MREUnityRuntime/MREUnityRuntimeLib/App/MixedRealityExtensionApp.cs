@@ -111,7 +111,7 @@ namespace MixedRealityExtension.App
 		public Uri ServerUri { get; private set; }
 
 		/// <summary>
-		/// Same as ServerUrl, but with ws(s): substituted for http(s):
+		/// Same as ServerUri, but with ws(s): substituted for http(s):
 		/// </summary>
 		public Uri ServerAssetUri { get; private set; }
 

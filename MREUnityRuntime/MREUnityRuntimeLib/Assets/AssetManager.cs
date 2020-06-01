@@ -186,9 +186,8 @@ namespace MixedRealityExtension.Assets
 		public void Unload(Guid containerId)
 		{
 			var assets = Assets.Values.Where(c => c.ContainerId == containerId && c.Asset != null).ToArray();
-			for (var i = 0; i < assets.Length; i++)
+			foreach (var asset in assets)
 			{
-				var asset = assets[i];
 				Assets.Remove(asset.Id);
 
 				// asset is a one-off, just destroy it

@@ -82,7 +82,7 @@ namespace MixedRealityExtension.App
 		bool IsActive { get; }
 
 		/// <summary>
-		/// The url of the MRE server. Only valid after `Startup` has been called.
+		/// The URI of the MRE server. Only valid after `Startup` has been called.
 		/// </summary>
 		Uri ServerUri { get; }
 
