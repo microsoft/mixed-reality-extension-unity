@@ -63,7 +63,7 @@ namespace MixedRealityExtension.Patching.Types
 		/// <summary>
 		/// What runtime objects are being animated
 		/// </summary>
-		public IEnumerable<Guid> TargetIds { get; set; }
+		public Guid[] TargetIds { get; set; }
 
 		/// <summary>
 		/// The ID of the AnimationData bound to this animation
