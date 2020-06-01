@@ -42,6 +42,9 @@ namespace MixedRealityExtension.Assets
 			}
 		}
 
+		/// <summary>
+		/// Fired when a stored asset is substituted for a write-safe duplicate.
+		/// </summary>
 		public event Action<Guid> AssetReferenceChanged;
 
 		private App.IMixedRealityExtensionApp App;

@@ -371,6 +371,7 @@ namespace MixedRealityExtension.Assets
 				if (def.Material != null && asset.Asset != null && asset.Asset is UnityEngine.Material mat)
 				{
 					// make sure material reference is write-safe
+					// Note: It's safe to assume existence because we're inside the OnSet callback
 					mat = _app.AssetManager.GetById(def.Id, writeSafe: true).Value.Asset as UnityEngine.Material;
 
 					MREAPI.AppsAPI.MaterialPatcher.ApplyMaterialPatch(_app, mat, def.Material.Value);
@@ -378,6 +379,7 @@ namespace MixedRealityExtension.Assets
 				else if (def.Texture != null && asset.Asset != null && asset.Asset is UnityEngine.Texture tex)
 				{
 					// make sure texture reference is write-safe
+					// Note: It's safe to assume existence because we're inside the OnSet callback
 					tex = _app.AssetManager.GetById(def.Id, writeSafe: true).Value.Asset as UnityEngine.Texture;
 
 					var texdef = def.Texture.Value;

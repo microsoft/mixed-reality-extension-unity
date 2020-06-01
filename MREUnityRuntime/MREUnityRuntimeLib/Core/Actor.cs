@@ -810,6 +810,10 @@ namespace MixedRealityExtension.Core
 			return RigidBody;
 		}
 
+		/// <summary>
+		/// Precondition: The mesh refered to by MeshId is loaded and available for use.
+		/// </summary>
+		/// <param name="colliderPatch"></param>
 		private void SetCollider(ColliderPatch colliderPatch)
 		{
 			if (colliderPatch == null || colliderPatch.Geometry == null)
@@ -1061,6 +1065,10 @@ namespace MixedRealityExtension.Core
 			}
 		}
 
+		/// <summary>
+		/// Precondition: Asset identified by `id` exists, and is a material.
+		/// </summary>
+		/// <param name="id"></param>
 		private void CheckMaterialReferenceChanged(Guid id)
 		{
 			if (this != null && MaterialId == id && Renderer != null)
