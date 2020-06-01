@@ -1396,6 +1396,11 @@ namespace MixedRealityExtension.Core
 				}
 			}
 
+			if (RigidBody != null)
+			{
+				RigidBodyRemoved?.Invoke(Id);
+			}
+
 			foreach (var component in _components.Values)
 			{
 				component.CleanUp();
