@@ -159,5 +159,25 @@ namespace MixedRealityExtension.Util
 
 			return _this[key];
 		}
+
+		/// helper function to transform an Euler angle to radian and also to take the shortest angle from 0
+		/// the input is assumed to be within the interval [-360,360] (degree)
+		internal static float TransformEulerAngleToRadian(float eulerAngle)
+		{
+			float ret = eulerAngle;
+			ret = (ret >= 180) ? (ret - 360.0f) : ret;
+			ret = (ret <= -180) ? (360 + ret) : ret;
+			ret = ret * ((float)Math.PI / 180.0f);
+			return ret;
+		}
+		/// helper function to transform Euler angles to radians to also take the shortest rotational angle from 0
+		internal static UnityEngine.Vector3 TransformEulerAnglesToRadians(UnityEngine.Vector3 eulerAngles)
+		{
+			UnityEngine.Vector3 ret = eulerAngles;
+			ret.x = TransformEulerAngleToRadian(ret.x);
+			ret.y = TransformEulerAngleToRadian(ret.y);
+			ret.z = TransformEulerAngleToRadian(ret.z);
+			return ret;
+		}
 	}
 }
