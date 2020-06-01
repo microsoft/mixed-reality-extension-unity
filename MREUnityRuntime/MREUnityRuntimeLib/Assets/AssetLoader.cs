@@ -220,20 +220,19 @@ namespace MixedRealityExtension.Assets
 				assetDef.Name = asset.name;
 
 				string internalId = null;
-				var assetType = asset.GetType();
-				if (assetType == typeof(UnityEngine.Texture))
+				if (asset is UnityEngine.Texture)
 				{
 					internalId = $"texture:{textureIndex++}";
 				}
-				else if (assetType == typeof(UnityEngine.Mesh))
+				else if (asset is UnityEngine.Mesh)
 				{
 					internalId = $"mesh:{meshIndex++}";
 				}
-				else if (assetType == typeof(UnityEngine.Material))
+				else if (asset is UnityEngine.Material)
 				{
 					internalId = $"material:{materialIndex++}";
 				}
-				else if (assetType == typeof(GameObject))
+				else if (asset is GameObject)
 				{
 					internalId = $"scene:{prefabIndex++}";
 				}

@@ -170,6 +170,7 @@ namespace MixedRealityExtension.Core
 
 		internal Guid MaterialId { get; set; } = Guid.Empty;
 		internal Guid MeshId { get; set; } = Guid.Empty;
+		private bool ListeningForMaterialChanges = false;
 
 		internal Mesh UnityMesh
 		{
@@ -596,16 +597,6 @@ namespace MixedRealityExtension.Core
 		{
 			_rigidbody = gameObject.GetComponent<Rigidbody>();
 			_light = gameObject.GetComponent<UnityLight>();
-
-			App.AssetManager.AssetReferenceChanged += CheckMaterialReferenceChanged;
-		}
-
-		private void CheckMaterialReferenceChanged(Guid id)
-		{
-			if (this != null && MaterialId == id && Renderer != null)
-			{
-				Renderer.sharedMaterial = (Material)App.AssetManager.GetById(id).Value.Asset;
-			}
 		}
 
 		protected override void OnDestroyed()
@@ -629,7 +620,10 @@ namespace MixedRealityExtension.Core
 				}
 			}
 
-			App.AssetManager.AssetReferenceChanged -= CheckMaterialReferenceChanged;
+			if (ListeningForMaterialChanges)
+			{
+				App.AssetManager.AssetReferenceChanged -= CheckMaterialReferenceChanged;
+			}
 		}
 
 		protected override void InternalUpdate()
@@ -1005,11 +999,23 @@ namespace MixedRealityExtension.Core
 						{
 							if (!this || !Renderer || MaterialId != updatedMaterialId) return;
 							Renderer.sharedMaterial = (Material)sharedMat.Asset ?? MREAPI.AppsAPI.DefaultMaterial;
+
+							// keep this material up to date
+							if (!ListeningForMaterialChanges)
+							{
+								App.AssetManager.AssetReferenceChanged += CheckMaterialReferenceChanged;
+								ListeningForMaterialChanges = true;
+							}
 						});
 					}
 					else
 					{
 						Renderer.sharedMaterial = MREAPI.AppsAPI.DefaultMaterial;
+						if (ListeningForMaterialChanges)
+						{
+							App.AssetManager.AssetReferenceChanged -= CheckMaterialReferenceChanged;
+							ListeningForMaterialChanges = false;
+						}
 					}
 				}
 				// clean up unused components
@@ -1052,6 +1058,14 @@ namespace MixedRealityExtension.Core
 				{
 					ApplyVisibilityUpdate(child, force);
 				}
+			}
+		}
+
+		private void CheckMaterialReferenceChanged(Guid id)
+		{
+			if (this != null && MaterialId == id && Renderer != null)
+			{
+				Renderer.sharedMaterial = (Material)App.AssetManager.GetById(id).Value.Asset;
 			}
 		}
 

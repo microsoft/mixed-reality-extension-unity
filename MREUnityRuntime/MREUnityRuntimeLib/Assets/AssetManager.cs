@@ -263,7 +263,7 @@ namespace MixedRealityExtension.Assets
 					{
 						updatePatch.EmissiveTextureId = dependency.Value.Id;
 					}
-					MREAPI.AppsAPI.MaterialPatcher.ApplyMaterialPatch(App, mat, updatePatch);
+					MREAPI.AppsAPI.MaterialPatcher.ApplyMaterialPatch(App, (UnityEngine.Material)copyAsset, updatePatch);
 				}
 
 				// update actors that use this material
