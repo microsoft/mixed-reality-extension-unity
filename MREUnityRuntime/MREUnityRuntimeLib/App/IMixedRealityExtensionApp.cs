@@ -1,5 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
+using MixedRealityExtension.Assets;
 using MixedRealityExtension.Core.Interfaces;
 using MixedRealityExtension.IPC;
 using MixedRealityExtension.RPC;
@@ -81,9 +82,9 @@ namespace MixedRealityExtension.App
 		bool IsActive { get; }
 
 		/// <summary>
-		/// The url of the MRE server. Only valid after `Startup` has been called.
+		/// The URI of the MRE server. Only valid after `Startup` has been called.
 		/// </summary>
-		string ServerUrl { get; }
+		Uri ServerUri { get; }
 
 		/// <summary>
 		/// The game object that serves as the scene root.
@@ -93,7 +94,7 @@ namespace MixedRealityExtension.App
 		/// <summary>
 		/// Where assets for this app instance are stored
 		/// </summary>
-		IAssetCache AssetCache { get; }
+		AssetManager AssetManager { get; }
 
 		/// <summary>
 		/// The RPC interface for registering handlers and invoking remote procedure calls.

@@ -96,6 +96,7 @@
     <Compile Include="Animation\MWSetAnimationStateOptions.cs" />
     <Compile Include="Animation\NativeAnimation.cs" />
     <Compile Include="Animation\TargetPath.cs" />
+    <Compile Include="Assets\AssetCache.cs" />
     <Compile Include="Assets\AssetLoadThrottling.cs" />
     <Compile Include="Assets\PrefabAnimationTargets.cs" />
     <Compile Include="Behaviors\ActionData\BaseActionData.cs" />
@@ -104,7 +105,7 @@
     <Compile Include="Behaviors\Handlers\PenHandler.cs" />
     <Compile Include="Behaviors\Handlers\ToolHandler.cs" />
     <Compile Include="Core\CollisionLayers.cs" />
-    <Compile Include="Assets\AssetCache.cs" />
+    <Compile Include="Assets\AssetManager.cs" />
     <Compile Include="Assets\AssetGroup.cs" />
     <Compile Include="Assets\AssetSource.cs" />
     <Compile Include="Core\ActorCommandQueue.cs" />

@@ -57,10 +57,10 @@ public class VertexMaterialPatcher : MixedRealityExtension.Factories.DefaultMate
 			}
 			else
 			{
-				app.AssetCache.OnCached(textureId, tex =>
+				app.AssetManager.OnSet(textureId, tex =>
 				{
 					if (!material || emissiveTextureAssignments[material.GetInstanceID()] != textureId) return;
-					material.SetTexture(EmissiveTexProp, (Texture)tex);
+					material.SetTexture(EmissiveTexProp, (Texture)tex.Asset);
 				});
 			}
 		}
@@ -113,7 +113,7 @@ public class VertexMaterialPatcher : MixedRealityExtension.Factories.DefaultMate
 			A = unityColor.a
 		};
 
-		patch.EmissiveTextureId = app.AssetCache.GetId(material.GetTexture(EmissiveTexProp));
+		patch.EmissiveTextureId = app.AssetManager.GetByObject(material.GetTexture(EmissiveTexProp))?.Id;
 		patch.EmissiveTextureOffset = new Vector2Patch(material.GetTextureOffset(EmissiveTexProp));
 		patch.EmissiveTextureScale = new Vector2Patch(material.GetTextureScale(EmissiveTexProp));
 
@@ -124,5 +124,11 @@ public class VertexMaterialPatcher : MixedRealityExtension.Factories.DefaultMate
 			MWAssets.AlphaMode.Opaque;
 
 		return patch;
+	}
+
+	/// <inheritdoc />
+	public override bool UsesTexture(IMixedRealityExtensionApp app, Material material, Texture texture)
+	{
+		return base.UsesTexture(app, material, texture) || material.GetTexture(EmissiveTexProp) == texture;
 	}
 }

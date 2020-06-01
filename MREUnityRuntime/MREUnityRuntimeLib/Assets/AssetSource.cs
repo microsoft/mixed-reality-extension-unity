@@ -20,12 +20,25 @@ namespace MixedRealityExtension.Assets
 		/// </summary>
 		public string Uri { get; set; }
 
+		/// <summary>
+		/// The version of the resource at the Uri that this asset came from. Will typically be an HTTP ETag.
+		/// </summary>
+		[Newtonsoft.Json.JsonIgnore]
+		public string Version { get; set; }
+
 		private Uri parsedUri;
 		/// <summary>
 		/// The parsed URI of the asset's container.
 		/// </summary>
 		[Newtonsoft.Json.JsonIgnore]
-		public Uri ParsedUri => parsedUri = parsedUri ?? new Uri(Uri);
+		public Uri ParsedUri
+		{
+			get => parsedUri = parsedUri ?? new Uri(Uri);
+			set {
+				parsedUri = value;
+				Uri = parsedUri.AbsoluteUri;
+			}
+		}
 
 		/// <summary>
 		/// The location of the asset within the container. Type-dependent.
@@ -34,11 +47,16 @@ namespace MixedRealityExtension.Assets
 
 		public AssetSource() { }
 
-		public AssetSource(AssetContainerType containerType = AssetContainerType.GLTF, string uri = null, string internalId = null)
+		public AssetSource(
+			AssetContainerType containerType = AssetContainerType.GLTF,
+			string uri = null,
+			string internalId = null,
+			string version = null)
 		{
 			ContainerType = containerType;
 			Uri = uri;
 			InternalId = internalId;
+			Version = version;
 		}
 
 		public override bool Equals(object other)

@@ -181,6 +181,7 @@ namespace MixedRealityExtension.Core
 
 		internal Guid MaterialId { get; set; } = Guid.Empty;
 		internal Guid MeshId { get; set; } = Guid.Empty;
+		private bool ListeningForMaterialChanges = false;
 
 		internal Mesh UnityMesh
 		{
@@ -638,6 +639,11 @@ namespace MixedRealityExtension.Core
 			{
 				RigidBodyRemoved?.Invoke(Id);
 			}
+
+			if (ListeningForMaterialChanges)
+			{
+				App.AssetManager.AssetReferenceChanged -= CheckMaterialReferenceChanged;
+			}
 		}
 
 		protected override void InternalUpdate()
@@ -847,6 +853,10 @@ namespace MixedRealityExtension.Core
 			return RigidBody;
 		}
 
+		/// <summary>
+		/// Precondition: The mesh refered to by MeshId is loaded and available for use.
+		/// </summary>
+		/// <param name="colliderPatch"></param>
 		private void SetCollider(ColliderPatch colliderPatch)
 		{
 			if (colliderPatch == null || colliderPatch.Geometry == null)
@@ -859,7 +869,7 @@ namespace MixedRealityExtension.Core
 
 			if (colliderType == ColliderType.Auto)
 			{
-				colliderGeometry = App.AssetCache.GetColliderGeometry(MeshId);
+				colliderGeometry = App.AssetManager.GetById(MeshId).Value.ColliderGeometry;
 				colliderType = colliderGeometry.Shape;
 			}
 
@@ -1023,10 +1033,10 @@ namespace MixedRealityExtension.Core
 
 					// look up and assign mesh
 					var updatedMeshId = MeshId;
-					App.AssetCache.OnCached(MeshId, sharedMesh =>
+					App.AssetManager.OnSet(MeshId, sharedMesh =>
 					{
 						if (!this || MeshId != updatedMeshId) return;
-						UnityMesh = (Mesh)sharedMesh;
+						UnityMesh = (Mesh)sharedMesh.Asset;
 						if (Collider != null && Collider.Shape == ColliderType.Auto)
 						{
 							SetCollider(new ColliderPatch()
@@ -1040,15 +1050,27 @@ namespace MixedRealityExtension.Core
 					if (MaterialId != Guid.Empty)
 					{
 						var updatedMaterialId = MaterialId;
-						App.AssetCache.OnCached(MaterialId, sharedMat =>
+						App.AssetManager.OnSet(MaterialId, sharedMat =>
 						{
 							if (!this || !Renderer || MaterialId != updatedMaterialId) return;
-							Renderer.sharedMaterial = (Material)sharedMat ?? MREAPI.AppsAPI.DefaultMaterial;
+							Renderer.sharedMaterial = (Material)sharedMat.Asset ?? MREAPI.AppsAPI.DefaultMaterial;
+
+							// keep this material up to date
+							if (!ListeningForMaterialChanges)
+							{
+								App.AssetManager.AssetReferenceChanged += CheckMaterialReferenceChanged;
+								ListeningForMaterialChanges = true;
+							}
 						});
 					}
 					else
 					{
 						Renderer.sharedMaterial = MREAPI.AppsAPI.DefaultMaterial;
+						if (ListeningForMaterialChanges)
+						{
+							App.AssetManager.AssetReferenceChanged -= CheckMaterialReferenceChanged;
+							ListeningForMaterialChanges = false;
+						}
 					}
 				}
 				// clean up unused components
@@ -1091,6 +1113,18 @@ namespace MixedRealityExtension.Core
 				{
 					ApplyVisibilityUpdate(child, force);
 				}
+			}
+		}
+
+		/// <summary>
+		/// Precondition: Asset identified by `id` exists, and is a material.
+		/// </summary>
+		/// <param name="id"></param>
+		private void CheckMaterialReferenceChanged(Guid id)
+		{
+			if (this != null && MaterialId == id && Renderer != null)
+			{
+				Renderer.sharedMaterial = (Material)App.AssetManager.GetById(id).Value.Asset;
 			}
 		}
 
@@ -1222,11 +1256,11 @@ namespace MixedRealityExtension.Core
 					var runningGeneration = ++colliderGeneration;
 
 					// must wait for mesh load before auto type will work
-					if (colliderPatch.Geometry.Shape == ColliderType.Auto && App.AssetCache.GetColliderGeometry(MeshId) == null)
+					if (colliderPatch.Geometry.Shape == ColliderType.Auto && App.AssetManager.GetById(MeshId) == null)
 					{
 						var runningMeshId = MeshId;
 						_pendingColliderPatch = colliderPatch;
-						App.AssetCache.OnCached(MeshId, _ =>
+						App.AssetManager.OnSet(MeshId, _ =>
 						{
 							if (runningMeshId != MeshId || runningGeneration != colliderGeneration) return;
 							SetCollider(_pendingColliderPatch);
@@ -1576,9 +1610,9 @@ namespace MixedRealityExtension.Core
 						MediaInstance mediaInstance = new MediaInstance(payload.MediaAssetId);
 						_mediaInstances.Add(payload.Id, mediaInstance);
 
-						App.AssetCache.OnCached(payload.MediaAssetId, asset =>
+						App.AssetManager.OnSet(payload.MediaAssetId, asset =>
 						{
-							if (asset is AudioClip audioClip)
+							if (asset.Asset is AudioClip audioClip)
 							{
 								AudioSource soundInstance = App.SoundManager.AddSoundInstance(this, payload.Id, audioClip, payload.Options);
 								if (soundInstance)
@@ -1591,7 +1625,7 @@ namespace MixedRealityExtension.Core
 									_mediaInstances.Remove(payload.Id);
 								}
 							}
-							else if (asset is VideoStreamDescription videoStreamDescription)
+							else if (asset.Asset is VideoStreamDescription videoStreamDescription)
 							{
 								var factory = MREAPI.AppsAPI.VideoPlayerFactory
 									?? throw new ArgumentException("Cannot start video stream - VideoPlayerFactory not implemented.");
@@ -1611,7 +1645,7 @@ namespace MixedRealityExtension.Core
 					{
 						if (_mediaInstances.TryGetValue(payload.Id, out MediaInstance mediaInstance))
 						{
-							App.AssetCache.OnCached(mediaInstance.MediaAssetId, asset =>
+							App.AssetManager.OnSet(mediaInstance.MediaAssetId, _ =>
 							{
 								_mediaInstances.Remove(payload.Id);
 								DestroyMediaById(payload.Id, mediaInstance);
@@ -1623,7 +1657,7 @@ namespace MixedRealityExtension.Core
 					{
 						if (_mediaInstances.TryGetValue(payload.Id, out MediaInstance mediaInstance))
 						{
-							App.AssetCache.OnCached(mediaInstance.MediaAssetId, asset =>
+							App.AssetManager.OnSet(mediaInstance.MediaAssetId, _ =>
 							{
 								if (mediaInstance.Instance != null)
 								{

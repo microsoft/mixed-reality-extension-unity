@@ -125,9 +125,16 @@ public class MREComponent : MonoBehaviour
 	{
 		if (!_apiInitialized)
 		{
+			var assetCacheGo = new GameObject("MRE Asset Cache");
+			var assetCache = assetCacheGo.AddComponent<AssetCache>();
+			assetCache.CacheRootGO = new GameObject("Assets");
+			assetCache.CacheRootGO.transform.SetParent(assetCacheGo.transform, false);
+			assetCache.CacheRootGO.SetActive(false);
+
 			MREAPI.InitializeAPI(
 				defaultMaterial: DefaultPrimMaterial,
 				layerApplicator: new SimpleLayerApplicator(0, 9, 10, 5),
+				assetCache: assetCache,
 				behaviorFactory: new MRTKBehaviorFactory(),
 				textFactory: new TmpTextFactory()
 				{

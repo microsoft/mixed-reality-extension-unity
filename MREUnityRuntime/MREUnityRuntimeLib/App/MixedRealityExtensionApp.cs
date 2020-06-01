@@ -27,6 +27,7 @@ using System.Linq;
 using UnityEngine;
 
 using Trace = MixedRealityExtension.Messaging.Trace;
+using Regex = System.Text.RegularExpressions.Regex;
 
 namespace MixedRealityExtension.App
 {
@@ -37,7 +38,7 @@ namespace MixedRealityExtension.App
 		private readonly ActorManager _actorManager;
 		private readonly CommandManager _commandManager;
 		internal readonly AnimationManager AnimationManager;
-		private readonly AssetCache _assetCache;
+		private readonly AssetManager _assetManager;
 
 		private PhysicsBridge _physicsBridge;
 		private bool _shouldSendPhysicsUpdate = false;
@@ -109,7 +110,12 @@ namespace MixedRealityExtension.App
 		public bool IsActive => _conn?.IsActive ?? false;
 
 		/// <inheritdoc />
-		public string ServerUrl { get; private set; }
+		public Uri ServerUri { get; private set; }
+
+		/// <summary>
+		/// Same as ServerUri, but with ws(s): substituted for http(s):
+		/// </summary>
+		public Uri ServerAssetUri { get; private set; }
 
 		/// <inheritdoc />
 		public GameObject SceneRoot { get; set; }
@@ -143,7 +149,7 @@ namespace MixedRealityExtension.App
 
 		internal AssetLoader AssetLoader => _assetLoader;
 
-		public IAssetCache AssetCache => _assetCache;
+		public AssetManager AssetManager => _assetManager;
 
 		#endregion
 
@@ -175,7 +181,7 @@ namespace MixedRealityExtension.App
 			var cacheRoot = new GameObject("MRE Cache");
 			cacheRoot.transform.SetParent(_ownerScript.gameObject.transform);
 			cacheRoot.SetActive(false);
-			_assetCache = new AssetCache(cacheRoot);
+			_assetManager = new AssetManager(this, cacheRoot);
 
 			RPC = new RPCInterface(this);
 			RPCChannels = new RPCChannelInterface();
@@ -206,7 +212,8 @@ namespace MixedRealityExtension.App
 		/// <inheritdoc />
 		public void Startup(string url, string sessionId, string platformId)
 		{
-			ServerUrl = url;
+			ServerUri = new Uri(url, UriKind.Absolute);
+			ServerAssetUri = new Uri(Regex.Replace(ServerUri.AbsoluteUri, "^ws(s?):", "http$1:"));
 
 			_actorManager.RigidBodyAdded += OnRigidBodyAdded;
 			_actorManager.RigidBodyRemoved += OnRigidBodyRemoved;
@@ -297,7 +304,7 @@ namespace MixedRealityExtension.App
 
 			foreach (Guid id in _assetLoader.ActiveContainers)
 			{
-				AssetCache.UncacheAssetsAndDestroy(id);
+				AssetManager.Unload(id);
 			}
 			_assetLoader.ActiveContainers.Clear();
 		}
@@ -728,10 +735,10 @@ namespace MixedRealityExtension.App
 			try
 			{
 				var curGeneration = generation;
-				AssetCache.OnCached(payload.PrefabId, prefab =>
+				AssetManager.OnSet(payload.PrefabId, prefab =>
 				{
 					if (this == null || _conn == null || !_conn.IsActive || generation != curGeneration) return;
-					if (prefab != null)
+					if (prefab.Asset != null)
 					{
 						var createdActors = _assetLoader.CreateFromPrefab(payload.PrefabId, payload.Actor?.ParentId, payload.CollisionLayer);
 						ProcessCreatedActors(payload, createdActors, onCompleteCallback);
@@ -821,8 +828,8 @@ namespace MixedRealityExtension.App
 				actor.ParentId = parent?.Id ?? actor.ParentId;
 				if (actor.Renderer != null)
 				{
-					actor.MaterialId = AssetCache.GetId(actor.Renderer.sharedMaterial) ?? Guid.Empty;
-					actor.MeshId = AssetCache.GetId(actor.UnityMesh) ?? Guid.Empty;
+					actor.MaterialId = AssetManager.GetByObject(actor.Renderer.sharedMaterial)?.Id ?? Guid.Empty;
+					actor.MeshId = AssetManager.GetByObject(actor.UnityMesh)?.Id ?? Guid.Empty;
 				}
 
 				// native animation construction requires the whole actor hierarchy to already exist. defer to second pass

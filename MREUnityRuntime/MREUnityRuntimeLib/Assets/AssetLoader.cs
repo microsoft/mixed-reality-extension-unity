@@ -14,6 +14,8 @@ using MixedRealityExtension.Util.Unity;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -64,7 +66,7 @@ namespace MixedRealityExtension.Assets
 		internal IList<Actor> CreateEmpty(Guid? parentId)
 		{
 			GameObject newGO = GameObject.Instantiate(
-				_app.AssetCache.EmptyTemplate(),
+				_app.AssetManager.EmptyTemplate(),
 				GetGameObjectFromParentId(parentId).transform,
 				false);
 			newGO.layer = MREAPI.AppsAPI.LayerApplicator.DefaultLayer;
@@ -74,7 +76,7 @@ namespace MixedRealityExtension.Assets
 
 		internal IList<Actor> CreateFromPrefab(Guid prefabId, Guid? parentId, CollisionLayer? collisionLayer)
 		{
-			GameObject prefab = _app.AssetCache.GetAsset(prefabId) as GameObject;
+			GameObject prefab = _app.AssetManager.GetById(prefabId)?.Asset as GameObject;
 
 			GameObject instance = UnityEngine.Object.Instantiate(
 				prefab, GetGameObjectFromParentId(parentId).transform, false);
@@ -153,18 +155,115 @@ namespace MixedRealityExtension.Assets
 		{
 			WebRequestLoader loader = null;
 			Stream stream = null;
-			IList<Asset> assets = new List<Asset>();
-			DeterministicGuids guidGenerator = new DeterministicGuids(UtilMethods.StringToGuid(
-				$"{containerId}:{source.ParsedUri.AbsoluteUri}"));
+
+			source.ParsedUri = new Uri(_app.ServerAssetUri, source.ParsedUri);
+			var rootUri = URIHelper.GetDirectoryName(source.ParsedUri.AbsoluteUri);
+			var cachedVersion = MREAPI.AppsAPI.AssetCache.SupportsSync ?
+				MREAPI.AppsAPI.AssetCache.GetVersionSync(source.ParsedUri) :
+				await MREAPI.AppsAPI.AssetCache.GetVersion(source.ParsedUri);
 
 			// Wait asynchronously until the load throttler lets us through.
 			using (var scope = await AssetLoadThrottling.AcquireLoadScope())
 			{
-				// download file
-				var rootUrl = URIHelper.GetDirectoryName(source.ParsedUri.AbsoluteUri);
-				loader = new WebRequestLoader(rootUrl);
-				stream = await loader.LoadStreamAsync(URIHelper.GetFileFromUri(source.ParsedUri));
+				// set up loader
+				loader = new WebRequestLoader(rootUri);
+				if (!string.IsNullOrEmpty(cachedVersion))
+				{
+					loader.BeforeRequestCallback += (msg) =>
+					{
+						if (msg.RequestUri == source.ParsedUri)
+						{
+							msg.Headers.Add("If-None-Match", cachedVersion);
+						}
+					};
+				}
+
+				// download root gltf file, check for cache hit
+				try
+				{
+					stream = await loader.LoadStreamAsync(URIHelper.GetFileFromUri(source.ParsedUri));
+					source.Version = loader.LastResponse.Headers.ETag.Tag;
+				}
+				catch (HttpRequestException httpErr)
+				{
+					if (loader.LastResponse.StatusCode == System.Net.HttpStatusCode.NotModified)
+					{
+						source.Version = cachedVersion;
+					}
+					else
+					{
+						throw httpErr;
+					}
+				}
 			}
+
+			IList<Asset> assetDefs = new List<Asset>(30);
+			DeterministicGuids guidGenerator = new DeterministicGuids(UtilMethods.StringToGuid(
+				$"{containerId}:{source.ParsedUri.AbsoluteUri}"));
+			IList<UnityEngine.Object> assets;
+
+			// fetch assets from glTF stream or cache
+			if (source.Version != cachedVersion)
+			{
+				assets = await LoadGltfFromStream(loader, stream, colliderType);
+				MREAPI.AppsAPI.AssetCache.StoreAssets(source.ParsedUri, assets, source.Version);
+			}
+			else
+			{
+				var assetsEnum = MREAPI.AppsAPI.AssetCache.SupportsSync ?
+					MREAPI.AppsAPI.AssetCache.LeaseAssetsSync(source.ParsedUri) :
+					await MREAPI.AppsAPI.AssetCache.LeaseAssets(source.ParsedUri);
+				assets = assetsEnum.ToList();
+			}
+
+			// catalog assets
+			int textureIndex = 0, meshIndex = 0, materialIndex = 0, prefabIndex = 0;
+			foreach (var asset in assets)
+			{
+				var assetDef = GenerateAssetPatch(asset, guidGenerator.Next());
+				assetDef.Name = asset.name;
+
+				string internalId = null;
+				if (asset is UnityEngine.Texture)
+				{
+					internalId = $"texture:{textureIndex++}";
+				}
+				else if (asset is UnityEngine.Mesh)
+				{
+					internalId = $"mesh:{meshIndex++}";
+				}
+				else if (asset is UnityEngine.Material)
+				{
+					internalId = $"material:{materialIndex++}";
+				}
+				else if (asset is GameObject)
+				{
+					internalId = $"scene:{prefabIndex++}";
+				}
+				assetDef.Source = new AssetSource(source.ContainerType, source.ParsedUri.AbsoluteUri, internalId, source.Version);
+
+				ColliderGeometry colliderGeo = null;
+				if (asset is UnityEngine.Mesh mesh)
+				{
+					colliderGeo = colliderType == ColliderType.Mesh ?
+						(ColliderGeometry)new MeshColliderGeometry() { MeshId = assetDef.Id } :
+						(ColliderGeometry)new BoxColliderGeometry()
+						{
+							Size = (mesh.bounds.size * 0.8f).CreateMWVector3(),
+							Center = mesh.bounds.center.CreateMWVector3()
+						};
+				}
+
+				_app.AssetManager.Set(assetDef.Id, containerId, asset, colliderGeo, assetDef.Source);
+				assetDefs.Add(assetDef);
+			}
+
+			return assetDefs;
+		}
+
+		private async Task<IList<UnityEngine.Object>> LoadGltfFromStream(WebRequestLoader loader, Stream stream, ColliderType colliderType)
+		{
+			var assets = new List<UnityEngine.Object>(30);
 
 			// pre-parse glTF document so we can get a scene count
 			// run this on a threadpool thread so that the Unity main thread is not blocked
@@ -189,7 +288,7 @@ namespace MixedRealityExtension.Assets
 			using (GLTFSceneImporter importer =
 				MREAPI.AppsAPI.GLTFImporterFactory.CreateImporter(gltfRoot, loader, _asyncHelper, stream))
 			{
-				importer.SceneParent = _app.AssetCache.CacheRootGO().transform;
+				importer.SceneParent = MREAPI.AppsAPI.AssetCache.CacheRootGO.transform;
 				importer.Collider = colliderType.ToGLTFColliderType();
 
 				// load textures
@@ -200,12 +299,7 @@ namespace MixedRealityExtension.Assets
 						await importer.LoadTextureAsync(gltfRoot.Textures[i], i, true);
 						var texture = importer.GetTexture(i);
 						texture.name = gltfRoot.Textures[i].Name ?? $"texture:{i}";
-
-						var asset = GenerateAssetPatch(texture, guidGenerator.Next());
-						asset.Name = texture.name;
-						asset.Source = new AssetSource(source.ContainerType, source.Uri, $"texture:{i}");
-						_app.AssetCache.CacheAsset(texture, asset.Id, containerId, source);
-						assets.Add(asset);
+						assets.Add(texture);
 					}
 				}
 
@@ -217,15 +311,7 @@ namespace MixedRealityExtension.Assets
 					{
 						var mesh = await importer.LoadMeshAsync(i, cancellationSource.Token);
 						mesh.name = gltfRoot.Meshes[i].Name ?? $"mesh:{i}";
-
-						var asset = GenerateAssetPatch(mesh, guidGenerator.Next());
-						asset.Name = mesh.name;
-						asset.Source = new AssetSource(source.ContainerType, source.Uri, $"mesh:{i}");
-						var colliderGeo = colliderType == ColliderType.Mesh ?
-							(ColliderGeometry)new MeshColliderGeometry() { MeshId = asset.Id } :
-							(ColliderGeometry)new BoxColliderGeometry() { Size = (mesh.bounds.size * 0.8f).CreateMWVector3() };
-						_app.AssetCache.CacheAsset(mesh, asset.Id, containerId, source, colliderGeo);
-						assets.Add(asset);
+						assets.Add(mesh);
 					}
 				}
 
@@ -237,12 +323,7 @@ namespace MixedRealityExtension.Assets
 						var matdef = gltfRoot.Materials[i];
 						var material = await importer.LoadMaterialAsync(i);
 						material.name = matdef.Name ?? $"material:{i}";
-
-						var asset = GenerateAssetPatch(material, guidGenerator.Next());
-						asset.Name = material.name;
-						asset.Source = new AssetSource(source.ContainerType, source.Uri, $"material:{i}");
-						_app.AssetCache.CacheAsset(material, asset.Id, containerId, source);
-						assets.Add(asset);
+						assets.Add(material);
 					}
 				}
 
@@ -271,11 +352,7 @@ namespace MixedRealityExtension.Assets
 							go.layer = MREAPI.AppsAPI.LayerApplicator.DefaultLayer;
 						});
 
-						var def = GenerateAssetPatch(rootObject, guidGenerator.Next());
-						def.Name = rootObject.name;
-						def.Source = new AssetSource(source.ContainerType, source.Uri, $"scene:{i}");
-						_app.AssetCache.CacheAsset(rootObject, def.Id, containerId, source);
-						assets.Add(def);
+						assets.Add(rootObject);
 					}
 				}
 			}
@@ -287,24 +364,23 @@ namespace MixedRealityExtension.Assets
 		internal void OnAssetUpdate(AssetUpdate payload, Action onCompleteCallback)
 		{
 			var def = payload.Asset;
-			_app.AssetCache.OnCached(def.Id, asset =>
+			_app.AssetManager.OnSet(def.Id, asset =>
 			{
 				if (!_owner) return;
 
-				var mat = asset as UnityEngine.Material;
-				var tex = asset as UnityEngine.Texture;
-				if (def.Material != null)
+				if (def.Material != null && asset.Asset != null && asset.Asset is UnityEngine.Material mat)
 				{
+					// make sure material reference is write-safe
+					// Note: It's safe to assume existence because we're inside the OnSet callback
+					mat = _app.AssetManager.GetById(def.Id, writeSafe: true).Value.Asset as UnityEngine.Material;
+
 					MREAPI.AppsAPI.MaterialPatcher.ApplyMaterialPatch(_app, mat, def.Material.Value);
 				}
-				else if (def.Texture != null)
+				else if (def.Texture != null && asset.Asset != null && asset.Asset is UnityEngine.Texture tex)
 				{
-					// loading failed
-					if (tex == null)
-					{
-						onCompleteCallback?.Invoke();
-						return;
-					}
+					// make sure texture reference is write-safe
+					// Note: It's safe to assume existence because we're inside the OnSet callback
+					tex = _app.AssetManager.GetById(def.Id, writeSafe: true).Value.Asset as UnityEngine.Texture;
 
 					var texdef = def.Texture.Value;
 					if (texdef.WrapModeU != null)
@@ -341,8 +417,9 @@ namespace MixedRealityExtension.Assets
 		{
 			var def = payload.Definition;
 			var response = new AssetsLoaded();
-			var unityAsset = _app.AssetCache.GetAsset(def.Id);
+			var unityAsset = _app.AssetManager.GetById(def.Id)?.Asset;
 			ColliderGeometry colliderGeo = null;
+			AssetSource source = null;
 
 			ActiveContainers.Add(payload.ContainerId);
 
@@ -355,8 +432,11 @@ namespace MixedRealityExtension.Assets
 			// create textures
 			else if (unityAsset == null && def.Texture != null)
 			{
-				var result = await AssetFetcher<UnityEngine.Texture>.LoadTask(_owner, new Uri(def.Texture.Value.Uri));
+				var texUri = new Uri(_app.ServerAssetUri, def.Texture.Value.Uri);
+				source = new AssetSource(AssetContainerType.None, texUri.AbsoluteUri);
+				var result = await AssetFetcher<UnityEngine.Texture>.LoadTask(_owner, texUri);
 				unityAsset = result.Asset;
+				source.Version = result.ETag;
 				if (result.FailureMessage != null)
 				{
 					response.FailureMessage = result.FailureMessage;
@@ -389,8 +469,11 @@ namespace MixedRealityExtension.Assets
 			// create sounds
 			else if (unityAsset == null && def.Sound != null)
 			{
-				var result = await AssetFetcher<UnityEngine.AudioClip>.LoadTask(_owner, new Uri(def.Sound.Value.Uri));
+				var soundUri = new Uri(_app.ServerAssetUri, def.Sound.Value.Uri);
+				source = new AssetSource(AssetContainerType.None, soundUri.AbsoluteUri);
+				var result = await AssetFetcher<UnityEngine.AudioClip>.LoadTask(_owner, soundUri);
 				unityAsset = result.Asset;
+				source.Version = result.ETag;
 				if (result.FailureMessage != null)
 				{
 					response.FailureMessage = result.FailureMessage;
@@ -402,7 +485,8 @@ namespace MixedRealityExtension.Assets
 			{
 				if (MREAPI.AppsAPI.VideoPlayerFactory != null)
 				{
-					PluginInterfaces.FetchResult result2 = MREAPI.AppsAPI.VideoPlayerFactory.PreloadVideoAsset(def.VideoStream.Value.Uri);
+					var videoUri = new Uri(_app.ServerAssetUri, def.VideoStream.Value.Uri);
+					PluginInterfaces.FetchResult result2 = MREAPI.AppsAPI.VideoPlayerFactory.PreloadVideoAsset(videoUri.AbsoluteUri);
 					unityAsset = result2.Asset;
 					if (result2.FailureMessage != null)
 					{
@@ -423,7 +507,7 @@ namespace MixedRealityExtension.Assets
 				unityAsset = animDataCache;
 			}
 
-			_app.AssetCache.CacheAsset(unityAsset, def.Id, payload.ContainerId, colliderGeometry: colliderGeo);
+			_app.AssetManager.Set(def.Id, payload.ContainerId, unityAsset, colliderGeo, source);
 
 			// verify creation and apply initial patch
 			if (unityAsset != null)
@@ -465,8 +549,7 @@ namespace MixedRealityExtension.Assets
 		[CommandHandler(typeof(UnloadAssets))]
 		internal void UnloadAssets(UnloadAssets payload, Action onCompleteCallback)
 		{
-			_app.AssetCache.UncacheAssetsAndDestroy(payload.ContainerId);
-
+			_app.AssetManager.Unload(payload.ContainerId);
 			ActiveContainers.Remove(payload.ContainerId);
 
 			onCompleteCallback?.Invoke();
