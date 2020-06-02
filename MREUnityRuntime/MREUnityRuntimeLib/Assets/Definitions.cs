@@ -71,6 +71,11 @@ namespace MixedRealityExtension.Assets
 	public enum AssetContainerType
 	{
 		/// <summary>
+		/// This asset was loaded on its own, and not from a container.
+		/// </summary>
+		None,
+
+		/// <summary>
 		/// Loaded from a glTF file.
 		/// </summary>
 		GLTF,

@@ -1,7 +1,9 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
+using MixedRealityExtension.API;
 using System;
 using System.Collections;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -15,7 +17,10 @@ namespace MixedRealityExtension.Assets
 		{
 			public T Asset;
 			public string FailureMessage;
-			public bool IsPopulated => Asset != null || FailureMessage != null;
+			public long ReturnCode;
+			public string ETag;
+
+			public bool IsPopulated => ReturnCode != 0;
 		}
 
 		public static async Task<FetchResult> LoadTask(MonoBehaviour runner, Uri uri)
@@ -25,6 +30,9 @@ namespace MixedRealityExtension.Assets
 				Asset = null,
 				FailureMessage = null
 			};
+			var ifNoneMatch = MREAPI.AppsAPI.AssetCache.SupportsSync ?
+				MREAPI.AppsAPI.AssetCache.GetVersionSync(uri) :
+				await MREAPI.AppsAPI.AssetCache.GetVersion(uri);
 
 			runner.StartCoroutine(LoadCoroutine());
 
@@ -32,6 +40,22 @@ namespace MixedRealityExtension.Assets
 			while (!result.IsPopulated)
 			{
 				await Task.Delay(10);
+			}
+
+			// handle caching
+			if (ifNoneMatch != null && result.ReturnCode == 304)
+			{
+				var assets = MREAPI.AppsAPI.AssetCache.SupportsSync ?
+					MREAPI.AppsAPI.AssetCache.LeaseAssetsSync(uri) :
+					await MREAPI.AppsAPI.AssetCache.LeaseAssets(uri);
+				result.Asset = assets.FirstOrDefault() as T;
+			}
+			else if (result.Asset != null)
+			{
+				MREAPI.AppsAPI.AssetCache.StoreAssets(
+					uri,
+					new UnityEngine.Object[] { result.Asset as UnityEngine.Object },
+					result.ETag);
 			}
 
 			return result;
@@ -62,24 +86,36 @@ namespace MixedRealityExtension.Assets
 				using (var scope = new AssetLoadThrottling.AssetLoadScope())
 				using (var www = new UnityWebRequest(uri, "GET", handler, null))
 				{
+					if (ifNoneMatch != null)
+					{
+						www.SetRequestHeader("If-None-Match", ifNoneMatch);
+					}
+					
 					yield return www.SendWebRequest();
 					if (www.isNetworkError)
 					{
+						result.ReturnCode = -1;
 						result.FailureMessage = www.error;
-					}
-					else if (www.isHttpError)
-					{
-						result.FailureMessage = $"[{www.responseCode}] {uri}";
 					}
 					else
 					{
-						if (typeof(T) == typeof(UnityEngine.AudioClip))
+						result.ReturnCode = www.responseCode;
+						result.ETag = www.GetResponseHeader("ETag");
+
+						if (www.isHttpError)
 						{
-							result.Asset = ((DownloadHandlerAudioClip)handler).audioClip as T;
+							result.FailureMessage = $"[{www.responseCode}] {uri}";
 						}
-						else if (typeof(T) == typeof(UnityEngine.Texture))
+						else if (www.responseCode >= 200 && www.responseCode <= 299)
 						{
-							result.Asset = ((DownloadHandlerTexture)handler).texture as T;
+							if (typeof(T) == typeof(UnityEngine.AudioClip))
+							{
+								result.Asset = ((DownloadHandlerAudioClip)handler).audioClip as T;
+							}
+							else if (typeof(T) == typeof(UnityEngine.Texture))
+							{
+								result.Asset = ((DownloadHandlerTexture)handler).texture as T;
+							}
 						}
 					}
 				}

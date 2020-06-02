@@ -61,10 +61,16 @@ namespace MixedRealityExtension.Animation
 			DataId = dataId;
 			TargetMap = targetMap;
 
-			manager.App.AssetCache.OnCached(DataId, cacheData =>
+			manager.App.AssetManager.OnSet(DataId, cacheData =>
 			{
-				Data = (AnimationDataCached)cacheData;
 				DataSet = true;
+				if (cacheData.Asset == null)
+				{
+					Data = null;
+					return;
+				}
+
+				Data = (AnimationDataCached)cacheData.Asset;
 				LastKeyframeIndex = new int[Data.Tracks.Length];
 				ImplicitStartKeyframes = new Keyframe[Data.Tracks.Length];
 				ResolvedRelativeKeyframes = new Keyframe[Data.Tracks.Length][];

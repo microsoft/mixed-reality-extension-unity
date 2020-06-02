@@ -5,6 +5,7 @@ using MixedRealityExtension.Animation;
 using MixedRealityExtension.API;
 using MixedRealityExtension.App;
 using MixedRealityExtension.Behaviors;
+using MixedRealityExtension.Behaviors.Actions;
 using MixedRealityExtension.Core.Components;
 using MixedRealityExtension.Core.Interfaces;
 using MixedRealityExtension.Core.Types;
@@ -65,8 +66,6 @@ namespace MixedRealityExtension.Core
 
 		private ActorComponentType _subscriptions = ActorComponentType.None;
 
-		private ActorTransformPatch _rbTransformPatch;
-
 		private new Renderer renderer = null;
 		internal Renderer Renderer
 		{
@@ -94,6 +93,15 @@ namespace MixedRealityExtension.Core
 			}
 		}
 
+		public delegate void RigidBodyAddedHandler(Guid id, UnityEngine.Rigidbody rigidbody, bool isOwned);
+		public event RigidBodyAddedHandler RigidBodyAdded;
+
+		public delegate void RigidBodyRemovedHandler(Guid id);
+		public event RigidBodyRemovedHandler RigidBodyRemoved;
+
+		public delegate void RigidBodyGrabbedHandler(Guid id, bool isGrabbed);
+		public event RigidBodyGrabbedHandler RigidBodyGrabbed;
+
 		#region IActor Properties - Public
 
 		/// <inheritdoc />
@@ -107,6 +115,8 @@ namespace MixedRealityExtension.Core
 			get => transform.name;
 			set => transform.name = value;
 		}
+
+		private Guid? Owner = null;
 
 		/// <inheritdoc />
 		IMixedRealityExtensionApp IActor.App => base.App;
@@ -172,6 +182,7 @@ namespace MixedRealityExtension.Core
 
 		internal Guid MaterialId { get; set; } = Guid.Empty;
 		internal Guid MeshId { get; set; } = Guid.Empty;
+		private bool ListeningForMaterialChanges = false;
 
 		internal Mesh UnityMesh
 		{
@@ -278,9 +289,12 @@ namespace MixedRealityExtension.Core
 					actorPatch.ParentId = ParentId;
 				}
 
-				if (ShouldSync(subscriptions, ActorComponentType.Transform))
+				if (RigidBody == null)
 				{
-					GenerateTransformPatch(actorPatch);
+					if (ShouldSync(subscriptions, ActorComponentType.Transform))
+					{
+						GenerateTransformPatch(actorPatch);
+					}
 				}
 
 				if (ShouldSync(subscriptions, ActorComponentType.Rigidbody))
@@ -325,6 +339,7 @@ namespace MixedRealityExtension.Core
 		internal void ApplyPatch(ActorPatch actorPatch)
 		{
 			PatchName(actorPatch.Name);
+			PatchOwner(actorPatch.Owner);
 			PatchParent(actorPatch.ParentId);
 			PatchAppearance(actorPatch.Appearance);
 			PatchTransform(actorPatch.Transform);
@@ -620,6 +635,16 @@ namespace MixedRealityExtension.Core
 					DestroyMediaById(mediaInstance.Key, mediaInstance.Value);
 				}
 			}
+
+			if (RigidBody != null)
+			{
+				RigidBodyRemoved?.Invoke(Id);
+			}
+
+			if (ListeningForMaterialChanges)
+			{
+				App.AssetManager.AssetReferenceChanged -= CheckMaterialReferenceChanged;
+			}
 		}
 
 		protected override void InternalUpdate()
@@ -796,16 +821,43 @@ namespace MixedRealityExtension.Core
 			return Light;
 		}
 
+		void OnRigidBodyGrabbed(object sender, ActionStateChangedArgs args)
+		{
+			if (args.NewState != ActionState.Performing)
+			{
+				RigidBodyGrabbed?.Invoke(Id, args.NewState == ActionState.Started);
+			}
+		}
+
 		private RigidBody AddRigidBody()
 		{
 			if (_rigidbody == null)
 			{
 				_rigidbody = gameObject.AddComponent<Rigidbody>();
 				RigidBody = new RigidBody(_rigidbody, App.SceneRoot.transform);
+
+				bool isOwner = Owner.HasValue ? Owner.Value == App.LocalUser.Id : CanSync();
+
+				_rigidbody.isKinematic = !isOwner;
+
+				RigidBodyAdded?.Invoke(Id, _rigidbody, isOwner);
+
+				var behaviorComponent = GetActorComponent<BehaviorComponent>();
+				if (behaviorComponent != null && behaviorComponent.Behavior is ITargetBehavior targetBehavior)
+				{
+					if (targetBehavior.Grabbable)
+					{
+						targetBehavior.Grab.ActionStateChanged += OnRigidBodyGrabbed;
+					}
+				}
 			}
 			return RigidBody;
 		}
 
+		/// <summary>
+		/// Precondition: The mesh refered to by MeshId is loaded and available for use.
+		/// </summary>
+		/// <param name="colliderPatch"></param>
 		private void SetCollider(ColliderPatch colliderPatch)
 		{
 			if (colliderPatch == null || colliderPatch.Geometry == null)
@@ -818,7 +870,7 @@ namespace MixedRealityExtension.Core
 
 			if (colliderType == ColliderType.Auto)
 			{
-				colliderGeometry = App.AssetCache.GetColliderGeometry(MeshId);
+				colliderGeometry = App.AssetManager.GetById(MeshId).Value.ColliderGeometry;
 				colliderType = colliderGeometry.Shape;
 			}
 
@@ -933,6 +985,14 @@ namespace MixedRealityExtension.Core
 			}
 		}
 
+		private void PatchOwner(Guid? ownerOrNull)
+		{
+			if (ownerOrNull.HasValue)
+			{
+				Owner = ownerOrNull;
+			}
+		}
+
 		private void PatchAppearance(AppearancePatch appearance)
 		{
 			if (appearance == null)
@@ -974,10 +1034,10 @@ namespace MixedRealityExtension.Core
 
 					// look up and assign mesh
 					var updatedMeshId = MeshId;
-					App.AssetCache.OnCached(MeshId, sharedMesh =>
+					App.AssetManager.OnSet(MeshId, sharedMesh =>
 					{
 						if (!this || MeshId != updatedMeshId) return;
-						UnityMesh = (Mesh)sharedMesh;
+						UnityMesh = (Mesh)sharedMesh.Asset;
 						if (Collider != null && Collider.Shape == ColliderType.Auto)
 						{
 							SetCollider(new ColliderPatch()
@@ -991,15 +1051,27 @@ namespace MixedRealityExtension.Core
 					if (MaterialId != Guid.Empty)
 					{
 						var updatedMaterialId = MaterialId;
-						App.AssetCache.OnCached(MaterialId, sharedMat =>
+						App.AssetManager.OnSet(MaterialId, sharedMat =>
 						{
 							if (!this || !Renderer || MaterialId != updatedMaterialId) return;
-							Renderer.sharedMaterial = (Material)sharedMat ?? MREAPI.AppsAPI.DefaultMaterial;
+							Renderer.sharedMaterial = (Material)sharedMat.Asset ?? MREAPI.AppsAPI.DefaultMaterial;
+
+							// keep this material up to date
+							if (!ListeningForMaterialChanges)
+							{
+								App.AssetManager.AssetReferenceChanged += CheckMaterialReferenceChanged;
+								ListeningForMaterialChanges = true;
+							}
 						});
 					}
 					else
 					{
 						Renderer.sharedMaterial = MREAPI.AppsAPI.DefaultMaterial;
+						if (ListeningForMaterialChanges)
+						{
+							App.AssetManager.AssetReferenceChanged -= CheckMaterialReferenceChanged;
+							ListeningForMaterialChanges = false;
+						}
 					}
 				}
 				// clean up unused components
@@ -1045,6 +1117,18 @@ namespace MixedRealityExtension.Core
 			}
 		}
 
+		/// <summary>
+		/// Precondition: Asset identified by `id` exists, and is a material.
+		/// </summary>
+		/// <param name="id"></param>
+		private void CheckMaterialReferenceChanged(Guid id)
+		{
+			if (this != null && MaterialId == id && Renderer != null)
+			{
+				Renderer.sharedMaterial = (Material)App.AssetManager.GetById(id).Value.Asset;
+			}
+		}
+
 		private void PatchTransform(ActorTransformPatch transformPatch)
 		{
 			if (transformPatch != null)
@@ -1066,66 +1150,10 @@ namespace MixedRealityExtension.Core
 				}
 				else
 				{
-					PatchTransformWithRigidBody(transformPatch);
+					// <todo> do we need this, since with physics we have a different chanel for this
+					//PatchTransformWithRigidBody(transformPatch);
 				}
 			}
-		}
-
-		private void PatchTransformWithRigidBody(ActorTransformPatch transformPatch)
-		{
-			if (_rigidbody == null)
-			{
-				return;
-			}
-
-			RigidBody.RigidBodyTransformUpdate transformUpdate = new RigidBody.RigidBodyTransformUpdate();
-			if (transformPatch.Local != null)
-			{
-				// In case of rigid body:
-				// - Apply scale directly.
-				transform.localScale = transform.localScale.GetPatchApplied(LocalTransform.Scale.ApplyPatch(transformPatch.Local.Scale));
-
-				// - Apply position and rotation via rigid body from local to world space.
-				if (transformPatch.Local.Position != null)
-				{
-					var localPosition = transform.localPosition.GetPatchApplied(LocalTransform.Position.ApplyPatch(transformPatch.Local.Position));
-					transformUpdate.Position = transform.parent.TransformPoint(localPosition);
-				}
-
-				if (transformPatch.Local.Rotation != null)
-				{
-					var localRotation = transform.localRotation.GetPatchApplied(LocalTransform.Rotation.ApplyPatch(transformPatch.Local.Rotation));
-					transformUpdate.Rotation = transform.parent.rotation * localRotation;
-				}
-			}
-
-			if (transformPatch.App != null)
-			{
-				var appTransform = App.SceneRoot.transform;
-
-				if (transformPatch.App.Position != null)
-				{
-					// New app space position.
-					var newAppPos = appTransform.InverseTransformPoint(transform.position)
-						.GetPatchApplied(AppTransform.Position.ApplyPatch(transformPatch.App.Position));
-
-					// Transform new position to world space.
-					transformUpdate.Position = appTransform.TransformPoint(newAppPos);
-				}
-
-				if (transformPatch.App.Rotation != null)
-				{
-					// New app space rotation
-					var newAppRot = (transform.rotation * appTransform.rotation)
-						.GetPatchApplied(AppTransform.Rotation.ApplyPatch(transformPatch.App.Rotation));
-
-					// Transform new app rotation to world space.
-					transformUpdate.Rotation = newAppRot * transform.rotation;
-				}
-			}
-
-			// Queue update to happen in the fixed update
-			RigidBody.SynchronizeEngine(transformUpdate);
 		}
 
 		private void CorrectAppTransform(MWTransform transform)
@@ -1172,44 +1200,7 @@ namespace MixedRealityExtension.Core
 			}
 			else
 			{
-				// Lerping and correction needs to happen at the rigid body level here to
-				// not interfere with physics simulation.  This will change with kinematic being
-				// enabled on a rigid body for when it is grabbed.  We do not support this currently,
-				// and thus do not interpolate the actor.  Just set the position for the rigid body.
-
-				_rbTransformPatch = _rbTransformPatch ?? new ActorTransformPatch()
-				{
-					App = new TransformPatch()
-					{
-						Position = new Vector3Patch(),
-						Rotation = new QuaternionPatch()
-					}
-				};
-
-				if (transform.Position != null)
-				{
-					_rbTransformPatch.App.Position.X = transform.Position.X;
-					_rbTransformPatch.App.Position.Y = transform.Position.Y;
-					_rbTransformPatch.App.Position.Z = transform.Position.Z;
-				}
-				else
-				{
-					_rbTransformPatch.App.Position = null;
-				}
-
-				if (transform.Rotation != null)
-				{
-					_rbTransformPatch.App.Rotation.W = transform.Rotation.W;
-					_rbTransformPatch.App.Rotation.X = transform.Rotation.X;
-					_rbTransformPatch.App.Rotation.Y = transform.Rotation.Y;
-					_rbTransformPatch.App.Rotation.Z = transform.Rotation.Z;
-				}
-				else
-				{
-					_rbTransformPatch.App.Rotation = null;
-				}
-
-				PatchTransformWithRigidBody(_rbTransformPatch);
+				// nothing to do this should be handled by the physics channel 
 			}
 		}
 
@@ -1266,11 +1257,11 @@ namespace MixedRealityExtension.Core
 					var runningGeneration = ++colliderGeneration;
 
 					// must wait for mesh load before auto type will work
-					if (colliderPatch.Geometry.Shape == ColliderType.Auto && App.AssetCache.GetColliderGeometry(MeshId) == null)
+					if (colliderPatch.Geometry.Shape == ColliderType.Auto && App.AssetManager.GetById(MeshId) == null)
 					{
 						var runningMeshId = MeshId;
 						_pendingColliderPatch = colliderPatch;
-						App.AssetCache.OnCached(MeshId, _ =>
+						App.AssetManager.OnSet(MeshId, _ =>
 						{
 							if (runningMeshId != MeshId || runningGeneration != colliderGeneration) return;
 							SetCollider(_pendingColliderPatch);
@@ -1357,7 +1348,23 @@ namespace MixedRealityExtension.Core
 					behaviorComponent.SetBehaviorContext(context);
 				}
 
-				((ITargetBehavior)behaviorComponent.Behavior).Grabbable = grabbable.Value;
+				if (RigidBody != null && behaviorComponent.Behavior is ITargetBehavior targetBehavior)
+				{
+					bool wasGrabbable = targetBehavior.Grabbable;
+					targetBehavior.Grabbable = grabbable.Value;
+
+					if (wasGrabbable != grabbable.Value)
+					{
+						if (grabbable.Value)
+						{
+							targetBehavior.Grab.ActionStateChanged += OnRigidBodyGrabbed;
+						}
+						else
+						{
+							targetBehavior.Grab.ActionStateChanged -= OnRigidBodyGrabbed;
+						}
+					}
+				}
 
 				Grabbable = grabbable.Value;
 			}
@@ -1415,6 +1422,20 @@ namespace MixedRealityExtension.Core
 
 		private void CleanUp()
 		{
+			var behaviorComponent = GetActorComponent<BehaviorComponent>();
+			if (behaviorComponent != null && behaviorComponent.Behavior is ITargetBehavior targetBehavior)
+			{
+				if (RigidBody != null && Grabbable)
+				{
+					targetBehavior.Grab.ActionStateChanged -= OnRigidBodyGrabbed;
+				}
+			}
+
+			if (RigidBody != null)
+			{
+				RigidBodyRemoved?.Invoke(Id);
+			}
+
 			foreach (var component in _components.Values)
 			{
 				component.CleanUp();
@@ -1489,9 +1510,9 @@ namespace MixedRealityExtension.Core
 			return false;
 		}
 
-		#endregion
+#endregion
 
-		#region Command Handlers
+#region Command Handlers
 
 		[CommandHandler(typeof(LocalCommand))]
 		private void OnLocalCommand(LocalCommand payload, Action onCompleteCallback)
@@ -1590,9 +1611,9 @@ namespace MixedRealityExtension.Core
 						MediaInstance mediaInstance = new MediaInstance(payload.MediaAssetId);
 						_mediaInstances.Add(payload.Id, mediaInstance);
 
-						App.AssetCache.OnCached(payload.MediaAssetId, asset =>
+						App.AssetManager.OnSet(payload.MediaAssetId, asset =>
 						{
-							if (asset is AudioClip audioClip)
+							if (asset.Asset is AudioClip audioClip)
 							{
 								AudioSource soundInstance = App.SoundManager.AddSoundInstance(this, payload.Id, audioClip, payload.Options);
 								if (soundInstance)
@@ -1605,7 +1626,7 @@ namespace MixedRealityExtension.Core
 									_mediaInstances.Remove(payload.Id);
 								}
 							}
-							else if (asset is VideoStreamDescription videoStreamDescription)
+							else if (asset.Asset is VideoStreamDescription videoStreamDescription)
 							{
 								var factory = MREAPI.AppsAPI.VideoPlayerFactory
 									?? throw new ArgumentException("Cannot start video stream - VideoPlayerFactory not implemented.");
@@ -1625,7 +1646,7 @@ namespace MixedRealityExtension.Core
 					{
 						if (_mediaInstances.TryGetValue(payload.Id, out MediaInstance mediaInstance))
 						{
-							App.AssetCache.OnCached(mediaInstance.MediaAssetId, asset =>
+							App.AssetManager.OnSet(mediaInstance.MediaAssetId, _ =>
 							{
 								_mediaInstances.Remove(payload.Id);
 								DestroyMediaById(payload.Id, mediaInstance);
@@ -1637,7 +1658,7 @@ namespace MixedRealityExtension.Core
 					{
 						if (_mediaInstances.TryGetValue(payload.Id, out MediaInstance mediaInstance))
 						{
-							App.AssetCache.OnCached(mediaInstance.MediaAssetId, asset =>
+							App.AssetManager.OnSet(mediaInstance.MediaAssetId, _ =>
 							{
 								if (mediaInstance.Instance != null)
 								{
@@ -1736,9 +1757,9 @@ namespace MixedRealityExtension.Core
 			onCompleteCallback?.Invoke();
 		}
 
-		#endregion
+#endregion
 
-		#region Command Handlers - Rigid Body Commands
+#region Command Handlers - Rigid Body Commands
 
 		[CommandHandler(typeof(RBMovePosition))]
 		private void OnRBMovePosition(RBMovePosition payload, Action onCompleteCallback)
@@ -1757,7 +1778,12 @@ namespace MixedRealityExtension.Core
 		[CommandHandler(typeof(RBAddForce))]
 		private void OnRBAddForce(RBAddForce payload, Action onCompleteCallback)
 		{
-			RigidBody?.RigidBodyAddForce(new MWVector3().ApplyPatch(payload.Force));
+			bool isOwner = Owner.HasValue ? Owner.Value == App.LocalUser.Id : CanSync();
+			if (isOwner)
+			{
+				RigidBody?.RigidBodyAddForce(new MWVector3().ApplyPatch(payload.Force));
+			}
+
 			onCompleteCallback?.Invoke();
 		}
 
@@ -1784,6 +1810,6 @@ namespace MixedRealityExtension.Core
 			onCompleteCallback?.Invoke();
 		}
 
-		#endregion
+#endregion
 	}
 }

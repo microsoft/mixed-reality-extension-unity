@@ -1,155 +1,203 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
+using MixedRealityExtension.PluginInterfaces;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using MixedRealityExtension.PluginInterfaces;
-using MixedRealityExtension.Util;
+using System.Threading.Tasks;
 using UnityEngine;
 using Object = UnityEngine.Object;
-
-using ColliderGeometry = MixedRealityExtension.Core.ColliderGeometry;
-using CacheCallback = System.Action<UnityEngine.Object>;
 
 namespace MixedRealityExtension.Assets
 {
 	/// <summary>
-	/// A default implementation of IAssetCache
+	/// Default in-memory implementation of the asset cache interface
 	/// </summary>
-	public class AssetCache : IAssetCache
+	public class AssetCache : MonoBehaviour, IAssetCache
 	{
-		private readonly struct CacheEntry
+		private class CacheItem
 		{
-			public readonly Guid Id;
-			public readonly Guid ContainerId;
-			public readonly AssetSource Source;
-			public readonly Object Asset;
-			public readonly ColliderGeometry ColliderGeometry;
+			public readonly Uri Uri;
+			public readonly IEnumerable<Object> Assets;
+			public readonly string Version;
+			public int ReferenceCount;
 
-			public CacheEntry(Guid id, Guid containerId, AssetSource source, Object asset, ColliderGeometry collider = null)
+			public CacheItem PreviousVersion;
+
+			public CacheItem(
+				Uri uri,
+				IEnumerable<Object> assets,
+				string version,
+				int referenceCount,
+				CacheItem previousVersion = null)
 			{
-				Id = id;
-				ContainerId = containerId;
-				Source = source;
-				Asset = asset;
-				ColliderGeometry = collider;
+				Uri = uri;
+				Assets = assets;
+				Version = version;
+				ReferenceCount = referenceCount;
+				PreviousVersion = previousVersion;
+			}
+
+			public override string ToString()
+			{
+				return $"[Uri: {Uri}, {Assets.Count()} assets, Version: {Version}, References: {ReferenceCount}]";
+			}
+
+			public CacheItem FindInHistory(string version)
+			{
+				if (version == Version)
+				{
+					return this;
+				}
+				else if (PreviousVersion == null)
+				{
+					return null;
+				}
+				else
+				{
+					return PreviousVersion.FindInHistory(version);
+				}
 			}
 		}
 
-		private readonly List<CacheEntry> cache = new List<CacheEntry>(50);
-		private readonly Dictionary<Guid, List<CacheCallback>> cacheCallbacks = new Dictionary<Guid, List<CacheCallback>>(50);
-		private readonly GameObject cacheRoot;
-		private readonly GameObject emptyTemplate;
+		private readonly Dictionary<Uri, CacheItem> Cache = new Dictionary<Uri, CacheItem>(10);
+		private Coroutine CleanTimer = null;
 
-		public AssetCache(GameObject root = null)
+		/// <summary>
+		/// The maximum time (in seconds) dereferenced assets are allowed to stay in memory.
+		/// </summary>
+		public int CleanInterval { get; set; } = 30;
+
+		///<inheritdoc/>
+		public GameObject CacheRootGO { get; set; }
+
+		/// <inheritdoc />
+		public bool SupportsSync { get; } = true;
+
+		///<inheritdoc/>
+		public void StoreAssets(Uri uri, IEnumerable<Object> assets, string version)
 		{
-			cacheRoot = root ?? new GameObject("MRE Cache Root");
-			cacheRoot.SetActive(false);
-
-			emptyTemplate = new GameObject("Empty");
-			emptyTemplate.transform.SetParent(cacheRoot.transform, false);
-		}
-
-		/// <inheritdoc cref="CacheRootGO"/>
-		public GameObject CacheRootGO()
-		{
-			return cacheRoot;
-		}
-
-		/// <inheritdoc cref="EmptyTemplate"/>
-		public GameObject EmptyTemplate()
-		{
-			return emptyTemplate;
-		}
-
-		/// <inheritdoc cref="GetAsset"/>
-		public Object GetAsset(Guid? id)
-		{
-			return id != null ? cache.Find(c => c.Id == id).Asset : null;
-		}
-
-		/// <inheritdoc cref="GetColliderGeometry(Guid?)"/>
-		public ColliderGeometry GetColliderGeometry(Guid? id)
-		{
-			return id != null ? cache.Find(c => c.Id == id).ColliderGeometry : null;
-		}
-
-		/// <inheritdoc cref="GetId"/>
-		public Guid? GetId(Object asset)
-		{
-			return asset != null ? cache.Find(c => c.Asset == asset).Id : (Guid?)null;
-		}
-
-		/// <inheritdoc cref="OnCached"/>
-		public void OnCached(Guid id, CacheCallback callback)
-		{
-			var asset = GetAsset(id);
-			if (cache.Any(c => c.Id == id))
+			// already a cached asset for this uri
+			if (Cache.TryGetValue(uri, out CacheItem cacheItem))
 			{
-				try
+				// Note: might be same as cacheItem
+				CacheItem oldItem = cacheItem.FindInHistory(version);
+
+				// these assets are already in the cache, just dereference
+				if (oldItem != null)
 				{
-					callback?.Invoke(asset);
+					var newRefCount = oldItem.ReferenceCount - assets.Count();
+					oldItem.ReferenceCount = newRefCount >= 0 ? newRefCount : 0;
+					if (oldItem.ReferenceCount == 0)
+					{
+						ScheduleCleanUnusedResources();
+					}
 				}
-				catch (Exception e)
+				// the submitted version is not in history (i.e. is a new version), update cache
+				else
 				{
-					Debug.LogException(e);
+					Cache[uri] = new CacheItem(uri, assets.ToArray(), version,
+						referenceCount: assets.Count(),
+						previousVersion: cacheItem);
 				}
+			}
+			// no previously cached assets, just store
+			else
+			{
+				cacheItem = new CacheItem(uri, assets.ToArray(), version, assets.Count());
+				Cache.Add(uri, cacheItem);
+			}
+		}
+
+		/// <inheritdoc />
+		public Task<IEnumerable<Object>> LeaseAssets(Uri uri, string ifMatchesVersion = null)
+		{
+			return Task.FromResult(LeaseAssetsSync(uri, ifMatchesVersion));
+		}
+
+		///<inheritdoc/>
+		public IEnumerable<Object> LeaseAssetsSync(Uri uri, string ifMatchesVersion = null)
+		{
+			if (Cache.TryGetValue(uri, out CacheItem cacheItem))
+			{
+				cacheItem.ReferenceCount += cacheItem.Assets.Count();
+				return cacheItem.Assets;
 			}
 			else
 			{
-				cacheCallbacks.GetOrCreate(id, () => new List<CacheCallback>(3)).Add(callback);
+				return null;
 			}
 		}
 
-		/// <inheritdoc cref="CacheAsset"/>
-		public void CacheAsset(Object asset, Guid id, Guid containerId, AssetSource source = null, ColliderGeometry colliderGeo = null)
+		/// <inheritdoc />
+		public Task<string> GetVersion(Uri uri)
 		{
-			if (!cache.Any(c => c.Id == id))
+			return Task.FromResult(GetVersionSync(uri));
+		}
+
+		///<inheritdoc/>
+		public string GetVersionSync(Uri uri)
+		{
+			if (Cache.TryGetValue(uri, out CacheItem cacheItem))
 			{
-				cache.Add(new CacheEntry(id, containerId, source, asset, colliderGeo));
+				return cacheItem.Version;
+			}
+			else
+			{
+				return null;
+			}
+		}
+
+		/// <summary>
+		/// Deallocates any cache items that have zero references.
+		/// </summary>
+		public void CleanUnusedResources()
+		{
+			// returns whether the item was deallocated
+			bool CleanBottomUp(CacheItem item)
+			{
+				if (item.PreviousVersion != null && CleanBottomUp(item.PreviousVersion))
+				{
+					item.PreviousVersion = null;
+				}
+
+				if (item.PreviousVersion == null && item.ReferenceCount == 0)
+				{
+					foreach (var o in item.Assets)
+					{
+						Object.Destroy(o);
+					}
+					return true;
+				}
+				else
+				{
+					return false;
+				}
 			}
 
-			if (cacheCallbacks.TryGetValue(id, out List<CacheCallback> callbacks))
+			foreach (CacheItem cacheItem in Cache.Values.ToArray())
 			{
-				cacheCallbacks.Remove(id);
-				foreach (var cb in callbacks)
+				if (CleanBottomUp(cacheItem))
 				{
-					try
-					{
-						cb?.Invoke(asset);
-					}
-					catch(Exception e)
-					{
-						Debug.LogException(e);
-					}
+					Cache.Remove(cacheItem.Uri);
 				}
 			}
 		}
 
-		/// <inheritdoc cref="UncacheAssets"/>
-		public IEnumerable<Object> UncacheAssets(Guid containerId)
+		private void ScheduleCleanUnusedResources()
 		{
-			var assets = cache.Where(c => c.ContainerId == containerId && c.Asset != null).Select(c => c.Asset).ToArray();
-			cache.RemoveAll(c => c.ContainerId == containerId);
-			return assets;
+			if (CleanTimer == null)
+			{
+				CleanTimer = StartCoroutine(CleanupCoroutine());
+			}
 		}
 
-		/// <inheritdoc cref="UncacheAssetsAndDestroy(Guid)"/>
-		public void UncacheAssetsAndDestroy(Guid containerId)
+		private IEnumerator CleanupCoroutine()
 		{
-			foreach (var asset in UncacheAssets(containerId))
-			{
-				// workaround: unload meshes implicitly
-				if (asset is GameObject prefab)
-				{
-					var filters = prefab.GetComponentsInChildren<MeshFilter>();
-					foreach (var f in filters)
-					{
-						Object.Destroy(f.sharedMesh);
-					}
-				}
-				Object.Destroy(asset);
-			}
+			yield return new WaitForSeconds(CleanInterval);
+			CleanUnusedResources();
+			CleanTimer = null;
 		}
 	}
 }

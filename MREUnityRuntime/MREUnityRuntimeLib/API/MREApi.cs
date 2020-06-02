@@ -25,6 +25,7 @@ namespace MixedRealityExtension.API
 		/// </summary>
 		/// <param name="defaultMaterial">The material template used for all SDK-spawned meshes.</param>
 		/// <param name="layerApplicator">The class used to apply MRE layers to Unity colliders.</param>
+		/// <param name="assetCache">The class responsible for long-term asset caching.</param>
 		/// <param name="behaviorFactory">The behavior factory to use within the runtime.</param>
 		/// <param name="textFactory">The text factory to use within the runtime.</param>
 		/// <param name="primitiveFactory">The primitive factory to use within the runtime.</param>
@@ -38,6 +39,7 @@ namespace MixedRealityExtension.API
 		public static void InitializeAPI(
 			UnityEngine.Material defaultMaterial,
 			ILayerApplicator layerApplicator,
+			IAssetCache assetCache,
 			IBehaviorFactory behaviorFactory = null,
 			ITextFactory textFactory = null,
 			IPrimitiveFactory primitiveFactory = null,
@@ -51,6 +53,7 @@ namespace MixedRealityExtension.API
 		{
 			AppsAPI.DefaultMaterial = defaultMaterial;
 			AppsAPI.LayerApplicator = layerApplicator;
+			AppsAPI.AssetCache = assetCache;
 			AppsAPI.BehaviorFactory = behaviorFactory;
 			AppsAPI.TextFactory = textFactory ?? throw new ArgumentException($"{nameof(textFactory)} cannot be null");
 			AppsAPI.PrimitiveFactory = primitiveFactory ?? new MWPrimitiveFactory();
@@ -98,6 +101,11 @@ namespace MixedRealityExtension.API
 		/// The class responsible for assigning layers to colliders.
 		/// </summary>
 		public ILayerApplicator LayerApplicator { get; internal set; }
+
+		/// <summary>
+		/// The class responsible for long-term asset caching.
+		/// </summary>
+		public IAssetCache AssetCache { get; internal set; }
 
 		internal IBehaviorFactory BehaviorFactory { get; set; }
 
