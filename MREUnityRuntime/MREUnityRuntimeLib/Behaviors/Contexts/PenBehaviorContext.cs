@@ -5,7 +5,6 @@ namespace MixedRealityExtension.Behaviors.Contexts
 	public class PenBehaviorContext : PhysicalToolBehaviorContext<PenData>
 	{
 		internal PenBehaviorContext()
-			: base()
 		{
 
 		}

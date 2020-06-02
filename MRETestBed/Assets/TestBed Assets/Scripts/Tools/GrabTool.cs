@@ -29,7 +29,7 @@ namespace Assets.Scripts.Tools
 
 	public class GrabTool: IDisposable
 	{
-		private Transform _manipulator;
+		private GameObject _manipulator;
 		private Transform _previousParent;
 		private Vector3 _manipulatorPosInToolSpace;
 		private Vector3 _manipulatorupInToolSpace;
@@ -102,17 +102,17 @@ namespace Assets.Scripts.Tools
 			var targetTransform = CurrentGrabbedTarget.transform;
 			var inputTransform = _currentInputSource.transform;
 
-			_manipulator = _manipulator ?? new GameObject("manipulator").transform;
-			_manipulator.parent = null;
-			_manipulator.position = targetTransform.position;
-			_manipulator.rotation = targetTransform.rotation;
+			_manipulator = new GameObject("manipulator");
+			_manipulator.transform.parent = null;
+			_manipulator.transform.position = targetTransform.position;
+			_manipulator.transform.rotation = targetTransform.rotation;
 
 			_previousParent = targetTransform.parent;
-			targetTransform.SetParent(_manipulator, worldPositionStays: true);
+			targetTransform.SetParent(_manipulator.transform, worldPositionStays: true);
 
-			_manipulatorPosInToolSpace = inputTransform.InverseTransformPoint(_manipulator.position);
-			_manipulatorupInToolSpace = inputTransform.InverseTransformDirection(_manipulator.up);
-			_manipulatorLookAtPosInToolSpace = inputTransform.InverseTransformPoint(_manipulator.position + _manipulator.forward);
+			_manipulatorPosInToolSpace = inputTransform.InverseTransformPoint(_manipulator.transform.position);
+			_manipulatorupInToolSpace = inputTransform.InverseTransformDirection(_manipulator.transform.up);
+			_manipulatorLookAtPosInToolSpace = inputTransform.InverseTransformPoint(_manipulator.transform.position + _manipulator.transform.forward);
 		}
 
 		private void EndGrab()
@@ -125,22 +125,21 @@ namespace Assets.Scripts.Tools
 			CurrentGrabbedTarget.transform.SetParent(_previousParent, worldPositionStays: true);
 			CurrentGrabbedTarget = null;
 
-			_manipulator.localPosition = Vector3.zero;
-			_manipulator.localRotation = Quaternion.identity;
-			_manipulator.localScale = Vector3.one;
+			UnityEngine.Object.Destroy(_manipulator);
+			_manipulator = null;
 		}
 
 		private void UpdatePosition()
 		{
 			Vector3 targetPosition = _currentInputSource.transform.TransformPoint(_manipulatorPosInToolSpace);
-			_manipulator.position = targetPosition;
+			_manipulator.transform.position = targetPosition;
 		}
 
 		private void UpdateRotation()
 		{
 			Vector3 targetLookAtPos = _currentInputSource.transform.TransformPoint(_manipulatorLookAtPosInToolSpace);
 			Vector3 targetUp = _currentInputSource.transform.TransformDirection(_manipulatorupInToolSpace);
-			_manipulator.rotation = Quaternion.LookRotation(targetLookAtPos - _manipulator.position, targetUp);
+			_manipulator.transform.rotation = Quaternion.LookRotation(targetLookAtPos - _manipulator.transform.position, targetUp);
 		}
 
 		public void Dispose()

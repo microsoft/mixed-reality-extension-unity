@@ -109,7 +109,6 @@ namespace MixedRealityExtension.Behaviors.Contexts
 		}
 
 		internal ButtonBehaviorContext()
-			: base()
 		{
 			
 		}

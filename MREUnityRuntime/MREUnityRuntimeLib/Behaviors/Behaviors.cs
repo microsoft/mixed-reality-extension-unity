@@ -26,13 +26,13 @@ namespace MixedRealityExtension.Behaviors
 		/// The button behavior type.
 		/// </summary>
 		[BehaviorContextType(typeof(ButtonBehaviorContext))]
-		Button = 4,
+		Button = 2,
 
 		/// <summary>
 		/// The pen behavior type.
 		/// </summary>
 		[BehaviorContextType(typeof(PenBehaviorContext))]
-		Pen = 8
+		Pen = 4
 	}
 
 	[AttributeUsage(AttributeTargets.Field, AllowMultiple = false)]

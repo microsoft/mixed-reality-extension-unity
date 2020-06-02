@@ -41,7 +41,6 @@ namespace MixedRealityExtension.Behaviors.Contexts
 
 
 		internal PhysicalToolBehaviorContext()
-			: base()
 		{
 			ToolData = new ToolDataT();
 		}

@@ -32,8 +32,7 @@ namespace MixedRealityExtension.Behaviors.Contexts
 				return factoryMethod.Invoke(actor, appRef);
 			}
 
-			MixedRealityExtensionApp app;
-			if (appRef.TryGetTarget(out app))
+			if (appRef.TryGetTarget(out MixedRealityExtensionApp app))
 			{
 				app.Logger.LogError($"Trying to create a behavior of type {behaviorType.ToString()}, but no handler is registered for the given type.");
 			}

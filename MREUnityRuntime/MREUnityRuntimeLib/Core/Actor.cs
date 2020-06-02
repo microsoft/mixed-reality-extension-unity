@@ -843,11 +843,12 @@ namespace MixedRealityExtension.Core
 				RigidBodyAdded?.Invoke(Id, _rigidbody, isOwner);
 
 				var behaviorComponent = GetActorComponent<BehaviorComponent>();
-				if (behaviorComponent != null && behaviorComponent.Behavior is ITargetBehavior targetBehavior)
+				if (behaviorComponent != null && behaviorComponent.Context is TargetBehaviorContext targetContext)
 				{
+					var targetBehavior = (ITargetBehavior)targetContext.Behavior;
 					if (targetBehavior.Grabbable)
 					{
-						targetBehavior.Grab.ActionStateChanged += OnRigidBodyGrabbed;
+						targetContext.GrabAction.ActionStateChanged += OnRigidBodyGrabbed;
 					}
 				}
 			}
@@ -855,7 +856,7 @@ namespace MixedRealityExtension.Core
 		}
 
 		/// <summary>
-		/// Precondition: The mesh refered to by MeshId is loaded and available for use.
+		/// Precondition: The mesh referred to by MeshId is loaded and available for use.
 		/// </summary>
 		/// <param name="colliderPatch"></param>
 		private void SetCollider(ColliderPatch colliderPatch)
@@ -1348,8 +1349,9 @@ namespace MixedRealityExtension.Core
 					behaviorComponent.SetBehaviorContext(context);
 				}
 
-				if (RigidBody != null && behaviorComponent.Behavior is ITargetBehavior targetBehavior)
+				if (RigidBody != null && behaviorComponent.Context is TargetBehaviorContext targetContext)
 				{
+					var targetBehavior = (ITargetBehavior)targetContext.Behavior;
 					bool wasGrabbable = targetBehavior.Grabbable;
 					targetBehavior.Grabbable = grabbable.Value;
 
@@ -1357,11 +1359,11 @@ namespace MixedRealityExtension.Core
 					{
 						if (grabbable.Value)
 						{
-							targetBehavior.Grab.ActionStateChanged += OnRigidBodyGrabbed;
+							targetContext.GrabAction.ActionStateChanged += OnRigidBodyGrabbed;
 						}
 						else
 						{
-							targetBehavior.Grab.ActionStateChanged -= OnRigidBodyGrabbed;
+							targetContext.GrabAction.ActionStateChanged -= OnRigidBodyGrabbed;
 						}
 					}
 				}
@@ -1423,11 +1425,12 @@ namespace MixedRealityExtension.Core
 		private void CleanUp()
 		{
 			var behaviorComponent = GetActorComponent<BehaviorComponent>();
-			if (behaviorComponent != null && behaviorComponent.Behavior is ITargetBehavior targetBehavior)
+			if (behaviorComponent != null && behaviorComponent.Context is TargetBehaviorContext targetContext)
 			{
+				var targetBehavior = (ITargetBehavior)targetContext.Behavior;
 				if (RigidBody != null && Grabbable)
 				{
-					targetBehavior.Grab.ActionStateChanged -= OnRigidBodyGrabbed;
+					targetContext.GrabAction.ActionStateChanged -= OnRigidBodyGrabbed;
 				}
 			}
 

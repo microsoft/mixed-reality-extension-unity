@@ -12,8 +12,10 @@ namespace MixedRealityExtension.Behaviors.Contexts
 	public class TargetBehaviorContext : BehaviorContextBase
 	{
 		private List<Vector3> _currentTargetPoints = new List<Vector3>();
-		private MWAction<TargetData> _targetAction = new MWAction<TargetData>();
-		private MWAction _grabAction = new MWAction();
+
+		internal MWAction<TargetData> TargetAction { get; } = new MWAction<TargetData>();
+
+		internal MWAction GrabAction { get; } = new MWAction();
 
 		public void StartTargeting(IUser user, Vector3 targetPoint)
 		{
@@ -31,7 +33,7 @@ namespace MixedRealityExtension.Behaviors.Contexts
 				}
 			};
 
-			_targetAction.StartAction(user, targetData);
+			TargetAction.StartAction(user, targetData);
 		}
 
 		public void EndTargeting(IUser user, Vector3 targetPoint)
@@ -50,7 +52,7 @@ namespace MixedRealityExtension.Behaviors.Contexts
 				}
 			};
 
-			_targetAction.StopAction(user, targetData);
+			TargetAction.StopAction(user, targetData);
 		}
 
 		public void UpdateTargetPoint(IUser user, Vector3 targetPoint)
@@ -61,16 +63,15 @@ namespace MixedRealityExtension.Behaviors.Contexts
 
 		public void StartGrab(IUser user)
 		{
-			_grabAction.StartAction(user);
+			GrabAction.StartAction(user);
 		}
 
 		public void EndGrab(IUser user)
 		{
-			_grabAction.StopAction(user);
+			GrabAction.StopAction(user);
 		}
 
 		internal TargetBehaviorContext()
-			: base()
 		{
 			
 		}
@@ -87,7 +88,7 @@ namespace MixedRealityExtension.Behaviors.Contexts
 
 			if (_currentTargetPoints.Any())
 			{
-				_targetAction.PerformActionUpdate(new TargetData()
+				TargetAction.PerformActionUpdate(new TargetData()
 				{
 					targetedPoints = _currentTargetPoints.Select((point) =>
 					{
@@ -106,8 +107,8 @@ namespace MixedRealityExtension.Behaviors.Contexts
 
 		protected override void OnInitialized()
 		{
-			RegisterActionHandler(_targetAction, "target");
-			RegisterActionHandler(_grabAction, "grab");
+			RegisterActionHandler(TargetAction, "target");
+			RegisterActionHandler(GrabAction, "grab");
 		}
 	}
 }

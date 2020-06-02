@@ -12,6 +12,8 @@ namespace MixedRealityExtension.Core.Components
 
 		internal IBehavior Behavior => _behaviorContext?.Behavior;
 
+		internal BehaviorContextBase Context => _behaviorContext;
+
 		internal void SetBehaviorContext(BehaviorContextBase behaviorContext)
 		{
 			if (_behaviorContext != null && _behaviorContext.BehaviorType != behaviorContext.BehaviorType)
