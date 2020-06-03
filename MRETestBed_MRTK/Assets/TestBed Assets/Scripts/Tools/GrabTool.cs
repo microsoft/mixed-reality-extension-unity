@@ -57,7 +57,7 @@ namespace Assets.Scripts.Tools
 					var mwUser = grabBehavior.GetMWUnityUser(inputSource.UserGameObject);
 					if (mwUser != null)
 					{
-						grabBehavior.Grab.StartAction(mwUser);
+						grabBehavior.Context.StartGrab(mwUser);
 						grabBehavior.IsGrabbed = true;
 					}
 				}
@@ -73,7 +73,7 @@ namespace Assets.Scripts.Tools
 					var mwUser = grabBehavior.GetMWUnityUser(inputSource.UserGameObject);
 					if (mwUser != null)
 					{
-						grabBehavior.Grab.StopAction(mwUser);
+						grabBehavior.Context.EndGrab(mwUser);
 						grabBehavior.IsGrabbed = false;
 					}
 				}

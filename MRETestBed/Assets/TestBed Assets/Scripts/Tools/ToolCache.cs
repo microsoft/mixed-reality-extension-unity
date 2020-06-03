@@ -30,7 +30,6 @@ namespace Assets.Scripts.Tools
 
 		public static void StowTool(Tool tool)
 		{
-			tool.IsHeld = false;
 			_cachedAvailableTools[typeof(Tool)] = tool;
 		}
 	}

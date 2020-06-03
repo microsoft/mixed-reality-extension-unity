@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 using Assets.Scripts.Behaviors;
 using Assets.Scripts.User;
-using System;
 using System.Linq;
 using UnityEngine;
 
@@ -17,6 +16,8 @@ namespace Assets.Scripts.Tools
 
 		public bool TargetGrabbed => _grabTool.GrabActive;
 
+		protected Vector3 CurrentTargetPoint { get; private set; }
+
 		public TargetTool()
 		{
 			_grabTool.GrabStateChanged += OnGrabStateChanged;
@@ -25,6 +26,41 @@ namespace Assets.Scripts.Tools
 		public override void CleanUp()
 		{
 			_grabTool.GrabStateChanged -= OnGrabStateChanged;
+		}
+
+		public override void OnToolHeld(InputSource inputSource)
+		{
+			base.OnToolHeld(inputSource);
+
+			Vector3? hitPoint;
+			var newTarget = FindTarget(inputSource, out hitPoint);
+			if (newTarget == null)
+			{
+				return;
+			}
+
+			var newBehavior = newTarget.GetBehavior<TargetBehavior>();
+
+			OnTargetChanged(
+				Target,
+				CurrentTargetPoint,
+				newTarget,
+				hitPoint.Value,
+				newBehavior,
+				inputSource);
+		}
+
+		public override void OnToolDropped(InputSource inputSource)
+		{
+			base.OnToolDropped(inputSource);
+
+			OnTargetChanged(
+				Target,
+				CurrentTargetPoint,
+				null,
+				Vector3.zero,
+				null,
+				inputSource);
 		}
 
 		protected override void UpdateTool(InputSource inputSource)
@@ -39,49 +75,81 @@ namespace Assets.Scripts.Tools
 				}
 			}
 
-			var newTarget = FindTarget(inputSource);
-			if (Target == newTarget)
+			Vector3? hitPoint;
+			var newTarget = FindTarget(inputSource, out hitPoint);
+			if (Target == null && newTarget == null)
 			{
 				return;
 			}
 
-			if (Target != null && _currentTargetBehavior != null)
+			if (Target == newTarget)
 			{
 				var mwUser = _currentTargetBehavior.GetMWUnityUser(inputSource.UserGameObject);
-				if (mwUser != null)
+				if (mwUser == null)
 				{
-					_currentTargetBehavior.Target.StopAction(mwUser);
+					return;
 				}
+
+				CurrentTargetPoint = hitPoint.Value;
+				_currentTargetBehavior.Context.UpdateTargetPoint(mwUser, CurrentTargetPoint);
+				return;
 			}
 
 			TargetBehavior newBehavior = null;
 			if (newTarget != null)
 			{
 				newBehavior = newTarget.GetBehavior<TargetBehavior>();
-				var mwUser = newBehavior.GetMWUnityUser(inputSource.UserGameObject);
-				if (mwUser != null)
-				{
-					newBehavior.Target.StartAction(mwUser);
-				}
-			}
 
-			OnTargetChanged(Target, newTarget, inputSource);
-			Target = newTarget;
-
-			if (newBehavior != null)
-			{
 				if (newBehavior.GetDesiredToolType() != inputSource.CurrentTool.GetType())
 				{
 					inputSource.HoldTool(newBehavior.GetDesiredToolType());
 				}
+				else
+				{
+					OnTargetChanged(
+						Target,
+						CurrentTargetPoint,
+						newTarget,
+						hitPoint.Value,
+						newBehavior, 
+						inputSource);
+				}
+			}
+			else
+			{
+				OnTargetChanged(
+					Target,
+					CurrentTargetPoint,
+					null,
+					Vector3.zero,
+					null,
+					inputSource);
 
-				_currentTargetBehavior = newBehavior;
+				inputSource.DropTool();
 			}
 		}
 
-		protected virtual void OnTargetChanged(GameObject oldTarget, GameObject newTarget, InputSource inputSource)
+		protected virtual void OnTargetChanged(
+			GameObject oldTarget,
+			Vector3 oldTargetPoint,
+			GameObject newTarget,
+			Vector3 newTargetPoint,
+			TargetBehavior newBehavior,
+			InputSource inputSource)
 		{
+			if (oldTarget != null)
+			{
+				_currentTargetBehavior.Context.EndTargeting(_currentTargetBehavior.GetMWUnityUser(inputSource.UserGameObject), oldTargetPoint);
+			}
 
+			if (newTarget != null)
+			{
+				newBehavior.Context.StartTargeting(newBehavior.GetMWUnityUser(inputSource.UserGameObject), newTargetPoint);
+			}
+
+			CurrentTargetPoint = newTargetPoint;
+			Target = newTarget;
+			_currentTargetBehavior = newBehavior;
 		}
 
 		protected virtual void OnGrabStateChanged(GrabState oldGrabState, GrabState newGrabState, InputSource inputSource)
@@ -89,15 +157,21 @@ namespace Assets.Scripts.Tools
 
 		}
 
+		protected BehaviorT GetCurrentTargetBehavior<BehaviorT>() where BehaviorT : TargetBehavior
+		{
+			return _currentTargetBehavior as BehaviorT;
+		}
+
 		private void OnGrabStateChanged(object sender, GrabStateChangedArgs args)
 		{
 			OnGrabStateChanged(args.OldGrabState, args.NewGrabState, args.InputSource);
 		}
 
-		private GameObject FindTarget(InputSource inputSource)
+		private GameObject FindTarget(InputSource inputSource, out Vector3? hitPoint)
 		{
 			RaycastHit hitInfo;
 			var gameObject = inputSource.gameObject;
+			hitPoint = null;
 
 			// Only target layers 0 (Default), 5 (UI), and 10 (Hologram).
 			// You still want to hit all layers, but only interact with these.
@@ -110,6 +184,7 @@ namespace Assets.Scripts.Tools
 					if (transform.GetComponents<TargetBehavior>().FirstOrDefault() != null
 						&& ((1 << transform.gameObject.layer) | layerMask) != 0)
 					{
+						hitPoint = hitInfo.point;
 						return transform.gameObject;
 					}
 				}

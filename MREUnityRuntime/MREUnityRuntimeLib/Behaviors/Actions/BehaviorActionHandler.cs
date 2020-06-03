@@ -2,15 +2,14 @@
 // Licensed under the MIT License.
 using MixedRealityExtension.App;
 using MixedRealityExtension.Behaviors.ActionData;
-using MixedRealityExtension.Behaviors.Actions;
 using MixedRealityExtension.Core.Interfaces;
 using MixedRealityExtension.Messaging.Events.Types;
 using MixedRealityExtension.Messaging.Payloads;
 using System;
 
-namespace MixedRealityExtension.Behaviors
+namespace MixedRealityExtension.Behaviors.Actions
 {
-	internal sealed class BehaviorActionHandler : IActionHandler
+	internal sealed class BehaviorActionHandler
 	{
 		private readonly string _actionName;
 		private readonly BehaviorType _behaviorType;
@@ -29,12 +28,12 @@ namespace MixedRealityExtension.Behaviors
 			_attachedActorId = attachedActorId;
 		}
 
-		void IActionHandler.HandleActionPerforming(IUser user, BaseActionData actionData)
+		internal void HandleActionPerforming(IUser user, BaseActionData actionData)
 		{
-			((IActionHandler)this).HandleActionStateChanged(user, ActionState.Performing, ActionState.Performing, actionData);
+			HandleActionStateChanged(user, ActionState.Performing, ActionState.Performing, actionData);
 		}
 
-		void IActionHandler.HandleActionStateChanged(
+		internal void HandleActionStateChanged(
 			IUser user,
 			ActionState oldState,
 			ActionState newState,

@@ -26,6 +26,7 @@ using UnityCollider = UnityEngine.Collider;
 using MixedRealityExtension.PluginInterfaces.Behaviors;
 using MixedRealityExtension.Util;
 using IVideoPlayer = MixedRealityExtension.PluginInterfaces.IVideoPlayer;
+using MixedRealityExtension.Behaviors.Contexts;
 
 namespace MixedRealityExtension.Core
 {
@@ -842,11 +843,12 @@ namespace MixedRealityExtension.Core
 				RigidBodyAdded?.Invoke(Id, _rigidbody, isOwner);
 
 				var behaviorComponent = GetActorComponent<BehaviorComponent>();
-				if (behaviorComponent != null && behaviorComponent.Behavior is ITargetBehavior targetBehavior)
+				if (behaviorComponent != null && behaviorComponent.Context is TargetBehaviorContext targetContext)
 				{
+					var targetBehavior = (ITargetBehavior)targetContext.Behavior;
 					if (targetBehavior.Grabbable)
 					{
-						targetBehavior.Grab.ActionStateChanged += OnRigidBodyGrabbed;
+						targetContext.GrabAction.ActionStateChanged += OnRigidBodyGrabbed;
 					}
 				}
 			}
@@ -854,7 +856,7 @@ namespace MixedRealityExtension.Core
 		}
 
 		/// <summary>
-		/// Precondition: The mesh refered to by MeshId is loaded and available for use.
+		/// Precondition: The mesh referred to by MeshId is loaded and available for use.
 		/// </summary>
 		/// <param name="colliderPatch"></param>
 		private void SetCollider(ColliderPatch colliderPatch)
@@ -1336,19 +1338,20 @@ namespace MixedRealityExtension.Core
 					// to be able to be grabbed on all controller types for host apps.  This will be a base Target behavior once we
 					// update host apps to handle button conflicts.
 					behaviorComponent = GetOrCreateActorComponent<BehaviorComponent>();
-					var handler = BehaviorHandlerFactory.CreateBehaviorHandler(BehaviorType.Button, this, new WeakReference<MixedRealityExtensionApp>(App));
+					var context = BehaviorContextFactory.CreateContext(BehaviorType.Button, this, new WeakReference<MixedRealityExtensionApp>(App));
 
-					if (handler == null)
+					if (context == null)
 					{
-						Debug.LogError("Failed to create a behavior handler.  Grab will not work without one.");
+						Debug.LogError("Failed to create a behavior context.  Grab will not work without one.");
 						return;
 					}
 
-					behaviorComponent.SetBehaviorHandler(handler);
+					behaviorComponent.SetBehaviorContext(context);
 				}
 
-				if (RigidBody != null && behaviorComponent.Behavior is ITargetBehavior targetBehavior)
+				if (RigidBody != null && behaviorComponent.Context is TargetBehaviorContext targetContext)
 				{
+					var targetBehavior = (ITargetBehavior)targetContext.Behavior;
 					bool wasGrabbable = targetBehavior.Grabbable;
 					targetBehavior.Grabbable = grabbable.Value;
 
@@ -1356,11 +1359,11 @@ namespace MixedRealityExtension.Core
 					{
 						if (grabbable.Value)
 						{
-							targetBehavior.Grab.ActionStateChanged += OnRigidBodyGrabbed;
+							targetContext.GrabAction.ActionStateChanged += OnRigidBodyGrabbed;
 						}
 						else
 						{
-							targetBehavior.Grab.ActionStateChanged -= OnRigidBodyGrabbed;
+							targetContext.GrabAction.ActionStateChanged -= OnRigidBodyGrabbed;
 						}
 					}
 				}
@@ -1422,11 +1425,12 @@ namespace MixedRealityExtension.Core
 		private void CleanUp()
 		{
 			var behaviorComponent = GetActorComponent<BehaviorComponent>();
-			if (behaviorComponent != null && behaviorComponent.Behavior is ITargetBehavior targetBehavior)
+			if (behaviorComponent != null && behaviorComponent.Context is TargetBehaviorContext targetContext)
 			{
+				var targetBehavior = (ITargetBehavior)targetContext.Behavior;
 				if (RigidBody != null && Grabbable)
 				{
-					targetBehavior.Grab.ActionStateChanged -= OnRigidBodyGrabbed;
+					targetContext.GrabAction.ActionStateChanged -= OnRigidBodyGrabbed;
 				}
 			}
 
@@ -1732,26 +1736,26 @@ namespace MixedRealityExtension.Core
 		{
 			var behaviorComponent = GetOrCreateActorComponent<BehaviorComponent>();
 
-			if (behaviorComponent.ContainsBehaviorHandler())
+			if (behaviorComponent.ContainsBehaviorContext())
 			{
-				behaviorComponent.ClearBehaviorHandler();
+				behaviorComponent.ClearBehaviorContext();
 			}
 
 			if (payload.BehaviorType != BehaviorType.None)
 			{
-				var handler = BehaviorHandlerFactory.CreateBehaviorHandler(payload.BehaviorType, this, new WeakReference<MixedRealityExtensionApp>(App));
+				var context = BehaviorContextFactory.CreateContext(payload.BehaviorType, this, new WeakReference<MixedRealityExtensionApp>(App));
 
-				if (handler == null)
+				if (context == null)
 				{
 					Debug.LogError($"Failed to create behavior for behavior type {payload.BehaviorType.ToString()}");
 					onCompleteCallback?.Invoke();
 					return;
 				}
 
-				behaviorComponent.SetBehaviorHandler(handler);
+				behaviorComponent.SetBehaviorContext(context);
 
 				// We need to update the new behavior's grabbable flag from the actor so that it can be grabbed in the case we cleared the previous behavior.
-				((ITargetBehavior)handler.Behavior).Grabbable = Grabbable;
+				((ITargetBehavior)context.Behavior).Grabbable = Grabbable;
 			}
 			onCompleteCallback?.Invoke();
 		}

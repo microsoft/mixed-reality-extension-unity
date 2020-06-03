@@ -25,7 +25,7 @@ namespace Assets.Scripts.Tools
 					var mwUser = buttonBehavior.GetMWUnityUser(inputSource.UserGameObject);
 					if (mwUser != null)
 					{
-						buttonBehavior.Button.StartAction(mwUser);
+						buttonBehavior.Context.StartButton(mwUser, CurrentTargetPoint);
 					}
 				}
 			}
@@ -37,16 +37,28 @@ namespace Assets.Scripts.Tools
 					var mwUser = buttonBehavior.GetMWUnityUser(inputSource.UserGameObject);
 					if (mwUser != null)
 					{
-						buttonBehavior.Button.StopAction(mwUser);
-						buttonBehavior.Click.StartAction(mwUser);
+						buttonBehavior.Context.EndButton(mwUser, CurrentTargetPoint);
+						buttonBehavior.Context.Click(mwUser, CurrentTargetPoint);
 					}
 				}
 			}
 		}
 
-		protected override void OnTargetChanged(GameObject oldTarget, GameObject newTarget, InputSource inputSource)
+		protected override void OnTargetChanged(
+			GameObject oldTarget,
+			Vector3 oldTargetPosition,
+			GameObject newTarget,
+			Vector3 newTargetPosition,
+			TargetBehavior newBehavior,
+			InputSource inputSource)
 		{
-			base.OnTargetChanged(oldTarget, newTarget, inputSource);
+			base.OnTargetChanged(
+				oldTarget,
+				oldTargetPosition,
+				newTarget,
+				newTargetPosition,
+				newBehavior,
+				inputSource);
 
 			if (oldTarget != null)
 			{
@@ -56,21 +68,20 @@ namespace Assets.Scripts.Tools
 					var mwUser = oldBehavior.GetMWUnityUser(inputSource.UserGameObject);
 					if (mwUser != null)
 					{
-						oldBehavior.Hover.StopAction(mwUser);
+						oldBehavior.Context.EndHover(mwUser, oldTargetPosition);
 					}
 				}
 			}
 
-			
 			if (newTarget != null)
 			{
-				var newBehavior = newTarget.GetBehavior<ButtonBehavior>();
-				if (newBehavior != null)
+				var newButtonBehavior = newBehavior as ButtonBehavior;
+				if (newButtonBehavior != null)
 				{
-					var mwUser = newBehavior.GetMWUnityUser(inputSource.UserGameObject);
+					var mwUser = newButtonBehavior.GetMWUnityUser(inputSource.UserGameObject);
 					if (mwUser != null)
 					{
-						newBehavior.Hover.StartAction(mwUser);
+						newButtonBehavior.Context.StartHover(mwUser, newTargetPosition);
 					}
 				}
 			}
