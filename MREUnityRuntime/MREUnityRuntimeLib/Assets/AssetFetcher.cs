@@ -108,11 +108,11 @@ namespace MixedRealityExtension.Assets
 						}
 						else if (www.responseCode >= 200 && www.responseCode <= 299)
 						{
-							if (typeof(T) == typeof(UnityEngine.AudioClip))
+							if (typeof(T).IsAssignableFrom(typeof(UnityEngine.AudioClip)))
 							{
 								result.Asset = ((DownloadHandlerAudioClip)handler).audioClip as T;
 							}
-							else if (typeof(T) == typeof(UnityEngine.Texture))
+							else if (typeof(T).IsAssignableFrom(typeof(UnityEngine.Texture)))
 							{
 								result.Asset = ((DownloadHandlerTexture)handler).texture as T;
 							}
