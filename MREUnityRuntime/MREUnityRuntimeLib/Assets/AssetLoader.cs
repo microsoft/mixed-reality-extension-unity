@@ -378,15 +378,22 @@ namespace MixedRealityExtension.Assets
 				}
 				else if (def.Texture != null && asset.Asset != null && asset.Asset is UnityEngine.Texture tex)
 				{
-					// make sure texture reference is write-safe
-					// Note: It's safe to assume existence because we're inside the OnSet callback
-					tex = _app.AssetManager.GetById(def.Id, writeSafe: true).Value.Asset as UnityEngine.Texture;
-
 					var texdef = def.Texture.Value;
-					if (texdef.WrapModeU != null)
-						tex.wrapModeU = texdef.WrapModeU.Value;
-					if (texdef.WrapModeV != null)
-						tex.wrapModeV = texdef.WrapModeV.Value;
+
+					// make sure texture reference actually needs to be updated
+					if (texdef.WrapModeU.HasValue && texdef.WrapModeU.Value != tex.wrapModeU ||
+						texdef.WrapModeV.HasValue && texdef.WrapModeV.Value != tex.wrapModeV)
+					{
+						// make texture write-safe
+						// Note: It's safe to assume existence because we're inside the OnSet callback
+						tex = _app.AssetManager.GetById(def.Id, writeSafe: true).Value.Asset as UnityEngine.Texture;
+
+						if (texdef.WrapModeU.HasValue)
+							tex.wrapModeU = texdef.WrapModeU.Value;
+						if (texdef.WrapModeV.HasValue)
+							tex.wrapModeV = texdef.WrapModeV.Value;
+					}
+					// otherwise, the shared texture is in exactly the state we want, so use it
 				}
 				else if (def.Sound != null)
 				{
@@ -435,6 +442,14 @@ namespace MixedRealityExtension.Assets
 				var texUri = new Uri(_app.ServerAssetUri, def.Texture.Value.Uri);
 				source = new AssetSource(AssetContainerType.None, texUri.AbsoluteUri);
 				var result = await AssetFetcher<UnityEngine.Texture>.LoadTask(_owner, texUri);
+
+				// this is a newly loaded texture, so we decide initial settings for the shared asset
+				if (result.ReturnCode == 200)
+				{
+					result.Asset.wrapModeU = def.Texture.Value.WrapModeU ?? TextureWrapMode.Repeat;
+					result.Asset.wrapModeV = def.Texture.Value.WrapModeV ?? TextureWrapMode.Repeat;
+				}
+
 				unityAsset = result.Asset;
 				source.Version = result.ETag;
 				if (result.FailureMessage != null)

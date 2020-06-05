@@ -228,7 +228,19 @@ namespace MixedRealityExtension.Assets
 
 			// copy asset
 			var originalAsset = metadata.Asset;
-			var copyAsset = Object.Instantiate(originalAsset);
+			Object copyAsset;
+			if (originalAsset is UnityEngine.Texture2D tex2d)
+			{
+				// can't Instantiate GPU-only textures
+				var copyTex = new Texture2D(tex2d.width, tex2d.height, tex2d.format, tex2d.mipmapCount > 1);
+				Graphics.CopyTexture(tex2d, copyTex);
+				copyAsset = copyTex;
+			}
+			else
+			{
+				copyAsset = Object.Instantiate(originalAsset);
+			}
+
 			var copyMetadata = new AssetMetadata(
 				metadata.Id,
 				metadata.ContainerId,
@@ -248,7 +260,7 @@ namespace MixedRealityExtension.Assets
 						return MREAPI.AppsAPI.MaterialPatcher.UsesTexture(App, mat, tex);
 					}
 					else return false;
-				});
+				}).ToArray();
 			}
 			else if (originalAsset is UnityEngine.Material mat)
 			{
@@ -280,7 +292,7 @@ namespace MixedRealityExtension.Assets
 						return renderers.Any(r => r.sharedMaterial == mat);
 					}
 					else return false;
-				});
+				}).ToArray();
 			}
 			else if (copyAsset is GameObject prefab)
 			{
