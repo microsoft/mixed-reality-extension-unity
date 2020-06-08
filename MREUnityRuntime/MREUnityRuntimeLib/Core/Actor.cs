@@ -1367,7 +1367,10 @@ namespace MixedRealityExtension.Core
 						}
 					}
 				}
-				((ITargetBehavior)behaviorComponent.Behavior).Grabbable = grabbable.Value;
+				else
+				{
+					((ITargetBehavior)behaviorComponent.Behavior).Grabbable = grabbable.Value;
+				}
 				Grabbable = grabbable.Value;
 			}
 		}
