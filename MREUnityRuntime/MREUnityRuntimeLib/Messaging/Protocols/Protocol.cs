@@ -120,7 +120,8 @@ namespace MixedRealityExtension.Messaging.Protocols
 				}
 				catch (Exception e)
 				{
-					App.Logger.LogDebug($"Error sending message. Exception: {e.Message}\nStackTrace: {e.StackTrace}");
+					// Don't log to App.Logger here. The WebSocket might be disconnected.
+					Debug.LogError($"Error sending message. Exception: {e.Message}\nStackTrace: {e.StackTrace}");
 				}
 			}
 		}
