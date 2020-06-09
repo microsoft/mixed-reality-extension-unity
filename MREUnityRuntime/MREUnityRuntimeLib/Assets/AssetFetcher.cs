@@ -100,7 +100,7 @@ namespace MixedRealityExtension.Assets
 					else
 					{
 						result.ReturnCode = www.responseCode;
-						result.ETag = www.GetResponseHeader("ETag");
+						result.ETag = www.GetResponseHeader("ETag") ?? "unversioned";
 
 						if (www.isHttpError)
 						{
