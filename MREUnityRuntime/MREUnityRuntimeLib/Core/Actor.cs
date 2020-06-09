@@ -1349,25 +1349,33 @@ namespace MixedRealityExtension.Core
 					behaviorComponent.SetBehaviorContext(context);
 				}
 
-				if (RigidBody != null && behaviorComponent.Context is TargetBehaviorContext targetContext)
+				if (behaviorComponent.Context is TargetBehaviorContext targetContext)
 				{
-					var targetBehavior = (ITargetBehavior)targetContext.Behavior;
-					bool wasGrabbable = targetBehavior.Grabbable;
-					targetBehavior.Grabbable = grabbable.Value;
-
-					if (wasGrabbable != grabbable.Value)
+					if (RigidBody != null)
 					{
-						if (grabbable.Value)
+						// for rigid body we need callbacks for the physics bridge
+						var targetBehavior = (ITargetBehavior)targetContext.Behavior;
+						bool wasGrabbable = targetBehavior.Grabbable;
+						targetBehavior.Grabbable = grabbable.Value;
+
+						if (wasGrabbable != grabbable.Value)
 						{
-							targetContext.GrabAction.ActionStateChanged += OnRigidBodyGrabbed;
-						}
-						else
-						{
-							targetContext.GrabAction.ActionStateChanged -= OnRigidBodyGrabbed;
+							if (grabbable.Value)
+							{
+								targetContext.GrabAction.ActionStateChanged += OnRigidBodyGrabbed;
+							}
+							else
+							{
+								targetContext.GrabAction.ActionStateChanged -= OnRigidBodyGrabbed;
+							}
 						}
 					}
+					else
+					{
+						// non-rigid body context
+						((ITargetBehavior)behaviorComponent.Behavior).Grabbable = grabbable.Value;
+					}
 				}
-
 				Grabbable = grabbable.Value;
 			}
 		}
