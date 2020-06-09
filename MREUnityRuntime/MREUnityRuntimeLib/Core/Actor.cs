@@ -101,7 +101,7 @@ namespace MixedRealityExtension.Core
 			}
 		}
 
-		public delegate void RigidBodyAddedHandler(Guid id, UnityEngine.Rigidbody rigidbody, bool isOwned);
+		public delegate void RigidBodyAddedHandler(Guid id, UnityEngine.Rigidbody rigidbody, Guid? owner);
 		public event RigidBodyAddedHandler RigidBodyAdded;
 
 		public delegate void RigidBodyRemovedHandler(Guid id);
@@ -109,6 +109,9 @@ namespace MixedRealityExtension.Core
 
 		public delegate void RigidBodyKinematicsChangedHandler(Guid id, bool isKinematic);
 		public event RigidBodyKinematicsChangedHandler RigidBodyKinematicsChanged;
+
+		public delegate void RigidBodyOwnerChangedHandler(Guid id, Guid? owner);
+		public event RigidBodyOwnerChangedHandler RigidBodyOwnerChanged;
 
 		#region IActor Properties - Public
 
@@ -313,6 +316,11 @@ namespace MixedRealityExtension.Core
 				if (ShouldSync(ActorComponentType.Attachment, ActorComponentType.Attachment))
 				{
 					GenerateAttachmentPatch(actorPatch);
+				}
+
+				if (IsGrabbed || _grabbedLastSync)
+				{
+					actorPatch.Owner = Owner;
 				}
 
 				if (actorPatch.IsPatched())
@@ -831,6 +839,11 @@ namespace MixedRealityExtension.Core
 
 		void OnRigidBodyGrabbed(object sender, ActionStateChangedArgs args)
 		{
+			if (args.NewState == ActionState.Started)
+			{
+				PatchOwner(App.LocalUser.Id);
+			}
+
 			if (args.NewState != ActionState.Performing)
 			{
 				RigidBodyKinematicsChanged?.Invoke(Id, args.NewState == ActionState.Started);
@@ -844,7 +857,7 @@ namespace MixedRealityExtension.Core
 				_rigidbody = gameObject.AddComponent<Rigidbody>();
 				RigidBody = new RigidBody(_rigidbody, App.SceneRoot.transform);
 
-				RigidBodyAdded?.Invoke(Id, _rigidbody, IsSimulatedByLocalUser);
+				RigidBodyAdded?.Invoke(Id, _rigidbody, Owner);
 
 				var behaviorComponent = GetActorComponent<BehaviorComponent>();
 				if (behaviorComponent != null && behaviorComponent.Context is TargetBehaviorContext targetContext)
@@ -992,10 +1005,8 @@ namespace MixedRealityExtension.Core
 
 		private void PatchOwner(Guid? ownerOrNull)
 		{
-			if (ownerOrNull.HasValue)
-			{
-				Owner = ownerOrNull;
-			}
+			Owner = ownerOrNull;
+			RigidBodyOwnerChanged?.Invoke(Id, Owner);
 		}
 
 		private void PatchAppearance(AppearancePatch appearance)
@@ -1593,7 +1604,8 @@ namespace MixedRealityExtension.Core
 				App.IsAuthoritativePeer ||
 				IsGrabbed ||
 				_grabbedLastSync ||
-				inOwnedAttachmentHierarchy)
+				inOwnedAttachmentHierarchy ||
+				Owner == App.LocalUser.Id)
 			{
 				return true;
 			}

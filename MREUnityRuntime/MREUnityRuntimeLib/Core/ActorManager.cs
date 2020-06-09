@@ -25,7 +25,7 @@ namespace MixedRealityExtension.Core
 
 		internal Dictionary<Guid, Actor>.ValueCollection Actors => _actorMapping.Values;
 
-		public delegate void RigidBodyAddedHandler(Guid id, UnityEngine.Rigidbody rigidbody, bool isOwned);
+		public delegate void RigidBodyAddedHandler(Guid id, UnityEngine.Rigidbody rigidbody, Guid? owner);
 		internal event RigidBodyAddedHandler RigidBodyAdded;
 
 		public delegate void RigidBodyRemovedHandler(Guid id);
@@ -34,14 +34,17 @@ namespace MixedRealityExtension.Core
 		public delegate void RigidBodyKinematicsChangedHandler(Guid id, bool isKinematic);
 		internal event RigidBodyKinematicsChangedHandler RigidBodyKinematicsChanged;
 
+		public delegate void RigidBodyOwnerChangedHandler(Guid id, Guid? owner);
+		public event RigidBodyOwnerChangedHandler RigidBodyOwnerChanged;
+
 		internal ActorManager(MixedRealityExtensionApp app)
 		{
 			_app = app;
 		}
 
-		private void OnRigidBodyAdded(Guid id, UnityEngine.Rigidbody rigidbody, bool isOwned)
+		private void OnRigidBodyAdded(Guid id, UnityEngine.Rigidbody rigidbody, Guid? owner)
 		{
-			RigidBodyAdded?.Invoke(id, rigidbody, isOwned);
+			RigidBodyAdded?.Invoke(id, rigidbody, owner);
 		}
 
 		private void OnRigidBodyRemoved(Guid id)
@@ -63,8 +66,15 @@ namespace MixedRealityExtension.Core
 			actor.RigidBodyRemoved += OnRigidBodyRemoved;
 			actor.RigidBodyKinematicsChanged += OnActorRigidBodyKinematicsChanged;
 
+			actor.RigidBodyOwnerChanged += Actor_RigidBodyOwnerChanged;
+
 			OnActorCreated?.Invoke(actor);
 			return actor;
+		}
+
+		private void Actor_RigidBodyOwnerChanged(Guid id, Guid? owner)
+		{
+			RigidBodyOwnerChanged?.Invoke(id, owner);
 		}
 
 		internal void DestroyActors(IEnumerable<Guid> ids)
