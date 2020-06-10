@@ -93,7 +93,7 @@ namespace MixedRealityExtension.Core
 			}
 		}
 
-		internal bool IsSimulationOwner
+		internal bool IsSimulatedByLocalUser
 		{
 			get
 			{
@@ -844,7 +844,7 @@ namespace MixedRealityExtension.Core
 				_rigidbody = gameObject.AddComponent<Rigidbody>();
 				RigidBody = new RigidBody(_rigidbody, App.SceneRoot.transform);
 
-				RigidBodyAdded?.Invoke(Id, _rigidbody, IsSimulationOwner);
+				RigidBodyAdded?.Invoke(Id, _rigidbody, IsSimulatedByLocalUser);
 
 				var behaviorComponent = GetActorComponent<BehaviorComponent>();
 				if (behaviorComponent != null && behaviorComponent.Context is TargetBehaviorContext targetContext)
@@ -1157,7 +1157,7 @@ namespace MixedRealityExtension.Core
 				{
 					// We need to update transform only for the simulation owner,
 					// others will get update through PhysicsBridge.
-					if (IsSimulationOwner)
+					if (IsSimulatedByLocalUser)
 					{
 						PatchTransformWithRigidBody(transformPatch);
 					}
