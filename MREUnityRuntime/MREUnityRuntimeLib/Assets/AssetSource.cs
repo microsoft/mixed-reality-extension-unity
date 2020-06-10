@@ -33,10 +33,10 @@ namespace MixedRealityExtension.Assets
 		[Newtonsoft.Json.JsonIgnore]
 		public Uri ParsedUri
 		{
-			get => parsedUri = parsedUri ?? new Uri(Uri);
+			get => parsedUri = parsedUri ?? new Uri(Uri, UriKind.RelativeOrAbsolute);
 			set {
 				parsedUri = value;
-				Uri = parsedUri.AbsoluteUri;
+				Uri = parsedUri.ToString();
 			}
 		}
 
