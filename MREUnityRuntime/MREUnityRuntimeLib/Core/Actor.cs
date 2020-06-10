@@ -97,9 +97,18 @@ namespace MixedRealityExtension.Core
 		{
 			get
 			{
-				return Owner.HasValue ? Owner.Value == App.LocalUser.Id : CanSync();
+				Attachment attachmentInHierarchy = FindAttachmentInHierarchy();
+				bool inAttachmentHeirarchy = (attachmentInHierarchy != null);
+
+				bool inOwnedAttachmentHierarchy = (inAttachmentHeirarchy && LocalUser != null && attachmentInHierarchy.UserId == LocalUser.Id);
+
+				return Owner.HasValue ?
+					Owner.Value == App.LocalUser.Id :
+					inOwnedAttachmentHierarchy || App.IsAuthoritativePeer;
 			}
 		}
+
+		private bool _takeOwnership = false;
 
 		public delegate void RigidBodyAddedHandler(Guid id, UnityEngine.Rigidbody rigidbody, Guid? owner);
 		public event RigidBodyAddedHandler RigidBodyAdded;
@@ -318,9 +327,10 @@ namespace MixedRealityExtension.Core
 					GenerateAttachmentPatch(actorPatch);
 				}
 
-				if (IsGrabbed || _grabbedLastSync)
+				if (_takeOwnership)
 				{
 					actorPatch.Owner = Owner;
+					_takeOwnership = false;
 				}
 
 				if (actorPatch.IsPatched())
@@ -839,9 +849,10 @@ namespace MixedRealityExtension.Core
 
 		void OnRigidBodyGrabbed(object sender, ActionStateChangedArgs args)
 		{
-			if (args.NewState == ActionState.Started)
+			if (args.NewState == ActionState.Started && !IsSimulationOwner)
 			{
 				PatchOwner(App.LocalUser.Id);
+				_takeOwnership = true;
 			}
 
 			if (args.NewState != ActionState.Performing)
@@ -1005,8 +1016,11 @@ namespace MixedRealityExtension.Core
 
 		private void PatchOwner(Guid? ownerOrNull)
 		{
-			Owner = ownerOrNull;
-			RigidBodyOwnerChanged?.Invoke(Id, Owner);
+			if (ownerOrNull.HasValue)
+			{
+				Owner = ownerOrNull;
+				RigidBodyOwnerChanged?.Invoke(Id, Owner);
+			}
 		}
 
 		private void PatchAppearance(AppearancePatch appearance)

@@ -52,9 +52,14 @@ namespace MixedRealityExtension.Core
 			RigidBodyRemoved?.Invoke(id);
 		}
 
-		private void OnActorRigidBodyKinematicsChanged(Guid id, bool isKinematic)
+		private void OnRigidBodyKinematicsChanged(Guid id, bool isKinematic)
 		{
 			RigidBodyKinematicsChanged?.Invoke(id, isKinematic);
+		}
+
+		private void OnRigidBodyOwnerChanged(Guid id, Guid? owner)
+		{
+			RigidBodyOwnerChanged?.Invoke(id, owner);
 		}
 
 		internal Actor AddActor(Guid id, Actor actor)
@@ -64,17 +69,11 @@ namespace MixedRealityExtension.Core
 
 			actor.RigidBodyAdded += OnRigidBodyAdded;
 			actor.RigidBodyRemoved += OnRigidBodyRemoved;
-			actor.RigidBodyKinematicsChanged += OnActorRigidBodyKinematicsChanged;
-
-			actor.RigidBodyOwnerChanged += Actor_RigidBodyOwnerChanged;
+			actor.RigidBodyKinematicsChanged += OnRigidBodyKinematicsChanged;
+			actor.RigidBodyOwnerChanged += OnRigidBodyOwnerChanged;
 
 			OnActorCreated?.Invoke(actor);
 			return actor;
-		}
-
-		private void Actor_RigidBodyOwnerChanged(Guid id, Guid? owner)
-		{
-			RigidBodyOwnerChanged?.Invoke(id, owner);
 		}
 
 		internal void DestroyActors(IEnumerable<Guid> ids)
@@ -105,7 +104,8 @@ namespace MixedRealityExtension.Core
 
 					actor.RigidBodyAdded -= OnRigidBodyAdded;
 					actor.RigidBodyRemoved -= OnRigidBodyRemoved;
-					actor.RigidBodyKinematicsChanged -= OnActorRigidBodyKinematicsChanged;
+					actor.RigidBodyKinematicsChanged -= OnRigidBodyKinematicsChanged;
+					actor.RigidBodyOwnerChanged -= OnRigidBodyOwnerChanged;
 				}
 			}
 		}
@@ -116,7 +116,8 @@ namespace MixedRealityExtension.Core
 			{
 				actor.RigidBodyAdded -= OnRigidBodyAdded;
 				actor.RigidBodyRemoved -= OnRigidBodyRemoved;
-				actor.RigidBodyKinematicsChanged -= OnActorRigidBodyKinematicsChanged;
+				actor.RigidBodyKinematicsChanged -= OnRigidBodyKinematicsChanged;
+				actor.RigidBodyOwnerChanged -= OnRigidBodyOwnerChanged;
 			}
 
 			_actorMapping.Clear();
@@ -198,7 +199,8 @@ namespace MixedRealityExtension.Core
 
 				actor.RigidBodyAdded -= OnRigidBodyAdded;
 				actor.RigidBodyRemoved -= OnRigidBodyRemoved;
-				actor.RigidBodyKinematicsChanged -= OnActorRigidBodyKinematicsChanged;
+				actor.RigidBodyKinematicsChanged -= OnRigidBodyKinematicsChanged;
+				actor.RigidBodyOwnerChanged += OnRigidBodyOwnerChanged;
 
 				_actorMapping.Remove(id);
 				removed = true;
