@@ -500,8 +500,21 @@ namespace MixedRealityExtension.Assets
 			{
 				if (MREAPI.AppsAPI.VideoPlayerFactory != null)
 				{
-					var videoUri = new Uri(_app.ServerAssetUri, def.VideoStream.Value.Uri);
-					PluginInterfaces.FetchResult result2 = MREAPI.AppsAPI.VideoPlayerFactory.PreloadVideoAsset(videoUri.AbsoluteUri);
+					string videoString;
+
+					// These youtube "URIs" are not valid URIs because they are case-sensitive. Don't parse, and
+					// deprecate this URL scheme as soon as feasible.
+					if (def.VideoStream.Value.Uri.StartsWith("youtube://"))
+					{
+						videoString = def.VideoStream.Value.Uri;
+					}
+					else
+					{
+						var videoUri = new Uri(_app.ServerAssetUri, def.VideoStream.Value.Uri);
+						videoString = videoUri.AbsoluteUri;
+					}
+
+					PluginInterfaces.FetchResult result2 = MREAPI.AppsAPI.VideoPlayerFactory.PreloadVideoAsset(videoString);
 					unityAsset = result2.Asset;
 					if (result2.FailureMessage != null)
 					{
