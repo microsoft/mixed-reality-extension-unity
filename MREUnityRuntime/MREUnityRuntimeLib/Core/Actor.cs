@@ -93,6 +93,14 @@ namespace MixedRealityExtension.Core
 			}
 		}
 
+		internal bool IsSimulationOwner
+		{
+			get
+			{
+				return Owner.HasValue ? Owner.Value == App.LocalUser.Id : CanSync();
+			}
+		}
+
 		public delegate void RigidBodyAddedHandler(Guid id, UnityEngine.Rigidbody rigidbody, bool isOwned);
 		public event RigidBodyAddedHandler RigidBodyAdded;
 
@@ -836,9 +844,7 @@ namespace MixedRealityExtension.Core
 				_rigidbody = gameObject.AddComponent<Rigidbody>();
 				RigidBody = new RigidBody(_rigidbody, App.SceneRoot.transform);
 
-				bool isOwner = Owner.HasValue ? Owner.Value == App.LocalUser.Id : CanSync();
-
-				RigidBodyAdded?.Invoke(Id, _rigidbody, isOwner);
+				RigidBodyAdded?.Invoke(Id, _rigidbody, IsSimulationOwner);
 
 				var behaviorComponent = GetActorComponent<BehaviorComponent>();
 				if (behaviorComponent != null && behaviorComponent.Context is TargetBehaviorContext targetContext)
@@ -1150,9 +1156,70 @@ namespace MixedRealityExtension.Core
 				else
 				{
 					// <todo> do we need this, since with physics we have a different chanel for this
-					//PatchTransformWithRigidBody(transformPatch);
+
+					if (IsSimulationOwner)
+					{
+						PatchTransformWithRigidBody(transformPatch);
+					}
 				}
 			}
+		}
+
+		private void PatchTransformWithRigidBody(ActorTransformPatch transformPatch)
+		{
+			if (_rigidbody == null)
+			{
+				return;
+			}
+
+			RigidBody.RigidBodyTransformUpdate transformUpdate = new RigidBody.RigidBodyTransformUpdate();
+			if (transformPatch.Local != null)
+			{
+				// In case of rigid body:
+				// - Apply scale directly.
+				transform.localScale = transform.localScale.GetPatchApplied(LocalTransform.Scale.ApplyPatch(transformPatch.Local.Scale));
+
+				// - Apply position and rotation via rigid body from local to world space.
+				if (transformPatch.Local.Position != null)
+				{
+					var localPosition = transform.localPosition.GetPatchApplied(LocalTransform.Position.ApplyPatch(transformPatch.Local.Position));
+					transformUpdate.Position = transform.parent.TransformPoint(localPosition);
+				}
+
+				if (transformPatch.Local.Rotation != null)
+				{
+					var localRotation = transform.localRotation.GetPatchApplied(LocalTransform.Rotation.ApplyPatch(transformPatch.Local.Rotation));
+					transformUpdate.Rotation = transform.parent.rotation* localRotation;
+				}
+			}
+
+			if (transformPatch.App != null)
+			{
+				var appTransform = App.SceneRoot.transform;
+
+				if (transformPatch.App.Position != null)
+				{
+					// New app space position.
+					var newAppPos = appTransform.InverseTransformPoint(transform.position)
+                       .GetPatchApplied(AppTransform.Position.ApplyPatch(transformPatch.App.Position));
+
+					// Transform new position to world space.
+					transformUpdate.Position = appTransform.TransformPoint(newAppPos);
+				}
+
+				if (transformPatch.App.Rotation != null)
+				{
+					// New app space rotation
+					var newAppRot = (transform.rotation * appTransform.rotation)
+                       .GetPatchApplied(AppTransform.Rotation.ApplyPatch(transformPatch.App.Rotation));
+
+					// Transform new app rotation to world space.
+					transformUpdate.Rotation = newAppRot* transform.rotation;
+				}
+			}
+
+			// Queue update to happen in the fixed update
+			RigidBody.SynchronizeEngine(transformUpdate);
 		}
 
 		private void CorrectAppTransform(MWTransform transform)

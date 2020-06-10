@@ -165,9 +165,33 @@ namespace MixedRealityExtension.Core
 			_rigidbody.constraints = (RigidbodyConstraints)((int)_rigidbody.constraints).GetPatchApplied((int)ConstraintFlags.ApplyPatch(patch.ConstraintFlags));
 		}
 
+		internal void UpdateTransform(RigidBodyTransformUpdate update)
+		{
+			if (update.Position != null)
+			{
+				_rigidbody.position = update.Position.Value;
+			}
+			if (update.Rotation != null)
+			{
+				_rigidbody.rotation = update.Rotation.Value;
+			}
+		}
+
+		internal void SynchronizeEngine(RigidBodyTransformUpdate update)
+		{
+			_updateActions.Enqueue((rigidBody) => UpdateTransform(update));
+		}
+
 		internal void SynchronizeEngine(RigidBodyPatch patch)
 		{
-			_updateActions.Enqueue((rigidbody) => ApplyPatch(patch));
+			_updateActions.Enqueue((rigidbody) => ApplyPatch(patch)); _updateActions.Enqueue((rigidbody) => ApplyPatch(patch));
+		}
+
+		internal struct RigidBodyTransformUpdate
+		{
+			internal Vector3? Position { get; set; }
+
+			internal Quaternion? Rotation { get; set; }
 		}
 	}
 }
