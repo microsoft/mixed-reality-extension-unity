@@ -93,6 +93,22 @@ namespace MixedRealityExtension.Core
 			}
 		}
 
+		internal bool IsSimulated
+		{
+			get
+			{
+				return RigidBody != null && !RigidBody.IsKinematic;
+			}
+		}
+
+		internal bool IsSimulationOwner
+		{
+			get
+			{
+				return Owner.HasValue ? Owner.Value == App.LocalUser.Id : CanSync();
+			}
+		}
+
 		public delegate void RigidBodyAddedHandler(Guid id, UnityEngine.Rigidbody rigidbody, bool isOwned);
 		public event RigidBodyAddedHandler RigidBodyAdded;
 
@@ -289,7 +305,7 @@ namespace MixedRealityExtension.Core
 					actorPatch.ParentId = ParentId;
 				}
 
-				if (RigidBody == null)
+				if (RigidBody == null || RigidBody.IsKinematic)
 				{
 					if (ShouldSync(subscriptions, ActorComponentType.Transform))
 					{
@@ -636,7 +652,7 @@ namespace MixedRealityExtension.Core
 				}
 			}
 
-			if (RigidBody != null)
+			if (IsSimulated)
 			{
 				RigidBodyRemoved?.Invoke(Id);
 			}
@@ -836,19 +852,18 @@ namespace MixedRealityExtension.Core
 				_rigidbody = gameObject.AddComponent<Rigidbody>();
 				RigidBody = new RigidBody(_rigidbody, App.SceneRoot.transform);
 
-				bool isOwner = Owner.HasValue ? Owner.Value == App.LocalUser.Id : CanSync();
-
-				_rigidbody.isKinematic = !isOwner;
-
-				RigidBodyAdded?.Invoke(Id, _rigidbody, isOwner);
-
-				var behaviorComponent = GetActorComponent<BehaviorComponent>();
-				if (behaviorComponent != null && behaviorComponent.Context is TargetBehaviorContext targetContext)
+				if (IsSimulated)
 				{
-					var targetBehavior = (ITargetBehavior)targetContext.Behavior;
-					if (targetBehavior.Grabbable)
+					RigidBodyAdded?.Invoke(Id, _rigidbody, IsSimulationOwner);
+
+					var behaviorComponent = GetActorComponent<BehaviorComponent>();
+					if (behaviorComponent != null && behaviorComponent.Context is TargetBehaviorContext targetContext)
 					{
-						targetContext.GrabAction.ActionStateChanged += OnRigidBodyGrabbed;
+						var targetBehavior = (ITargetBehavior)targetContext.Behavior;
+						if (targetBehavior.Grabbable)
+						{
+							targetContext.GrabAction.ActionStateChanged += OnRigidBodyGrabbed;
+						}
 					}
 				}
 			}
@@ -1152,9 +1167,66 @@ namespace MixedRealityExtension.Core
 				else
 				{
 					// <todo> do we need this, since with physics we have a different chanel for this
-					//PatchTransformWithRigidBody(transformPatch);
+					PatchTransformWithRigidBody(transformPatch);
 				}
 			}
+		}
+
+		private void PatchTransformWithRigidBody(ActorTransformPatch transformPatch)
+		{
+			if (_rigidbody == null)
+			{
+				return;
+			}
+
+			RigidBody.RigidBodyTransformUpdate transformUpdate = new RigidBody.RigidBodyTransformUpdate();
+			if (transformPatch.Local != null)
+			{
+				// In case of rigid body:
+				// - Apply scale directly.
+				transform.localScale = transform.localScale.GetPatchApplied(LocalTransform.Scale.ApplyPatch(transformPatch.Local.Scale));
+
+				// - Apply position and rotation via rigid body from local to world space.
+				if (transformPatch.Local.Position != null)
+				{
+					var localPosition = transform.localPosition.GetPatchApplied(LocalTransform.Position.ApplyPatch(transformPatch.Local.Position));
+					transformUpdate.Position = transform.parent.TransformPoint(localPosition);
+				}
+
+				if (transformPatch.Local.Rotation != null)
+				{
+					var localRotation = transform.localRotation.GetPatchApplied(LocalTransform.Rotation.ApplyPatch(transformPatch.Local.Rotation));
+					transformUpdate.Rotation = transform.parent.rotation * localRotation;
+				}
+			}
+
+			if (transformPatch.App != null)
+			{
+				var appTransform = App.SceneRoot.transform;
+
+				if (transformPatch.App.Position != null)
+				{
+					// New app space position.
+					var newAppPos = appTransform.InverseTransformPoint(transform.position)
+						.GetPatchApplied(AppTransform.Position.ApplyPatch(transformPatch.App.Position));
+
+					// Transform new position to world space.
+					transformUpdate.Position = appTransform.TransformPoint(newAppPos);
+				}
+
+				if (transformPatch.App.Rotation != null)
+				{
+					// New app space rotation
+					var newAppRot = (transform.rotation * appTransform.rotation)
+						.GetPatchApplied(AppTransform.Rotation.ApplyPatch(transformPatch.App.Rotation));
+
+					// Transform new app rotation to world space.
+					transformUpdate.Rotation = newAppRot * transform.rotation;
+				}
+			}
+
+			// Queue update to happen in the fixed update
+			RigidBody.SynchronizeEngine(transformUpdate);
 		}
 
 		private void CorrectAppTransform(MWTransform transform)
@@ -1221,15 +1293,40 @@ namespace MixedRealityExtension.Core
 		{
 			if (rigidBodyPatch != null)
 			{
+				bool wasKinematic;
+
 				if (RigidBody == null)
 				{
 					AddRigidBody();
+
+					wasKinematic = RigidBody.IsKinematic;
+
 					RigidBody.ApplyPatch(rigidBodyPatch);
 				}
 				else
 				{
+					wasKinematic = RigidBody.IsKinematic;
+
 					// Queue update to happen in the fixed update
 					RigidBody.SynchronizeEngine(rigidBodyPatch);
+				}
+
+				if (rigidBodyPatch.IsKinematic.HasValue)
+				{
+					bool isKinematic = rigidBodyPatch.IsKinematic.Value;
+
+					if (wasKinematic != isKinematic)
+					{
+						if (isKinematic)
+						{
+							RigidBodyRemoved?.Invoke(Id);
+						}
+						else
+						{
+							bool isOwner = Owner.HasValue ? Owner.Value == App.LocalUser.Id : CanSync();
+							RigidBodyAdded?.Invoke(Id, _rigidbody, isOwner);
+						}
+					}
 				}
 			}
 		}
@@ -1351,7 +1448,7 @@ namespace MixedRealityExtension.Core
 
 				if (behaviorComponent.Context is TargetBehaviorContext targetContext)
 				{
-					if (RigidBody != null)
+					if (IsSimulated)
 					{
 						// for rigid body we need callbacks for the physics bridge
 						var targetBehavior = (ITargetBehavior)targetContext.Behavior;
@@ -1432,18 +1529,18 @@ namespace MixedRealityExtension.Core
 
 		private void CleanUp()
 		{
-			var behaviorComponent = GetActorComponent<BehaviorComponent>();
-			if (behaviorComponent != null && behaviorComponent.Context is TargetBehaviorContext targetContext)
+			if (IsSimulated)
 			{
-				var targetBehavior = (ITargetBehavior)targetContext.Behavior;
-				if (RigidBody != null && Grabbable)
+				var behaviorComponent = GetActorComponent<BehaviorComponent>();
+				if (behaviorComponent != null && behaviorComponent.Context is TargetBehaviorContext targetContext)
 				{
-					targetContext.GrabAction.ActionStateChanged -= OnRigidBodyGrabbed;
+					var targetBehavior = (ITargetBehavior)targetContext.Behavior;
+					if (Grabbable)
+					{
+						targetContext.GrabAction.ActionStateChanged -= OnRigidBodyGrabbed;
+					}
 				}
-			}
 
-			if (RigidBody != null)
-			{
 				RigidBodyRemoved?.Invoke(Id);
 			}
 
