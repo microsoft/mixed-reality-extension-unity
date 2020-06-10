@@ -184,7 +184,7 @@ namespace MixedRealityExtension.Core
 
 		internal void SynchronizeEngine(RigidBodyPatch patch)
 		{
-			_updateActions.Enqueue((rigidbody) => ApplyPatch(patch)); _updateActions.Enqueue((rigidbody) => ApplyPatch(patch));
+			_updateActions.Enqueue((rigidbody) => ApplyPatch(patch));
 		}
 
 		internal struct RigidBodyTransformUpdate

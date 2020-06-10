@@ -107,8 +107,8 @@ namespace MixedRealityExtension.Core
 		public delegate void RigidBodyRemovedHandler(Guid id);
 		public event RigidBodyRemovedHandler RigidBodyRemoved;
 
-		public delegate void RigidBodyGrabbedHandler(Guid id, bool isGrabbed);
-		public event RigidBodyGrabbedHandler RigidBodyGrabbed;
+		public delegate void RigidBodyKinematicsChangedHandler(Guid id, bool isKinematic);
+		public event RigidBodyKinematicsChangedHandler RigidBodyKinematicsChanged;
 
 		#region IActor Properties - Public
 
@@ -833,7 +833,7 @@ namespace MixedRealityExtension.Core
 		{
 			if (args.NewState != ActionState.Performing)
 			{
-				RigidBodyGrabbed?.Invoke(Id, args.NewState == ActionState.Started);
+				RigidBodyKinematicsChanged?.Invoke(Id, args.NewState == ActionState.Started);
 			}
 		}
 
@@ -1155,8 +1155,8 @@ namespace MixedRealityExtension.Core
 				}
 				else
 				{
-					// <todo> do we need this, since with physics we have a different chanel for this
-
+					// We need to update transform only for the simulation owner,
+					// others will get update through PhysicsBridge.
 					if (IsSimulationOwner)
 					{
 						PatchTransformWithRigidBody(transformPatch);
@@ -1308,7 +1308,7 @@ namespace MixedRealityExtension.Core
 				{
 					if (wasKinematic != rigidBodyPatch.IsKinematic.Value)
 					{
-						RigidBodyGrabbed?.Invoke(Id, rigidBodyPatch.IsKinematic.Value);
+						RigidBodyKinematicsChanged?.Invoke(Id, rigidBodyPatch.IsKinematic.Value);
 					}
 				}
 			}
