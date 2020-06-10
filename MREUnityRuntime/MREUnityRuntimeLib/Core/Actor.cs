@@ -1163,6 +1163,34 @@ namespace MixedRealityExtension.Core
 					}
 				}
 			}
+
+			if (transformPatch.App != null)
+			{
+				var appTransform = App.SceneRoot.transform;
+
+				if (transformPatch.App.Position != null)
+				{
+					// New app space position.
+					var newAppPos = appTransform.InverseTransformPoint(transform.position)
+                       .GetPatchApplied(AppTransform.Position.ApplyPatch(transformPatch.App.Position));
+
+					// Transform new position to world space.
+					transformUpdate.Position = appTransform.TransformPoint(newAppPos);
+				}
+
+				if (transformPatch.App.Rotation != null)
+				{
+					// New app space rotation
+					var newAppRot = (transform.rotation * appTransform.rotation)
+                       .GetPatchApplied(AppTransform.Rotation.ApplyPatch(transformPatch.App.Rotation));
+
+					// Transform new app rotation to world space.
+					transformUpdate.Rotation = newAppRot* transform.rotation;
+				}
+			}
+
+			// Queue update to happen in the fixed update
+			RigidBody.SynchronizeEngine(transformUpdate);
 		}
 
 		private void PatchTransformWithRigidBody(ActorTransformPatch transformPatch)
