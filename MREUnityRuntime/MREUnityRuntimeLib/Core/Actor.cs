@@ -838,8 +838,6 @@ namespace MixedRealityExtension.Core
 
 				bool isOwner = Owner.HasValue ? Owner.Value == App.LocalUser.Id : CanSync();
 
-				_rigidbody.isKinematic = !isOwner;
-
 				RigidBodyAdded?.Invoke(Id, _rigidbody, isOwner);
 
 				var behaviorComponent = GetActorComponent<BehaviorComponent>();
@@ -1221,15 +1219,30 @@ namespace MixedRealityExtension.Core
 		{
 			if (rigidBodyPatch != null)
 			{
+				bool wasKinematic;
+
 				if (RigidBody == null)
 				{
 					AddRigidBody();
+
+					wasKinematic = RigidBody.IsKinematic;
+
 					RigidBody.ApplyPatch(rigidBodyPatch);
 				}
 				else
 				{
+					wasKinematic = RigidBody.IsKinematic;
+
 					// Queue update to happen in the fixed update
 					RigidBody.SynchronizeEngine(rigidBodyPatch);
+				}
+
+				if (rigidBodyPatch.IsKinematic.HasValue)
+				{
+					if (wasKinematic != rigidBodyPatch.IsKinematic.Value)
+					{
+						RigidBodyGrabbed?.Invoke(Id, rigidBodyPatch.IsKinematic.Value);
+					}
 				}
 			}
 		}
