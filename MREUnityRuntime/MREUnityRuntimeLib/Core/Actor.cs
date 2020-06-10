@@ -849,7 +849,7 @@ namespace MixedRealityExtension.Core
 
 		void OnRigidBodyGrabbed(object sender, ActionStateChangedArgs args)
 		{
-			if (args.NewState == ActionState.Started && !IsSimulationOwner)
+			if (args.NewState == ActionState.Started && !IsSimulatedByLocalUser)
 			{
 				PatchOwner(App.LocalUser.Id);
 				_takeOwnership = true;
