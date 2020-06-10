@@ -194,9 +194,9 @@ namespace MixedRealityExtension.App
 #endif
 		}
 
-		private void OnRigidBodyGrabbed(Guid id, bool isGrabbed)
+		private void OnRigidBodyKinematicsChanged(Guid id, bool isKinematic)
 		{
-			_physicsBridge.setKeyframed(id, isGrabbed);
+			_physicsBridge.setKeyframed(id, isKinematic);
 		}
 
 		private void OnRigidBodyAdded(Guid id, Rigidbody rigidbody, bool isOwned)
@@ -217,7 +217,7 @@ namespace MixedRealityExtension.App
 
 			_actorManager.RigidBodyAdded += OnRigidBodyAdded;
 			_actorManager.RigidBodyRemoved += OnRigidBodyRemoved;
-			_actorManager.RigidBodyGrabbed += OnRigidBodyGrabbed;
+			_actorManager.RigidBodyKinematicsChanged += OnRigidBodyKinematicsChanged;
 
 			if (_conn == null)
 			{
@@ -296,7 +296,7 @@ namespace MixedRealityExtension.App
 
 			_actorManager.RigidBodyAdded -= OnRigidBodyAdded;
 			_actorManager.RigidBodyRemoved -= OnRigidBodyRemoved;
-			_actorManager.RigidBodyGrabbed -= OnRigidBodyGrabbed;
+			_actorManager.RigidBodyKinematicsChanged -= OnRigidBodyKinematicsChanged;
 
 			_ownedGameObjects.Clear();
 			_actorManager.Reset();

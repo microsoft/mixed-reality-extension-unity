@@ -31,8 +31,8 @@ namespace MixedRealityExtension.Core
 		public delegate void RigidBodyRemovedHandler(Guid id);
 		internal event RigidBodyRemovedHandler RigidBodyRemoved;
 
-		public delegate void RigidBodyGrabbedHandler(Guid id, bool isGrabbed);
-		internal event RigidBodyGrabbedHandler RigidBodyGrabbed;
+		public delegate void RigidBodyKinematicsChangedHandler(Guid id, bool isKinematic);
+		internal event RigidBodyKinematicsChangedHandler RigidBodyKinematicsChanged;
 
 		internal ActorManager(MixedRealityExtensionApp app)
 		{
@@ -49,9 +49,9 @@ namespace MixedRealityExtension.Core
 			RigidBodyRemoved?.Invoke(id);
 		}
 
-		private void OnActorRigidBodyGrabbed(Guid id, bool isGrabbed)
+		private void OnActorRigidBodyKinematicsChanged(Guid id, bool isKinematic)
 		{
-			RigidBodyGrabbed?.Invoke(id, isGrabbed);
+			RigidBodyKinematicsChanged?.Invoke(id, isKinematic);
 		}
 
 		internal Actor AddActor(Guid id, Actor actor)
@@ -61,7 +61,7 @@ namespace MixedRealityExtension.Core
 
 			actor.RigidBodyAdded += OnRigidBodyAdded;
 			actor.RigidBodyRemoved += OnRigidBodyRemoved;
-			actor.RigidBodyGrabbed += OnActorRigidBodyGrabbed;
+			actor.RigidBodyKinematicsChanged += OnActorRigidBodyKinematicsChanged;
 
 			OnActorCreated?.Invoke(actor);
 			return actor;
@@ -95,7 +95,7 @@ namespace MixedRealityExtension.Core
 
 					actor.RigidBodyAdded -= OnRigidBodyAdded;
 					actor.RigidBodyRemoved -= OnRigidBodyRemoved;
-					actor.RigidBodyGrabbed -= OnActorRigidBodyGrabbed;
+					actor.RigidBodyKinematicsChanged -= OnActorRigidBodyKinematicsChanged;
 				}
 			}
 		}
@@ -106,7 +106,7 @@ namespace MixedRealityExtension.Core
 			{
 				actor.RigidBodyAdded -= OnRigidBodyAdded;
 				actor.RigidBodyRemoved -= OnRigidBodyRemoved;
-				actor.RigidBodyGrabbed -= OnActorRigidBodyGrabbed;
+				actor.RigidBodyKinematicsChanged -= OnActorRigidBodyKinematicsChanged;
 			}
 
 			_actorMapping.Clear();
@@ -188,7 +188,7 @@ namespace MixedRealityExtension.Core
 
 				actor.RigidBodyAdded -= OnRigidBodyAdded;
 				actor.RigidBodyRemoved -= OnRigidBodyRemoved;
-				actor.RigidBodyGrabbed -= OnActorRigidBodyGrabbed;
+				actor.RigidBodyKinematicsChanged -= OnActorRigidBodyKinematicsChanged;
 
 				_actorMapping.Remove(id);
 				removed = true;
