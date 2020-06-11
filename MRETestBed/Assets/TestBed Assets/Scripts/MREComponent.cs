@@ -293,9 +293,10 @@ public class MREComponent : MonoBehaviour
 		}
 		catch { }
 
+		var uri = overrideUri != null && overrideUri.Scheme.StartsWith("ws") ? overrideUri.AbsoluteUri : MREURL;
 		try
 		{
-			MREApp?.Startup(overrideUri?.AbsoluteUri ?? MREURL, SessionID, "MRETestBed");
+			MREApp?.Startup(uri, SessionID, "MRETestBed");
 		}
 		catch (Exception e)
 		{
