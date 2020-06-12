@@ -325,8 +325,14 @@ namespace MixedRealityExtension.App
 
 		private void SendPhysicsUpdate()
 		{
-			PhysicsBridgePatch physicsPatch = new PhysicsBridgePatch(InstanceId, _physicsBridge.GenerateSnapshot(UnityEngine.Time.fixedTime, SceneRoot.transform));
-			EventManager.QueueEvent(new PhysicsBridgeUpdated(InstanceId, physicsPatch));
+			PhysicsBridgePatch physicsPatch = new PhysicsBridgePatch(InstanceId,
+				_physicsBridge.GenerateSnapshot(UnityEngine.Time.fixedTime, SceneRoot.transform));
+			// send only updates if there are any, to save band with
+			// in order to produce any updates for settled bodies this should be handled within the physics bridge
+			if (physicsPatch.TransformCount > 0)
+			{
+				EventManager.QueueEvent(new PhysicsBridgeUpdated(InstanceId, physicsPatch));
+			}
 		}
 
 		/// <inheritdoc />
