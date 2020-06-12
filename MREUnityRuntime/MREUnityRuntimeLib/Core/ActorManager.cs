@@ -200,7 +200,7 @@ namespace MixedRealityExtension.Core
 				actor.RigidBodyAdded -= OnRigidBodyAdded;
 				actor.RigidBodyRemoved -= OnRigidBodyRemoved;
 				actor.RigidBodyKinematicsChanged -= OnRigidBodyKinematicsChanged;
-				actor.RigidBodyOwnerChanged += OnRigidBodyOwnerChanged;
+				actor.RigidBodyOwnerChanged -= OnRigidBodyOwnerChanged;
 
 				_actorMapping.Remove(id);
 				removed = true;
