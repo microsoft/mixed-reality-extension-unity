@@ -92,9 +92,9 @@ namespace MixedRealityExtension.Core.Physics
 
 					var lastsnapshot = Snapshots.Last().Value;
 
-//#if MRE_PHYSICS_DEBUG
+#if MRE_PHYSICS_DEBUG
 					Debug.Log(" Before merge: " + snapshot.Transforms.Count);
-//#endif
+#endif
 					while (indCurrent < snapshot.Transforms.Count || indLast < lastsnapshot.Transforms.Count)
 					{
 						// find the next sleeping in the last list that will be propagated further
@@ -138,9 +138,9 @@ namespace MixedRealityExtension.Core.Physics
 							}
 						}
 					}
-//#if MRE_PHYSICS_DEBUG
+#if MRE_PHYSICS_DEBUG
 					Debug.Log(" After merge: " + mergedWithSleepingListTransforms.Count);
-//#endif
+#endif
 					var snapshotExtended = new Snapshot(snapshot.Time, mergedWithSleepingListTransforms);
 					Snapshots.Add(snapshot.Time, snapshotExtended);
 				}
@@ -530,7 +530,7 @@ namespace MixedRealityExtension.Core.Physics
 		/// There are sleeping bodies that are kept in the jitter buffer without any update, and if
 		/// body is removed or when the ownership is transfered these bodies should not be kept further
 		/// in the buffer from that client and should no be marked as sleeping. 
-		public void MakeSureBodyIsNotSleeping(Guid bodyID)
+		public void DelteBodyFromBufferIfSleeping(Guid bodyID)
 		{
 			foreach (SourceInfo source in Sources.Values)
 			{
@@ -546,12 +546,19 @@ namespace MixedRealityExtension.Core.Physics
 							if (source.CurrentSnapshot.Transforms[ind].motionType == MotionType.Sleeping)
 							{
 								var trInfo = Sources[source.Id].CurrentSnapshot.Transforms[ind];
-								trInfo.motionType = MotionType.Dynamic;
+								if (trInfo.motionType == MotionType.Sleeping)
+								{
+									Sources[source.Id].CurrentSnapshot.Transforms.RemoveAt(ind);
+								}
+								//trInfo.motionType = MotionType.Dynamic;
+#if MRE_PHYSICS_DEBUG
+				Debug.Log(" MakeSureBodyIsNotSleeping body: " + bodyID.ToString());
+#endif
 							}
 							// 
 							break;
 						}
-						// this is a sorted list
+						// this is a sorted list so once we passed this we can safely break
 						if (cmp < 0)
 						{
 							break;

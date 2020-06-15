@@ -23,8 +23,10 @@ namespace MixedRealityExtension.Core
 			IsKeyframed = false;
 		}
 
+		/// the rigid body identifier
 		public Guid Id;
 
+		/// Unity rigid body 
 		public UnityEngine.Rigidbody RigidBody;
 
 		/// these 3 fields are used to store the actual velocities ,
@@ -98,7 +100,7 @@ namespace MixedRealityExtension.Core
 			{
 				_countStreamedTransforms--;
 				//<todo> remove also from the last Jitter buffer for sleeping bodies (we should just set the motion type to dynamic)
-				_snapshotManager.MakeSureBodyIsNotSleeping(id);
+				_snapshotManager.DelteBodyFromBufferIfSleeping(id);
 			}
 
 			_rigidBodies.Remove(id);
@@ -121,7 +123,7 @@ namespace MixedRealityExtension.Core
 			}
 
 			//<todo> this could be done more efficiently
-			_snapshotManager.MakeSureBodyIsNotSleeping(id);
+			_snapshotManager.DelteBodyFromBufferIfSleeping(id);
 			
 			_rigidBodies[id].Ownership = ownership;
 		}
@@ -268,11 +270,12 @@ namespace MixedRealityExtension.Core
 			// collect transforms from owned rigid bodies
 			// and generate update packet/snapshot
 
-			// these constanst define when a body is considered to be sleeping
-			const float maxSleepingSqrtLinearVelocity = 0.05F;
-			const float maxSleepingSqrtAngularVelocity = 0.05F;
-			const float maxSleepingSqrtPositionDiff = 0.02F;
-			const float maxSleepingSqrtAngularEulerDiff = 5.0F;
+			// these constants define when a body is considered to be sleeping
+			const float globalToleranceMultipier = 5.0F;
+			const float maxSleepingSqrtLinearVelocity = 0.05F * globalToleranceMultipier;
+			const float maxSleepingSqrtAngularVelocity = 0.05F * globalToleranceMultipier;
+			const float maxSleepingSqrtPositionDiff = 0.02F * globalToleranceMultipier;
+			const float maxSleepingSqrtAngularEulerDiff = 5.0F * globalToleranceMultipier;
 			int numSleepingBodies = 0;
 
 			List<Snapshot.TransformInfo> transforms = new List<Snapshot.TransformInfo>(_rigidBodies.Count);
@@ -320,9 +323,9 @@ namespace MixedRealityExtension.Core
 #endif
 			}
 
-//#if MRE_PHYSICS_DEBUG
+#if MRE_PHYSICS_DEBUG
 				Debug.Log(" Client:" + " Total number of sleeping bodies: " + numSleepingBodies + " out of " + _rigidBodies.Count);
-//#endif
+#endif
 
 			return new Snapshot(time, transforms);
 		}
