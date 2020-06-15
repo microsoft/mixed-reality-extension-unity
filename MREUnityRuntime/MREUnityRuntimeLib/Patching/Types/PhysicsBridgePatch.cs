@@ -11,10 +11,14 @@ using Unity.Collections;
 namespace MixedRealityExtension.Patching.Types
 {
 	/// type of the motion that helps on the other side to predict its trajectory
-	public enum MotionType : int
+	public enum MotionType : byte
 	{
-		Dynamic,
-		Keyframed
+		/// body that is simulated and should react to impacts
+		Dynamic = 1,
+		/// body is key framed, has infinite mass used for animation or mouse pick 
+		Keyframed = 2,
+		/// special flag to signal that this body is now sleeping and will not move (can become key framed stationary until collision)
+		Sleeping = 4
 	};
 
 	public class TransformPatchInfo

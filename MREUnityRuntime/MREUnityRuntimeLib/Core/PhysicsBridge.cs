@@ -16,8 +16,8 @@ namespace MixedRealityExtension.Core
 			RigidBody = rb;
 			Ownership = ownership;
 			lastTimeKeyFramedUpdate = 0.0f;
-			lastValidLinerVelocity.Set(0.0f, 0.0f, 0.0f);
-			lastValidAngularVelocity.Set(0.0f, 0.0f, 0.0f);
+			lastValidLinerVelocityOrPos.Set(0.0f, 0.0f, 0.0f);
+			lastValidAngularVelocityorAng.Set(0.0f, 0.0f, 0.0f);
 
 			IsKeyframed = false;
 		}
@@ -26,15 +26,19 @@ namespace MixedRealityExtension.Core
 
 		public UnityEngine.Rigidbody RigidBody;
 
-		/// these 3 fields are used to store the actual velocities
+		/// these 3 fields are used to store the actual velocities ,
+		/// IF this body is owned then here we store the transform that last time was sent
 		public float lastTimeKeyFramedUpdate;
-		public UnityEngine.Vector3 lastValidLinerVelocity;
-		public UnityEngine.Vector3 lastValidAngularVelocity;
+		public UnityEngine.Vector3 lastValidLinerVelocityOrPos;
+		public UnityEngine.Vector3 lastValidAngularVelocityorAng;
 
 		/// true if this rigid body is owned by this client
 		public bool Ownership;
-
+		/// if the body is moved by key-framing then this is true
 		public bool IsKeyframed;
+
+		/// when transmitting the transforms we store if this body is sleeping
+		public Patching.Types.MotionType sendMotionType;
 	}
 
 	/// <summary>
@@ -90,6 +94,7 @@ namespace MixedRealityExtension.Core
 			else
 			{
 				_countStreamedTransforms--;
+				//<todo> remove also from the last Jitter buffer for sleeping bodies (we should just set 
 			}
 
 			_rigidBodies.Remove(id);
@@ -110,6 +115,8 @@ namespace MixedRealityExtension.Core
 				_countOwnedTransforms--;
 				_countStreamedTransforms++;
 			}
+
+			//<todo> remove also from the last Jitter buffer for sleeping bodies
 
 			_rigidBodies[id].Ownership = ownership;
 		}
@@ -137,6 +144,10 @@ namespace MixedRealityExtension.Core
 		/// <param name="snapshot">List of transform at specified timestamp.</param>
 		public void addSnapshot(Guid sourceId, Snapshot snapshot)
 		{
+
+			// <todo> jabenk now not all bodies will get an update here
+			//        we should just copy exactly over 
+
 			_snapshotManager.addSnapshot(sourceId, snapshot);
 		}
 
@@ -199,13 +210,13 @@ namespace MixedRealityExtension.Core
 					{
 						// <todo> for long running times this could be a problem 
 						float invUpdateDT = 1.0f / (timeOfSnapshot - rb.lastTimeKeyFramedUpdate);
-						rb.lastValidLinerVelocity = (keyFramedPos - rb.RigidBody.transform.position) * invUpdateDT;
+						rb.lastValidLinerVelocityOrPos = (keyFramedPos - rb.RigidBody.transform.position) * invUpdateDT;
 						// transform to radians and take the angular velocity 
 						UnityEngine.Vector3 eulerAngles = (
 						      UnityEngine.Quaternion.Inverse(rb.RigidBody.transform.rotation)
 						    * keyFramedOrientation).eulerAngles;
 						UnityEngine.Vector3 radianAngles = UtilMethods.TransformEulerAnglesToRadians(eulerAngles);
-						rb.lastValidAngularVelocity = radianAngles * invUpdateDT;
+						rb.lastValidAngularVelocityorAng = radianAngles * invUpdateDT;
 #if MRE_PHYSICS_DEBUG
 						Debug.Log(" Remote body: " + rb.Id.ToString() + " got update lin vel:"
 							+ rb.lastValidLinerVelocity + " ang vel:" + rb.lastValidAngularVelocity
@@ -252,6 +263,12 @@ namespace MixedRealityExtension.Core
 			// collect transforms from owned rigid bodies
 			// and generate update packet/snapshot
 
+			// these constanst define when a body is considered to be sleeping
+			const float maxSleepingSqrtLinearVelocity = 0.05F;
+			const float maxSleepingSqrtAngularVelocity = 0.05F;
+			const float maxSleepingSqrtPositionDiff = 0.02F;
+			const float maxSleepingSqrtAngularEulerDiff = 5.0F;
+
 			List<Snapshot.TransformInfo> transforms = new List<Snapshot.TransformInfo>(_rigidBodies.Count);
 
 			foreach (var rb in _rigidBodies.Values)
@@ -269,7 +286,26 @@ namespace MixedRealityExtension.Core
 
 				Patching.Types.MotionType mType = (rb.IsKeyframed) ? (Patching.Types.MotionType.Keyframed)
 					: (Patching.Types.MotionType.Dynamic);
-				
+
+				bool isBodySleeping = rb.RigidBody.velocity.sqrMagnitude < maxSleepingSqrtLinearVelocity
+					&& rb.RigidBody.angularVelocity.sqrMagnitude < maxSleepingSqrtAngularVelocity
+					&& (rb.lastValidLinerVelocityOrPos - transform.Position).sqrMagnitude < maxSleepingSqrtPositionDiff
+					&& (rb.lastValidAngularVelocityorAng - transform.Rotation.eulerAngles).sqrMagnitude < maxSleepingSqrtAngularEulerDiff;
+
+				// test if this is sleeping
+				if (rb.lastTimeKeyFramedUpdate > 0 && isBodySleeping && rb.sendMotionType == Patching.Types.MotionType.Sleeping)
+				{
+					// condition for velocity and positions are triggered and we already told the consumers to make body sleep, so just skip this update
+					continue;
+				}
+				mType = (isBodySleeping) ? (Patching.Types.MotionType.Sleeping) : mType;
+
+				// store the last update informations
+				rb.sendMotionType = mType;
+				rb.lastTimeKeyFramedUpdate = time;
+				rb.lastValidLinerVelocityOrPos = transform.Position;
+				rb.lastValidAngularVelocityorAng = transform.Rotation.eulerAngles;
+
 				transforms.Add(new Snapshot.TransformInfo(rb.Id, transform, mType));
 #if MRE_PHYSICS_DEBUG
 				Debug.Log(" SEND Remote body: " + rb.Id.ToString() + " OriginalRot:" + transform.Rotation

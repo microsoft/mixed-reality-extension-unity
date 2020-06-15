@@ -84,7 +84,64 @@ namespace MixedRealityExtension.Core.Physics
 		{
 			if (!Snapshots.ContainsKey(snapshot.Time))
 			{
-				Snapshots.Add(snapshot.Time, snapshot);
+				// get the previous snapshot that should contain the list of all sleeping bodies, but only if there is a last snapshot
+				if (Snapshots.Count > 0)
+				{
+					int indCurrent = 0, indLast = 0;
+					List<Snapshot.TransformInfo> mergedWithSleepingListTransforms = new List<Snapshot.TransformInfo>();
+
+					var lastsnapshot = Snapshots.Last().Value;
+					while (indCurrent < snapshot.Transforms.Count || indLast < lastsnapshot.Transforms.Count)
+					{
+						// find the next sleeping in the last list that will be propagated further
+						while (indLast < lastsnapshot.Transforms.Count && lastsnapshot.Transforms[indLast].motionType != MotionType.Sleeping)
+						{
+							indLast++;
+						}
+
+						// here merge the 2 lists items such that they are in an incremental order
+						bool r1 = indCurrent < snapshot.Transforms.Count;
+						bool r2 = indLast < lastsnapshot.Transforms.Count;
+						if (r1 && r2)
+						{
+							int cmpValue = snapshot.Transforms[indCurrent].Id.CompareTo(lastsnapshot.Transforms[indLast].Id);
+							if (cmpValue <= 0)
+							{
+								mergedWithSleepingListTransforms.Add(snapshot.Transforms[indCurrent]);
+								indCurrent++;
+								indLast += (cmpValue == 0) ? 1 : 0;
+							}
+							else
+							{
+								mergedWithSleepingListTransforms.Add(lastsnapshot.Transforms[indLast]);
+								indLast++;
+							}
+						}
+						else
+						{
+							if (r1)
+							{
+								mergedWithSleepingListTransforms.Add(snapshot.Transforms[indCurrent]);
+								indCurrent++;
+							}
+							else
+							{
+								if (r2)
+								{
+									mergedWithSleepingListTransforms.Add(lastsnapshot.Transforms[indLast]);
+									indLast++;
+								}
+							}
+						}
+					}
+
+					var snapshotExtended = new Snapshot(snapshot.Time, mergedWithSleepingListTransforms);
+					Snapshots.Add(snapshot.Time, snapshotExtended);
+				}
+				else
+				{
+					Snapshots.Add(snapshot.Time, snapshot);
+				}
 			}
 		}
 
@@ -327,7 +384,10 @@ namespace MixedRealityExtension.Core.Physics
 								for (; nextIndex < next.Transforms.Count; nextIndex++)
 								{
 									// find corresponding transform in prev snapshot
-									while (prevIndex < prev.Transforms.Count && prev.Transforms[prevIndex].Id.CompareTo(next.Transforms[nextIndex].Id) < 0) prevIndex++;
+									while (prevIndex < prev.Transforms.Count && prev.Transforms[prevIndex].Id.CompareTo(next.Transforms[nextIndex].Id) < 0)
+									{
+										prevIndex++;
+									}
 
 									if (prevIndex < prev.Transforms.Count &&
 										prev.Transforms[prevIndex].Id == next.Transforms[nextIndex].Id)
@@ -459,6 +519,41 @@ namespace MixedRealityExtension.Core.Physics
 			}
 
 			return snapshot;
+		}
+
+		/// There are sleeping bodies that are kept in the jitter buffer without any update, and if
+		/// body is removed or when the ownership is transfered these bodies should not be kept further
+		/// in the buffer from that client and should no be marked as sleeping. 
+		public void MakeSureBodyIsNotSleeping(Guid bodyID)
+		{
+			foreach (SourceInfo source in Sources.Values)
+			{
+				// if it's new source, it may have no snapshot
+				if (source.CurrentSnapshot != null)
+				{
+					int ind = 0;
+					while (ind < source.CurrentSnapshot.Transforms.Count)
+					{
+						int cmp = bodyID.CompareTo(source.CurrentSnapshot.Transforms[ind].Id);
+						if (cmp == 0)
+						{
+							if (source.CurrentSnapshot.Transforms[ind].motionType == MotionType.Sleeping)
+							{
+								var trInfo = Sources[source.Id].CurrentSnapshot.Transforms[ind];
+								trInfo.motionType = MotionType.Dynamic;
+							}
+							// 
+							break;
+						}
+						// this is a sorted list
+						if (cmp < 0)
+						{
+							break;
+						}
+						ind++;
+					}
+				}
+			}
 		}
 
 		private Dictionary<Guid, SourceInfo> Sources = new Dictionary<Guid, SourceInfo>();
