@@ -5,6 +5,7 @@ using MixedRealityExtension.Core.Physics;
 using System;
 using System.Collections.Generic;
 using MixedRealityExtension.Util;
+using UnityEngine;
 
 namespace MixedRealityExtension.Core
 {
@@ -36,6 +37,8 @@ namespace MixedRealityExtension.Core
 		public bool Ownership;
 		/// if the body is moved by key-framing then this is true
 		public bool IsKeyframed;
+
+		// <todo> add owner of the body for faster access ?
 
 		/// when transmitting the transforms we store if this body is sleeping
 		public Patching.Types.MotionType sendMotionType;
@@ -94,7 +97,8 @@ namespace MixedRealityExtension.Core
 			else
 			{
 				_countStreamedTransforms--;
-				//<todo> remove also from the last Jitter buffer for sleeping bodies (we should just set 
+				//<todo> remove also from the last Jitter buffer for sleeping bodies (we should just set the motion type to dynamic)
+				_snapshotManager.MakeSureBodyIsNotSleeping(id);
 			}
 
 			_rigidBodies.Remove(id);
@@ -116,8 +120,9 @@ namespace MixedRealityExtension.Core
 				_countStreamedTransforms++;
 			}
 
-			//<todo> remove also from the last Jitter buffer for sleeping bodies
-
+			//<todo> this could be done more efficiently
+			_snapshotManager.MakeSureBodyIsNotSleeping(id);
+			
 			_rigidBodies[id].Ownership = ownership;
 		}
 
@@ -268,6 +273,7 @@ namespace MixedRealityExtension.Core
 			const float maxSleepingSqrtAngularVelocity = 0.05F;
 			const float maxSleepingSqrtPositionDiff = 0.02F;
 			const float maxSleepingSqrtAngularEulerDiff = 5.0F;
+			int numSleepingBodies = 0;
 
 			List<Snapshot.TransformInfo> transforms = new List<Snapshot.TransformInfo>(_rigidBodies.Count);
 
@@ -296,6 +302,7 @@ namespace MixedRealityExtension.Core
 				if (rb.lastTimeKeyFramedUpdate > 0 && isBodySleeping && rb.sendMotionType == Patching.Types.MotionType.Sleeping)
 				{
 					// condition for velocity and positions are triggered and we already told the consumers to make body sleep, so just skip this update
+					numSleepingBodies++;
 					continue;
 				}
 				mType = (isBodySleeping) ? (Patching.Types.MotionType.Sleeping) : mType;
@@ -312,6 +319,10 @@ namespace MixedRealityExtension.Core
 					+ " RigidBodyRot:" + rb.RigidBody.transform.rotation);
 #endif
 			}
+
+//#if MRE_PHYSICS_DEBUG
+				Debug.Log(" Client:" + " Total number of sleeping bodies: " + numSleepingBodies + " out of " + _rigidBodies.Count);
+//#endif
 
 			return new Snapshot(time, transforms);
 		}

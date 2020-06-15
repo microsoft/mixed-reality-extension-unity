@@ -91,6 +91,10 @@ namespace MixedRealityExtension.Core.Physics
 					List<Snapshot.TransformInfo> mergedWithSleepingListTransforms = new List<Snapshot.TransformInfo>();
 
 					var lastsnapshot = Snapshots.Last().Value;
+
+//#if MRE_PHYSICS_DEBUG
+					Debug.Log(" Before merge: " + snapshot.Transforms.Count);
+//#endif
 					while (indCurrent < snapshot.Transforms.Count || indLast < lastsnapshot.Transforms.Count)
 					{
 						// find the next sleeping in the last list that will be propagated further
@@ -134,7 +138,9 @@ namespace MixedRealityExtension.Core.Physics
 							}
 						}
 					}
-
+//#if MRE_PHYSICS_DEBUG
+					Debug.Log(" After merge: " + mergedWithSleepingListTransforms.Count);
+//#endif
 					var snapshotExtended = new Snapshot(snapshot.Time, mergedWithSleepingListTransforms);
 					Snapshots.Add(snapshot.Time, snapshotExtended);
 				}
