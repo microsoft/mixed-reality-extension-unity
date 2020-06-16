@@ -100,7 +100,7 @@ namespace MixedRealityExtension.Core
 			{
 				_countStreamedTransforms--;
 				//<todo> remove also from the last Jitter buffer for sleeping bodies (we should just set the motion type to dynamic)
-				_snapshotManager.DelteBodyFromBufferIfSleeping(id);
+				_snapshotManager.DelteBodyFromBuffer(id);
 			}
 
 			_rigidBodies.Remove(id);
@@ -128,7 +128,7 @@ namespace MixedRealityExtension.Core
 			}
 
 			//<todo> this could be done more efficiently
-			_snapshotManager.DelteBodyFromBufferIfSleeping(id);
+			_snapshotManager.DelteBodyFromBuffer(id);
 			
 			_rigidBodies[id].Ownership = ownership;
 		}
@@ -229,9 +229,9 @@ namespace MixedRealityExtension.Core
 						    * keyFramedOrientation).eulerAngles;
 						UnityEngine.Vector3 radianAngles = UtilMethods.TransformEulerAnglesToRadians(eulerAngles);
 						rb.lastValidAngularVelocityorAng = radianAngles * invUpdateDT;
-#if MRE_PHYSICS_DEBUG
+//#if MRE_PHYSICS_DEBUG
 						Debug.Log(" Remote body: " + rb.Id.ToString() + " got update lin vel:"
-							+ rb.lastValidLinerVelocity + " ang vel:" + rb.lastValidAngularVelocity
+							+ rb.lastValidLinerVelocityOrPos + " ang vel:" + rb.lastValidAngularVelocityorAng
 							//+ " DangE:" + eulerAngles + " DangR:" + radianAngles
 							+ " time:" + timeOfSnapshot + " newp:" + keyFramedPos
 							+ " newR:" + keyFramedOrientation
@@ -241,26 +241,26 @@ namespace MixedRealityExtension.Core
 							+ " OriginalRot:" + transform.Rotation
 							+ " keyF:" + rb.RigidBody.isKinematic
 							+ " KF:" + rb.IsKeyframed);
-#endif
+//#endif
 					}
 					rb.lastTimeKeyFramedUpdate = timeOfSnapshot;
 					rb.IsKeyframed = (snapshot.RigidBodies.Values[index].motionType == Patching.Types.MotionType.Keyframed);
 
 					// code to disable prediction and to use just key framing 
-					//rb.RigidBody.isKinematic = true;
-					//rb.RigidBody.transform.position = keyFramedPos;
-					//rb.RigidBody.transform.rotation = keyFramedOrientation;
-					//rb.RigidBody.velocity.Set(0.0f, 0.0f, 0.0f);
-					//rb.RigidBody.angularVelocity.Set(0.0f, 0.0f, 0.0f);
+					rb.RigidBody.isKinematic = true;
+					rb.RigidBody.transform.position = keyFramedPos;
+					rb.RigidBody.transform.rotation = keyFramedOrientation;
+					rb.RigidBody.velocity.Set(0.0f, 0.0f, 0.0f);
+					rb.RigidBody.angularVelocity.Set(0.0f, 0.0f, 0.0f);
 
 					// call the predictor with this remotely owned body
-					_predictor.AddAndProcessRemoteBodyForPrediction(rb, transform,
-						keyFramedPos, keyFramedOrientation, timeOfSnapshot, timeInfo);
+					//_predictor.AddAndProcessRemoteBodyForPrediction(rb, transform,
+					//	keyFramedPos, keyFramedOrientation, timeOfSnapshot, timeInfo);
 				}
 			}
 
 			// call the predictor
-			_predictor.PredictAllRemoteBodiesWithOwnedBodies(ref _rigidBodies, timeInfo);
+			//_predictor.PredictAllRemoteBodiesWithOwnedBodies(ref _rigidBodies, timeInfo);
 
 		}
 
@@ -276,12 +276,13 @@ namespace MixedRealityExtension.Core
 			// and generate update packet/snapshot
 
 			// these constants define when a body is considered to be sleeping
-			const float globalToleranceMultipier = 5.0F;
+			const float globalToleranceMultipier = 1.0F;
 			const float maxSleepingSqrtLinearVelocity = 0.05F * globalToleranceMultipier;
 			const float maxSleepingSqrtAngularVelocity = 0.05F * globalToleranceMultipier;
 			const float maxSleepingSqrtPositionDiff = 0.02F * globalToleranceMultipier;
 			const float maxSleepingSqrtAngularEulerDiff = 5.0F * globalToleranceMultipier;
 			int numSleepingBodies = 0;
+			int numOwnedBodies = 0;
 
 			List<Snapshot.TransformInfo> transforms = new List<Snapshot.TransformInfo>(_rigidBodies.Count);
 
@@ -298,16 +299,22 @@ namespace MixedRealityExtension.Core
 					transform.Rotation = UnityEngine.Quaternion.Inverse(rootTransform.rotation) * rb.RigidBody.transform.rotation;
 				}
 
+				numOwnedBodies++;
 				Patching.Types.MotionType mType = (rb.IsKeyframed) ? (Patching.Types.MotionType.Keyframed)
 					: (Patching.Types.MotionType.Dynamic);
 
-				bool isBodySleeping = rb.RigidBody.velocity.sqrMagnitude < maxSleepingSqrtLinearVelocity
-					&& rb.RigidBody.angularVelocity.sqrMagnitude < maxSleepingSqrtAngularVelocity
-					&& (rb.lastValidLinerVelocityOrPos - transform.Position).sqrMagnitude < maxSleepingSqrtPositionDiff
-					&& (rb.lastValidAngularVelocityorAng - transform.Rotation.eulerAngles).sqrMagnitude < maxSleepingSqrtAngularEulerDiff;
+				UnityEngine.Vector3 posDiff = rb.lastValidLinerVelocityOrPos - transform.Position;
+				UnityEngine.Vector3 rotDiff = rb.lastValidAngularVelocityorAng - transform.Rotation.eulerAngles;
 
-				// test if this is sleeping
-				if (rb.lastTimeKeyFramedUpdate > 0 && isBodySleeping && rb.sendMotionType == Patching.Types.MotionType.Sleeping)
+				bool isBodySleeping =
+					!rb.IsKeyframed && // if body is key framed and owned then we should just feed the jitter buffer
+					( rb.RigidBody.velocity.sqrMagnitude < maxSleepingSqrtLinearVelocity
+					  && rb.RigidBody.angularVelocity.sqrMagnitude < maxSleepingSqrtAngularVelocity
+					  && posDiff.sqrMagnitude < maxSleepingSqrtPositionDiff
+					  && rotDiff.sqrMagnitude < maxSleepingSqrtAngularEulerDiff);
+
+				// test if this is sleeping, and when this was newly added then 
+				if (rb.lastTimeKeyFramedUpdate > 0.001F && isBodySleeping && rb.sendMotionType == Patching.Types.MotionType.Sleeping)
 				{
 					// condition for velocity and positions are triggered and we already told the consumers to make body sleep, so just skip this update
 					numSleepingBodies++;
@@ -322,15 +329,18 @@ namespace MixedRealityExtension.Core
 				rb.lastValidAngularVelocityorAng = transform.Rotation.eulerAngles;
 
 				transforms.Add(new Snapshot.TransformInfo(rb.Id, transform, mType));
-#if MRE_PHYSICS_DEBUG
+//#if MRE_PHYSICS_DEBUG
 				Debug.Log(" SEND Remote body: " + rb.Id.ToString() + " OriginalRot:" + transform.Rotation
-					+ " RigidBodyRot:" + rb.RigidBody.transform.rotation);
-#endif
+					+ " RigidBodyRot:" + rb.RigidBody.transform.rotation
+					+ " lv:" + rb.RigidBody.velocity + " av:" + rb.RigidBody.angularVelocity
+					+ " posDiff:" + posDiff + " rotDiff:" + rotDiff + " isKeyF:" + rb.IsKeyframed);
+//#endif
 			}
 
-#if MRE_PHYSICS_DEBUG
-				Debug.Log(" Client:" + " Total number of sleeping bodies: " + numSleepingBodies + " out of " + _rigidBodies.Count);
-#endif
+//#if MRE_PHYSICS_DEBUG
+				Debug.Log(" Client:" + " Total number of sleeping bodies: " + numSleepingBodies + " total RBs" + _rigidBodies.Count
+			     + " num owned " + numOwnedBodies + " num sent transforms " + transforms.Count);
+//#endif
 			var ret = new Snapshot(time, transforms);
 			return ret;
 		}

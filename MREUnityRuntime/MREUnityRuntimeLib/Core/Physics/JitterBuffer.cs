@@ -94,6 +94,7 @@ namespace MixedRealityExtension.Core.Physics
 					List<Snapshot.TransformInfo> mergedWithSleepingListTransforms = new List<Snapshot.TransformInfo>();
 
 					var lastsnapshot = Snapshots.Last().Value;
+					bool isEverythingSleeping = true;
 
 					while (indCurrent < snapshot.Transforms.Count || indLast < lastsnapshot.Transforms.Count)
 					{
@@ -111,12 +112,14 @@ namespace MixedRealityExtension.Core.Physics
 							int cmpValue = snapshot.Transforms[indCurrent].Id.CompareTo(lastsnapshot.Transforms[indLast].Id);
 							if (cmpValue <= 0)
 							{
+								isEverythingSleeping = isEverythingSleeping && (snapshot.Transforms[indCurrent].motionType == MotionType.Sleeping);
 								mergedWithSleepingListTransforms.Add(snapshot.Transforms[indCurrent]);
 								indCurrent++;
 								indLast += (cmpValue == 0) ? 1 : 0;
 							}
 							else
 							{
+								isEverythingSleeping = isEverythingSleeping && (lastsnapshot.Transforms[indLast].motionType == MotionType.Sleeping);
 								mergedWithSleepingListTransforms.Add(lastsnapshot.Transforms[indLast]);
 								indLast++;
 							}
@@ -125,6 +128,7 @@ namespace MixedRealityExtension.Core.Physics
 						{
 							if (r1)
 							{
+								isEverythingSleeping = isEverythingSleeping && (snapshot.Transforms[indCurrent].motionType == MotionType.Sleeping);
 								mergedWithSleepingListTransforms.Add(snapshot.Transforms[indCurrent]);
 								indCurrent++;
 							}
@@ -132,6 +136,7 @@ namespace MixedRealityExtension.Core.Physics
 							{
 								if (r2)
 								{
+									isEverythingSleeping = isEverythingSleeping && (lastsnapshot.Transforms[indLast].motionType == MotionType.Sleeping);
 									mergedWithSleepingListTransforms.Add(lastsnapshot.Transforms[indLast]);
 									indLast++;
 								}
@@ -140,11 +145,23 @@ namespace MixedRealityExtension.Core.Physics
 					}
 //#if MRE_PHYSICS_DEBUG
 					Debug.Log(" After merge: " + mergedWithSleepingListTransforms.Count + " before:" + snapshot.Transforms.Count
-					+ " time:" + snapshot.Time);
+						+ " last:" + lastsnapshot.Transforms.Count + " time:" + snapshot.Time + " isEverythingSleeping=" + isEverythingSleeping
+						+ " total size:" + Snapshots.Count);
 //#endif
 					var snapshotExtended = new Snapshot(snapshot.Time, mergedWithSleepingListTransforms);
 
+					// if all bodies were sleeping in the previous update then clear all the jitter buffer
+					if (areAllBodiesSleepingInTheLastSnapshot)
+					{
+//#if MRE_PHYSICS_DEBUG
+						Debug.Log(" RESET JB  time:" + snapshot.Time + " isEverythingSleeping=" + isEverythingSleeping
+							+ " size:" + Snapshots.Count);
+//#endif
+						Snapshots.Clear();
+					}
+					
 					Snapshots.Add(snapshot.Time, snapshotExtended);
+					areAllBodiesSleepingInTheLastSnapshot = isEverythingSleeping;
 				}
 				else
 				{
@@ -169,6 +186,9 @@ namespace MixedRealityExtension.Core.Physics
 			// remove old snapshots, todo: find better way
 			for (int r = 0; r < index - 1; r++) Snapshots.RemoveAt(0);
 		}
+
+		/// in order to reset the jitter buffer properly we need to know if the last updates only has sleeping bodies
+		public bool areAllBodiesSleepingInTheLastSnapshot = false;
 
 		/// <summary>
 		/// Snapshots sorted by snapshot timestamp.
@@ -532,32 +552,33 @@ namespace MixedRealityExtension.Core.Physics
 		/// There are sleeping bodies that are kept in the jitter buffer without any update, and if
 		/// body is removed or when the ownership is transfered these bodies should not be kept further
 		/// in the buffer from that client and should no be marked as sleeping. 
-		public void DelteBodyFromBufferIfSleeping(Guid bodyID)
+		public void DelteBodyFromBuffer(Guid bodyID)
 		{
-			foreach (SourceInfo source in Sources.Values)
+//#if MRE_PHYSICS_DEBUG
+			Debug.Log(" Called DelteBodyFromBufferIfSleeping body: " + bodyID.ToString() + " size:" + Sources.Count);
+			//#endif
+			int sourceIndex = 0;
+			//foreach (SourceInfo source in Sources.Values)
+			while (sourceIndex < Sources.Count)
 			{
+				var currentSource = Sources.ElementAt(sourceIndex);
 				// if it's new source, it may have no snapshot
-				if (source.CurrentSnapshot != null)
+				if (currentSource.Value.CurrentSnapshot != null)
 				{
 					int ind = 0;
-					while (ind < source.CurrentSnapshot.Transforms.Count)
+//#if MRE_PHYSICS_DEBUG
+					Debug.Log(" source : " + currentSource.Key.ToString() + " size:" + currentSource.Value.CurrentSnapshot.Transforms.Count);
+//#endif
+					while (ind < currentSource.Value.CurrentSnapshot.Transforms.Count)
 					{
-						int cmp = bodyID.CompareTo(source.CurrentSnapshot.Transforms[ind].Id);
+						int cmp = bodyID.CompareTo(currentSource.Value.CurrentSnapshot.Transforms[ind].Id);
 						if (cmp == 0)
 						{
-							if (source.CurrentSnapshot.Transforms[ind].motionType == MotionType.Sleeping)
-							{
-								var trInfo = Sources[source.Id].CurrentSnapshot.Transforms[ind];
-								if (trInfo.motionType == MotionType.Sleeping)
-								{
-									Sources[source.Id].CurrentSnapshot.Transforms.RemoveAt(ind);
-								}
-								//trInfo.motionType = MotionType.Dynamic;
-#if MRE_PHYSICS_DEBUG
-				Debug.Log(" MakeSureBodyIsNotSleeping body: " + bodyID.ToString());
-#endif
-							}
-							// 
+							Sources[currentSource.Key].CurrentSnapshot.Transforms.RemoveAt(ind);
+//#if MRE_PHYSICS_DEBUG
+				Debug.Log(" Found DelteBodyFromBufferIfSleeping body: " + bodyID.ToString()
+					+ " new size:" + Sources[currentSource.Key].CurrentSnapshot.Transforms.Count);
+//#endif
 							break;
 						}
 						// this is a sorted list so once we passed this we can safely break
@@ -568,6 +589,7 @@ namespace MixedRealityExtension.Core.Physics
 						ind++;
 					}
 				}
+				sourceIndex++;
 			}
 		}
 
