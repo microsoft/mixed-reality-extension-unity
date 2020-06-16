@@ -97,11 +97,20 @@ namespace MixedRealityExtension.Core
 		{
 			get
 			{
-				return Owner.HasValue ? Owner.Value == App.LocalUser.Id : CanSync();
+				Attachment attachmentInHierarchy = FindAttachmentInHierarchy();
+				bool inAttachmentHeirarchy = (attachmentInHierarchy != null);
+
+				bool inOwnedAttachmentHierarchy = (inAttachmentHeirarchy && LocalUser != null && attachmentInHierarchy.UserId == LocalUser.Id);
+
+				return Owner.HasValue ?
+					Owner.Value == App.LocalUser.Id :
+					inOwnedAttachmentHierarchy || App.IsAuthoritativePeer;
 			}
 		}
 
-		public delegate void RigidBodyAddedHandler(Guid id, UnityEngine.Rigidbody rigidbody, bool isOwned);
+		private bool _takeOwnership = false;
+
+		public delegate void RigidBodyAddedHandler(Guid id, UnityEngine.Rigidbody rigidbody, Guid? owner);
 		public event RigidBodyAddedHandler RigidBodyAdded;
 
 		public delegate void RigidBodyRemovedHandler(Guid id);
@@ -109,6 +118,9 @@ namespace MixedRealityExtension.Core
 
 		public delegate void RigidBodyKinematicsChangedHandler(Guid id, bool isKinematic);
 		public event RigidBodyKinematicsChangedHandler RigidBodyKinematicsChanged;
+
+		public delegate void RigidBodyOwnerChangedHandler(Guid id, Guid? owner);
+		public event RigidBodyOwnerChangedHandler RigidBodyOwnerChanged;
 
 		#region IActor Properties - Public
 
@@ -313,6 +325,12 @@ namespace MixedRealityExtension.Core
 				if (ShouldSync(ActorComponentType.Attachment, ActorComponentType.Attachment))
 				{
 					GenerateAttachmentPatch(actorPatch);
+				}
+
+				if (_takeOwnership)
+				{
+					actorPatch.Owner = Owner;
+					_takeOwnership = false;
 				}
 
 				if (actorPatch.IsPatched())
@@ -831,6 +849,12 @@ namespace MixedRealityExtension.Core
 
 		void OnRigidBodyGrabbed(object sender, ActionStateChangedArgs args)
 		{
+			if (args.NewState == ActionState.Started && !IsSimulatedByLocalUser)
+			{
+				PatchOwner(App.LocalUser.Id);
+				_takeOwnership = true;
+			}
+
 			if (args.NewState != ActionState.Performing)
 			{
 				RigidBodyKinematicsChanged?.Invoke(Id, args.NewState == ActionState.Started);
@@ -844,7 +868,7 @@ namespace MixedRealityExtension.Core
 				_rigidbody = gameObject.AddComponent<Rigidbody>();
 				RigidBody = new RigidBody(_rigidbody, App.SceneRoot.transform);
 
-				RigidBodyAdded?.Invoke(Id, _rigidbody, IsSimulatedByLocalUser);
+				RigidBodyAdded?.Invoke(Id, _rigidbody, Owner);
 
 				var behaviorComponent = GetActorComponent<BehaviorComponent>();
 				if (behaviorComponent != null && behaviorComponent.Context is TargetBehaviorContext targetContext)
@@ -995,6 +1019,7 @@ namespace MixedRealityExtension.Core
 			if (ownerOrNull.HasValue)
 			{
 				Owner = ownerOrNull;
+				RigidBodyOwnerChanged?.Invoke(Id, Owner);
 			}
 		}
 
@@ -1593,7 +1618,8 @@ namespace MixedRealityExtension.Core
 				App.IsAuthoritativePeer ||
 				IsGrabbed ||
 				_grabbedLastSync ||
-				inOwnedAttachmentHierarchy)
+				inOwnedAttachmentHierarchy ||
+				Owner == App.LocalUser.Id)
 			{
 				return true;
 			}

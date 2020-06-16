@@ -196,15 +196,6 @@ namespace MixedRealityExtension.Assets
 				// asset is a one-off, just destroy it
 				if (asset.Source == null)
 				{
-					// workaround: unload meshes implicitly
-					if (asset.Asset is GameObject prefab)
-					{
-						var filters = prefab.GetComponentsInChildren<MeshFilter>();
-						foreach (var f in filters)
-						{
-							Object.Destroy(f.sharedMesh);
-						}
-					}
 					Object.Destroy(asset.Asset);
 				}
 				// asset is shared with other MRE instances, just return asset to cache

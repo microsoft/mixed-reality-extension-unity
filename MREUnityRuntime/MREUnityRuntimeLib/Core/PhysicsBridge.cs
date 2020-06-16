@@ -108,6 +108,11 @@ namespace MixedRealityExtension.Core
 
 		public void setRigidBodyOwnership(Guid id, bool ownership)
 		{
+			if (!_rigidBodies.ContainsKey(id))
+			{
+				return;
+			}
+
 			UnityEngine.Debug.Assert(_rigidBodies.ContainsKey(id), "PhysicsBridge don't have rigid body with specified ID.");
 			UnityEngine.Debug.Assert(_rigidBodies[id].Ownership != ownership, "Rigid body with specified ID is already registered with same ownership flag.");
 

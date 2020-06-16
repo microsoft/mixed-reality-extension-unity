@@ -285,9 +285,18 @@ public class MREComponent : MonoBehaviour
 
 		Debug.Log("Connecting to MRE App.");
 
+		var args = System.Environment.GetCommandLineArgs();
+		Uri overrideUri = null;
 		try
 		{
-			MREApp?.Startup(MREURL, SessionID, "MRETestBed");
+			overrideUri = new Uri(args[args.Length - 1], UriKind.Absolute);
+		}
+		catch { }
+
+		var uri = overrideUri != null && overrideUri.Scheme.StartsWith("ws") ? overrideUri.AbsoluteUri : MREURL;
+		try
+		{
+			MREApp?.Startup(uri, SessionID, "MRETestBed");
 		}
 		catch (Exception e)
 		{
