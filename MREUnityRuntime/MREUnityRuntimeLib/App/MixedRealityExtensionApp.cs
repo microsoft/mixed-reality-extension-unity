@@ -199,9 +199,10 @@ namespace MixedRealityExtension.App
 			_physicsBridge.setKeyframed(id, isKinematic);
 		}
 
-		private void OnRigidBodyAdded(Guid id, Rigidbody rigidbody, bool isOwned)
+		private void OnRigidBodyAdded(Guid id, Rigidbody rigidbody, Guid? owner)
 		{
-			_physicsBridge.addRigidBody(id, rigidbody, isOwned);
+			bool isOwner = owner.HasValue ? owner.Value == LocalUser.Id : IsAuthoritativePeer;
+			_physicsBridge.addRigidBody(id, rigidbody, isOwner);
 		}
 
 		private void OnRigidBodyRemoved(Guid id)
@@ -218,6 +219,7 @@ namespace MixedRealityExtension.App
 			_actorManager.RigidBodyAdded += OnRigidBodyAdded;
 			_actorManager.RigidBodyRemoved += OnRigidBodyRemoved;
 			_actorManager.RigidBodyKinematicsChanged += OnRigidBodyKinematicsChanged;
+			_actorManager.RigidBodyOwnerChanged += OnRigidBodyOwnerChanged;
 
 			if (_conn == null)
 			{
@@ -244,6 +246,12 @@ namespace MixedRealityExtension.App
 				_conn = connection;
 			}
 			_conn.Open();
+		}
+
+		private void OnRigidBodyOwnerChanged(Guid id, Guid? owner)
+		{
+			bool isOwner = owner.HasValue ? owner.Value == LocalUser.Id : IsAuthoritativePeer;
+			_physicsBridge.setRigidBodyOwnership(id, isOwner);
 		}
 
 		/// <inheritdoc />
@@ -297,6 +305,7 @@ namespace MixedRealityExtension.App
 			_actorManager.RigidBodyAdded -= OnRigidBodyAdded;
 			_actorManager.RigidBodyRemoved -= OnRigidBodyRemoved;
 			_actorManager.RigidBodyKinematicsChanged -= OnRigidBodyKinematicsChanged;
+			_actorManager.RigidBodyOwnerChanged -= OnRigidBodyOwnerChanged;
 
 			_ownedGameObjects.Clear();
 			_actorManager.Reset();
