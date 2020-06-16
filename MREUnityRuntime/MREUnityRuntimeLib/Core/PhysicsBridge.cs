@@ -326,8 +326,8 @@ namespace MixedRealityExtension.Core
 #if MRE_PHYSICS_DEBUG
 				Debug.Log(" Client:" + " Total number of sleeping bodies: " + numSleepingBodies + " out of " + _rigidBodies.Count);
 #endif
-
-			return new Snapshot(time, transforms);
+			var ret = new Snapshot(time, transforms);
+			return ret;
 		}
 
 		public void LateUpdate()

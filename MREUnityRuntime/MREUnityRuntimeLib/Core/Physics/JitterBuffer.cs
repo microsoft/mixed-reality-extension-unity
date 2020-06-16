@@ -82,6 +82,9 @@ namespace MixedRealityExtension.Core.Physics
 		/// </summary>
 		public void addSnapshot(Snapshot snapshot)
 		{
+
+			// <todo> there should be some automatic reset when the times are so far apart.
+
 			if (!Snapshots.ContainsKey(snapshot.Time))
 			{
 				// get the previous snapshot that should contain the list of all sleeping bodies, but only if there is a last snapshot
@@ -92,9 +95,6 @@ namespace MixedRealityExtension.Core.Physics
 
 					var lastsnapshot = Snapshots.Last().Value;
 
-#if MRE_PHYSICS_DEBUG
-					Debug.Log(" Before merge: " + snapshot.Transforms.Count);
-#endif
 					while (indCurrent < snapshot.Transforms.Count || indLast < lastsnapshot.Transforms.Count)
 					{
 						// find the next sleeping in the last list that will be propagated further
@@ -138,10 +138,12 @@ namespace MixedRealityExtension.Core.Physics
 							}
 						}
 					}
-#if MRE_PHYSICS_DEBUG
-					Debug.Log(" After merge: " + mergedWithSleepingListTransforms.Count);
-#endif
+//#if MRE_PHYSICS_DEBUG
+					Debug.Log(" After merge: " + mergedWithSleepingListTransforms.Count + " before:" + snapshot.Transforms.Count
+					+ " time:" + snapshot.Time);
+//#endif
 					var snapshotExtended = new Snapshot(snapshot.Time, mergedWithSleepingListTransforms);
+
 					Snapshots.Add(snapshot.Time, snapshotExtended);
 				}
 				else
