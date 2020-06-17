@@ -282,10 +282,10 @@ namespace MixedRealityExtension.Core
 
 			// these constants define when a body is considered to be sleeping
 			const float globalToleranceMultipier = 1.0F;
-			const float maxSleepingSqrtLinearVelocity = 0.01F * globalToleranceMultipier;
-			const float maxSleepingSqrtAngularVelocity = 0.01F * globalToleranceMultipier;
-			const float maxSleepingSqrtPositionDiff = 0.005F * globalToleranceMultipier;
-			const float maxSleepingSqrtAngularEulerDiff = 0.01F * globalToleranceMultipier;
+			const float maxSleepingSqrtLinearVelocity = 0.05F * globalToleranceMultipier;
+			const float maxSleepingSqrtAngularVelocity = 0.05F * globalToleranceMultipier;
+			const float maxSleepingSqrtPositionDiff = 0.01F * globalToleranceMultipier;
+			const float maxSleepingSqrtAngularEulerDiff = 0.05F * globalToleranceMultipier;
 			int numSleepingBodies = 0;
 			int numOwnedBodies = 0;
 
