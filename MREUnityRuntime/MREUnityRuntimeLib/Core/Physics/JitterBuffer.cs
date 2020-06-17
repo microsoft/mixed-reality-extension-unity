@@ -32,8 +32,8 @@ namespace MixedRealityExtension.Core.Physics
 	/// </summary>
 	public class Snapshot
 	{
-		/// flags that mark special properties of the snapshot, needs to be int for Json
-		public enum SnapshotFlags : int
+		/// flags that mark special properties of the snapshot
+		public enum SnapshotFlags : byte
 		{
 			/// no special treatment
 			NoFlags = 0,
@@ -103,9 +103,9 @@ namespace MixedRealityExtension.Core.Physics
 			// Reset the jitter buffer if this is requested by the update flag
 			if (snapshot.Flags == Snapshot.SnapshotFlags.ResetJitterBuffer)
 			{
-				//#if MRE_PHYSICS_DEBUG
+#if MRE_PHYSICS_DEBUG
 				Debug.Log(" RESET JB FLAGS time:" + snapshot.Time  + " size:" + Snapshots.Count);
-				//#endif
+#endif
 				Snapshots.Clear();
 				areAllBodiesSleepingInTheLastSnapshot = false;
 			}
@@ -168,20 +168,20 @@ namespace MixedRealityExtension.Core.Physics
 							}
 						}
 					}
-//#if MRE_PHYSICS_DEBUG
+#if MRE_PHYSICS_DEBUG
 					Debug.Log(" After merge: " + mergedWithSleepingListTransforms.Count + " before:" + snapshot.Transforms.Count
 						+ " last:" + lastsnapshot.Transforms.Count + " time:" + snapshot.Time + " isEverythingSleeping=" + isEverythingSleeping
 						+ " total size:" + Snapshots.Count);
-//#endif
+#endif
 					var snapshotExtended = new Snapshot(snapshot.Time, mergedWithSleepingListTransforms);
 
 					// if all bodies were sleeping in the previous update then clear all the jitter buffer
 					if (areAllBodiesSleepingInTheLastSnapshot)
 					{
-//#if MRE_PHYSICS_DEBUG
+#if MRE_PHYSICS_DEBUG
 						Debug.Log(" RESET JB  time:" + snapshot.Time + " isEverythingSleeping=" + isEverythingSleeping
 							+ " size:" + Snapshots.Count);
-//#endif
+#endif
 						Snapshots.Clear();
 					}
 					
@@ -588,9 +588,9 @@ namespace MixedRealityExtension.Core.Physics
 		/// in the buffer from that client and should no be marked as sleeping. 
 		public void DelteBodyFromBuffer(Guid bodyID)
 		{
-//#if MRE_PHYSICS_DEBUG
+#if MRE_PHYSICS_DEBUG
 			Debug.Log(" Called DelteBodyFromBufferIfSleeping body: " + bodyID.ToString() + " size:" + Sources.Count);
-			//#endif
+#endif
 			int sourceIndex = 0;
 			//foreach (SourceInfo source in Sources.Values)
 			while (sourceIndex < Sources.Count)
@@ -600,19 +600,19 @@ namespace MixedRealityExtension.Core.Physics
 				if (currentSource.Value.CurrentSnapshot != null)
 				{
 					int ind = 0;
-//#if MRE_PHYSICS_DEBUG
+#if MRE_PHYSICS_DEBUG
 					Debug.Log(" source : " + currentSource.Key.ToString() + " size:" + currentSource.Value.CurrentSnapshot.Transforms.Count);
-//#endif
+#endif
 					while (ind < currentSource.Value.CurrentSnapshot.Transforms.Count)
 					{
 						int cmp = bodyID.CompareTo(currentSource.Value.CurrentSnapshot.Transforms[ind].Id);
 						if (cmp == 0)
 						{
 							Sources[currentSource.Key].CurrentSnapshot.Transforms.RemoveAt(ind);
-//#if MRE_PHYSICS_DEBUG
+#if MRE_PHYSICS_DEBUG
 				Debug.Log(" Found DelteBodyFromBufferIfSleeping body: " + bodyID.ToString()
 					+ " new size:" + Sources[currentSource.Key].CurrentSnapshot.Transforms.Count);
-//#endif
+#endif
 							break;
 						}
 						// this is a sorted list so once we passed this we can safely break
