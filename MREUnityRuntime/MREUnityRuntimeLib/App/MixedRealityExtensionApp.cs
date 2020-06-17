@@ -40,6 +40,8 @@ namespace MixedRealityExtension.App
 		internal readonly AnimationManager AnimationManager;
 		private readonly AssetManager _assetManager;
 
+		internal bool UsePhysicsBridge { get; set; }
+
 		private PhysicsBridge _physicsBridge;
 		private bool _shouldSendPhysicsUpdate = false;
 
@@ -166,7 +168,14 @@ namespace MixedRealityExtension.App
 			_assetLoader = new AssetLoader(ownerScript, this);
 			_userManager = new UserManager(this);
 			_actorManager = new ActorManager(this);
-			_physicsBridge = new PhysicsBridge();
+
+			UsePhysicsBridge = Constants.UsePhysicsBridge;
+
+			if (UsePhysicsBridge)
+			{
+				_physicsBridge = new PhysicsBridge();
+			}
+
 			SoundManager = new SoundManager(this);
 			AnimationManager = new AnimationManager(this);
 			_commandManager = new CommandManager(new Dictionary<Type, ICommandHandlerContext>()
@@ -216,10 +225,13 @@ namespace MixedRealityExtension.App
 			ServerUri = new Uri(url, UriKind.Absolute);
 			ServerAssetUri = new Uri(Regex.Replace(ServerUri.AbsoluteUri, "^ws(s?):", "http$1:"));
 
-			_actorManager.RigidBodyAdded += OnRigidBodyAdded;
-			_actorManager.RigidBodyRemoved += OnRigidBodyRemoved;
-			_actorManager.RigidBodyKinematicsChanged += OnRigidBodyKinematicsChanged;
-			_actorManager.RigidBodyOwnerChanged += OnRigidBodyOwnerChanged;
+			if (UsePhysicsBridge)
+			{
+				_actorManager.RigidBodyAdded += OnRigidBodyAdded;
+				_actorManager.RigidBodyRemoved += OnRigidBodyRemoved;
+				_actorManager.RigidBodyKinematicsChanged += OnRigidBodyKinematicsChanged;
+				_actorManager.RigidBodyOwnerChanged += OnRigidBodyOwnerChanged;
+			}
 
 			if (_conn == null)
 			{
@@ -302,10 +314,13 @@ namespace MixedRealityExtension.App
 				UnityEngine.Object.Destroy(go);
 			}
 
-			_actorManager.RigidBodyAdded -= OnRigidBodyAdded;
-			_actorManager.RigidBodyRemoved -= OnRigidBodyRemoved;
-			_actorManager.RigidBodyKinematicsChanged -= OnRigidBodyKinematicsChanged;
-			_actorManager.RigidBodyOwnerChanged -= OnRigidBodyOwnerChanged;
+			if (UsePhysicsBridge)
+			{
+				_actorManager.RigidBodyAdded -= OnRigidBodyAdded;
+				_actorManager.RigidBodyRemoved -= OnRigidBodyRemoved;
+				_actorManager.RigidBodyKinematicsChanged -= OnRigidBodyKinematicsChanged;
+				_actorManager.RigidBodyOwnerChanged -= OnRigidBodyOwnerChanged;
+			}
 
 			_ownedGameObjects.Clear();
 			_actorManager.Reset();
@@ -321,15 +336,18 @@ namespace MixedRealityExtension.App
 		/// <inheritdoc />
 		public void FixedUpdate()
 		{
-			if (_shouldSendPhysicsUpdate)
+			if (UsePhysicsBridge)
 			{
-				SendPhysicsUpdate();
-				_shouldSendPhysicsUpdate = false;
+				if (_shouldSendPhysicsUpdate)
+				{
+					SendPhysicsUpdate();
+					_shouldSendPhysicsUpdate = false;
+				}
+
+				_physicsBridge.FixedUpdate(SceneRoot.transform);
+
+				_shouldSendPhysicsUpdate = true;
 			}
-
-			_physicsBridge.FixedUpdate(SceneRoot.transform);
-
-			_shouldSendPhysicsUpdate = true;
 		}
 
 		private void SendPhysicsUpdate()
@@ -359,10 +377,13 @@ namespace MixedRealityExtension.App
 			// Process actor queues after connection update.
 			_actorManager.Update();
 
-			if (_shouldSendPhysicsUpdate)
+			if (UsePhysicsBridge)
 			{
-				SendPhysicsUpdate();
-				_shouldSendPhysicsUpdate = false;
+				if (_shouldSendPhysicsUpdate)
+				{
+					SendPhysicsUpdate();
+					_shouldSendPhysicsUpdate = false;
+				}
 			}
 
 			SoundManager.Update();
@@ -990,8 +1011,11 @@ namespace MixedRealityExtension.App
 		[CommandHandler(typeof(PhysicsBridgeUpdate))]
 		private void OnTransformsUpdate(PhysicsBridgeUpdate payload, Action onCompleteCallback)
 		{
-			_physicsBridge.addSnapshot(payload.PhysicsBridge.Id, payload.PhysicsBridge.ToSnapshot());
-			onCompleteCallback?.Invoke();
+			if (UsePhysicsBridge)
+			{
+				_physicsBridge.addSnapshot(payload.PhysicsBridge.Id, payload.PhysicsBridge.ToSnapshot());
+				onCompleteCallback?.Invoke();
+			}
 		}
 
 		#endregion

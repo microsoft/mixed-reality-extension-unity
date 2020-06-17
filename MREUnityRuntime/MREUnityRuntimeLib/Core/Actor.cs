@@ -66,6 +66,8 @@ namespace MixedRealityExtension.Core
 
 		private ActorComponentType _subscriptions = ActorComponentType.None;
 
+		private ActorTransformPatch _rbTransformPatch;
+
 		private new Renderer renderer = null;
 		internal Renderer Renderer
 		{
@@ -309,7 +311,7 @@ namespace MixedRealityExtension.Core
 					actorPatch.ParentId = ParentId;
 				}
 
-				if (RigidBody == null)
+				if (!App.UsePhysicsBridge || RigidBody == null)
 				{
 					if (ShouldSync(subscriptions, ActorComponentType.Transform))
 					{
@@ -1016,7 +1018,7 @@ namespace MixedRealityExtension.Core
 
 		private void PatchOwner(Guid? ownerOrNull)
 		{
-			if (ownerOrNull.HasValue)
+			if (App.UsePhysicsBridge && ownerOrNull.HasValue)
 			{
 				Owner = ownerOrNull;
 				RigidBodyOwnerChanged?.Invoke(Id, Owner);
@@ -1182,7 +1184,7 @@ namespace MixedRealityExtension.Core
 				{
 					// We need to update transform only for the simulation owner,
 					// others will get update through PhysicsBridge.
-					if (IsSimulatedByLocalUser)
+					if (!App.UsePhysicsBridge || IsSimulatedByLocalUser)
 					{
 						PatchTransformWithRigidBody(transformPatch);
 					}
@@ -1214,7 +1216,7 @@ namespace MixedRealityExtension.Core
 				if (transformPatch.Local.Rotation != null)
 				{
 					var localRotation = transform.localRotation.GetPatchApplied(LocalTransform.Rotation.ApplyPatch(transformPatch.Local.Rotation));
-					transformUpdate.Rotation = transform.parent.rotation* localRotation;
+					transformUpdate.Rotation = transform.parent.rotation * localRotation;
 				}
 			}
 
@@ -1226,7 +1228,7 @@ namespace MixedRealityExtension.Core
 				{
 					// New app space position.
 					var newAppPos = appTransform.InverseTransformPoint(transform.position)
-                       .GetPatchApplied(AppTransform.Position.ApplyPatch(transformPatch.App.Position));
+						.GetPatchApplied(AppTransform.Position.ApplyPatch(transformPatch.App.Position));
 
 					// Transform new position to world space.
 					transformUpdate.Position = appTransform.TransformPoint(newAppPos);
@@ -1236,10 +1238,10 @@ namespace MixedRealityExtension.Core
 				{
 					// New app space rotation
 					var newAppRot = (transform.rotation * appTransform.rotation)
-                       .GetPatchApplied(AppTransform.Rotation.ApplyPatch(transformPatch.App.Rotation));
+						.GetPatchApplied(AppTransform.Rotation.ApplyPatch(transformPatch.App.Rotation));
 
 					// Transform new app rotation to world space.
-					transformUpdate.Rotation = newAppRot* transform.rotation;
+					transformUpdate.Rotation = newAppRot * transform.rotation;
 				}
 			}
 
@@ -1291,7 +1293,49 @@ namespace MixedRealityExtension.Core
 			}
 			else
 			{
-				// nothing to do this should be handled by the physics channel 
+				// nothing to do this should be handled by the physics channel
+
+				if (!App.UsePhysicsBridge)
+				{
+					// Lerping and correction needs to happen at the rigid body level here to
+					// not interfere with physics simulation.  This will change with kinematic being
+					// enabled on a rigid body for when it is grabbed.  We do not support this currently,
+					// and thus do not interpolate the actor.  Just set the position for the rigid body.
+
+					_rbTransformPatch = _rbTransformPatch ?? new ActorTransformPatch()
+					{
+						App = new TransformPatch()
+						{
+							Position = new Vector3Patch(),
+							Rotation = new QuaternionPatch()
+						}
+					};
+
+					if (transform.Position != null)
+					{
+						_rbTransformPatch.App.Position.X = transform.Position.X;
+						_rbTransformPatch.App.Position.Y = transform.Position.Y;
+						_rbTransformPatch.App.Position.Z = transform.Position.Z;
+					}
+					else
+					{
+						_rbTransformPatch.App.Position = null;
+					}
+
+					if (transform.Rotation != null)
+					{
+						_rbTransformPatch.App.Rotation.W = transform.Rotation.W;
+						_rbTransformPatch.App.Rotation.X = transform.Rotation.X;
+						_rbTransformPatch.App.Rotation.Y = transform.Rotation.Y;
+						_rbTransformPatch.App.Rotation.Z = transform.Rotation.Z;
+					}
+					else
+					{
+						_rbTransformPatch.App.Rotation = null;
+					}
+
+					PatchTransformWithRigidBody(_rbTransformPatch);
+				}
 			}
 		}
 
@@ -1311,6 +1355,8 @@ namespace MixedRealityExtension.Core
 		{
 			if (rigidBodyPatch != null)
 			{
+				bool patchVelocities = !App.UsePhysicsBridge || IsSimulatedByLocalUser;
+
 				bool wasKinematic;
 
 				if (RigidBody == null)
@@ -1319,14 +1365,14 @@ namespace MixedRealityExtension.Core
 
 					wasKinematic = RigidBody.IsKinematic;
 
-					RigidBody.ApplyPatch(rigidBodyPatch);
+					RigidBody.ApplyPatch(rigidBodyPatch, patchVelocities);
 				}
 				else
 				{
 					wasKinematic = RigidBody.IsKinematic;
 
 					// Queue update to happen in the fixed update
-					RigidBody.SynchronizeEngine(rigidBodyPatch);
+					RigidBody.SynchronizeEngine(rigidBodyPatch, patchVelocities);
 				}
 
 				if (rigidBodyPatch.IsKinematic.HasValue)
