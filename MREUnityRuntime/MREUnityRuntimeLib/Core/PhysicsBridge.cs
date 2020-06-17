@@ -54,6 +54,8 @@ namespace MixedRealityExtension.Core
 
 		private int _countOwnedTransforms = 0;
 		private int _countStreamedTransforms = 0;
+		/// stores the number of transforms that should be have been sent (without cap) to all consumers
+		private int _lastNumberOfTransformsToBeSent = 0;
 
 		private SortedList<Guid, RigidBodyPhysicsBridgeInfo> _rigidBodies = new SortedList<Guid, RigidBodyPhysicsBridgeInfo>();
 
@@ -246,7 +248,7 @@ namespace MixedRealityExtension.Core
 					rb.lastTimeKeyFramedUpdate = timeOfSnapshot;
 					rb.IsKeyframed = (snapshot.RigidBodies.Values[index].motionType == Patching.Types.MotionType.Keyframed);
 
-					// code to disable prediction and to use just key framing 
+					// code to disable prediction and to use just key framing (and comment out the prediction)
 					rb.RigidBody.isKinematic = true;
 					rb.RigidBody.transform.position = keyFramedPos;
 					rb.RigidBody.transform.rotation = keyFramedOrientation;
@@ -340,8 +342,19 @@ namespace MixedRealityExtension.Core
 //#if MRE_PHYSICS_DEBUG
 				Debug.Log(" Client:" + " Total number of sleeping bodies: " + numSleepingBodies + " total RBs" + _rigidBodies.Count
 			     + " num owned " + numOwnedBodies + " num sent transforms " + transforms.Count);
-//#endif
-			var ret = new Snapshot(time, transforms);
+			//#endif
+
+			Snapshot.SnapshotFlags snapshotFlag = Snapshot.SnapshotFlags.NoFlags;
+			// check if we should restart the jitter buffer 
+			if ( (_lastNumberOfTransformsToBeSent == 0 && numOwnedBodies != 0)
+				|| (_lastNumberOfTransformsToBeSent != 0 && numOwnedBodies == 0))
+			{
+				snapshotFlag = Snapshot.SnapshotFlags.ResetJitterBuffer;
+			}
+			
+			_lastNumberOfTransformsToBeSent = numOwnedBodies;
+
+			var ret = new Snapshot(time, transforms, snapshotFlag);
 			return ret;
 		}
 

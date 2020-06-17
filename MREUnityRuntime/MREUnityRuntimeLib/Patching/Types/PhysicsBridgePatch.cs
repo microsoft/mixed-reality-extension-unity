@@ -57,7 +57,7 @@ namespace MixedRealityExtension.Patching.Types
 		{
 			Id = sourceId;
 			Time = snapshot.Time;
-
+			Flags = snapshot.Flags;
 			TransformCount = snapshot.Transforms.Count;
 
 			if (TransformCount > 0)
@@ -81,11 +81,14 @@ namespace MixedRealityExtension.Patching.Types
 
 				// todo: use native array in snapshot
 				Unity.Collections.NativeSlice<Snapshot.TransformInfo> transforms = new NativeSlice<byte>(blob).SliceConvert<Snapshot.TransformInfo>();
-				return new Snapshot(Time, new List<Snapshot.TransformInfo>(transforms.ToArray()));
+				return new Snapshot(Time, new List<Snapshot.TransformInfo>(transforms.ToArray()), Flags);
 			}
 
-			return new Snapshot(Time, new List<Snapshot.TransformInfo>());
+			return new Snapshot(Time, new List<Snapshot.TransformInfo>(), Flags);
 		}
+
+		/// returns true if this snapshot should be send even if it has no transforms
+		public bool DoSendThisPatch() { return (TransformCount > 0 || Flags != Snapshot.SnapshotFlags.NoFlags); }
 
 		/// <summary>
 		/// source app id (of the sender)
@@ -95,6 +98,8 @@ namespace MixedRealityExtension.Patching.Types
 		public float Time { get; set; }
 
 		public int TransformCount { get; set; }
+
+		public Snapshot.SnapshotFlags Flags { get; set; }
 
 		/// <summary>
 		/// Serialized as a string in Json.

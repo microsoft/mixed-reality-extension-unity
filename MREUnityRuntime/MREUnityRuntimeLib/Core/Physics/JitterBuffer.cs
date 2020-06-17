@@ -32,8 +32,17 @@ namespace MixedRealityExtension.Core.Physics
 	/// </summary>
 	public class Snapshot
 	{
+		/// flags that mark special properties of the snapshot, needs to be int for Json
+		public enum SnapshotFlags : int
+		{
+			/// no special treatment
+			NoFlags = 0,
+			/// reset the jitter buffer
+			ResetJitterBuffer = 1,
+		};
+
 		/// <summary>
-		/// Trnasform identifier and respective transform.
+		/// Transform identifier and respective transform.
 		/// </summary>
 		public struct TransformInfo
 		{
@@ -55,11 +64,19 @@ namespace MixedRealityExtension.Core.Physics
 			public RigidBodyTransform Transform { get; private set; }
 		}
 
-		public Snapshot(float time, List<TransformInfo> transforms)
+		public Snapshot(float time, List<TransformInfo> transforms,
+			SnapshotFlags snapFlags = SnapshotFlags.NoFlags)
 		{
 			Time = time;
 			Transforms = transforms;
+			Flags = snapFlags;
 		}
+
+		/// returns true if this snapshot should be send even if it has no transforms
+		public bool DoSendThisSnapshot() { return (Transforms.Count > 0 || Flags != SnapshotFlags.NoFlags);  }
+
+		///special flag for a snapshot
+		public SnapshotFlags Flags { get; private set; }
 
 		/// <summary>
 		/// Timestamp of the snapshot.
@@ -83,7 +100,15 @@ namespace MixedRealityExtension.Core.Physics
 		public void addSnapshot(Snapshot snapshot)
 		{
 
-			// <todo> there should be some automatic reset when the times are so far apart.
+			// Reset the jitter buffer if this is requested by the update flag
+			if (snapshot.Flags == Snapshot.SnapshotFlags.ResetJitterBuffer)
+			{
+				//#if MRE_PHYSICS_DEBUG
+				Debug.Log(" RESET JB FLAGS time:" + snapshot.Time  + " size:" + Snapshots.Count);
+				//#endif
+				Snapshots.Clear();
+				areAllBodiesSleepingInTheLastSnapshot = false;
+			}
 
 			if (!Snapshots.ContainsKey(snapshot.Time))
 			{
@@ -166,6 +191,7 @@ namespace MixedRealityExtension.Core.Physics
 				else
 				{
 					Snapshots.Add(snapshot.Time, snapshot);
+					areAllBodiesSleepingInTheLastSnapshot = false;
 				}
 			}
 		}
@@ -331,7 +357,7 @@ namespace MixedRealityExtension.Core.Physics
 
 			public void step(float timestep)
 			{
-				if (_mode == Mode.Init)
+				if (_mode == Mode.Init || SnapshotBuffer.Snapshots.Count < 4)
 				{
 					// todo: do we need this warm up?
 					if (SnapshotBuffer.Snapshots.Count >= 4)
@@ -340,6 +366,14 @@ namespace MixedRealityExtension.Core.Physics
 
 						CurrentSnapshot = SnapshotBuffer.Snapshots.First().Value;
 						CurrentLocalTime = CurrentSnapshot.Time;
+					}
+					else
+					{
+						if (_mode != Mode.Init)
+						{
+							CurrentSnapshot = SnapshotBuffer.Snapshots.First().Value;
+							CurrentLocalTime = CurrentSnapshot.Time;
+						}
 					}
 				}
 				else if (_mode != Mode.Init)
@@ -437,7 +471,7 @@ namespace MixedRealityExtension.Core.Physics
 
 								// interpolated snapshot
 								CurrentLocalTime = nextTimestamp;
-								CurrentSnapshot = new Snapshot(nextTimestamp, transforms);
+								CurrentSnapshot = new Snapshot(nextTimestamp, transforms, prev.Flags);
 							}
 						}
 						else
