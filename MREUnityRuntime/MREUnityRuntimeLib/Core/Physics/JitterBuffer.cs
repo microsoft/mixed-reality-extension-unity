@@ -75,7 +75,7 @@ namespace MixedRealityExtension.Core.Physics
 		/// returns true if this snapshot should be send even if it has no transforms
 		public bool DoSendThisSnapshot() { return (Transforms.Count > 0 || Flags != SnapshotFlags.NoFlags);  }
 
-		///special flag for a snapshot
+		/// special flag for a snapshot
 		public SnapshotFlags Flags { get; private set; }
 
 		/// <summary>
@@ -97,9 +97,10 @@ namespace MixedRealityExtension.Core.Physics
 		/// <summary>
 		/// Add snapshot to buffer if snapshot with same timestamp exists in buffer.
 		/// </summary>
-		public void addSnapshot(Snapshot snapshot)
+		/// returns true if the buffer should be set in the Init mode, false otherwise
+		public bool addSnapshot(Snapshot snapshot)
 		{
-
+			bool isBufferReseted = false;
 			// Reset the jitter buffer if this is requested by the update flag
 			if (snapshot.Flags == Snapshot.SnapshotFlags.ResetJitterBuffer)
 			{
@@ -107,6 +108,7 @@ namespace MixedRealityExtension.Core.Physics
 				Debug.Log(" RESET JB FLAGS time:" + snapshot.Time  + " size:" + Snapshots.Count);
 #endif
 				Snapshots.Clear();
+				isBufferReseted = true;
 				areAllBodiesSleepingInTheLastSnapshot = false;
 			}
 
@@ -183,6 +185,7 @@ namespace MixedRealityExtension.Core.Physics
 							+ " size:" + Snapshots.Count);
 #endif
 						Snapshots.Clear();
+						isBufferReseted = true;
 					}
 					
 					Snapshots.Add(snapshot.Time, snapshotExtended);
@@ -194,6 +197,7 @@ namespace MixedRealityExtension.Core.Physics
 					areAllBodiesSleepingInTheLastSnapshot = false;
 				}
 			}
+			return isBufferReseted;
 		}
 
 		/// <summary>
@@ -352,28 +356,23 @@ namespace MixedRealityExtension.Core.Physics
 
 			public void addSnapshot(Snapshot snapshot)
 			{
-				SnapshotBuffer.addSnapshot(snapshot);
+				bool needsReset = SnapshotBuffer.addSnapshot(snapshot);
+				if (needsReset)
+				{
+					_mode = Mode.Init;
+				}
 			}
 
 			public void step(float timestep)
 			{
-				if (_mode == Mode.Init || SnapshotBuffer.Snapshots.Count < 4)
+				if (_mode == Mode.Init)
 				{
 					// todo: do we need this warm up?
 					if (SnapshotBuffer.Snapshots.Count >= 4)
 					{
 						_mode = Mode.Play;
-
 						CurrentSnapshot = SnapshotBuffer.Snapshots.First().Value;
 						CurrentLocalTime = CurrentSnapshot.Time;
-					}
-					else
-					{
-						if (_mode != Mode.Init)
-						{
-							CurrentSnapshot = SnapshotBuffer.Snapshots.First().Value;
-							CurrentLocalTime = CurrentSnapshot.Time;
-						}
 					}
 				}
 				else if (_mode != Mode.Init)
