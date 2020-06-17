@@ -54,5 +54,12 @@ namespace MixedRealityExtension
 		 * this *is* a big deal, and requires discussion and signoff from the dev team.
 		 */
 		internal const string MinimumSupportedSDKVersion = "0.13";
+
+		/*
+		 * Enable physics bridge
+		 * Work in progress feature to improve shared physics synchronization.
+		 * It is NOT compatibile with SDK versions older than 0.19.
+		 */
+		internal const bool UsePhysicsBridge = true;
 	}
 }
