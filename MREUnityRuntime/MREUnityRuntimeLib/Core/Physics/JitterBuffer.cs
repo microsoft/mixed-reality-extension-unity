@@ -32,8 +32,17 @@ namespace MixedRealityExtension.Core.Physics
 	/// </summary>
 	public class Snapshot
 	{
+		/// flags that mark special properties of the snapshot
+		public enum SnapshotFlags : byte
+		{
+			/// no special treatment
+			NoFlags = 0,
+			/// reset the jitter buffer
+			ResetJitterBuffer = 1,
+		};
+
 		/// <summary>
-		/// Trnasform identifier and respective transform.
+		/// Transform identifier and respective transform.
 		/// </summary>
 		public struct TransformInfo
 		{
@@ -55,11 +64,19 @@ namespace MixedRealityExtension.Core.Physics
 			public RigidBodyTransform Transform { get; private set; }
 		}
 
-		public Snapshot(float time, List<TransformInfo> transforms)
+		public Snapshot(float time, List<TransformInfo> transforms,
+			SnapshotFlags snapFlags = SnapshotFlags.NoFlags)
 		{
 			Time = time;
 			Transforms = transforms;
+			Flags = snapFlags;
 		}
+
+		/// returns true if this snapshot should be send even if it has no transforms
+		public bool DoSendThisSnapshot() { return (Transforms.Count > 0 || Flags != SnapshotFlags.NoFlags);  }
+
+		/// special flag for a snapshot
+		public SnapshotFlags Flags { get; private set; }
 
 		/// <summary>
 		/// Timestamp of the snapshot.
@@ -80,12 +97,107 @@ namespace MixedRealityExtension.Core.Physics
 		/// <summary>
 		/// Add snapshot to buffer if snapshot with same timestamp exists in buffer.
 		/// </summary>
-		public void addSnapshot(Snapshot snapshot)
+		/// returns true if the buffer should be set in the Init mode, false otherwise
+		public bool addSnapshot(Snapshot snapshot)
 		{
+			bool isBufferReseted = false;
+			// Reset the jitter buffer if this is requested by the update flag
+			if (snapshot.Flags == Snapshot.SnapshotFlags.ResetJitterBuffer)
+			{
+#if MRE_PHYSICS_DEBUG
+				Debug.Log(" RESET JB FLAGS time:" + snapshot.Time  + " size:" + Snapshots.Count);
+#endif
+				Snapshots.Clear();
+				isBufferReseted = true;
+				areAllBodiesSleepingInTheLastSnapshot = false;
+			}
+
 			if (!Snapshots.ContainsKey(snapshot.Time))
 			{
-				Snapshots.Add(snapshot.Time, snapshot);
+				// get the previous snapshot that should contain the list of all sleeping bodies, but only if there is a last snapshot
+				if (Snapshots.Count > 0)
+				{
+					int indCurrent = 0, indLast = 0;
+					List<Snapshot.TransformInfo> mergedWithSleepingListTransforms = new List<Snapshot.TransformInfo>();
+
+					var lastsnapshot = Snapshots.Last().Value;
+					bool isEverythingSleeping = true;
+
+					while (indCurrent < snapshot.Transforms.Count || indLast < lastsnapshot.Transforms.Count)
+					{
+						// find the next sleeping in the last list that will be propagated further
+						while (indLast < lastsnapshot.Transforms.Count && lastsnapshot.Transforms[indLast].motionType != MotionType.Sleeping)
+						{
+							indLast++;
+						}
+
+						// here merge the 2 lists items such that they are in an incremental order
+						bool r1 = indCurrent < snapshot.Transforms.Count;
+						bool r2 = indLast < lastsnapshot.Transforms.Count;
+						if (r1 && r2)
+						{
+							int cmpValue = snapshot.Transforms[indCurrent].Id.CompareTo(lastsnapshot.Transforms[indLast].Id);
+							if (cmpValue <= 0)
+							{
+								isEverythingSleeping = isEverythingSleeping && (snapshot.Transforms[indCurrent].motionType == MotionType.Sleeping);
+								mergedWithSleepingListTransforms.Add(snapshot.Transforms[indCurrent]);
+								indCurrent++;
+								indLast += (cmpValue == 0) ? 1 : 0;
+							}
+							else
+							{
+								isEverythingSleeping = isEverythingSleeping && (lastsnapshot.Transforms[indLast].motionType == MotionType.Sleeping);
+								mergedWithSleepingListTransforms.Add(lastsnapshot.Transforms[indLast]);
+								indLast++;
+							}
+						}
+						else
+						{
+							if (r1)
+							{
+								isEverythingSleeping = isEverythingSleeping && (snapshot.Transforms[indCurrent].motionType == MotionType.Sleeping);
+								mergedWithSleepingListTransforms.Add(snapshot.Transforms[indCurrent]);
+								indCurrent++;
+							}
+							else
+							{
+								if (r2)
+								{
+									isEverythingSleeping = isEverythingSleeping && (lastsnapshot.Transforms[indLast].motionType == MotionType.Sleeping);
+									mergedWithSleepingListTransforms.Add(lastsnapshot.Transforms[indLast]);
+									indLast++;
+								}
+							}
+						}
+					}
+#if MRE_PHYSICS_DEBUG
+					Debug.Log(" After merge: " + mergedWithSleepingListTransforms.Count + " before:" + snapshot.Transforms.Count
+						+ " last:" + lastsnapshot.Transforms.Count + " time:" + snapshot.Time + " isEverythingSleeping=" + isEverythingSleeping
+						+ " total size:" + Snapshots.Count);
+#endif
+					var snapshotExtended = new Snapshot(snapshot.Time, mergedWithSleepingListTransforms);
+
+					// if all bodies were sleeping in the previous update then clear all the jitter buffer
+					if (areAllBodiesSleepingInTheLastSnapshot)
+					{
+#if MRE_PHYSICS_DEBUG
+						Debug.Log(" RESET JB  time:" + snapshot.Time + " isEverythingSleeping=" + isEverythingSleeping
+							+ " size:" + Snapshots.Count);
+#endif
+						Snapshots.Clear();
+						isBufferReseted = true;
+					}
+					
+					Snapshots.Add(snapshot.Time, snapshotExtended);
+					areAllBodiesSleepingInTheLastSnapshot = isEverythingSleeping;
+				}
+				else
+				{
+					Snapshots.Add(snapshot.Time, snapshot);
+					areAllBodiesSleepingInTheLastSnapshot = false;
+				}
 			}
+			return isBufferReseted;
 		}
 
 		/// <summary>
@@ -104,6 +216,9 @@ namespace MixedRealityExtension.Core.Physics
 			// remove old snapshots, todo: find better way
 			for (int r = 0; r < index - 1; r++) Snapshots.RemoveAt(0);
 		}
+
+		/// in order to reset the jitter buffer properly we need to know if the last updates only has sleeping bodies
+		public bool areAllBodiesSleepingInTheLastSnapshot = false;
 
 		/// <summary>
 		/// Snapshots sorted by snapshot timestamp.
@@ -241,7 +356,11 @@ namespace MixedRealityExtension.Core.Physics
 
 			public void addSnapshot(Snapshot snapshot)
 			{
-				SnapshotBuffer.addSnapshot(snapshot);
+				bool needsReset = SnapshotBuffer.addSnapshot(snapshot);
+				if (needsReset)
+				{
+					_mode = Mode.Init;
+				}
 			}
 
 			public void step(float timestep)
@@ -252,7 +371,6 @@ namespace MixedRealityExtension.Core.Physics
 					if (SnapshotBuffer.Snapshots.Count >= 4)
 					{
 						_mode = Mode.Play;
-
 						CurrentSnapshot = SnapshotBuffer.Snapshots.First().Value;
 						CurrentLocalTime = CurrentSnapshot.Time;
 					}
@@ -327,7 +445,10 @@ namespace MixedRealityExtension.Core.Physics
 								for (; nextIndex < next.Transforms.Count; nextIndex++)
 								{
 									// find corresponding transform in prev snapshot
-									while (prevIndex < prev.Transforms.Count && prev.Transforms[prevIndex].Id.CompareTo(next.Transforms[nextIndex].Id) < 0) prevIndex++;
+									while (prevIndex < prev.Transforms.Count && prev.Transforms[prevIndex].Id.CompareTo(next.Transforms[nextIndex].Id) < 0)
+									{
+										prevIndex++;
+									}
 
 									if (prevIndex < prev.Transforms.Count &&
 										prev.Transforms[prevIndex].Id == next.Transforms[nextIndex].Id)
@@ -349,7 +470,7 @@ namespace MixedRealityExtension.Core.Physics
 
 								// interpolated snapshot
 								CurrentLocalTime = nextTimestamp;
-								CurrentSnapshot = new Snapshot(nextTimestamp, transforms);
+								CurrentSnapshot = new Snapshot(nextTimestamp, transforms, prev.Flags);
 							}
 						}
 						else
@@ -459,6 +580,50 @@ namespace MixedRealityExtension.Core.Physics
 			}
 
 			return snapshot;
+		}
+
+		/// There are sleeping bodies that are kept in the jitter buffer without any update, and if
+		/// body is removed or when the ownership is transfered these bodies should not be kept further
+		/// in the buffer from that client and should no be marked as sleeping. 
+		public void DelteBodyFromBuffer(Guid bodyID)
+		{
+#if MRE_PHYSICS_DEBUG
+			Debug.Log(" Called DelteBodyFromBufferIfSleeping body: " + bodyID.ToString() + " size:" + Sources.Count);
+#endif
+			int sourceIndex = 0;
+			//foreach (SourceInfo source in Sources.Values)
+			while (sourceIndex < Sources.Count)
+			{
+				var currentSource = Sources.ElementAt(sourceIndex);
+				// if it's new source, it may have no snapshot
+				if (currentSource.Value.CurrentSnapshot != null)
+				{
+					int ind = 0;
+#if MRE_PHYSICS_DEBUG
+					Debug.Log(" source : " + currentSource.Key.ToString() + " size:" + currentSource.Value.CurrentSnapshot.Transforms.Count);
+#endif
+					while (ind < currentSource.Value.CurrentSnapshot.Transforms.Count)
+					{
+						int cmp = bodyID.CompareTo(currentSource.Value.CurrentSnapshot.Transforms[ind].Id);
+						if (cmp == 0)
+						{
+							Sources[currentSource.Key].CurrentSnapshot.Transforms.RemoveAt(ind);
+#if MRE_PHYSICS_DEBUG
+				Debug.Log(" Found DelteBodyFromBufferIfSleeping body: " + bodyID.ToString()
+					+ " new size:" + Sources[currentSource.Key].CurrentSnapshot.Transforms.Count);
+#endif
+							break;
+						}
+						// this is a sorted list so once we passed this we can safely break
+						if (cmp < 0)
+						{
+							break;
+						}
+						ind++;
+					}
+				}
+				sourceIndex++;
+			}
 		}
 
 		private Dictionary<Guid, SourceInfo> Sources = new Dictionary<Guid, SourceInfo>();

@@ -115,7 +115,7 @@ namespace MixedRealityExtension.Core.Physics
 								+ " dyn:" + rb.RigidBody.transform.position
 							    + " interp pos:" + interpolatedPos
 								+ " rb vel:" + rb.RigidBody.velocity
-								+ " KF vel:" + rb.lastValidLinerVelocity);
+								+ " KF vel:" + rb.lastValidLinerVelocityOrPos);
 #endif
 					// apply these changes only if they are significant in order to not to bother the physics engine
 					// for settled objects
@@ -147,8 +147,8 @@ namespace MixedRealityExtension.Core.Physics
 				rb.RigidBody.transform.rotation = keyFramedOrientation;
 				rb.RigidBody.velocity.Set(0.0f, 0.0f, 0.0f);
 				rb.RigidBody.angularVelocity.Set(0.0f, 0.0f, 0.0f);
-				collisionInfo.linearVelocity = rb.lastValidLinerVelocity;
-				collisionInfo.angularVelocity = rb.lastValidAngularVelocity;
+				collisionInfo.linearVelocity = rb.lastValidLinerVelocityOrPos;
+				collisionInfo.angularVelocity = rb.lastValidAngularVelocityorAng;
 				collisionInfo.monitorInfo = new CollisionMonitorInfo();
 #if MRE_PHYSICS_DEBUG
 				if (rb.IsKeyframed)

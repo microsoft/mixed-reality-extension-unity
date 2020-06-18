@@ -11,10 +11,14 @@ using Unity.Collections;
 namespace MixedRealityExtension.Patching.Types
 {
 	/// type of the motion that helps on the other side to predict its trajectory
-	public enum MotionType : int
+	public enum MotionType : byte
 	{
-		Dynamic,
-		Keyframed
+		/// body that is simulated and should react to impacts
+		Dynamic = 1,
+		/// body is key framed, has infinite mass used for animation or mouse pick 
+		Keyframed = 2,
+		/// special flag to signal that this body is now sleeping and will not move (can become key framed stationary until collision)
+		Sleeping = 4
 	};
 
 	public class TransformPatchInfo
@@ -53,7 +57,7 @@ namespace MixedRealityExtension.Patching.Types
 		{
 			Id = sourceId;
 			Time = snapshot.Time;
-
+			Flags = snapshot.Flags;
 			TransformCount = snapshot.Transforms.Count;
 
 			if (TransformCount > 0)
@@ -77,11 +81,14 @@ namespace MixedRealityExtension.Patching.Types
 
 				// todo: use native array in snapshot
 				Unity.Collections.NativeSlice<Snapshot.TransformInfo> transforms = new NativeSlice<byte>(blob).SliceConvert<Snapshot.TransformInfo>();
-				return new Snapshot(Time, new List<Snapshot.TransformInfo>(transforms.ToArray()));
+				return new Snapshot(Time, new List<Snapshot.TransformInfo>(transforms.ToArray()), Flags);
 			}
 
-			return new Snapshot(Time, new List<Snapshot.TransformInfo>());
+			return new Snapshot(Time, new List<Snapshot.TransformInfo>(), Flags);
 		}
+
+		/// returns true if this snapshot should be send even if it has no transforms
+		public bool DoSendThisPatch() { return (TransformCount > 0 || Flags != Snapshot.SnapshotFlags.NoFlags); }
 
 		/// <summary>
 		/// source app id (of the sender)
@@ -91,6 +98,8 @@ namespace MixedRealityExtension.Patching.Types
 		public float Time { get; set; }
 
 		public int TransformCount { get; set; }
+
+		public Snapshot.SnapshotFlags Flags { get; set; }
 
 		/// <summary>
 		/// Serialized as a string in Json.
