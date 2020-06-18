@@ -67,6 +67,11 @@ namespace MixedRealityExtension.Core
 		/// the prediction object
 		IPrediction _predictor = new PredictionInterpolation();
 
+		/// maximal estimated linear velocity
+		private const float _maxEstimatedLinearVelocity = 30.0F;
+		/// maximal estimated angular velocity
+		private const float _maxEstimatedAngularVelocity = 5.0F;
+
 		public PhysicsBridge()
 		{
 		}
@@ -234,6 +239,17 @@ namespace MixedRealityExtension.Core
 						    * keyFramedOrientation).eulerAngles;
 						UnityEngine.Vector3 radianAngles = UtilMethods.TransformEulerAnglesToRadians(eulerAngles);
 						rb.lastValidAngularVelocityorAng = radianAngles * invUpdateDT;
+						// cap the velocities
+						rb.lastValidLinerVelocityOrPos = UnityEngine.Vector3.ClampMagnitude(
+							rb.lastValidLinerVelocityOrPos, _maxEstimatedLinearVelocity);
+						rb.lastValidAngularVelocityorAng = UnityEngine.Vector3.ClampMagnitude(
+							rb.lastValidAngularVelocityorAng, _maxEstimatedAngularVelocity);
+						// if body is sleeping then all velocities are zero
+						if (snapshot.RigidBodies.Values[index].motionType == Patching.Types.MotionType.Sleeping )
+						{
+							rb.lastValidLinerVelocityOrPos.Set(0.0F, 0.0F, 0.0F);
+							rb.lastValidAngularVelocityorAng.Set(0.0F, 0.0F, 0.0F);
+						}
 #if MRE_PHYSICS_DEBUG
 						Debug.Log(" Remote body: " + rb.Id.ToString() + " got update lin vel:"
 							+ rb.lastValidLinerVelocityOrPos + " ang vel:" + rb.lastValidAngularVelocityorAng
