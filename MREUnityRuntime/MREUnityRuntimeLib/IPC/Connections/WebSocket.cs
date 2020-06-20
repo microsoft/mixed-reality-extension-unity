@@ -1,13 +1,12 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
+using MessagePack;
 using MixedRealityExtension.Messaging;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Net.WebSockets;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine.Networking;
@@ -122,8 +121,7 @@ namespace MixedRealityExtension.IPC.Connections
 			{
 				try
 				{
-					var json = JsonConvert.SerializeObject(message, Constants.SerializerSettings);
-					var buffer = new ArraySegment<byte>(Encoding.UTF8.GetBytes(json));
+					var buffer = new ArraySegment<byte>(MessagePackSerializer.Serialize(message));
 					await ws.SendAsync(buffer, WebSocketMessageType.Text, true, CancellationToken).ConfigureAwait(false);
 				}
 				catch (Exception)
@@ -291,8 +289,7 @@ namespace MixedRealityExtension.IPC.Connections
 							// Dispatch the message.
 							if (result != null && result.EndOfMessage && stream.Length > 0)
 							{
-								var json = Encoding.UTF8.GetString(stream.GetBuffer(), 0, (int)stream.Length);
-								Invoke_OnReceive(json);
+								Invoke_OnReceive(stream.GetBuffer());
 							}
 
 							// Reset accumulation buffer.
@@ -365,7 +362,7 @@ namespace MixedRealityExtension.IPC.Connections
 			_eventQueue.Add(() => OnError?.Invoke(e));
 		}
 
-		private void Invoke_OnReceive(string json)
+		private void Invoke_OnReceive(byte[] serializedMessage)
 		{
 			// TODO: verbose log the message, once MREAPI global logger exists
 			// if (MREAPI.AppsAPI.VerboseLogging)
@@ -375,7 +372,7 @@ namespace MixedRealityExtension.IPC.Connections
 
 			try
 			{
-				Message message = JsonConvert.DeserializeObject<Message>(json, Constants.SerializerSettings);
+				Message message = MessagePackSerializer.Deserialize<Message>(serializedMessage);
 				_eventQueue.Add(() => OnReceive?.Invoke(message));
 			}
 			catch (Exception)
