@@ -60,6 +60,6 @@ namespace MixedRealityExtension
 		 * Work in progress feature to improve shared physics synchronization.
 		 * It is NOT compatibile with SDK versions older than 0.19.
 		 */
-		internal const bool UsePhysicsBridge = false;
+		internal const bool UsePhysicsBridge = true;
 	}
 }

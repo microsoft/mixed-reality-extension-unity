@@ -144,7 +144,7 @@ namespace MixedRealityExtension.Core
 			DetectCollisions = rigidbody.detectCollisions;
 			CollisionDetectionMode = (MRECollisionDetectionMode)Enum.Parse(typeof(MRECollisionDetectionMode), rigidbody.collisionDetectionMode.ToString());
 			UseGravity = rigidbody.useGravity;
-			IsKinematic = rigidbody.isKinematic;
+			//IsKinematic = rigidbody.isKinematic;
 			ConstraintFlags = (MRERigidBodyConstraints)Enum.Parse(typeof(MRERigidBodyConstraints), rigidbody.constraints.ToString());
 		}
 
