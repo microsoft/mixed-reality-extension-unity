@@ -250,19 +250,29 @@ namespace MixedRealityExtension.Core
 							rb.lastValidLinerVelocityOrPos.Set(0.0F, 0.0F, 0.0F);
 							rb.lastValidAngularVelocityorAng.Set(0.0F, 0.0F, 0.0F);
 						}
-#if MRE_PHYSICS_DEBUG
-						Debug.Log(" Remote body: " + rb.Id.ToString() + " got update lin vel:"
-							+ rb.lastValidLinerVelocityOrPos + " ang vel:" + rb.lastValidAngularVelocityorAng
-							//+ " DangE:" + eulerAngles + " DangR:" + radianAngles
-							+ " time:" + timeOfSnapshot + " newp:" + keyFramedPos
-							+ " newR:" + keyFramedOrientation
-							+ " incUpdateDt:" + invUpdateDT
-							+ " oldP:" + rb.RigidBody.transform.position
-							+ " oldR:" + rb.RigidBody.transform.rotation
-							+ " OriginalRot:" + transform.Rotation
-							+ " keyF:" + rb.RigidBody.isKinematic
-							+ " KF:" + rb.IsKeyframed);
-#endif
+//#if MRE_PHYSICS_DEBUG
+						if (true)
+						{
+						    // limited debug version
+							Debug.Log(" Remote body: " + rb.Id.ToString() + " got update lin vel:"
+								+ rb.lastValidLinerVelocityOrPos + " ang vel:" + rb.lastValidAngularVelocityorAng
+								+ " incUpdateDt:" + invUpdateDT + " time:" + timeOfSnapshot + " newR:" + rb.lastTimeKeyFramedUpdate);						    
+						}
+						else
+						{
+							Debug.Log(" Remote body: " + rb.Id.ToString() + " got update lin vel:"
+								+ rb.lastValidLinerVelocityOrPos + " ang vel:" + rb.lastValidAngularVelocityorAng
+								//+ " DangE:" + eulerAngles + " DangR:" + radianAngles
+								+ " time:" + timeOfSnapshot + " newp:" + keyFramedPos
+								+ " newR:" + keyFramedOrientation
+								+ " incUpdateDt:" + invUpdateDT
+								+ " oldP:" + rb.RigidBody.transform.position
+								+ " oldR:" + rb.RigidBody.transform.rotation
+								+ " OriginalRot:" + transform.Rotation
+								+ " keyF:" + rb.RigidBody.isKinematic
+								+ " KF:" + rb.IsKeyframed);
+						}
+//#endif
 					}
 					rb.lastTimeKeyFramedUpdate = timeOfSnapshot;
 					rb.IsKeyframed = (snapshot.RigidBodies.Values[index].motionType == Patching.Types.MotionType.Keyframed);
