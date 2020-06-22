@@ -145,7 +145,7 @@ namespace MixedRealityExtension.Assets
 				Payload = new AssetsLoaded()
 				{
 					FailureMessage = failureMessage,
-					Assets = (new List<Asset>(assets)).ToArray()
+					Assets = assets?.ToArray()
 				}
 			});
 			onCompleteCallback?.Invoke();
@@ -184,7 +184,7 @@ namespace MixedRealityExtension.Assets
 					stream = await loader.LoadStreamAsync(URIHelper.GetFileFromUri(source.ParsedUri));
 					source.Version = loader.LastResponse.Headers.ETag?.Tag ?? "unversioned";
 				}
-				catch (HttpRequestException httpErr)
+				catch (HttpRequestException)
 				{
 					if (loader.LastResponse.StatusCode == System.Net.HttpStatusCode.NotModified)
 					{
@@ -192,7 +192,7 @@ namespace MixedRealityExtension.Assets
 					}
 					else
 					{
-						throw httpErr;
+						throw;
 					}
 				}
 			}
