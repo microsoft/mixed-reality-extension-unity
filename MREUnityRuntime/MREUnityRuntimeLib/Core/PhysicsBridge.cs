@@ -254,8 +254,6 @@ namespace MixedRealityExtension.Core
 								+ " lastDTUpdate:" + (UnityEngine.Time.time-rb.lastTimeUpdateLocalTime)
 								+ " hasupdate:" + snapshot.RigidBodies.Values[index].HasUpdate
 								+  " DangE:" + eulerAngles + " DangR:" + radianAngles );
-
-
 						}
 
 						// cap the velocities
