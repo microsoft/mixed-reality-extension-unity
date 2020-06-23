@@ -230,9 +230,10 @@ namespace MixedRealityExtension.Core
 					// if there is a really new update then also store the implicit velocity
 					if (rb.lastTimeKeyFramedUpdate < timeOfSnapshot)
 					{
-						// <todo> for long running times this could be a problem
+						// <todo> for long running times the time difference could be a problem
 						// the minimal step is the half step size, even with jitter buffer
 						float invUpdateDT = 1.0f / Math.Max( (timeInfo.halfDT), (timeOfSnapshot - rb.lastTimeKeyFramedUpdate));
+
 						rb.lastValidLinerVelocityOrPos = (keyFramedPos - rb.RigidBody.transform.position) * invUpdateDT;
 						// transform to radians and take the angular velocity 
 						UnityEngine.Vector3 eulerAngles = (
@@ -288,6 +289,30 @@ namespace MixedRealityExtension.Core
 								+ " keyF:" + rb.RigidBody.isKinematic
 								+ " KF:" + rb.IsKeyframed);
 						}
+#endif
+						// cap the velocities
+						rb.lastValidLinerVelocityOrPos = UnityEngine.Vector3.ClampMagnitude(
+							rb.lastValidLinerVelocityOrPos, _maxEstimatedLinearVelocity);
+						rb.lastValidAngularVelocityorAng = UnityEngine.Vector3.ClampMagnitude(
+							rb.lastValidAngularVelocityorAng, _maxEstimatedAngularVelocity);
+						// if body is sleeping then all velocities are zero
+						if (snapshot.RigidBodies.Values[index].motionType == Patching.Types.MotionType.Sleeping )
+						{
+							rb.lastValidLinerVelocityOrPos.Set(0.0F, 0.0F, 0.0F);
+							rb.lastValidAngularVelocityorAng.Set(0.0F, 0.0F, 0.0F);
+						}
+#if MRE_PHYSICS_DEBUG
+						Debug.Log(" Remote body: " + rb.Id.ToString() + " got update lin vel:"
+							+ rb.lastValidLinerVelocityOrPos + " ang vel:" + rb.lastValidAngularVelocityorAng
+							//+ " DangE:" + eulerAngles + " DangR:" + radianAngles
+							+ " time:" + timeOfSnapshot + " newp:" + keyFramedPos
+							+ " newR:" + keyFramedOrientation
+							+ " incUpdateDt:" + invUpdateDT
+							+ " oldP:" + rb.RigidBody.transform.position
+							+ " oldR:" + rb.RigidBody.transform.rotation
+							+ " OriginalRot:" + transform.Rotation
+							+ " keyF:" + rb.RigidBody.isKinematic
+							+ " KF:" + rb.IsKeyframed);
 #endif
 					}
 					rb.lastTimeKeyFramedUpdate = timeOfSnapshot;

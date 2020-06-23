@@ -33,6 +33,10 @@ namespace MixedRealityExtension.Patching.Types
 			}
 		}
 
+
+		[PatchProperty]
+		public Guid? ExclusiveToUser { get; set; }
+
 		[PatchProperty]
 		public Guid? Owner { get; set; }
 

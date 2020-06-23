@@ -40,7 +40,16 @@ namespace MixedRealityExtension.App
 		internal readonly AnimationManager AnimationManager;
 		private readonly AssetManager _assetManager;
 
-		private PhysicsBridge _physicsBridge;
+		internal PhysicsBridge PhysicsBridge { get; } = null;
+
+		internal bool UsePhysicsBridge
+		{
+			get
+			{
+				return PhysicsBridge != null;
+			}
+		}
+
 		private bool _shouldSendPhysicsUpdate = false;
 
 		private readonly MonoBehaviour _ownerScript;
@@ -166,7 +175,12 @@ namespace MixedRealityExtension.App
 			_assetLoader = new AssetLoader(ownerScript, this);
 			_userManager = new UserManager(this);
 			_actorManager = new ActorManager(this);
-			_physicsBridge = new PhysicsBridge();
+
+			if (Constants.UsePhysicsBridge)
+			{
+				PhysicsBridge = new PhysicsBridge();
+			}
+
 			SoundManager = new SoundManager(this);
 			AnimationManager = new AnimationManager(this);
 			_commandManager = new CommandManager(new Dictionary<Type, ICommandHandlerContext>()
@@ -194,32 +208,11 @@ namespace MixedRealityExtension.App
 #endif
 		}
 
-		private void OnRigidBodyKinematicsChanged(Guid id, bool isKinematic)
-		{
-			_physicsBridge.setKeyframed(id, isKinematic);
-		}
-
-		private void OnRigidBodyAdded(Guid id, Rigidbody rigidbody, Guid? owner)
-		{
-			bool isOwner = owner.HasValue ? owner.Value == LocalUser.Id : IsAuthoritativePeer;
-			_physicsBridge.addRigidBody(id, rigidbody, isOwner);
-		}
-
-		private void OnRigidBodyRemoved(Guid id)
-		{
-			_physicsBridge.removeRigidBody(id);
-		}
-
 		/// <inheritdoc />
 		public void Startup(string url, string sessionId, string platformId)
 		{
 			ServerUri = new Uri(url, UriKind.Absolute);
 			ServerAssetUri = new Uri(Regex.Replace(ServerUri.AbsoluteUri, "^ws(s?):", "http$1:"));
-
-			_actorManager.RigidBodyAdded += OnRigidBodyAdded;
-			_actorManager.RigidBodyRemoved += OnRigidBodyRemoved;
-			_actorManager.RigidBodyKinematicsChanged += OnRigidBodyKinematicsChanged;
-			_actorManager.RigidBodyOwnerChanged += OnRigidBodyOwnerChanged;
 
 			if (_conn == null)
 			{
@@ -246,12 +239,6 @@ namespace MixedRealityExtension.App
 				_conn = connection;
 			}
 			_conn.Open();
-		}
-
-		private void OnRigidBodyOwnerChanged(Guid id, Guid? owner)
-		{
-			bool isOwner = owner.HasValue ? owner.Value == LocalUser.Id : IsAuthoritativePeer;
-			_physicsBridge.setRigidBodyOwnership(id, isOwner);
 		}
 
 		/// <inheritdoc />
@@ -302,11 +289,6 @@ namespace MixedRealityExtension.App
 				UnityEngine.Object.Destroy(go);
 			}
 
-			_actorManager.RigidBodyAdded -= OnRigidBodyAdded;
-			_actorManager.RigidBodyRemoved -= OnRigidBodyRemoved;
-			_actorManager.RigidBodyKinematicsChanged -= OnRigidBodyKinematicsChanged;
-			_actorManager.RigidBodyOwnerChanged -= OnRigidBodyOwnerChanged;
-
 			_ownedGameObjects.Clear();
 			_actorManager.Reset();
 			AnimationManager.Reset();
@@ -321,21 +303,24 @@ namespace MixedRealityExtension.App
 		/// <inheritdoc />
 		public void FixedUpdate()
 		{
-			if (_shouldSendPhysicsUpdate)
+			if (UsePhysicsBridge)
 			{
-				SendPhysicsUpdate();
-				_shouldSendPhysicsUpdate = false;
+				if (_shouldSendPhysicsUpdate)
+				{
+					SendPhysicsUpdate();
+					_shouldSendPhysicsUpdate = false;
+				}
+
+				PhysicsBridge.FixedUpdate(SceneRoot.transform);
+
+				_shouldSendPhysicsUpdate = true;
 			}
-
-			_physicsBridge.FixedUpdate(SceneRoot.transform);
-
-			_shouldSendPhysicsUpdate = true;
 		}
 
 		private void SendPhysicsUpdate()
 		{
 			PhysicsBridgePatch physicsPatch = new PhysicsBridgePatch(InstanceId,
-				_physicsBridge.GenerateSnapshot(UnityEngine.Time.fixedTime, SceneRoot.transform));
+				PhysicsBridge.GenerateSnapshot(UnityEngine.Time.fixedTime, SceneRoot.transform));
 			// send only updates if there are any, to save band with
 			// in order to produce any updates for settled bodies this should be handled within the physics bridge
 			if (physicsPatch.DoSendThisPatch())
@@ -359,10 +344,13 @@ namespace MixedRealityExtension.App
 			// Process actor queues after connection update.
 			_actorManager.Update();
 
-			if (_shouldSendPhysicsUpdate)
+			if (UsePhysicsBridge)
 			{
-				SendPhysicsUpdate();
-				_shouldSendPhysicsUpdate = false;
+				if (_shouldSendPhysicsUpdate)
+				{
+					SendPhysicsUpdate();
+					_shouldSendPhysicsUpdate = false;
+				}
 			}
 
 			SoundManager.Update();
@@ -990,8 +978,11 @@ namespace MixedRealityExtension.App
 		[CommandHandler(typeof(PhysicsBridgeUpdate))]
 		private void OnTransformsUpdate(PhysicsBridgeUpdate payload, Action onCompleteCallback)
 		{
-			_physicsBridge.addSnapshot(payload.PhysicsBridge.Id, payload.PhysicsBridge.ToSnapshot());
-			onCompleteCallback?.Invoke();
+			if (UsePhysicsBridge)
+			{
+				PhysicsBridge.addSnapshot(payload.PhysicsBridge.Id, payload.PhysicsBridge.ToSnapshot());
+				onCompleteCallback?.Invoke();
+			}
 		}
 
 		#endregion

@@ -67,11 +67,6 @@ namespace MixedRealityExtension.Core
 			actor.Initialize(id, _app);
 			_actorMapping[id] = actor;
 
-			actor.RigidBodyAdded += OnRigidBodyAdded;
-			actor.RigidBodyRemoved += OnRigidBodyRemoved;
-			actor.RigidBodyKinematicsChanged += OnRigidBodyKinematicsChanged;
-			actor.RigidBodyOwnerChanged += OnRigidBodyOwnerChanged;
-
 			OnActorCreated?.Invoke(actor);
 			return actor;
 		}
@@ -101,25 +96,12 @@ namespace MixedRealityExtension.Core
 						_app.Logger.LogError(e.ToString());
 					}
 					// Is there any other cleanup?  Do it here.
-
-					actor.RigidBodyAdded -= OnRigidBodyAdded;
-					actor.RigidBodyRemoved -= OnRigidBodyRemoved;
-					actor.RigidBodyKinematicsChanged -= OnRigidBodyKinematicsChanged;
-					actor.RigidBodyOwnerChanged -= OnRigidBodyOwnerChanged;
 				}
 			}
 		}
 
 		internal void Reset()
 		{
-			foreach (var actor in _actorMapping.Values)
-			{
-				actor.RigidBodyAdded -= OnRigidBodyAdded;
-				actor.RigidBodyRemoved -= OnRigidBodyRemoved;
-				actor.RigidBodyKinematicsChanged -= OnRigidBodyKinematicsChanged;
-				actor.RigidBodyOwnerChanged -= OnRigidBodyOwnerChanged;
-			}
-
 			_actorMapping.Clear();
 			_actorCommandQueues.Clear();
 			_uponStable.Clear();
@@ -195,13 +177,6 @@ namespace MixedRealityExtension.Core
 			bool removed = false;
 			if (_actorMapping.ContainsKey(id))
 			{
-				var actor = _actorMapping[id];
-
-				actor.RigidBodyAdded -= OnRigidBodyAdded;
-				actor.RigidBodyRemoved -= OnRigidBodyRemoved;
-				actor.RigidBodyKinematicsChanged -= OnRigidBodyKinematicsChanged;
-				actor.RigidBodyOwnerChanged -= OnRigidBodyOwnerChanged;
-
 				_actorMapping.Remove(id);
 				removed = true;
 			}
