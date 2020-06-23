@@ -866,7 +866,7 @@ namespace MixedRealityExtension.Core
 			if (_rigidbody == null)
 			{
 				_rigidbody = gameObject.AddComponent<Rigidbody>();
-				_rigidbody.maxDepenetrationVelocity = 3.0F; // set very low de-penetration velocities
+				//_rigidbody.maxDepenetrationVelocity = 3.0F; // set very low de-penetration velocities
 				RigidBody = new RigidBody(_rigidbody, App.SceneRoot.transform);
 
 				RigidBodyAdded?.Invoke(Id, _rigidbody, Owner);

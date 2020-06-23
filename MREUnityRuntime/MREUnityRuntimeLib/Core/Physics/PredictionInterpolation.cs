@@ -329,14 +329,14 @@ namespace MixedRealityExtension.Core.Physics
 								remoteBody.transform.rotation = remoteBodyInfo.startOrientation;
 								remoteBody.velocity = remoteBodyInfo.linearVelocity;
 								remoteBody.angularVelocity = remoteBodyInfo.angularVelocity;
-//#if MRE_PHYSICS_DEBUG
+#if MRE_PHYSICS_DEBUG
 								//if (remoteBodyInfo.isKeyframed)
 								{
 									Debug.Log(" remote body velocity SWITCH to collision: " + remoteBody.velocity.ToString()
 									   + "  start position:" + remoteBody.transform.position.ToString()
 									   + " linVel:" + remoteBody.velocity + " angVel:" + remoteBody.angularVelocity);
 								}
-//#endif
+#endif
 							}
 							else
 							{

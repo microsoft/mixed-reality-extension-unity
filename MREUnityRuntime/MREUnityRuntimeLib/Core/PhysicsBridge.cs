@@ -17,7 +17,6 @@ namespace MixedRealityExtension.Core
 			RigidBody = rb;
 			Ownership = ownership;
 			lastTimeKeyFramedUpdate = 0.0f;
-			lastTimeUpdateLocalTime = 0.0f;
 			lastValidLinerVelocityOrPos.Set(0.0f, 0.0f, 0.0f);
 			lastValidAngularVelocityorAng.Set(0.0f, 0.0f, 0.0f);
 			numOfConsequentSleepingFrames = 0;
@@ -33,8 +32,6 @@ namespace MixedRealityExtension.Core
 		/// these 3 fields are used to store the actual velocities ,
 		/// IF this body is owned then here we store the transform that last time was sent
 		public float lastTimeKeyFramedUpdate;
-		/// the time stored when we got an update but on this side not on the owner side
-		public float lastTimeUpdateLocalTime;
 		public UnityEngine.Vector3 lastValidLinerVelocityOrPos;
 		public UnityEngine.Vector3 lastValidAngularVelocityorAng;
 
@@ -233,28 +230,30 @@ namespace MixedRealityExtension.Core
 					// if there is a really new update then also store the implicit velocity
 					if (rb.lastTimeKeyFramedUpdate < timeOfSnapshot)
 					{
-						// <todo> for long running times this could be a problem 
-						float invUpdateDT = 1.0f / Math.Max( (1.0F/60.0F), (timeOfSnapshot - rb.lastTimeKeyFramedUpdate));
+						// <todo> for long running times this could be a problem
+						// the minimal step is the half step size, even with jitter buffer
+						float invUpdateDT = 1.0f / Math.Max( (timeInfo.halfDT), (timeOfSnapshot - rb.lastTimeKeyFramedUpdate));
 						rb.lastValidLinerVelocityOrPos = (keyFramedPos - rb.RigidBody.transform.position) * invUpdateDT;
 						// transform to radians and take the angular velocity 
 						UnityEngine.Vector3 eulerAngles = (
-						      UnityEngine.Quaternion.Inverse(rb.RigidBody.transform.rotation)
-						    * keyFramedOrientation).eulerAngles;
+							  UnityEngine.Quaternion.Inverse(rb.RigidBody.transform.rotation)
+							* keyFramedOrientation).eulerAngles;
 						UnityEngine.Vector3 radianAngles = UtilMethods.TransformEulerAnglesToRadians(eulerAngles);
 						rb.lastValidAngularVelocityorAng = radianAngles * invUpdateDT;
 
+#if MRE_PHYSICS_DEBUG
 						// test the source of large velocities
-						if (rb.lastValidLinerVelocityOrPos.sqrMagnitude > _maxEstimatedLinearVelocity* _maxEstimatedLinearVelocity)
+						if (rb.lastValidLinerVelocityOrPos.sqrMagnitude > _maxEstimatedLinearVelocity * _maxEstimatedLinearVelocity)
 						{
 							// limited debug version
 							Debug.Log(" ACTIVE SPEED LIMIT TRAP RB: " //+ rb.Id.ToString() + " got update lin vel:"
 								+ rb.lastValidLinerVelocityOrPos + " ang vel:" + rb.lastValidAngularVelocityorAng
 								+ " incUpdateDt:" + invUpdateDT + " time:" + timeOfSnapshot
 								+ " newR:" + rb.lastTimeKeyFramedUpdate
-								+ " lastDTUpdate:" + (UnityEngine.Time.time-rb.lastTimeUpdateLocalTime)
 								+ " hasupdate:" + snapshot.RigidBodies.Values[index].HasUpdate
 								+  " DangE:" + eulerAngles + " DangR:" + radianAngles );
 						}
+#endif
 
 						// cap the velocities
 						rb.lastValidLinerVelocityOrPos = UnityEngine.Vector3.ClampMagnitude(
@@ -266,10 +265,6 @@ namespace MixedRealityExtension.Core
 						{
 							rb.lastValidLinerVelocityOrPos.Set(0.0F, 0.0F, 0.0F);
 							rb.lastValidAngularVelocityorAng.Set(0.0F, 0.0F, 0.0F);
-						}
-						if (snapshot.RigidBodies.Values[index].HasUpdate)
-						{
-							rb.lastTimeUpdateLocalTime = UnityEngine.Time.time;
 						}
 #if MRE_PHYSICS_DEBUG
 						if (true)
