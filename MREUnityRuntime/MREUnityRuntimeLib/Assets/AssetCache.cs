@@ -83,7 +83,10 @@ namespace MixedRealityExtension.Assets
 
 		protected virtual void Start()
 		{
-			CacheRootGO = SerializedCacheRoot;
+			if (SerializedCacheRoot != null)
+			{
+				CacheRootGO = SerializedCacheRoot;
+			}
 			Application.lowMemory += CleanUnusedResources;
 		}
 
