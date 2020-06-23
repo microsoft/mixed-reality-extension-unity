@@ -349,10 +349,10 @@ namespace MixedRealityExtension.Core
 
 			// these constants define when a body is considered to be sleeping
 			const float globalToleranceMultipier = 1.0F;
-			const float maxSleepingSqrtLinearVelocity = 0.05F * globalToleranceMultipier;
-			const float maxSleepingSqrtAngularVelocity = 0.05F * globalToleranceMultipier;
-			const float maxSleepingSqrtPositionDiff = 0.01F * globalToleranceMultipier;
-			const float maxSleepingSqrtAngularEulerDiff = 0.05F * globalToleranceMultipier;
+			const float maxSleepingSqrtLinearVelocity = 0.1F * globalToleranceMultipier;
+			const float maxSleepingSqrtAngularVelocity = 0.1F * globalToleranceMultipier;
+			const float maxSleepingSqrtPositionDiff = 0.02F * globalToleranceMultipier;
+			const float maxSleepingSqrtAngularEulerDiff = 0.15F * globalToleranceMultipier;
 			int numSleepingBodies = 0;
 			int numOwnedBodies = 0;
 
@@ -422,11 +422,6 @@ namespace MixedRealityExtension.Core
 #endif
 			}
 
-#if MRE_PHYSICS_DEBUG
-				Debug.Log(" Client:" + " Total number of sleeping bodies: " + numSleepingBodies + " total RBs" + _rigidBodies.Count
-			     + " num owned " + numOwnedBodies + " num sent transforms " + transforms.Count);
-#endif
-
 			Snapshot.SnapshotFlags snapshotFlag = Snapshot.SnapshotFlags.NoFlags;
 			// check if we should restart the jitter buffer 
 			if ( (_lastNumberOfTransformsToBeSent == 0 && numOwnedBodies != 0)
@@ -438,6 +433,13 @@ namespace MixedRealityExtension.Core
 			_lastNumberOfTransformsToBeSent = numOwnedBodies;
 
 			var ret = new Snapshot(time, transforms, snapshotFlag);
+
+#if MRE_PHYSICS_DEBUG
+			Debug.Log(" Client:" + " Total number of sleeping bodies: " + numSleepingBodies + " total RBs" + _rigidBodies.Count
+			 + " num owned " + numOwnedBodies + " num sent transforms " + transforms.Count
+			 + " send:"  +  ret.DoSendThisSnapshot() );
+#endif
+
 			return ret;
 		}
 
