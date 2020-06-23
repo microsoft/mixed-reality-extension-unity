@@ -230,15 +230,66 @@ namespace MixedRealityExtension.Core
 					// if there is a really new update then also store the implicit velocity
 					if (rb.lastTimeKeyFramedUpdate < timeOfSnapshot)
 					{
-						// <todo> for long running times this could be a problem 
-						float invUpdateDT = 1.0f / (timeOfSnapshot - rb.lastTimeKeyFramedUpdate);
+						// <todo> for long running times the time difference could be a problem
+						// the minimal step is the half step size, even with jitter buffer
+						float invUpdateDT = 1.0f / Math.Max( (timeInfo.halfDT), (timeOfSnapshot - rb.lastTimeKeyFramedUpdate));
+
 						rb.lastValidLinerVelocityOrPos = (keyFramedPos - rb.RigidBody.transform.position) * invUpdateDT;
 						// transform to radians and take the angular velocity 
 						UnityEngine.Vector3 eulerAngles = (
-						      UnityEngine.Quaternion.Inverse(rb.RigidBody.transform.rotation)
-						    * keyFramedOrientation).eulerAngles;
+							  UnityEngine.Quaternion.Inverse(rb.RigidBody.transform.rotation)
+							* keyFramedOrientation).eulerAngles;
 						UnityEngine.Vector3 radianAngles = UtilMethods.TransformEulerAnglesToRadians(eulerAngles);
 						rb.lastValidAngularVelocityorAng = radianAngles * invUpdateDT;
+
+#if MRE_PHYSICS_DEBUG
+						// test the source of large velocities
+						if (rb.lastValidLinerVelocityOrPos.sqrMagnitude > _maxEstimatedLinearVelocity * _maxEstimatedLinearVelocity)
+						{
+							// limited debug version
+							Debug.Log(" ACTIVE SPEED LIMIT TRAP RB: " //+ rb.Id.ToString() + " got update lin vel:"
+								+ rb.lastValidLinerVelocityOrPos + " ang vel:" + rb.lastValidAngularVelocityorAng
+								+ " incUpdateDt:" + invUpdateDT + " time:" + timeOfSnapshot
+								+ " newR:" + rb.lastTimeKeyFramedUpdate
+								+ " hasupdate:" + snapshot.RigidBodies.Values[index].HasUpdate
+								+  " DangE:" + eulerAngles + " DangR:" + radianAngles );
+						}
+#endif
+
+						// cap the velocities
+						rb.lastValidLinerVelocityOrPos = UnityEngine.Vector3.ClampMagnitude(
+							rb.lastValidLinerVelocityOrPos, _maxEstimatedLinearVelocity);
+						rb.lastValidAngularVelocityorAng = UnityEngine.Vector3.ClampMagnitude(
+							rb.lastValidAngularVelocityorAng, _maxEstimatedAngularVelocity);
+						// if body is sleeping then all velocities are zero
+						if (snapshot.RigidBodies.Values[index].motionType == Patching.Types.MotionType.Sleeping )
+						{
+							rb.lastValidLinerVelocityOrPos.Set(0.0F, 0.0F, 0.0F);
+							rb.lastValidAngularVelocityorAng.Set(0.0F, 0.0F, 0.0F);
+						}
+#if MRE_PHYSICS_DEBUG
+						if (true)
+						{
+						    // limited debug version
+							Debug.Log(" Remote body: " + rb.Id.ToString() + " got update lin vel:"
+								+ rb.lastValidLinerVelocityOrPos + " ang vel:" + rb.lastValidAngularVelocityorAng
+								+ " incUpdateDt:" + invUpdateDT + " time:" + timeOfSnapshot + " newR:" + rb.lastTimeKeyFramedUpdate);						    
+						}
+						else
+						{
+							Debug.Log(" Remote body: " + rb.Id.ToString() + " got update lin vel:"
+								+ rb.lastValidLinerVelocityOrPos + " ang vel:" + rb.lastValidAngularVelocityorAng
+								//+ " DangE:" + eulerAngles + " DangR:" + radianAngles
+								+ " time:" + timeOfSnapshot + " newp:" + keyFramedPos
+								+ " newR:" + keyFramedOrientation
+								+ " incUpdateDt:" + invUpdateDT
+								+ " oldP:" + rb.RigidBody.transform.position
+								+ " oldR:" + rb.RigidBody.transform.rotation
+								+ " OriginalRot:" + transform.Rotation
+								+ " keyF:" + rb.RigidBody.isKinematic
+								+ " KF:" + rb.IsKeyframed);
+						}
+#endif
 						// cap the velocities
 						rb.lastValidLinerVelocityOrPos = UnityEngine.Vector3.ClampMagnitude(
 							rb.lastValidLinerVelocityOrPos, _maxEstimatedLinearVelocity);
@@ -297,11 +348,11 @@ namespace MixedRealityExtension.Core
 			// and generate update packet/snapshot
 
 			// these constants define when a body is considered to be sleeping
-			const float globalToleranceMultipier = 10.0F;
-			const float maxSleepingSqrtLinearVelocity = 0.05F * globalToleranceMultipier;
-			const float maxSleepingSqrtAngularVelocity = 0.05F * globalToleranceMultipier;
-			const float maxSleepingSqrtPositionDiff = 0.01F * globalToleranceMultipier;
-			const float maxSleepingSqrtAngularEulerDiff = 0.05F * globalToleranceMultipier;
+			const float globalToleranceMultipier = 1.0F;
+			const float maxSleepingSqrtLinearVelocity = 0.1F * globalToleranceMultipier;
+			const float maxSleepingSqrtAngularVelocity = 0.1F * globalToleranceMultipier;
+			const float maxSleepingSqrtPositionDiff = 0.02F * globalToleranceMultipier;
+			const float maxSleepingSqrtAngularEulerDiff = 0.15F * globalToleranceMultipier;
 			int numSleepingBodies = 0;
 			int numOwnedBodies = 0;
 
@@ -371,11 +422,6 @@ namespace MixedRealityExtension.Core
 #endif
 			}
 
-#if MRE_PHYSICS_DEBUG
-				Debug.Log(" Client:" + " Total number of sleeping bodies: " + numSleepingBodies + " total RBs" + _rigidBodies.Count
-			     + " num owned " + numOwnedBodies + " num sent transforms " + transforms.Count);
-#endif
-
 			Snapshot.SnapshotFlags snapshotFlag = Snapshot.SnapshotFlags.NoFlags;
 			// check if we should restart the jitter buffer 
 			if ( (_lastNumberOfTransformsToBeSent == 0 && numOwnedBodies != 0)
@@ -387,6 +433,13 @@ namespace MixedRealityExtension.Core
 			_lastNumberOfTransformsToBeSent = numOwnedBodies;
 
 			var ret = new Snapshot(time, transforms, snapshotFlag);
+
+#if MRE_PHYSICS_DEBUG
+			Debug.Log(" Client:" + " Total number of sleeping bodies: " + numSleepingBodies + " total RBs" + _rigidBodies.Count
+			 + " num owned " + numOwnedBodies + " num sent transforms " + transforms.Count
+			 + " send:"  +  ret.DoSendThisSnapshot() );
+#endif
+
 			return ret;
 		}
 
