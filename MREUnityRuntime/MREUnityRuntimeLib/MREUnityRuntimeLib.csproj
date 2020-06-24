@@ -310,6 +310,7 @@
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>
+	  copy "$(ProjectDir)\link.xml" "$(ProjectDir)\..\bin\$(Configuration)\link.xml"
       cd $(ProjectDir)\..\
       if not exist "$(ProjectDir)\..\MREUnityProjects.xml" copy "$(ProjectDir)\..\MREUnityProjects.default.xml" "$(ProjectDir)\..\MREUnityProjects.xml"
       PostBuildTool.exe $(ConfigurationName)
