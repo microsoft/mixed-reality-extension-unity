@@ -44,7 +44,7 @@ namespace MixedRealityExtension.Core
 
 		/// the sleeping condition needs to be fulfilled for a couple of frames such that we mark this body as sleeping
 		/// this sill be capped at the maximum to avoid overflow
-		public int numOfConsequentSleepingFrames;
+		public short numOfConsequentSleepingFrames;
 		/// when transmitting the transforms we store if this body is sleeping
 		public Patching.Types.MotionType sendMotionType;
 	}
@@ -346,13 +346,17 @@ namespace MixedRealityExtension.Core
 		{
 			// collect transforms from owned rigid bodies
 			// and generate update packet/snapshot
-
+			
 			// these constants define when a body is considered to be sleeping
 			const float globalToleranceMultipier = 1.0F;
 			const float maxSleepingSqrtLinearVelocity = 0.1F * globalToleranceMultipier;
 			const float maxSleepingSqrtAngularVelocity = 0.1F * globalToleranceMultipier;
 			const float maxSleepingSqrtPositionDiff = 0.02F * globalToleranceMultipier;
 			const float maxSleepingSqrtAngularEulerDiff = 0.15F * globalToleranceMultipier;
+
+			const short limitNoUpdateForSleepingBodies = 500;
+			const short numConsecutiveSleepingTrueConditionForNoUpdate = 5;
+
 			int numSleepingBodies = 0;
 			int numOwnedBodies = 0;
 
@@ -389,23 +393,33 @@ namespace MixedRealityExtension.Core
 				if (isBodySleepingInThisFrame)
 				{
 					rb.numOfConsequentSleepingFrames++;
-					rb.numOfConsequentSleepingFrames = (rb.numOfConsequentSleepingFrames > 50) ? 50 : rb.numOfConsequentSleepingFrames;
+					rb.numOfConsequentSleepingFrames = (rb.numOfConsequentSleepingFrames > (short)limitNoUpdateForSleepingBodies) ?
+						(short)limitNoUpdateForSleepingBodies : rb.numOfConsequentSleepingFrames;
 				}
 				else
 				{
 					rb.numOfConsequentSleepingFrames = 0;
 				}
+
 				// this is the real condition to put a body to sleep
-				bool isBodySleeping = (rb.numOfConsequentSleepingFrames > 5);
+				bool isBodySleeping = (rb.numOfConsequentSleepingFrames > numConsecutiveSleepingTrueConditionForNoUpdate);
 
 				// test if this is sleeping, and when this was newly added then 
-				if (rb.lastTimeKeyFramedUpdate > 0.001F && isBodySleeping && rb.sendMotionType == Patching.Types.MotionType.Sleeping)
+				if (rb.lastTimeKeyFramedUpdate > 0.001F && isBodySleeping &&
+					rb.sendMotionType == Patching.Types.MotionType.Sleeping && 
+					rb.numOfConsequentSleepingFrames < limitNoUpdateForSleepingBodies)
 				{
 					// condition for velocity and positions are triggered and we already told the consumers to make body sleep, so just skip this update
 					numSleepingBodies++;
-					continue;
+				    continue;
 				}
+
 				mType = (isBodySleeping) ? (Patching.Types.MotionType.Sleeping) : mType;
+				// here we handle the case when after of 300 frames with no update we should send one update at least
+				if (rb.numOfConsequentSleepingFrames >= limitNoUpdateForSleepingBodies)
+				{
+					rb.numOfConsequentSleepingFrames = numConsecutiveSleepingTrueConditionForNoUpdate + 1;
+				}
 
 				// store the last update informations
 				rb.sendMotionType = mType;
