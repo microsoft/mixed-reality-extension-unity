@@ -39,19 +39,6 @@ namespace MixedRealityExtension.App
 		private readonly CommandManager _commandManager;
 		internal readonly AnimationManager AnimationManager;
 		private readonly AssetManager _assetManager;
-
-		internal PhysicsBridge PhysicsBridge { get; } = null;
-
-		internal bool UsePhysicsBridge
-		{
-			get
-			{
-				return PhysicsBridge != null;
-			}
-		}
-
-		private bool _shouldSendPhysicsUpdate = false;
-
 		private readonly MonoBehaviour _ownerScript;
 
 		private IConnectionInternal _conn;
@@ -59,6 +46,8 @@ namespace MixedRealityExtension.App
 		private ISet<Guid> _interactingUserIds = new HashSet<Guid>();
 		private IList<Action> _executionProtocolActionQueue = new List<Action>();
 		private IList<GameObject> _ownedGameObjects = new List<GameObject>();
+
+		private bool _shouldSendPhysicsUpdate = false;
 
 		private enum AppState
 		{
@@ -159,6 +148,10 @@ namespace MixedRealityExtension.App
 		internal AssetLoader AssetLoader => _assetLoader;
 
 		public AssetManager AssetManager => _assetManager;
+
+		internal PhysicsBridge PhysicsBridge { get; } = null;
+
+		internal bool UsePhysicsBridge => PhysicsBridge != null;
 
 		#endregion
 
@@ -292,6 +285,7 @@ namespace MixedRealityExtension.App
 			_ownedGameObjects.Clear();
 			_actorManager.Reset();
 			AnimationManager.Reset();
+			PhysicsBridge.Reset();
 
 			foreach (Guid id in _assetLoader.ActiveContainers)
 			{
@@ -319,7 +313,12 @@ namespace MixedRealityExtension.App
 
 		private void SendPhysicsUpdate()
 		{
-			PhysicsBridgePatch physicsPatch = new PhysicsBridgePatch(InstanceId,
+			if (LocalUser == null)
+			{
+				return;
+			}
+
+			PhysicsBridgePatch physicsPatch = new PhysicsBridgePatch(LocalUser.Id,
 				PhysicsBridge.GenerateSnapshot(UnityEngine.Time.fixedTime, SceneRoot.transform));
 			// send only updates if there are any, to save band with
 			// in order to produce any updates for settled bodies this should be handled within the physics bridge

@@ -881,7 +881,19 @@ namespace MixedRealityExtension.Core
 
 				if (App.UsePhysicsBridge)
 				{
-					App.PhysicsBridge.addRigidBody(Id, _rigidbody, IsSimulatedByLocalUser);
+					// If owner is not specified, set ownership for default owner
+					if (!Owner.HasValue && IsSimulatedByLocalUser)
+					{
+						Owner = App.LocalUser.Id;
+						_takeOwnership = true;
+					}
+
+					// Add rigid body to physics bridge if source is known.
+					// Otherwise, do it once source is provided.
+					if (Owner.HasValue)
+					{
+						App.PhysicsBridge.addRigidBody(Id, _rigidbody, IsSimulatedByLocalUser, Owner.Value);
+					}
 				}
 
 				var behaviorComponent = GetActorComponent<BehaviorComponent>();
@@ -1042,9 +1054,20 @@ namespace MixedRealityExtension.Core
 			{
 				if (ownerOrNull.HasValue)
 				{
+					bool isInitialization = !Owner.HasValue;
 					Owner = ownerOrNull;
 
-					App.PhysicsBridge.setRigidBodyOwnership(Id, IsSimulatedByLocalUser);
+					if (RigidBody != null)
+					{
+						if (!isInitialization)
+						{
+							App.PhysicsBridge.setRigidBodyOwnership(Id, IsSimulatedByLocalUser, ownerOrNull.Value);
+						}
+						else if (!IsSimulatedByLocalUser)
+						{
+							App.PhysicsBridge.addRigidBody(Id, _rigidbody, IsSimulatedByLocalUser, ownerOrNull.Value);
+						}
+					}
 				}
 			}
 		}

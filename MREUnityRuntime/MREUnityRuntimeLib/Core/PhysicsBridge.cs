@@ -54,11 +54,10 @@ namespace MixedRealityExtension.Core
 	/// </summary>
 	public class PhysicsBridge
 	{
-
-		private int _countOwnedTransforms = 0;
-		private int _countStreamedTransforms = 0;
 		/// stores the number of transforms that should be have been sent (without cap) to all consumers
 		private int _lastNumberOfTransformsToBeSent = 0;
+
+		bool _allOwnedBodiesAreSleeping = true;
 
 		private SortedList<Guid, RigidBodyPhysicsBridgeInfo> _rigidBodies = new SortedList<Guid, RigidBodyPhysicsBridgeInfo>();
 
@@ -78,7 +77,7 @@ namespace MixedRealityExtension.Core
 
 		#region Rigid Body Management
 
-		public void addRigidBody(Guid id, UnityEngine.Rigidbody rigidbody, bool ownership)
+		public void addRigidBody(Guid id, UnityEngine.Rigidbody rigidbody, bool ownership, Guid source)
 		{
 			UnityEngine.Debug.Assert(!_rigidBodies.ContainsKey(id), "PhysicsBridge already has an entry for rigid body with specified ID.");
 
@@ -87,36 +86,35 @@ namespace MixedRealityExtension.Core
 			if (ownership)
 			{
 				rigidbody.isKinematic = false;
-				_countOwnedTransforms++;
 			}
 			else
 			{
 				rigidbody.isKinematic = true;
-				_countStreamedTransforms++;
+
+				_snapshotManager.RegisterOrUpateRigidBody(id, source);
 			}
 		}
 
 		public void removeRigidBody(Guid id)
 		{
+			if (!_rigidBodies.ContainsKey(id))
+			{
+				return;
+			}
+
 			UnityEngine.Debug.Assert(_rigidBodies.ContainsKey(id), "PhysicsBridge don't have rigid body with specified ID.");
 
 			var rb = _rigidBodies[id];
 
-			if (rb.Ownership)
+			if (!rb.Ownership)
 			{
-				_countOwnedTransforms--;
-			}
-			else
-			{
-				_countStreamedTransforms--;
-				//<todo> remove also from the last Jitter buffer for sleeping bodies (we should just set the motion type to dynamic)
-				_snapshotManager.DelteBodyFromBuffer(id);
+				_snapshotManager.UnregisterRigidBody(id);
 			}
 
 			_rigidBodies.Remove(id);
 		}
 
-		public void setRigidBodyOwnership(Guid id, bool ownership)
+		public void setRigidBodyOwnership(Guid id, bool ownership, Guid sourceId)
 		{
 			if (!_rigidBodies.ContainsKey(id))
 			{
@@ -128,18 +126,13 @@ namespace MixedRealityExtension.Core
 
 			if (ownership)
 			{
-				_countOwnedTransforms++;
-				_countStreamedTransforms--;
+				_snapshotManager.UnregisterRigidBody(id);
 			}
 			else
 			{
-				_countOwnedTransforms--;
-				_countStreamedTransforms++;
+				_snapshotManager.RegisterOrUpateRigidBody(id, sourceId);
 			}
 
-			//<todo> this could be done more efficiently
-			_snapshotManager.DelteBodyFromBuffer(id);
-			
 			_rigidBodies[id].Ownership = ownership;
 		}
 
@@ -187,7 +180,8 @@ namespace MixedRealityExtension.Core
 			_predictor.StartBodyPredicitonForNextFrame();
 
 			int index = 0;
-			MultiSourceCombinedSnapshot snapshot = _snapshotManager.GetNextSnapshot(timeInfo.DT);
+			MultiSourceCombinedSnapshot snapshot;
+			_snapshotManager.Step(timeInfo.DT, out snapshot);
 
 			foreach (var rb in _rigidBodies.Values)
 			{
@@ -336,6 +330,11 @@ namespace MixedRealityExtension.Core
 
 		}
 
+		internal void Reset()
+		{
+			//throw new NotImplementedException();
+		}
+
 		/// <summary>
 		/// Generate rigid body transform snapshot for owned transforms with specified timestamp.
 		/// </summary>
@@ -443,7 +442,15 @@ namespace MixedRealityExtension.Core
 			{
 				snapshotFlag = Snapshot.SnapshotFlags.ResetJitterBuffer;
 			}
-			
+
+			bool allBodiesAreSleepingNew = numOwnedBodies == numSleepingBodies;
+			if (allBodiesAreSleepingNew != _allOwnedBodiesAreSleeping)
+			{
+				_allOwnedBodiesAreSleeping = allBodiesAreSleepingNew;
+
+				snapshotFlag = Snapshot.SnapshotFlags.ResetJitterBuffer;
+			}
+
 			_lastNumberOfTransformsToBeSent = numOwnedBodies;
 
 			var ret = new Snapshot(time, transforms, snapshotFlag);
