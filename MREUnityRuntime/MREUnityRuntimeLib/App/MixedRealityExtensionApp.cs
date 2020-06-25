@@ -220,10 +220,19 @@ namespace MixedRealityExtension.App
 		}
 
 		/// <inheritdoc />
-		public void Startup(string url, string sessionId, string platformId)
+		public async void Startup(string url, string sessionId, string platformId)
 		{
 			ServerUri = new Uri(url, UriKind.Absolute);
 			ServerAssetUri = new Uri(Regex.Replace(ServerUri.AbsoluteUri, "^ws(s?):", "http$1:"));
+
+			// download manifest
+			var manifestUri = new Uri(ServerAssetUri, "./manifest.json");
+			var manifest = await AppManifest.DownloadManifest(manifestUri);
+
+			// verify permissions
+			var grantedPerms = await MREAPI.AppsAPI.PermissionManager.PromptForPermissions(
+				ServerUri.ToString(),
+				manifest);
 
 			if (UsePhysicsBridge)
 			{
