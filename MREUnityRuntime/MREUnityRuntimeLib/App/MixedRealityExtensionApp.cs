@@ -252,7 +252,7 @@ namespace MixedRealityExtension.App
 			// get permission to run from host app
 			var grantedPerms = await MREAPI.AppsAPI.PermissionManager.PromptForPermissions(
 				appLocation: ServerUri,
-				permissionsNeeded: new HashSet<Permissions>(manifest.Permissions) { Permissions.Execution },
+				permissionsNeeded: new HashSet<Permissions>(manifest.Permissions ?? new Permissions[0]) { Permissions.Execution },
 				permissionsWanted: manifest.OptionalPermissions,
 				permissionFlagsNeeded: neededFlags,
 				permissionFlagsWanted: wantedFlags,
@@ -443,6 +443,13 @@ namespace MixedRealityExtension.App
 		{
 			void PerformUserJoin()
 			{
+				// only join the user if required
+				if (!GrantedPermissions.HasFlag(Permissions.UserInteraction)
+					&& !GrantedPermissions.HasFlag(Permissions.UserTracking))
+				{
+					return;
+				}
+
 				var user = userGO.GetComponents<User>()
 					.FirstOrDefault(_user => _user.AppInstanceId == this.InstanceId);
 
@@ -465,18 +472,13 @@ namespace MixedRealityExtension.App
 				OnUserJoined?.Invoke(userInfo);
 			}
 
-			// only join the user if required
-			if (GrantedPermissions.HasFlag(Permissions.UserInteraction)
-				|| GrantedPermissions.HasFlag(Permissions.UserTracking))
+			if (Protocol is Execution)
 			{
-				if (Protocol is Execution)
-				{
-					PerformUserJoin();
-				}
-				else
-				{
-					_executionProtocolActionQueue.Add(() => PerformUserJoin());
-				}
+				PerformUserJoin();
+			}
+			else
+			{
+				_executionProtocolActionQueue.Add(() => PerformUserJoin());
 			}
 		}
 

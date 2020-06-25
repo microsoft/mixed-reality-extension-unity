@@ -111,7 +111,7 @@
     <Compile Include="Behaviors\Contexts\PenBehaviorContext.cs" />
     <Compile Include="Behaviors\Contexts\PhysicalToolBehaviorContext.cs" />
     <Compile Include="Behaviors\Contexts\TargetBehaviorContext.cs" />
-    <Compile Include="Core\AppManifest.cs" />
+    <Compile Include="App\AppManifest.cs" />
     <Compile Include="Core\CollisionLayers.cs" />
     <Compile Include="Assets\AssetManager.cs" />
     <Compile Include="Assets\AssetGroup.cs" />
@@ -138,6 +138,7 @@
     <Compile Include="Core\VideoStreamDescription.cs" />
     <Compile Include="Factories\DefaultMaterialPatcher.cs" />
     <Compile Include="Factories\SimpleLayerApplicator.cs" />
+    <Compile Include="Factories\SimplePermissionsManager.cs" />
     <Compile Include="Messaging\Events\Types\ActorCorrectionEvent.cs" />
     <Compile Include="Messaging\Events\Types\ColliderEvent.cs" />
     <Compile Include="Messaging\Events\Types\PhysicsBridgeUpdated.cs" />
