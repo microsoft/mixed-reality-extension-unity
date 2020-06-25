@@ -502,7 +502,7 @@ namespace MixedRealityExtension.Core
 			if (generateAll)
 			{
 				var rigidBody = PatchingUtilMethods.GeneratePatch(RigidBody, (Rigidbody)null,
-					                                              App.SceneRoot.transform, !App.UsePhysicsBridge);
+					                                             App.SceneRoot.transform, !App.UsePhysicsBridge);
 
 				ColliderPatch collider = null;
 				_collider = gameObject.GetComponent<UnityCollider>();
@@ -1590,7 +1590,7 @@ namespace MixedRealityExtension.Core
 			{
 				// convert to a RigidBody and build a patch from the old one to this one.
 				var rigidBodyPatch = PatchingUtilMethods.GeneratePatch(RigidBody, _rigidbody, App.SceneRoot.transform,
-					                                                    !App.UsePhysicsBridge);
+					                                                   !App.UsePhysicsBridge);
 				if (rigidBodyPatch != null && rigidBodyPatch.IsPatched())
 				{
 					actorPatch.RigidBody = rigidBodyPatch;
