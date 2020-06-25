@@ -212,9 +212,8 @@ namespace MixedRealityExtension.Patching
 			{
 				// Do not include Position or Rotation in the patch.
 
-				// add velocities only if this is requested
-				Velocity = ((addVelocities) ? GeneratePatch(_old.Velocity, sceneRoot.InverseTransformDirection(_new.velocity)) : null),
-				AngularVelocity = ((addVelocities) ? GeneratePatch(_old.AngularVelocity, sceneRoot.InverseTransformDirection(_new.angularVelocity)) : null),
+				//Velocity = GeneratePatch(_old.Velocity, sceneRoot.InverseTransformDirection(_new.velocity)),
+				//AngularVelocity = GeneratePatch(_old.AngularVelocity, sceneRoot.InverseTransformDirection(_new.angularVelocity)),
 
 				CollisionDetectionMode = GeneratePatch(
 					_old.CollisionDetectionMode,
