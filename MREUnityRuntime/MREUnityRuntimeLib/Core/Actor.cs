@@ -777,7 +777,8 @@ namespace MixedRealityExtension.Core
 				DetachFromAttachPointParent();
 
 				IUserInfo userInfo = MREAPI.AppsAPI.UserInfoProvider.GetUserInfo(App, Attachment.UserId);
-				if (userInfo != null)
+				if (userInfo != null &&
+					(Attachment.UserId != App.LocalUser?.Id || App.GrantedPermissions.HasFlag(Permissions.UserInteraction)))
 				{
 					userInfo.BeforeAvatarDestroyed -= UserInfo_BeforeAvatarDestroyed;
 

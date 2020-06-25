@@ -1,8 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 using MixedRealityExtension.Core;
-// Copyright (c) Microsoft Corporation. All rights reserved.
-// Licensed under the MIT License.
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -16,22 +15,32 @@ namespace MixedRealityExtension.PluginInterfaces
 		/// <summary>
 		/// Request permissions from the user, and return a Task that resolves with those permissions the user has granted.
 		/// </summary>
-		/// <param name="appOrigin">The origin of the MRE requesting permission.</param>
-		/// <param name="appManifest">The full app manifest, which includes required and optional permissions.</param>
+		/// <param name="appLocation">The URI of the MRE requesting permission.</param>
+		/// <param name="permissionsNeeded">An enumerable of the permissions required for the MRE to run.</param>
+		/// <param name="permissionsWanted">An enumerable of the permissions the MRE can use, but are not required.</param>
+		/// <param name="permissionFlagsNeeded">Same as permissionsNeeded, but in a bitfield.</param>
+		/// <param name="permissionFlagsWanted">Same as permissionsWanted, but in a bitfield.</param>
+		/// <param name="appManifest">The full app manifest, which includes enumerations of the required and optional permissions.</param>
 		/// <returns></returns>
-		Task<IEnumerable<Permissions>> PromptForPermissions(
-			string appOrigin,
+		Task<Permissions> PromptForPermissions(
+			Uri appLocation,
+			IEnumerable<Permissions> permissionsNeeded,
+			IEnumerable<Permissions> permissionsWanted,
+			Permissions permissionFlagsNeeded,
+			Permissions permissionFlagsWanted,
 			AppManifest appManifest);
 
-		/// <param name="appOrigin">The origin of the MRE that you want to know about.</param>
-		/// <returns>A list of the currently granted permissions for the given MRE.</returns>
-		IEnumerable<Permissions> CurrentPermissions(string appOrigin);
+		/// <summary>
+		/// Get the currently granted permissions for the MRE origin without requesting new ones.
+		/// </summary>
+		/// <param name="appLocation">The URI of the MRE that you want to know about.</param>
+		/// <returns>A bitfield of the currently granted permissions for the given MRE.</returns>
+		Permissions CurrentPermissions(Uri appLocation);
 
 		/// <summary>
-		/// Same as [[CurrentPermissions]], but using bitfields for permissions instead of enumerables.
+		/// Event that is fired when any permissions are edited. Receives as arguments the app location URI, the old
+		/// permission set, and the new permission set.
 		/// </summary>
-		/// <param name="appOrigin">The origin of the MRE that you want to know about.</param>
-		/// <returns>A bitfield of the currently granted permissions for the given MRE.</returns>
-		Permissions CurrentPermissionFlags(string appOrigin);
+		event Action<Uri, Permissions, Permissions> OnPermissionGrantsChanged;
 	}
 }
