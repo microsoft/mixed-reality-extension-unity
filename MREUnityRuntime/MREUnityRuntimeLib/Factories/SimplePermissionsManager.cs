@@ -30,7 +30,7 @@ namespace MixedRealityExtension.Factories
 		}
 
 		/// <inheritdoc/>
-		public event Action<Uri, Permissions, Permissions> OnPermissionGrantsChanged;
+		public event Action<Uri, Permissions, Permissions> OnPermissionDecisionsChanged;
 
 		/// <inheritdoc/>
 		public Task<Permissions> PromptForPermissions(

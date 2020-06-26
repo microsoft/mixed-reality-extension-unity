@@ -261,7 +261,7 @@ namespace MixedRealityExtension.App
 			// only use permissions that are requested, even if the user offers more
 			GrantedPermissions = grantedPerms & (neededFlags | wantedFlags);
 
-			MREAPI.AppsAPI.PermissionManager.OnPermissionGrantsChanged += OnPermissionsUpdated;
+			MREAPI.AppsAPI.PermissionManager.OnPermissionDecisionsChanged += OnPermissionsUpdated;
 
 			if (!grantedPerms.HasFlag(Permissions.Execution))
 			{
@@ -345,7 +345,7 @@ namespace MixedRealityExtension.App
 			Disconnect();
 			FreeResources();
 
-			MREAPI.AppsAPI.PermissionManager.OnPermissionGrantsChanged -= OnPermissionsUpdated;
+			MREAPI.AppsAPI.PermissionManager.OnPermissionDecisionsChanged -= OnPermissionsUpdated;
 
 			if (_appState != AppState.Stopped)
 			{

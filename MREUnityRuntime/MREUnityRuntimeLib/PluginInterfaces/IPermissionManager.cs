@@ -41,6 +41,6 @@ namespace MixedRealityExtension.PluginInterfaces
 		/// Event that is fired when any permissions are edited. Receives as arguments the app location URI, the old
 		/// permission set, and the new permission set.
 		/// </summary>
-		event Action<Uri, Permissions, Permissions> OnPermissionGrantsChanged;
+		event Action<Uri, Permissions, Permissions> OnPermissionDecisionsChanged;
 	}
 }
