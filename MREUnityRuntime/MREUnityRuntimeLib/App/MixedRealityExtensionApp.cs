@@ -982,7 +982,7 @@ namespace MixedRealityExtension.App
 		{
 			if (UsePhysicsBridge)
 			{
-				PhysicsBridge.addSnapshot(payload.PhysicsBridge.Id, payload.PhysicsBridge.ToSnapshot());
+				PhysicsBridge.addSnapshot(payload.PhysicsBridgePatchContent.Id, payload.PhysicsBridgePatchContent.ToSnapshot());
 				onCompleteCallback?.Invoke();
 			}
 		}

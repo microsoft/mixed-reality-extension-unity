@@ -140,9 +140,15 @@ namespace MixedRealityExtension.Patching.Types
 		/// </summary>
 		public Guid Id { get; set; }
 
+		public int TransformCount { get; set; }
+
+		public ActorTransformPatch[] transforms;
+
+		public Guid[] actorGuids;
+
 		public void WriteToPath(TargetPath path, JToken value, int depth)
 		{
-
+			TransformCount = 0;
 		}
 
 		public bool ReadFromPath(TargetPath path, ref JToken value, int depth)
@@ -165,5 +171,4 @@ namespace MixedRealityExtension.Patching.Types
 
 		}
 	}
-
 }

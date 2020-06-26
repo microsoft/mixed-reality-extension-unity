@@ -490,7 +490,7 @@ namespace MixedRealityExtension.Messaging.Payloads
 		/// <summary>
 		/// Physics bridge update with transforms for owned rigid bodies.
 		/// </summary>
-		public PhysicsBridgePatch PhysicsBridge { get; set; }
+		public PhysicsBridgePatch PhysicsBridgePatchContent { get; set; }
 	}
 
 	/// <summary>

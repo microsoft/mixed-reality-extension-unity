@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using MixedRealityExtension.Util;
 using UnityEngine;
+using MixedRealityExtension.Patching.Types;
 
 namespace MixedRealityExtension.Core
 {
@@ -72,8 +73,15 @@ namespace MixedRealityExtension.Core
 		/// maximal estimated angular velocity
 		private const float _maxEstimatedAngularVelocity = 5.0F;
 
+		// ---- fields to be used to check for update the server side updates ----
+		private Dictionary<Guid, ActorTransformPatch> _lastServerUploadedTransforms;
+		int numLastUpdate;
+		public ActorTransformPatch[] transforms;
+		public Guid[] actorGuids;
+
 		public PhysicsBridge()
 		{
+			numLastUpdate = 0;
 		}
 
 		#region Rigid Body Management
@@ -459,6 +467,44 @@ namespace MixedRealityExtension.Core
 		public void LateUpdate()
 		{
 			// smooth transform update to hide artifacts for rendering
+		}
+
+		/// generates the message that updates the transforms on the server side (this is done in a low frequency manner)
+		/// <returns> message that should be sent to the server</returns>
+		public PhysicsTranformServerUploadPatch GenerateServerTransformUploadPatch()
+		{
+			var ret = new PhysicsTranformServerUploadPatch();
+			int numownedbodies = 0;
+
+			// first loop counts how many RBs do we own
+			foreach (var rb in _rigidBodies.Values)
+			{
+				if (rb.Ownership)
+				{
+					// todo compare
+
+					numownedbodies++;
+				}
+			}
+
+			ret.transforms = new ActorTransformPatch[numownedbodies];
+			ret.actorGuids = new Guid[numownedbodies];
+			ret.numTransforms = numownedbodies;
+
+			numownedbodies = 0;
+			foreach (var rb in _rigidBodies.Values)
+			{
+				if (!rb.Ownership)
+				{
+					continue;
+				}
+
+				// todo compare
+
+			}
+
+
+			return ret;
 		}
 	}
 }
