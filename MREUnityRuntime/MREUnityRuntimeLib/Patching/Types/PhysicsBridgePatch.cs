@@ -132,4 +132,38 @@ namespace MixedRealityExtension.Patching.Types
 
 		}
 	}
+
+	public class PhysicsTranformServerUploadPatch : IPatchable
+	{
+		/// <summary>
+		/// source app id (of the sender)
+		/// </summary>
+		public Guid Id { get; set; }
+
+		public void WriteToPath(TargetPath path, JToken value, int depth)
+		{
+
+		}
+
+		public bool ReadFromPath(TargetPath path, ref JToken value, int depth)
+		{
+			return false;
+		}
+
+		public void Clear()
+		{
+
+		}
+
+		public void Restore(TargetPath path, int depth)
+		{
+
+		}
+
+		public void RestoreAll()
+		{
+
+		}
+	}
+
 }

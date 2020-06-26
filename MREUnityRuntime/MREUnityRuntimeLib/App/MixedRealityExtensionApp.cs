@@ -327,6 +327,8 @@ namespace MixedRealityExtension.App
 			{
 				EventManager.QueueEvent(new PhysicsBridgeUpdated(InstanceId, physicsPatch));
 			}
+
+			// <todo> low frequency server upload stream
 		}
 
 		/// <inheritdoc />

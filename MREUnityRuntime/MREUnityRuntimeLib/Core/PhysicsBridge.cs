@@ -333,7 +333,6 @@ namespace MixedRealityExtension.Core
 
 			// call the predictor
 			_predictor.PredictAllRemoteBodiesWithOwnedBodies(ref _rigidBodies, timeInfo);
-
 		}
 
 		/// <summary>
@@ -384,7 +383,7 @@ namespace MixedRealityExtension.Core
 				UnityEngine.Vector3 rotDiff = UtilMethods.TransformEulerAnglesToRadians(rb.lastValidAngularVelocityorAng - transform.Rotation.eulerAngles);
 
 				bool isBodySleepingInThisFrame =
-					!rb.IsKeyframed && // if body is key framed and owned then we should just feed the jitter buffer
+					(!rb.IsKeyframed) && // if body is key framed and owned then we should just feed the jitter buffer
 					( rb.RigidBody.velocity.sqrMagnitude < maxSleepingSqrtLinearVelocity
 					  && rb.RigidBody.angularVelocity.sqrMagnitude < maxSleepingSqrtAngularVelocity
 					  && posDiff.sqrMagnitude < maxSleepingSqrtPositionDiff
