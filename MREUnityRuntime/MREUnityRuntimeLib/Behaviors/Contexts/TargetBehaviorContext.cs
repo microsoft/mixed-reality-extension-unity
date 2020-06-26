@@ -20,7 +20,7 @@ namespace MixedRealityExtension.Behaviors.Contexts
 		public void StartTargeting(IUser user, Vector3 targetPoint)
 		{
 			var app = App;
-			if (app == null || user == null)
+			if (app == null)
 			{
 				return;
 			}
@@ -39,7 +39,7 @@ namespace MixedRealityExtension.Behaviors.Contexts
 		public void EndTargeting(IUser user, Vector3 targetPoint)
 		{
 			var app = App;
-			if (app == null || user == null)
+			if (app == null)
 			{
 				return;
 			}
@@ -57,11 +57,6 @@ namespace MixedRealityExtension.Behaviors.Contexts
 
 		public void UpdateTargetPoint(IUser user, Vector3 targetPoint)
 		{
-			if (App == null)
-			{
-				return;
-			}
-
 			_currentTargetPoints.Add(targetPoint);
 			OnTargetPointUpdated(targetPoint);
 		}

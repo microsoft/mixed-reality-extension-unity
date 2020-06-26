@@ -38,8 +38,9 @@ namespace MixedRealityExtension.Core
 		/// <returns></returns>
 		public static IEnumerable<Permissions> ToEnumerable(this Permissions flags)
 		{
-			var aggregate = new List<Permissions>(Enum.GetNames(typeof(Permissions)).Length);
-			foreach (Permissions perm in Enum.GetValues(typeof(Permissions)))
+			var allPerms = Enum.GetValues(typeof(Permissions));
+			var aggregate = new List<Permissions>(allPerms.Length);
+			foreach (Permissions perm in allPerms)
 			{
 				if (flags.HasFlag(perm))
 				{
