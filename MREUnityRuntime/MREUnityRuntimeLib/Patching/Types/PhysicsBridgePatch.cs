@@ -135,6 +135,53 @@ namespace MixedRealityExtension.Patching.Types
 
 	public class PhysicsTranformServerUploadPatch : IPatchable
 	{
+		public struct OneActorUpdate
+		{
+			public OneActorUpdate(Guid id,UnityEngine.Vector3 localPos, UnityEngine.Quaternion localQuat,
+				UnityEngine.Vector3 appPos, UnityEngine.Quaternion appQuat)
+			{
+
+				RigidBodyTransform localTransf;
+
+				localTransf.Position = localPos;
+				localTransf.Rotation = localQuat;
+
+				localTransforms = localTransf;
+
+				localTransf.Position = appPos;
+				localTransf.Rotation = appQuat;
+				
+				appTransforms = localTransf;
+
+				actorGuid = id;
+			}
+
+			/// tests if 2 transform equal
+			static internal bool isTransformEqual(RigidBodyTransform a, RigidBodyTransform b)
+			{
+				bool ret = true;
+				ret = ((a.Position - b.Position).sqrMagnitude > float.Epsilon);
+				ret = ret &&
+					( Math.Abs(a.Rotation.x - b.Rotation.x) +
+					  Math.Abs(a.Rotation.y - b.Rotation.y) +
+					  Math.Abs(a.Rotation.z - b.Rotation.z) +
+					  Math.Abs(a.Rotation.w - b.Rotation.w) > float.Epsilon);
+				return ret;
+			}
+
+			/// 
+			public bool isEqual(OneActorUpdate inUpdate)
+			{
+				return (inUpdate.actorGuid == actorGuid)
+					&& isTransformEqual(localTransforms, inUpdate.localTransforms)
+					&& isTransformEqual(appTransforms, inUpdate.appTransforms);
+			}
+
+			public RigidBodyTransform localTransforms { get; set; }
+			public RigidBodyTransform appTransforms { get; set; }
+			public Guid actorGuid { get; set; }
+		}
+
 		/// <summary>
 		/// source app id (of the sender)
 		/// </summary>
@@ -142,9 +189,7 @@ namespace MixedRealityExtension.Patching.Types
 
 		public int TransformCount { get; set; }
 
-		public ActorTransformPatch[] transforms;
-
-		public Guid[] actorGuids;
+		public OneActorUpdate[] updates;
 
 		public void WriteToPath(TargetPath path, JToken value, int depth)
 		{

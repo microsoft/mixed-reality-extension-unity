@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using MixedRealityExtension.Util;
 using UnityEngine;
 using MixedRealityExtension.Patching.Types;
+using MixedRealityExtension.Patching;
 
 namespace MixedRealityExtension.Core
 {
@@ -74,14 +75,11 @@ namespace MixedRealityExtension.Core
 		private const float _maxEstimatedAngularVelocity = 5.0F;
 
 		// ---- fields to be used to check for update the server side updates ----
-		private Dictionary<Guid, ActorTransformPatch> _lastServerUploadedTransforms;
-		int numLastUpdate;
-		public ActorTransformPatch[] transforms;
-		public Guid[] actorGuids;
+		private Dictionary<Guid, PhysicsTranformServerUploadPatch.OneActorUpdate> _lastServerUploadedTransforms  =
+			new Dictionary<Guid, PhysicsTranformServerUploadPatch.OneActorUpdate>();
 
 		public PhysicsBridge()
 		{
-			numLastUpdate = 0;
 		}
 
 		#region Rigid Body Management
@@ -471,39 +469,77 @@ namespace MixedRealityExtension.Core
 
 		/// generates the message that updates the transforms on the server side (this is done in a low frequency manner)
 		/// <returns> message that should be sent to the server</returns>
-		public PhysicsTranformServerUploadPatch GenerateServerTransformUploadPatch()
+		public PhysicsTranformServerUploadPatch GenerateServerTransformUploadPatch(Guid instanceId)
 		{
 			var ret = new PhysicsTranformServerUploadPatch();
 			int numownedbodies = 0;
+			int numUpdatedTransform = 0;
+			List<PhysicsTranformServerUploadPatch.OneActorUpdate> allUpdates = new List<PhysicsTranformServerUploadPatch.OneActorUpdate>();
 
 			// first loop counts how many RBs do we own
 			foreach (var rb in _rigidBodies.Values)
 			{
 				if (rb.Ownership)
 				{
-					// todo compare
-
 					numownedbodies++;
+
+					var actor = rb.RigidBody.gameObject.GetComponent<Actor>();
+					if (actor != null)
+					{
+
+						// MUST be the same as  PatchingUtilMethods.GenerateLocalTransformPatch
+						// and  PatchingUtilMethods.GenerateAppTransformPatch
+						//update.localTransforms.Position = actor.transform.position;
+
+						var update = new PhysicsTranformServerUploadPatch.OneActorUpdate(
+							actor.Id,
+							actor.transform.position, actor.transform.rotation,
+							actor.App.SceneRoot.transform.InverseTransformPoint(actor.transform.position),
+							Quaternion.Inverse(actor.App.SceneRoot.transform.rotation) * actor.transform.rotation
+							);
+
+						// todo see if we sent this update already
+						if (_lastServerUploadedTransforms.ContainsKey(rb.Id))
+						{
+							var lastUpdate = _lastServerUploadedTransforms[rb.Id];
+							if (!lastUpdate.isEqual(update))
+							{
+								allUpdates.Add(update);
+								numUpdatedTransform++;
+								_lastServerUploadedTransforms[rb.Id] = update;
+							}
+						}
+						else
+						{
+							// add an update anyway
+							allUpdates.Add(update);
+							_lastServerUploadedTransforms.Add(rb.Id, update);
+							numUpdatedTransform++;
+						}
+						numownedbodies++;
+					}
+				}
+				else
+				{
+					// remove if this is in this list
+					if (_lastServerUploadedTransforms.ContainsKey(rb.Id))
+					{
+						_lastServerUploadedTransforms.Remove(rb.Id);
+					}
 				}
 			}
 
-			ret.transforms = new ActorTransformPatch[numownedbodies];
-			ret.actorGuids = new Guid[numownedbodies];
-			ret.numTransforms = numownedbodies;
+			ret.updates = new PhysicsTranformServerUploadPatch.OneActorUpdate[numownedbodies];
+			ret.TransformCount = numownedbodies;
+			ret.Id = instanceId;
 
 			numownedbodies = 0;
-			foreach (var rb in _rigidBodies.Values)
+			foreach (var update in allUpdates)
 			{
-				if (!rb.Ownership)
-				{
-					continue;
-				}
-
-				// todo compare
-
+				// add the updates
+				ret.updates[numownedbodies++] = update;
 			}
-
-
+			// 
 			return ret;
 		}
 	}

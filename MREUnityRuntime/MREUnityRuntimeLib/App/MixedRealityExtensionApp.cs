@@ -329,6 +329,15 @@ namespace MixedRealityExtension.App
 			}
 
 			// <todo> low frequency server upload stream
+			//if (true)
+			{
+				PhysicsTranformServerUploadPatch serverUploadPatch =
+					PhysicsBridge.GenerateServerTransformUploadPatch(InstanceId);
+				if (serverUploadPatch.TransformCount > 0)
+				{
+					EventManager.QueueEvent(new PhysicsTranformServerUploadUpdated(InstanceId, serverUploadPatch));
+				}
+			}
 		}
 
 		/// <inheritdoc />
