@@ -222,6 +222,7 @@ MonoBehaviour:
   UserProperties: []
   AutoStart: 0
   AutoJoin: 1
+  GrantedPermissions: -1
   SceneRoot: {fileID: 1141388990}
   PlaceholderObject: {fileID: 0}
   UserGameObject: {fileID: 276664683}
