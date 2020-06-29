@@ -39,7 +39,7 @@ namespace MixedRealityExtension.Core
 		/// <summary>
 		/// The location of the MRE's public source code
 		/// </summary>
-		public string RepositoryUri;
+		public string RepositoryUrl;
 
 		/// <summary>
 		/// A list of permissions required for this MRE to run
