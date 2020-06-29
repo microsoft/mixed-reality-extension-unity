@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace MixedRealityExtension.Patching.Types
 {
-	public class LookAtPatch : PatchPropertyCache<LookAtPatch>, IPatchable
+	public class LookAtPatch : Patchable<LookAtPatch>
 	{
 		[PatchProperty]
 		public Guid? ActorId { get; set; }
@@ -20,30 +20,5 @@ namespace MixedRealityExtension.Patching.Types
 
 		[PatchProperty]
 		public bool? Backward { get; set; }
-
-		public void WriteToPath(TargetPath path, JToken value, int depth)
-		{
-
-		}
-
-		public bool ReadFromPath(TargetPath path, ref JToken value, int depth)
-		{
-			return false;
-		}
-
-		public void Clear()
-		{
-
-		}
-
-		public void Restore(TargetPath path, int depth)
-		{
-
-		}
-
-		public void RestoreAll()
-		{
-
-		}
 	}
 }

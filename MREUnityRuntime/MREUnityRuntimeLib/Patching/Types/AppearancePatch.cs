@@ -8,7 +8,7 @@ using Newtonsoft.Json.Linq;
 
 namespace MixedRealityExtension.Patching.Types
 {
-	public class AppearancePatch : PatchPropertyCache<AppearancePatch>, IPatchable
+	public class AppearancePatch : Patchable<AppearancePatch>
 	{
 		[PatchProperty]
 		[JsonConverter(typeof(UnsignedConverter))]
@@ -19,30 +19,5 @@ namespace MixedRealityExtension.Patching.Types
 
 		[PatchProperty]
 		public Guid? MeshId { get; set; }
-
-		public void WriteToPath(TargetPath path, JToken value, int depth)
-		{
-
-		}
-
-		public bool ReadFromPath(TargetPath path, ref JToken value, int depth)
-		{
-			return false;
-		}
-
-		public void Clear()
-		{
-
-		}
-
-		public void Restore(TargetPath path, int depth)
-		{
-
-		}
-
-		public void RestoreAll()
-		{
-
-		}
 	}
 }

@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace MixedRealityExtension.Patching.Types
 {
-	public class Vector3Patch : PatchPropertyCache<Vector3Patch>, IEquatable<Vector3Patch>, IPatchable
+	public class Vector3Patch : Patchable<Vector3Patch>, IEquatable<Vector3Patch>
 	{
 		[PatchProperty]
 		public float? X { get; set; }
@@ -71,7 +71,7 @@ namespace MixedRealityExtension.Patching.Types
 				Z.HasValue ? Z.Value.ToString() : "null");
 		}
 
-		public void WriteToPath(TargetPath path, JToken value, int depth)
+		public override void WriteToPath(TargetPath path, JToken value, int depth)
 		{
 			if (depth == path.PathParts.Length)
 			{
@@ -95,7 +95,7 @@ namespace MixedRealityExtension.Patching.Types
 			// an unrecognized path, do nothing
 		}
 
-		public bool ReadFromPath(TargetPath path, ref JToken value, int depth)
+		public override bool ReadFromPath(TargetPath path, ref JToken value, int depth)
 		{
 			if (depth == path.PathParts.Length && X.HasValue && Y.HasValue && Z.HasValue)
 			{
@@ -126,21 +126,11 @@ namespace MixedRealityExtension.Patching.Types
 			return false;
 		}
 
-		public void Clear()
+		public override void Clear()
 		{
 			X = null;
 			Y = null;
 			Z = null;
-		}
-
-		public void Restore(TargetPath path, int depth)
-		{
-
-		}
-
-		public void RestoreAll()
-		{
-
 		}
 	}
 }

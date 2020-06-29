@@ -8,6 +8,12 @@ namespace MixedRealityExtension.Patching
 	internal interface IPatchable
 	{
 		/// <summary>
+		/// Returns whether this patch has any non-null properties
+		/// </summary>
+		/// <returns></returns>
+		bool IsPatched();
+
+		/// <summary>
 		/// Write a serialized patch part into the specified path
 		/// </summary>
 		/// <param name="path"></param>

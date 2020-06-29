@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace MixedRealityExtension.Patching.Types
 {
-	public class Vector2Patch : PatchPropertyCache<Vector2Patch>, IEquatable<Vector2Patch>, IPatchable
+	public class Vector2Patch : Patchable<Vector2Patch>, IEquatable<Vector2Patch>
 	{
 		[PatchProperty]
 		public float? X { get; set; }
@@ -54,31 +54,6 @@ namespace MixedRealityExtension.Patching.Types
 					X.Equals(other.X) &&
 					Y.Equals(other.Y);
 			}
-		}
-
-		public void WriteToPath(TargetPath path, JToken value, int depth)
-		{
-
-		}
-
-		public bool ReadFromPath(TargetPath path, ref JToken value, int depth)
-		{
-			return false;
-		}
-
-		public void Clear()
-		{
-
-		}
-
-		public void Restore(TargetPath path, int depth)
-		{
-
-		}
-
-		public void RestoreAll()
-		{
-
 		}
 	}
 }

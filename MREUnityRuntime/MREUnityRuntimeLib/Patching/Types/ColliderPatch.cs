@@ -8,7 +8,7 @@ using System.Collections.Generic;
 
 namespace MixedRealityExtension.Patching.Types
 {
-	public class ColliderPatch : PatchPropertyCache<ColliderPatch>, IPatchable
+	public class ColliderPatch : Patchable<ColliderPatch>
 	{
 		[PatchProperty]
 		public bool? Enabled { get; set; }
@@ -33,30 +33,5 @@ namespace MixedRealityExtension.Patching.Types
 
 		[PatchProperty]
 		public ColliderEventType[] EventSubscriptions { get; set; }
-
-		public void WriteToPath(TargetPath path, JToken value, int depth)
-		{
-
-		}
-
-		public bool ReadFromPath(TargetPath path, ref JToken value, int depth)
-		{
-			return false;
-		}
-
-		public void Clear()
-		{
-
-		}
-
-		public void Restore(TargetPath path, int depth)
-		{
-
-		}
-
-		public void RestoreAll()
-		{
-
-		}
 	}
 }

@@ -6,7 +6,7 @@ using Newtonsoft.Json.Linq;
 
 namespace MixedRealityExtension.Patching.Types
 {
-	public class TextPatch : PatchPropertyCache<TextPatch>, IPatchable
+	public class TextPatch : Patchable<TextPatch>
 	{
 		[PatchProperty]
 		public bool? Enabled { get; set; }
@@ -44,31 +44,6 @@ namespace MixedRealityExtension.Patching.Types
 			Justify = text.Justify;
 			Font = text.Font;
 			Color = new ColorPatch(text.Color);
-		}
-
-		public void WriteToPath(TargetPath path, JToken value, int depth)
-		{
-
-		}
-
-		public bool ReadFromPath(TargetPath path, ref JToken value, int depth)
-		{
-			return false;
-		}
-
-		public void Clear()
-		{
-
-		}
-
-		public void Restore(TargetPath path, int depth)
-		{
-
-		}
-
-		public void RestoreAll()
-		{
-
 		}
 	}
 }
