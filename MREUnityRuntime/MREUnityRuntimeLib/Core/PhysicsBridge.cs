@@ -516,7 +516,6 @@ namespace MixedRealityExtension.Core
 							_lastServerUploadedTransforms.Add(rb.Id, update);
 							numUpdatedTransform++;
 						}
-						numownedbodies++;
 					}
 				}
 				else
@@ -530,7 +529,7 @@ namespace MixedRealityExtension.Core
 			}
 
 			ret.updates = new PhysicsTranformServerUploadPatch.OneActorUpdate[numownedbodies];
-			ret.TransformCount = numownedbodies;
+			ret.TransformCount = numUpdatedTransform;
 			ret.Id = instanceId;
 
 			numownedbodies = 0;

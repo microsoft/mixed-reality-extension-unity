@@ -336,6 +336,7 @@ namespace MixedRealityExtension.App
 				if (serverUploadPatch.TransformCount > 0)
 				{
 					EventManager.QueueEvent(new PhysicsTranformServerUploadUpdated(InstanceId, serverUploadPatch));
+					//Debug.Log(" Sent: " + serverUploadPatch.TransformCount);
 				}
 			}
 		}
@@ -992,6 +993,15 @@ namespace MixedRealityExtension.App
 			if (UsePhysicsBridge)
 			{
 				PhysicsBridge.addSnapshot(payload.PhysicsBridgePatchContent.Id, payload.PhysicsBridgePatchContent.ToSnapshot());
+				onCompleteCallback?.Invoke();
+			}
+		}
+
+		[CommandHandler(typeof(PhysicsTranformServerUpload))]
+		private void OnTransformsServerUpload(PhysicsTranformServerUpload payload, Action onCompleteCallback)
+		{
+			if (UsePhysicsBridge)
+			{
 				onCompleteCallback?.Invoke();
 			}
 		}

@@ -11,7 +11,6 @@ namespace MixedRealityExtension.Messaging.Events.Types
 	{
 		private readonly PhysicsBridgePatch _physicsBridgePatch;
 
-
 		public PhysicsBridgeUpdated(Guid id, PhysicsBridgePatch physicsBridgePatch) 
 			: base(id)
 		{

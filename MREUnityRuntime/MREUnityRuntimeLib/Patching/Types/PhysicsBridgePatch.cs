@@ -157,24 +157,24 @@ namespace MixedRealityExtension.Patching.Types
 			}
 
 			/// tests if 2 transform equal
-			static internal bool isTransformEqual(RigidBodyTransform a, RigidBodyTransform b)
+			static internal bool isTransformEqual(RigidBodyTransform a, RigidBodyTransform b, float eps)
 			{
 				bool ret = true;
-				ret = ((a.Position - b.Position).sqrMagnitude > float.Epsilon);
+				ret = ((a.Position - b.Position).sqrMagnitude < eps);
 				ret = ret &&
 					( Math.Abs(a.Rotation.x - b.Rotation.x) +
 					  Math.Abs(a.Rotation.y - b.Rotation.y) +
 					  Math.Abs(a.Rotation.z - b.Rotation.z) +
-					  Math.Abs(a.Rotation.w - b.Rotation.w) > float.Epsilon);
+					  Math.Abs(a.Rotation.w - b.Rotation.w) < eps);
 				return ret;
 			}
 
 			/// 
-			public bool isEqual(OneActorUpdate inUpdate)
+			public bool isEqual(OneActorUpdate inUpdate, float eps = 0.000001F)
 			{
 				return (inUpdate.actorGuid == actorGuid)
-					&& isTransformEqual(localTransforms, inUpdate.localTransforms)
-					&& isTransformEqual(appTransforms, inUpdate.appTransforms);
+					&& isTransformEqual(localTransforms, inUpdate.localTransforms, eps)
+					&& isTransformEqual(appTransforms, inUpdate.appTransforms, eps);
 			}
 
 			public RigidBodyTransform localTransforms { get; set; }
@@ -193,7 +193,6 @@ namespace MixedRealityExtension.Patching.Types
 
 		public void WriteToPath(TargetPath path, JToken value, int depth)
 		{
-			TransformCount = 0;
 		}
 
 		public bool ReadFromPath(TargetPath path, ref JToken value, int depth)
