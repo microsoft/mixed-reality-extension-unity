@@ -6,7 +6,7 @@ using System.Collections.Generic;
 namespace MixedRealityExtension.Core
 {
 	[Flags]
-	public enum Permissions
+	public enum Permissions : long
 	{
 		None = 0,
 		Execution = 1,
