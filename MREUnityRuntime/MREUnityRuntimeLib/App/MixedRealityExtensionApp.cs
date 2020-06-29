@@ -336,7 +336,6 @@ namespace MixedRealityExtension.App
 				if (serverUploadPatch.TransformCount > 0)
 				{
 					EventManager.QueueEvent(new PhysicsTranformServerUploadUpdated(InstanceId, serverUploadPatch));
-					//Debug.Log(" Sent: " + serverUploadPatch.TransformCount);
 				}
 			}
 		}

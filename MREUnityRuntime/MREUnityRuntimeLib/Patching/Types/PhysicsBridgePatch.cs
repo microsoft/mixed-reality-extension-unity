@@ -7,6 +7,7 @@ using MixedRealityExtension.Animation;
 using MixedRealityExtension.Core.Physics;
 using Newtonsoft.Json.Linq;
 using Unity.Collections;
+using UnityEngine;
 
 namespace MixedRealityExtension.Patching.Types
 {
@@ -140,45 +141,49 @@ namespace MixedRealityExtension.Patching.Types
 			public OneActorUpdate(Guid id,UnityEngine.Vector3 localPos, UnityEngine.Quaternion localQuat,
 				UnityEngine.Vector3 appPos, UnityEngine.Quaternion appQuat)
 			{
+				localTransform = new TransformPatch();
+				appTransform = new TransformPatch();
 
-				RigidBodyTransform localTransf;
+				localTransform.Position = new Vector3Patch(localPos);
+				localTransform.Rotation = new QuaternionPatch(localQuat);
 
-				localTransf.Position = localPos;
-				localTransf.Rotation = localQuat;
-
-				localTransforms = localTransf;
-
-				localTransf.Position = appPos;
-				localTransf.Rotation = appQuat;
+				appTransform.Position = new Vector3Patch(appPos);
+				appTransform.Rotation = new QuaternionPatch(appQuat);
 				
-				appTransforms = localTransf;
-
 				actorGuid = id;
 			}
 
-			/// tests if 2 transform equal
-			static internal bool isTransformEqual(RigidBodyTransform a, RigidBodyTransform b, float eps)
+			public OneActorUpdate(OneActorUpdate copyIn)
 			{
-				bool ret = true;
-				ret = ((a.Position - b.Position).sqrMagnitude < eps);
+				localTransform = copyIn.localTransform;
+				appTransform = copyIn.appTransform;
+				actorGuid = copyIn.actorGuid;
+			}
+
+			/// tests if 2 transforms equal
+			static internal bool isTransformEqual(TransformPatch a, TransformPatch b, float eps)
+			{
+				bool ret = ((Math.Abs(a.Position.X.Value - b.Position.X.Value) +
+					 Math.Abs(a.Position.Y.Value - b.Position.Y.Value) +
+					 Math.Abs(a.Position.Z.Value - b.Position.Z.Value)) < eps);
 				ret = ret &&
-					( Math.Abs(a.Rotation.x - b.Rotation.x) +
-					  Math.Abs(a.Rotation.y - b.Rotation.y) +
-					  Math.Abs(a.Rotation.z - b.Rotation.z) +
-					  Math.Abs(a.Rotation.w - b.Rotation.w) < eps);
+					 ((Math.Abs(a.Rotation.X.Value - b.Rotation.X.Value) +
+					  Math.Abs(a.Rotation.Y.Value - b.Rotation.Y.Value) +
+					  Math.Abs(a.Rotation.Z.Value - b.Rotation.Z.Value) +
+					  Math.Abs(a.Rotation.W.Value - b.Rotation.W.Value)) < 10.0F * eps);
 				return ret;
 			}
 
-			/// 
-			public bool isEqual(OneActorUpdate inUpdate, float eps = 0.000001F)
+			/// test if the two actor updates are equal
+			public bool isEqual(OneActorUpdate inUpdate, float eps = 0.0001F)
 			{
 				return (inUpdate.actorGuid == actorGuid)
-					&& isTransformEqual(localTransforms, inUpdate.localTransforms, eps)
-					&& isTransformEqual(appTransforms, inUpdate.appTransforms, eps);
+					&& isTransformEqual(localTransform, inUpdate.localTransform, eps)
+					&& isTransformEqual(appTransform, inUpdate.appTransform, eps);
 			}
 
-			public RigidBodyTransform localTransforms { get; set; }
-			public RigidBodyTransform appTransforms { get; set; }
+			public TransformPatch localTransform { get; set; }
+			public TransformPatch appTransform { get; set; }
 			public Guid actorGuid { get; set; }
 		}
 
