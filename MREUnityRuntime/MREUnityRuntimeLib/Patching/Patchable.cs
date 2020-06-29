@@ -35,6 +35,7 @@ namespace MixedRealityExtension.Patching
 			return _patchProperties;
 		}
 
+		/// <inheritdoc/>
 		public bool IsPatched()
 		{
 			foreach (PropertyInfo property in GetPatchProperties())
@@ -53,26 +54,31 @@ namespace MixedRealityExtension.Patching
 			return false;
 		}
 
+		/// <inheritdoc/>
 		public virtual void WriteToPath(TargetPath path, JToken value, int depth)
 		{
 
 		}
 
+		///<inheritdoc/>
 		public virtual bool ReadFromPath(TargetPath path, ref JToken value, int depth)
 		{
 			return false;
 		}
 
+		///<inheritdoc/>
 		public virtual void Clear()
 		{
 
 		}
 
+		///<inheritdoc/>
 		public virtual void Restore(TargetPath path, int depth)
 		{
 
 		}
 
+		///<inheritdoc/>
 		public virtual void RestoreAll()
 		{
 

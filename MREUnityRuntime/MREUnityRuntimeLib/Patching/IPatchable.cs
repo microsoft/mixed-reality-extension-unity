@@ -30,6 +30,9 @@ namespace MixedRealityExtension.Patching
 		/// <returns></returns>
 		bool ReadFromPath(TargetPath path, ref JToken value, int depth);
 
+		/// <summary>
+		/// Reset all patchable properties to null
+		/// </summary>
 		void Clear();
 
 		/// <summary>
@@ -43,11 +46,5 @@ namespace MixedRealityExtension.Patching
 		/// Assign all saved patches to public properties
 		/// </summary>
 		void RestoreAll();
-
-		/// <summary>
-		/// Return the properties of this class tagged with the PatchProperty attribute.
-		/// </summary>
-		/// <returns></returns>
-		//System.Reflection.PropertyInfo[] GetPatchProperties();
 	}
 }
