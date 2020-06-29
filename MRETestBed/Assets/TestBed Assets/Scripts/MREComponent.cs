@@ -121,9 +121,16 @@ public class MREComponent : MonoBehaviour
 	{
 		if (!_apiInitialized)
 		{
+			var assetCacheGo = new GameObject("MRE Asset Cache");
+			var assetCache = assetCacheGo.AddComponent<AssetCache>();
+			assetCache.CacheRootGO = new GameObject("Assets");
+			assetCache.CacheRootGO.transform.SetParent(assetCacheGo.transform, false);
+			assetCache.CacheRootGO.SetActive(false);
+
 			MREAPI.InitializeAPI(
 				defaultMaterial: DefaultPrimMaterial,
 				layerApplicator: new SimpleLayerApplicator(0, 9, 10, 5),
+				assetCache: assetCache,
 				behaviorFactory: new BehaviorFactory(),
 				textFactory: new TmpTextFactory()
 				{
@@ -234,6 +241,11 @@ public class MREComponent : MonoBehaviour
 		}
 	}
 
+	private void FixedUpdate()
+	{
+		MREApp?.FixedUpdate();
+	}
+
 	void Update()
 	{
 		if (Input.GetButtonUp("Jump"))
@@ -273,9 +285,18 @@ public class MREComponent : MonoBehaviour
 
 		Debug.Log("Connecting to MRE App.");
 
+		var args = System.Environment.GetCommandLineArgs();
+		Uri overrideUri = null;
 		try
 		{
-			MREApp?.Startup(MREURL, SessionID, "MRETestBed");
+			overrideUri = new Uri(args[args.Length - 1], UriKind.Absolute);
+		}
+		catch { }
+
+		var uri = overrideUri != null && overrideUri.Scheme.StartsWith("ws") ? overrideUri.AbsoluteUri : MREURL;
+		try
+		{
+			MREApp?.Startup(uri, SessionID, "MRETestBed");
 		}
 		catch (Exception e)
 		{

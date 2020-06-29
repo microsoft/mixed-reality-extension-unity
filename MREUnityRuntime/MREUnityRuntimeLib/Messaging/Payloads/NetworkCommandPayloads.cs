@@ -114,7 +114,7 @@ namespace MixedRealityExtension.Messaging.Payloads
 		/// <summary>
 		/// The enumeration of ids for the actors to be destroyed.
 		/// </summary>
-		public IEnumerable<Guid> ActorIds { get; set; }
+		public Guid[] ActorIds { get; set; }
 	}
 
 	/// <summary>
@@ -126,7 +126,7 @@ namespace MixedRealityExtension.Messaging.Payloads
 		/// <summary>
 		/// The list of IDs for animations to be destroyed
 		/// </summary>
-		public IEnumerable<Guid> AnimationIds { get; set; }
+		public Guid[] AnimationIds { get; set; }
 	}
 
 	/// <summary>
@@ -137,7 +137,7 @@ namespace MixedRealityExtension.Messaging.Payloads
 		/// <summary>
 		/// The enumeration of actor patches to apply to their corresponding actors.
 		/// </summary>
-		public IEnumerable<ActorPatch> Actors { get; set; }
+		public ActorPatch[] Actors { get; set; }
 	}
 
 	/// <summary>
@@ -154,7 +154,7 @@ namespace MixedRealityExtension.Messaging.Payloads
 		/// <summary>
 		/// The enumeration of command payloads to executed on the rigid body.
 		/// </summary>
-		public IEnumerable<Payload> CommandPayloads { get; set; }
+		public Payload[] CommandPayloads { get; set; }
 	}
 
 	/// <summary>
@@ -258,12 +258,12 @@ namespace MixedRealityExtension.Messaging.Payloads
 		/// <summary>
 		/// The enumeration of animation key frames to set to the animation. See <see cref="MWAnimationKeyframe"/>.
 		/// </summary>
-		public IEnumerable<MWAnimationKeyframe> Keyframes { get; set; }
+		public MWAnimationKeyframe[] Keyframes { get; set; }
 
 		/// <summary>
 		/// The enumeration of animation events to set to the animation. See <see cref="MWAnimationEvent"/>.
 		/// </summary>
-		public IEnumerable<MWAnimationEvent> Events { get; set; }
+		public MWAnimationEvent[] Events { get; set; }
 
 		/// <summary>
 		/// The wrap mode of the animation. See <see cref="MWAnimationWrapMode"/>.
@@ -299,7 +299,7 @@ namespace MixedRealityExtension.Messaging.Payloads
 	/// </summary>
 	public class SyncAnimations : NetworkCommandPayload
 	{
-		public IEnumerable<MWActorAnimationState> AnimationStates { get; set; }
+		public MWActorAnimationState[] AnimationStates { get; set; }
 	}
 
 	/// <summary>
@@ -479,5 +479,17 @@ namespace MixedRealityExtension.Messaging.Payloads
 		/// The text response.
 		/// </summary>
 		public string Text;
+	}
+
+	/// <summary>
+	/// Bidirectional
+	/// Payload to sync rigid body transforms between peers.
+	/// </summary>
+	public class PhysicsBridgeUpdate : NetworkCommandPayload
+	{
+		/// <summary>
+		/// Physics bridge update with transforms for owned rigid bodies.
+		/// </summary>
+		public PhysicsBridgePatch PhysicsBridge { get; set; }
 	}
 }

@@ -19,17 +19,17 @@ namespace Assets.Scripts.User
 		private void Start()
 		{
 			_currentTool = ToolCache.GetOrCreateTool<TargetTool>();
-			_currentTool.IsHeld = true;
+			_currentTool.OnToolHeld(this);
 		}
 
 		public void HoldTool(Type toolType)
 		{
 			if (UserGameObject != null)
 			{
-				_currentTool.IsHeld = false;
+				_currentTool.OnToolDropped(this);
 				ToolCache.StowTool(_currentTool);
 				_currentTool = ToolCache.GetOrCreateTool(toolType);
-				_currentTool.IsHeld = true;
+				_currentTool.OnToolHeld(this);
 			}
 		}
 
@@ -38,10 +38,10 @@ namespace Assets.Scripts.User
 			// We only drop a tool is it isn't the default target tool.
 			if (UserGameObject != null && _currentTool.GetType() != typeof(TargetTool))
 			{
-				_currentTool.IsHeld = false;
+				_currentTool.OnToolDropped(this);
 				ToolCache.StowTool(_currentTool);
 				_currentTool = ToolCache.GetOrCreateTool<TargetTool>();
-				_currentTool.IsHeld = true;
+				_currentTool.OnToolHeld(this);
 			}
 		}
 

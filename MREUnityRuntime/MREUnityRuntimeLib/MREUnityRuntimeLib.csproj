@@ -96,15 +96,23 @@
     <Compile Include="Animation\MWSetAnimationStateOptions.cs" />
     <Compile Include="Animation\NativeAnimation.cs" />
     <Compile Include="Animation\TargetPath.cs" />
+    <Compile Include="Assets\AssetCache.cs" />
     <Compile Include="Assets\AssetLoadThrottling.cs" />
     <Compile Include="Assets\PrefabAnimationTargets.cs" />
     <Compile Include="Behaviors\ActionData\BaseActionData.cs" />
     <Compile Include="Behaviors\ActionData\BaseToolData.cs" />
+    <Compile Include="Behaviors\ActionData\ButtonData.cs" />
     <Compile Include="Behaviors\ActionData\PenData.cs" />
-    <Compile Include="Behaviors\Handlers\PenHandler.cs" />
-    <Compile Include="Behaviors\Handlers\ToolHandler.cs" />
+    <Compile Include="Behaviors\ActionData\PointData.cs" />
+    <Compile Include="Behaviors\ActionData\TargetData.cs" />
+    <Compile Include="Behaviors\Contexts\BehaviorContextFactory.cs" />
+    <Compile Include="Behaviors\Contexts\BehaviorContextBase.cs" />
+    <Compile Include="Behaviors\Contexts\ButtonBehaviorContext.cs" />
+    <Compile Include="Behaviors\Contexts\PenBehaviorContext.cs" />
+    <Compile Include="Behaviors\Contexts\PhysicalToolBehaviorContext.cs" />
+    <Compile Include="Behaviors\Contexts\TargetBehaviorContext.cs" />
     <Compile Include="Core\CollisionLayers.cs" />
-    <Compile Include="Assets\AssetCache.cs" />
+    <Compile Include="Assets\AssetManager.cs" />
     <Compile Include="Assets\AssetGroup.cs" />
     <Compile Include="Assets\AssetSource.cs" />
     <Compile Include="Core\ActorCommandQueue.cs" />
@@ -117,6 +125,10 @@
     <Compile Include="Core\Interfaces\ICollider.cs" />
     <Compile Include="Core\Interfaces\IUserInfo.cs" />
     <Compile Include="Core\MediaCommand.cs" />
+    <Compile Include="Core\PhysicsBridge.cs" />
+    <Compile Include="Core\Physics\IPrediction.cs" />
+    <Compile Include="Core\Physics\JitterBuffer.cs" />
+    <Compile Include="Core\Physics\PredictionInterpolation.cs" />
     <Compile Include="Core\SoundManager.cs" />
     <Compile Include="Core\MediaStateOptions.cs" />
     <Compile Include="Core\Types\MWVector2.cs" />
@@ -126,6 +138,7 @@
     <Compile Include="Factories\SimpleLayerApplicator.cs" />
     <Compile Include="Messaging\Events\Types\ActorCorrectionEvent.cs" />
     <Compile Include="Messaging\Events\Types\ColliderEvent.cs" />
+    <Compile Include="Messaging\Events\Types\PhysicsBridgeUpdated.cs" />
     <Compile Include="Messaging\Events\Types\TriggerEvent.cs" />
     <Compile Include="Messaging\Payloads\Converters\UnsignedConverter.cs" />
     <Compile Include="Patching\PatchProperty.cs" />
@@ -133,6 +146,7 @@
     <Compile Include="Patching\Types\AnimationPatch.cs" />
     <Compile Include="Patching\Types\AppearancePatch.cs" />
     <Compile Include="Patching\Types\LookAtPatch.cs" />
+    <Compile Include="Patching\Types\PhysicsBridgePatch.cs" />
     <Compile Include="Patching\Types\ActorTransformPatch.cs" />
     <Compile Include="PluginInterfaces\Behaviors\IToolBehavior.cs" />
     <Compile Include="PluginInterfaces\Behaviors\IPenBehavior.cs" />
@@ -158,13 +172,8 @@
     <Compile Include="PluginInterfaces\IMRELogger.cs" />
     <Compile Include="PluginInterfaces\ITextFactory.cs" />
     <Compile Include="Behaviors\Actions\Action.cs" />
-    <Compile Include="Behaviors\BehaviorHandlerFactory.cs" />
     <Compile Include="Behaviors\Behaviors.cs" />
-    <Compile Include="Behaviors\BehaviorActionHandler.cs" />
-    <Compile Include="Behaviors\BehaviorHandlerBase.cs" />
-    <Compile Include="Behaviors\Handlers\TargetHandler.cs" />
-    <Compile Include="Behaviors\IActionHandler.cs" />
-    <Compile Include="Behaviors\IBehaviorHandler.cs" />
+    <Compile Include="Behaviors\Actions\BehaviorActionHandler.cs" />
     <Compile Include="Core\Components\LookAtComponent.cs" />
     <Compile Include="Core\Text.cs" />
     <Compile Include="Factories\MWTextFactory.cs" />
@@ -174,7 +183,6 @@
     <Compile Include="PluginInterfaces\Behaviors\IBehavior.cs" />
     <Compile Include="PluginInterfaces\Behaviors\IBehaviorFactory.cs" />
     <Compile Include="PluginInterfaces\Behaviors\IButtonBehavior.cs" />
-    <Compile Include="Behaviors\Handlers\ButtonHandler.cs" />
     <Compile Include="PluginInterfaces\Behaviors\ITargetBehavior.cs" />
     <Compile Include="Constants.cs" />
     <Compile Include="Core\Actor.cs" />
@@ -304,6 +312,7 @@
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>
+	  copy "$(ProjectDir)\link.xml" "$(ProjectDir)\..\bin\$(Configuration)\link.xml"
       cd $(ProjectDir)\..\
       if not exist "$(ProjectDir)\..\MREUnityProjects.xml" copy "$(ProjectDir)\..\MREUnityProjects.default.xml" "$(ProjectDir)\..\MREUnityProjects.xml"
       PostBuildTool.exe $(ConfigurationName)

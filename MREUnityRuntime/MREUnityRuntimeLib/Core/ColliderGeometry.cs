@@ -141,10 +141,10 @@ namespace MixedRealityExtension.Core
 		private void Patch(MixedRealityExtensionApp app, MeshCollider collider)
 		{
 			var tempId = MeshId;
-			app.AssetCache.OnCached(MeshId, asset =>
+			app.AssetManager.OnSet(MeshId, asset =>
 			{
 				if (MeshId != tempId) return;
-				collider.sharedMesh = asset as Mesh;
+				collider.sharedMesh = asset.Asset as Mesh;
 				collider.convex = true;
 			});
 		}

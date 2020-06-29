@@ -32,7 +32,7 @@ namespace MixedRealityExtension.Patching.Types
 		public ColliderGeometry Geometry { get; set; }
 
 		[PatchProperty]
-		public IEnumerable<ColliderEventType> EventSubscriptions { get; set; }
+		public ColliderEventType[] EventSubscriptions { get; set; }
 
 		public void WriteToPath(TargetPath path, JToken value, int depth)
 		{

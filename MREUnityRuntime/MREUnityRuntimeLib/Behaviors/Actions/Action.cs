@@ -69,7 +69,7 @@ namespace MixedRealityExtension.Behaviors.Actions
 	{
 		private Dictionary<IUser, ActionState> _userActionStates = new Dictionary<IUser, ActionState>();
 
-		internal IActionHandler Handler { get; set; }
+		internal BehaviorActionHandler Handler { get; set; }
 
 		internal EventHandler<ActionStateChangedArgs> ActionStateChanging { get; set; }
 

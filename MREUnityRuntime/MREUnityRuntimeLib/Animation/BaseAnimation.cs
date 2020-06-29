@@ -109,7 +109,7 @@ namespace MixedRealityExtension.Animation
 				Speed = Speed,
 				Weight = Weight,
 				WrapMode = WrapMode,
-				TargetIds = TargetIds
+				TargetIds = TargetIds.ToArray()
 			};
 
 			if (IsPlaying)

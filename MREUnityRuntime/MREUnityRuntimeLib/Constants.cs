@@ -46,7 +46,7 @@ namespace MixedRealityExtension
 		 * This matches major.minor from the package version number, and is updated as part of the manual
 		 * SDK release procedures.
 		 */
-		internal const string CurrentClientVersion = "0.18";
+		internal const string CurrentClientVersion = "0.19";
 
 		/*
 		 * Minimum Supported SDK version
@@ -54,5 +54,12 @@ namespace MixedRealityExtension
 		 * this *is* a big deal, and requires discussion and signoff from the dev team.
 		 */
 		internal const string MinimumSupportedSDKVersion = "0.13";
+
+		/*
+		 * Enable physics bridge
+		 * Work in progress feature to improve shared physics synchronization.
+		 * It is NOT compatibile with SDK versions older than 0.19.
+		 */
+		internal const bool UsePhysicsBridge = false;
 	}
 }

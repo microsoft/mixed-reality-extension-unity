@@ -60,10 +60,10 @@ namespace MixedRealityExtension.Factories
 				}
 				else
 				{
-					app.AssetCache.OnCached(textureId, tex =>
+					app.AssetManager.OnSet(textureId, tex =>
 					{
 						if (!material || mainTextureAssignments[material.GetInstanceID()] != textureId) return;
-						material.mainTexture = (Texture)tex;
+						material.mainTexture = (Texture)tex.Asset;
 					});
 				}
 			}
@@ -75,10 +75,16 @@ namespace MixedRealityExtension.Factories
 			return new MWMaterial()
 			{
 				Color = new ColorPatch(material.color),
-				MainTextureId = app.AssetCache.GetId(material.mainTexture),
+				MainTextureId = app.AssetManager.GetByObject(material.mainTexture)?.Id,
 				MainTextureOffset = new Vector2Patch(material.mainTextureOffset),
 				MainTextureScale = new Vector2Patch(material.mainTextureScale)
 			};
+		}
+
+		/// <inheritdoc />
+		public virtual bool UsesTexture(IMixedRealityExtensionApp app, Material material, Texture texture)
+		{
+			return material.mainTexture == texture;
 		}
 	}
 }

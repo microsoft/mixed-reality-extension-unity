@@ -24,10 +24,10 @@ using MixedRealityExtension.Util.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using UnityEngine;
 
 using Trace = MixedRealityExtension.Messaging.Trace;
+using Regex = System.Text.RegularExpressions.Regex;
 
 namespace MixedRealityExtension.App
 {
@@ -38,7 +38,12 @@ namespace MixedRealityExtension.App
 		private readonly ActorManager _actorManager;
 		private readonly CommandManager _commandManager;
 		internal readonly AnimationManager AnimationManager;
-		private readonly AssetCache _assetCache;
+		private readonly AssetManager _assetManager;
+
+		internal bool UsePhysicsBridge { get; set; }
+
+		private PhysicsBridge _physicsBridge;
+		private bool _shouldSendPhysicsUpdate = false;
 
 		private readonly MonoBehaviour _ownerScript;
 
@@ -107,7 +112,12 @@ namespace MixedRealityExtension.App
 		public bool IsActive => _conn?.IsActive ?? false;
 
 		/// <inheritdoc />
-		public string ServerUrl { get; private set; }
+		public Uri ServerUri { get; private set; }
+
+		/// <summary>
+		/// Same as ServerUri, but with ws(s): substituted for http(s):
+		/// </summary>
+		public Uri ServerAssetUri { get; private set; }
 
 		/// <inheritdoc />
 		public GameObject SceneRoot { get; set; }
@@ -141,7 +151,7 @@ namespace MixedRealityExtension.App
 
 		internal AssetLoader AssetLoader => _assetLoader;
 
-		public IAssetCache AssetCache => _assetCache;
+		public AssetManager AssetManager => _assetManager;
 
 		#endregion
 
@@ -158,6 +168,14 @@ namespace MixedRealityExtension.App
 			_assetLoader = new AssetLoader(ownerScript, this);
 			_userManager = new UserManager(this);
 			_actorManager = new ActorManager(this);
+
+			UsePhysicsBridge = Constants.UsePhysicsBridge;
+
+			if (UsePhysicsBridge)
+			{
+				_physicsBridge = new PhysicsBridge();
+			}
+
 			SoundManager = new SoundManager(this);
 			AnimationManager = new AnimationManager(this);
 			_commandManager = new CommandManager(new Dictionary<Type, ICommandHandlerContext>()
@@ -172,7 +190,7 @@ namespace MixedRealityExtension.App
 			var cacheRoot = new GameObject("MRE Cache");
 			cacheRoot.transform.SetParent(_ownerScript.gameObject.transform);
 			cacheRoot.SetActive(false);
-			_assetCache = new AssetCache(cacheRoot);
+			_assetManager = new AssetManager(this, cacheRoot);
 
 			RPC = new RPCInterface(this);
 			RPCChannels = new RPCChannelInterface();
@@ -185,10 +203,35 @@ namespace MixedRealityExtension.App
 #endif
 		}
 
+		private void OnRigidBodyKinematicsChanged(Guid id, bool isKinematic)
+		{
+			_physicsBridge.setKeyframed(id, isKinematic);
+		}
+
+		private void OnRigidBodyAdded(Guid id, Rigidbody rigidbody, Guid? owner)
+		{
+			bool isOwner = owner.HasValue ? owner.Value == LocalUser.Id : IsAuthoritativePeer;
+			_physicsBridge.addRigidBody(id, rigidbody, isOwner);
+		}
+
+		private void OnRigidBodyRemoved(Guid id)
+		{
+			_physicsBridge.removeRigidBody(id);
+		}
+
 		/// <inheritdoc />
 		public void Startup(string url, string sessionId, string platformId)
 		{
-			ServerUrl = url;
+			ServerUri = new Uri(url, UriKind.Absolute);
+			ServerAssetUri = new Uri(Regex.Replace(ServerUri.AbsoluteUri, "^ws(s?):", "http$1:"));
+
+			if (UsePhysicsBridge)
+			{
+				_actorManager.RigidBodyAdded += OnRigidBodyAdded;
+				_actorManager.RigidBodyRemoved += OnRigidBodyRemoved;
+				_actorManager.RigidBodyKinematicsChanged += OnRigidBodyKinematicsChanged;
+				_actorManager.RigidBodyOwnerChanged += OnRigidBodyOwnerChanged;
+			}
 
 			if (_conn == null)
 			{
@@ -215,6 +258,12 @@ namespace MixedRealityExtension.App
 				_conn = connection;
 			}
 			_conn.Open();
+		}
+
+		private void OnRigidBodyOwnerChanged(Guid id, Guid? owner)
+		{
+			bool isOwner = owner.HasValue ? owner.Value == LocalUser.Id : IsAuthoritativePeer;
+			_physicsBridge.setRigidBodyOwnership(id, isOwner);
 		}
 
 		/// <inheritdoc />
@@ -264,15 +313,53 @@ namespace MixedRealityExtension.App
 			{
 				UnityEngine.Object.Destroy(go);
 			}
+
+			if (UsePhysicsBridge)
+			{
+				_actorManager.RigidBodyAdded -= OnRigidBodyAdded;
+				_actorManager.RigidBodyRemoved -= OnRigidBodyRemoved;
+				_actorManager.RigidBodyKinematicsChanged -= OnRigidBodyKinematicsChanged;
+				_actorManager.RigidBodyOwnerChanged -= OnRigidBodyOwnerChanged;
+			}
+
 			_ownedGameObjects.Clear();
 			_actorManager.Reset();
 			AnimationManager.Reset();
 
 			foreach (Guid id in _assetLoader.ActiveContainers)
 			{
-				AssetCache.UncacheAssetsAndDestroy(id);
+				AssetManager.Unload(id);
 			}
 			_assetLoader.ActiveContainers.Clear();
+		}
+
+		/// <inheritdoc />
+		public void FixedUpdate()
+		{
+			if (UsePhysicsBridge)
+			{
+				if (_shouldSendPhysicsUpdate)
+				{
+					SendPhysicsUpdate();
+					_shouldSendPhysicsUpdate = false;
+				}
+
+				_physicsBridge.FixedUpdate(SceneRoot.transform);
+
+				_shouldSendPhysicsUpdate = true;
+			}
+		}
+
+		private void SendPhysicsUpdate()
+		{
+			PhysicsBridgePatch physicsPatch = new PhysicsBridgePatch(InstanceId,
+				_physicsBridge.GenerateSnapshot(UnityEngine.Time.fixedTime, SceneRoot.transform));
+			// send only updates if there are any, to save band with
+			// in order to produce any updates for settled bodies this should be handled within the physics bridge
+			if (physicsPatch.TransformCount > 0)
+			{
+				EventManager.QueueEvent(new PhysicsBridgeUpdated(InstanceId, physicsPatch));
+			}
 		}
 
 		/// <inheritdoc />
@@ -289,6 +376,16 @@ namespace MixedRealityExtension.App
 			}
 			// Process actor queues after connection update.
 			_actorManager.Update();
+
+			if (UsePhysicsBridge)
+			{
+				if (_shouldSendPhysicsUpdate)
+				{
+					SendPhysicsUpdate();
+					_shouldSendPhysicsUpdate = false;
+				}
+			}
+
 			SoundManager.Update();
 			_commandManager.Update();
 			AnimationManager.Update();
@@ -388,7 +485,7 @@ namespace MixedRealityExtension.App
 			{
 				Protocol.Send(new DestroyActors()
 				{
-					ActorIds = new List<Guid>() { actorId }
+					ActorIds = new Guid[] { actorId }
 				});
 			}
 		}
@@ -632,7 +729,7 @@ namespace MixedRealityExtension.App
 				_actorManager.UpdateAllVisibility();
 				onCompleteCallback?.Invoke();
 			}
-			catch(Exception e)
+			catch (Exception e)
 			{
 				Debug.LogException(e);
 			}
@@ -674,10 +771,10 @@ namespace MixedRealityExtension.App
 			try
 			{
 				var curGeneration = generation;
-				AssetCache.OnCached(payload.PrefabId, prefab =>
+				AssetManager.OnSet(payload.PrefabId, prefab =>
 				{
 					if (this == null || _conn == null || !_conn.IsActive || generation != curGeneration) return;
-					if (prefab != null)
+					if (prefab.Asset != null)
 					{
 						var createdActors = _assetLoader.CreateFromPrefab(payload.PrefabId, payload.Actor?.ParentId, payload.CollisionLayer);
 						ProcessCreatedActors(payload, createdActors, onCompleteCallback);
@@ -767,8 +864,8 @@ namespace MixedRealityExtension.App
 				actor.ParentId = parent?.Id ?? actor.ParentId;
 				if (actor.Renderer != null)
 				{
-					actor.MaterialId = AssetCache.GetId(actor.Renderer.sharedMaterial) ?? Guid.Empty;
-					actor.MeshId = AssetCache.GetId(actor.UnityMesh) ?? Guid.Empty;
+					actor.MaterialId = AssetManager.GetByObject(actor.Renderer.sharedMaterial)?.Id ?? Guid.Empty;
+					actor.MeshId = AssetManager.GetByObject(actor.UnityMesh)?.Id ?? Guid.Empty;
 				}
 
 				// native animation construction requires the whole actor hierarchy to already exist. defer to second pass
@@ -829,8 +926,8 @@ namespace MixedRealityExtension.App
 						Message = trace.Message
 					},
 					Traces = new List<Trace>() { trace },
-					Actors = actors?.Select((actor) => actor.GeneratePatch()) ?? new ActorPatch[] { },
-					Animations = anims?.Select(anim => anim.GeneratePatch()) ?? new AnimationPatch[] { }
+					Actors = actors?.Select((actor) => actor.GeneratePatch()).ToArray() ?? new ActorPatch[] { },
+					Animations = anims?.Select(anim => anim.GeneratePatch()).ToArray() ?? new AnimationPatch[] { }
 				},
 				originalMessage?.MessageId
 			);
@@ -860,7 +957,7 @@ namespace MixedRealityExtension.App
 					}
 					Protocol.Send(new SyncAnimations()
 					{
-						AnimationStates = animationStates.ToList()
+						AnimationStates = animationStates.ToArray()
 					}, payload.MessageId);
 					onCompleteCallback?.Invoke();
 				});
@@ -908,6 +1005,16 @@ namespace MixedRealityExtension.App
 					);
 					onCompleteCallback?.Invoke();
 				});
+			}
+		}
+
+		[CommandHandler(typeof(PhysicsBridgeUpdate))]
+		private void OnTransformsUpdate(PhysicsBridgeUpdate payload, Action onCompleteCallback)
+		{
+			if (UsePhysicsBridge)
+			{
+				_physicsBridge.addSnapshot(payload.PhysicsBridge.Id, payload.PhysicsBridge.ToSnapshot());
+				onCompleteCallback?.Invoke();
 			}
 		}
 
