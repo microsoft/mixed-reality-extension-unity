@@ -328,14 +328,18 @@ namespace MixedRealityExtension.App
 				EventManager.QueueEvent(new PhysicsBridgeUpdated(InstanceId, physicsPatch));
 			}
 
-			// <todo> low frequency server upload stream
-			//if (true)
+			//low frequency server upload transform stream
 			{
-				PhysicsTranformServerUploadPatch serverUploadPatch =
-					PhysicsBridge.GenerateServerTransformUploadPatch(InstanceId);
-				if (serverUploadPatch.TransformCount > 0)
+				float systemTime = UnityEngine.Time.time;
+				if (PhysicsBridge.shouldSendLowFrequencyTransformUpload(systemTime))
 				{
-					EventManager.QueueEvent(new PhysicsTranformServerUploadUpdated(InstanceId, serverUploadPatch));
+					PhysicsTranformServerUploadPatch serverUploadPatch =
+						PhysicsBridge.GenerateServerTransformUploadPatch(InstanceId, systemTime);
+					// upload only if there is a real difference
+					if (serverUploadPatch.TransformCount > 0)
+					{
+						EventManager.QueueEvent(new PhysicsTranformServerUploadUpdated(InstanceId, serverUploadPatch));
+					}
 				}
 			}
 		}

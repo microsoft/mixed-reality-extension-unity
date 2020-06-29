@@ -78,6 +78,8 @@ namespace MixedRealityExtension.Core
 		private Dictionary<Guid, PhysicsTranformServerUploadPatch.OneActorUpdate> _lastServerUploadedTransforms  =
 			new Dictionary<Guid, PhysicsTranformServerUploadPatch.OneActorUpdate>();
 
+		private float _lastServerTransformUploadSentTime = 0.0F;
+
 		public PhysicsBridge()
 		{
 		}
@@ -467,9 +469,16 @@ namespace MixedRealityExtension.Core
 			// smooth transform update to hide artifacts for rendering
 		}
 
+		/// returns true if the low frequency upload should be sent to the server
+		public bool shouldSendLowFrequencyTransformUpload(float systemTime)
+		{
+			const float sendPeriod = 3.0F;
+			return (systemTime - _lastServerTransformUploadSentTime > sendPeriod);
+		}
+
 		/// generates the message that updates the transforms on the server side (this is done in a low frequency manner)
 		/// <returns> message that should be sent to the server</returns>
-		public PhysicsTranformServerUploadPatch GenerateServerTransformUploadPatch(Guid instanceId)
+		public PhysicsTranformServerUploadPatch GenerateServerTransformUploadPatch(Guid instanceId, float systemTime)
 		{
 			var ret = new PhysicsTranformServerUploadPatch();
 			int numownedbodies = 0;
@@ -538,6 +547,9 @@ namespace MixedRealityExtension.Core
 				// add the updates
 				ret.updates[numownedbodies++] = update;
 			}
+			// store the last time
+			_lastServerTransformUploadSentTime = systemTime;
+
 			// 
 			return ret;
 		}
