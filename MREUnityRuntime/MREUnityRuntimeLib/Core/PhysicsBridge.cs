@@ -491,11 +491,9 @@ namespace MixedRealityExtension.Core
 				if (rb.Ownership)
 				{
 					numownedbodies++;
-
 					var actor = rb.RigidBody.gameObject.GetComponent<Actor>();
 					if (actor != null)
 					{
-
 						// MUST be the same as  PatchingUtilMethods.GenerateLocalTransformPatch
 						// and  PatchingUtilMethods.GenerateAppTransformPatch
 						//update.localTransforms.Position = actor.transform.position;
