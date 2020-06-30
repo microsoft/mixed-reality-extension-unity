@@ -449,23 +449,7 @@ namespace MixedRealityExtension.App
 		}
 
 		/// <inheritdoc />
-		public void EnableUserInteraction(IUser user)
-		{
-			if (_userManager.HasUser(user.Id))
-			{
-				_interactingUserIds.Add(user.Id);
-			}
-			else
-			{
-				throw new Exception("Enabling interaction on this app for a user that has not joined the app.");
-			}
-		}
-
-		/// <inheritdoc />
-		public void DisableUserInteration(IUser user)
-		{
-			_interactingUserIds.Remove(user.Id);
-		}
+		public bool IsInteractableForUser(IUser user) => _interactingUserIds.Contains(user.Id);
 
 		/// <inheritdoc />
 		public IActor FindActor(Guid id)
@@ -598,7 +582,25 @@ namespace MixedRealityExtension.App
 			return FindActor(actor.Id) != null;
 		}
 
-		internal bool IsInteractable(IUser user) => _interactingUserIds.Contains(user.Id);
+		internal void EnableUserInteraction(IUser user)
+		{
+			if (_userManager.HasUser(user.Id))
+			{
+				_interactingUserIds.Add(user.Id);
+			}
+			else
+			{
+				throw new Exception("Enabling interaction on this app for a user that has not joined the app.");
+			}
+		}
+
+		/// <inheritdoc />
+		internal void DisableUserInteration(IUser user)
+		{
+			_interactingUserIds.Remove(user.Id);
+		}
+
+		internal bool InteractionEnabled() => _interactingUserIds.Count != 0;
 
 		#endregion
 

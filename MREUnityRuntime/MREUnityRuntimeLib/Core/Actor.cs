@@ -1675,7 +1675,7 @@ namespace MixedRealityExtension.Core
 
 #endregion
 
-#region Command Handlers
+		#region Command Handlers
 
 		[CommandHandler(typeof(LocalCommand))]
 		private void OnLocalCommand(LocalCommand payload, Action onCompleteCallback)
@@ -1920,9 +1920,9 @@ namespace MixedRealityExtension.Core
 			onCompleteCallback?.Invoke();
 		}
 
-#endregion
+		#endregion
 
-#region Command Handlers - Rigid Body Commands
+		#region Command Handlers - Rigid Body Commands
 
 		[CommandHandler(typeof(RBMovePosition))]
 		private void OnRBMovePosition(RBMovePosition payload, Action onCompleteCallback)
@@ -1973,6 +1973,6 @@ namespace MixedRealityExtension.Core
 			onCompleteCallback?.Invoke();
 		}
 
-#endregion
+		#endregion
 	}
 }

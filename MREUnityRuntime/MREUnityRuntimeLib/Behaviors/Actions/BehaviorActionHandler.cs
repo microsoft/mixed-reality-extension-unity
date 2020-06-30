@@ -45,6 +45,11 @@ namespace MixedRealityExtension.Behaviors.Actions
 				return;
 			}
 
+			if (!app.IsInteractableForUser(user))
+			{
+				return;
+			}
+
 			var actionPerformed = new ActionPerformed()
 			{
 				UserId = user.Id,
