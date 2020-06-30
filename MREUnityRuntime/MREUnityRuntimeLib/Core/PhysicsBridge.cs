@@ -472,7 +472,7 @@ namespace MixedRealityExtension.Core
 		/// returns true if the low frequency upload should be sent to the server
 		public bool shouldSendLowFrequencyTransformUpload(float systemTime)
 		{
-			const float sendPeriod = 3.0F;
+			const float sendPeriod = 3.0F; // time period in seconds
 			return (systemTime - _lastServerTransformUploadSentTime > sendPeriod);
 		}
 
