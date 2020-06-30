@@ -182,7 +182,8 @@ namespace MixedRealityExtension.Core
 			}
 			if (patch.IsKinematic.HasValue)
 			{
-				_rigidbody.isKinematic = _rigidbody.isKinematic.GetPatchApplied(IsKinematic.ApplyPatch(patch.IsKinematic));
+				IsKinematic = patch.IsKinematic.Value;
+				//_rigidbody.isKinematic = _rigidbody.isKinematic.GetPatchApplied(IsKinematic.ApplyPatch(patch.IsKinematic));
 			}
 			_rigidbody.constraints = (RigidbodyConstraints)((int)_rigidbody.constraints).GetPatchApplied((int)ConstraintFlags.ApplyPatch(patch.ConstraintFlags));
 		}

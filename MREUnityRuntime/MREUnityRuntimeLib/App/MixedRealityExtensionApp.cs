@@ -47,6 +47,8 @@ namespace MixedRealityExtension.App
 		private IList<Action> _executionProtocolActionQueue = new List<Action>();
 		private IList<GameObject> _ownedGameObjects = new List<GameObject>();
 
+		private float _physicsUpdateTimestep = 0.016f;
+		private float _timeSinceLastPhysicsUpdate = 0.0f;
 		private bool _shouldSendPhysicsUpdate = false;
 
 		private enum AppState
@@ -297,17 +299,30 @@ namespace MixedRealityExtension.App
 		/// <inheritdoc />
 		public void FixedUpdate()
 		{
+			if (_appState == AppState.Stopped)
+			{
+				return;
+			}
+
 			if (UsePhysicsBridge)
 			{
 				if (_shouldSendPhysicsUpdate)
 				{
 					SendPhysicsUpdate();
-					_shouldSendPhysicsUpdate = false;
 				}
 
 				PhysicsBridge.FixedUpdate(SceneRoot.transform);
 
-				_shouldSendPhysicsUpdate = true;
+				// add delta for next step
+				_timeSinceLastPhysicsUpdate += Time.fixedDeltaTime;
+
+				float updateDeltaTime = Math.Max(Time.fixedDeltaTime,
+					Time.fixedDeltaTime * (float)Math.Floor(_physicsUpdateTimestep / Time.fixedDeltaTime));
+
+				if (updateDeltaTime - _timeSinceLastPhysicsUpdate < 0.001f)
+				{
+					_shouldSendPhysicsUpdate = true;
+				}
 			}
 		}
 
@@ -326,6 +341,9 @@ namespace MixedRealityExtension.App
 			{
 				EventManager.QueueEvent(new PhysicsBridgeUpdated(InstanceId, physicsPatch));
 			}
+
+			_shouldSendPhysicsUpdate = false;
+			_timeSinceLastPhysicsUpdate = 0.0f;
 		}
 
 		/// <inheritdoc />
@@ -348,7 +366,6 @@ namespace MixedRealityExtension.App
 				if (_shouldSendPhysicsUpdate)
 				{
 					SendPhysicsUpdate();
-					_shouldSendPhysicsUpdate = false;
 				}
 			}
 
@@ -377,6 +394,8 @@ namespace MixedRealityExtension.App
 				});
 
 				LocalUser = user;
+
+				PhysicsBridge.LocalUserId = LocalUser.Id;
 
 				// TODO @tombu - Wait for the app to send back a success for join?
 				_userManager.AddUser(user);
