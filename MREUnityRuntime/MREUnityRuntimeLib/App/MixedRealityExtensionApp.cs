@@ -56,12 +56,19 @@ namespace MixedRealityExtension.App
 		private enum AppState
 		{
 			Stopped,
+			/// <summary>
+			/// Startup has been called, but we might be waiting for permission to run.
+			/// </summary>
+			WaitingForPermission,
 			Starting,
 			Running
 		}
 
 		private AppState _appState = AppState.Stopped;
 		private int generation = 0;
+
+		[Obsolete]
+		private string PlatformId;
 
 		public IMRELogger Logger { get; private set; }
 
@@ -131,6 +138,8 @@ namespace MixedRealityExtension.App
 		/// <inheritdoc />
 		public RPCChannelInterface RPCChannels { get; }
 
+		public AssetManager AssetManager => _assetManager;
+
 		#endregion
 
 		#region Properties - Internal
@@ -151,7 +160,7 @@ namespace MixedRealityExtension.App
 
 		internal AssetLoader AssetLoader => _assetLoader;
 
-		public AssetManager AssetManager => _assetManager;
+		internal Permissions GrantedPermissions = Permissions.None;
 
 		#endregion
 
@@ -220,10 +229,47 @@ namespace MixedRealityExtension.App
 		}
 
 		/// <inheritdoc />
-		public void Startup(string url, string sessionId, string platformId)
+		public async void Startup(string url, string sessionId, string platformId)
 		{
+			if (_appState != AppState.Stopped)
+			{
+				Shutdown();
+			}
+
 			ServerUri = new Uri(url, UriKind.Absolute);
 			ServerAssetUri = new Uri(Regex.Replace(ServerUri.AbsoluteUri, "^ws(s?):", "http$1:"));
+			SessionId = sessionId;
+			PlatformId = platformId;
+
+			_appState = AppState.WaitingForPermission;
+
+			// download manifest
+			var manifestUri = new Uri(ServerAssetUri, "./manifest.json");
+			var manifest = await AppManifest.DownloadManifest(manifestUri);
+			var neededFlags = Permissions.Execution | (manifest.Permissions?.ToFlags() ?? Permissions.None);
+			var wantedFlags = manifest.OptionalPermissions?.ToFlags() ?? Permissions.None;
+
+			// get permission to run from host app
+			var grantedPerms = await MREAPI.AppsAPI.PermissionManager.PromptForPermissions(
+				appLocation: ServerUri,
+				permissionsNeeded: new HashSet<Permissions>(manifest.Permissions ?? new Permissions[0]) { Permissions.Execution },
+				permissionsWanted: manifest.OptionalPermissions,
+				permissionFlagsNeeded: neededFlags,
+				permissionFlagsWanted: wantedFlags,
+				appManifest: manifest);
+
+			// only use permissions that are requested, even if the user offers more
+			GrantedPermissions = grantedPerms & (neededFlags | wantedFlags);
+
+			MREAPI.AppsAPI.PermissionManager.OnPermissionDecisionsChanged += OnPermissionsUpdated;
+
+			if (!grantedPerms.HasFlag(Permissions.Execution))
+			{
+				Debug.LogError($"User has denied permission for the MRE '{ServerUri}' to run");
+				return;
+			}
+
+			_appState = AppState.Starting;
 
 			if (UsePhysicsBridge)
 			{
@@ -232,31 +278,21 @@ namespace MixedRealityExtension.App
 				_actorManager.RigidBodyKinematicsChanged += OnRigidBodyKinematicsChanged;
 				_actorManager.RigidBodyOwnerChanged += OnRigidBodyOwnerChanged;
 			}
+			
+			var connection = new WebSocket();
+			connection.Url = url;
+			connection.Headers.Add(Constants.SessionHeader, SessionId);
+			connection.Headers.Add(Constants.PlatformHeader, PlatformId);
+			connection.Headers.Add(Constants.LegacyProtocolVersionHeader, $"{Constants.LegacyProtocolVersion}");
+			connection.Headers.Add(Constants.CurrentClientVersionHeader, Constants.CurrentClientVersion);
+			connection.Headers.Add(Constants.MinimumSupportedSDKVersionHeader, Constants.MinimumSupportedSDKVersion);
+			connection.OnConnecting += Conn_OnConnecting;
+			connection.OnConnectFailed += Conn_OnConnectFailed;
+			connection.OnConnected += Conn_OnConnected;
+			connection.OnDisconnected += Conn_OnDisconnected;
+			connection.OnError += Connection_OnError;
+			_conn = connection;
 
-			if (_conn == null)
-			{
-				if (_appState == AppState.Stopped)
-				{
-					_appState = AppState.Starting;
-				}
-
-				SessionId = sessionId;
-
-				var connection = new WebSocket();
-
-				connection.Url = url;
-				connection.Headers.Add(Constants.SessionHeader, sessionId);
-				connection.Headers.Add(Constants.PlatformHeader, platformId);
-				connection.Headers.Add(Constants.LegacyProtocolVersionHeader, $"{Constants.LegacyProtocolVersion}");
-				connection.Headers.Add(Constants.CurrentClientVersionHeader, Constants.CurrentClientVersion);
-				connection.Headers.Add(Constants.MinimumSupportedSDKVersionHeader, Constants.MinimumSupportedSDKVersion);
-				connection.OnConnecting += Conn_OnConnecting;
-				connection.OnConnectFailed += Conn_OnConnectFailed;
-				connection.OnConnected += Conn_OnConnected;
-				connection.OnDisconnected += Conn_OnDisconnected;
-				connection.OnError += Connection_OnError;
-				_conn = connection;
-			}
 			_conn.Open();
 		}
 
@@ -264,6 +300,15 @@ namespace MixedRealityExtension.App
 		{
 			bool isOwner = owner.HasValue ? owner.Value == LocalUser.Id : IsAuthoritativePeer;
 			_physicsBridge.setRigidBodyOwnership(id, isOwner);
+		}
+
+		private void OnPermissionsUpdated(Uri serverUri, Permissions oldPermissions, Permissions newPermissions)
+		{
+			if (serverUri.GetLeftPart(UriPartial.Path) == ServerUri.GetLeftPart(UriPartial.Path)
+				&& _appState != AppState.Stopped)
+			{
+				Startup(ServerUri.ToString(), SessionId, PlatformId);
+			}
 		}
 
 		/// <inheritdoc />
@@ -299,6 +344,8 @@ namespace MixedRealityExtension.App
 		{
 			Disconnect();
 			FreeResources();
+
+			MREAPI.AppsAPI.PermissionManager.OnPermissionDecisionsChanged -= OnPermissionsUpdated;
 
 			if (_appState != AppState.Stopped)
 			{
@@ -396,6 +443,13 @@ namespace MixedRealityExtension.App
 		{
 			void PerformUserJoin()
 			{
+				// only join the user if required
+				if (!GrantedPermissions.HasFlag(Permissions.UserInteraction)
+					&& !GrantedPermissions.HasFlag(Permissions.UserTracking))
+				{
+					return;
+				}
+
 				var user = userGO.GetComponents<User>()
 					.FirstOrDefault(_user => _user.AppInstanceId == this.InstanceId);
 
@@ -991,6 +1045,14 @@ namespace MixedRealityExtension.App
 			{
 				Protocol.Send(
 					new DialogResponse() { FailureMessage = "This client has not implemented dialogs" },
+					payload.MessageId
+				);
+				onCompleteCallback?.Invoke();
+			}
+			else if (!GrantedPermissions.HasFlag(Permissions.UserInteraction))
+			{
+				Protocol.Send(
+					new DialogResponse() { FailureMessage = "The user has refused the MRE permission to open dialogs" },
 					payload.MessageId
 				);
 				onCompleteCallback?.Invoke();
