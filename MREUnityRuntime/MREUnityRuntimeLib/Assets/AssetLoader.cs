@@ -448,10 +448,11 @@ namespace MixedRealityExtension.Assets
 				{
 					result.Asset.wrapModeU = def.Texture.Value.WrapModeU ?? TextureWrapMode.Repeat;
 					result.Asset.wrapModeV = def.Texture.Value.WrapModeV ?? TextureWrapMode.Repeat;
+					result.Asset.filterMode = FilterMode.Bilinear;
 				}
 
-				unityAsset = result.Asset;
 				source.Version = result.ETag;
+				unityAsset = result.Asset;
 				if (result.FailureMessage != null)
 				{
 					response.FailureMessage = result.FailureMessage;

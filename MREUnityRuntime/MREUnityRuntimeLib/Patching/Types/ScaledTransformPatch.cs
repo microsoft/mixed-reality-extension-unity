@@ -1,12 +1,17 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 using MixedRealityExtension.Animation;
 using MixedRealityExtension.Core.Types;
 using Newtonsoft.Json.Linq;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace MixedRealityExtension.Patching.Types
 {
-	public class TransformPatch : Patchable<TransformPatch>
+	public class ScaledTransformPatch : Patchable<ScaledTransformPatch>
 	{
 		private Vector3Patch position;
 		private Vector3Patch savedPosition;
@@ -41,16 +46,33 @@ namespace MixedRealityExtension.Patching.Types
 				rotation = value;
 			}
 		}
+		private Vector3Patch scale;
+		private Vector3Patch savedScale;
+		[PatchProperty]
+		public Vector3Patch Scale
+		{
+			get => scale;
+			set
+			{
+				if (value == null && scale != null)
+				{
+					savedScale = scale;
+					savedScale.Clear();
+				}
+				scale = value;
+			}
+		}
 
-		public TransformPatch()
+		public ScaledTransformPatch()
 		{
 
 		}
 
-		internal TransformPatch(MWVector3 position, MWQuaternion rotation)
+		internal ScaledTransformPatch(MWVector3 position, MWQuaternion rotation, MWVector3 scale)
 		{
 			Position = new Vector3Patch(position);
 			Rotation = new QuaternionPatch(rotation);
+			Scale = new Vector3Patch(scale);
 		}
 
 		public override void WriteToPath(TargetPath path, JToken value, int depth)
@@ -83,6 +105,18 @@ namespace MixedRealityExtension.Patching.Types
 				}
 				Rotation.WriteToPath(path, value, depth + 1);
 			}
+			else if (path.PathParts[depth] == "scale")
+			{
+				if (Scale == null)
+				{
+					if (savedScale == null)
+					{
+						savedScale = new Vector3Patch();
+					}
+					scale = savedScale;
+				}
+				scale.WriteToPath(path, value, depth + 1);
+			}
 			// else
 				// an unrecognized path, do nothing
 		}
@@ -97,6 +131,10 @@ namespace MixedRealityExtension.Patching.Types
 			{
 				return Rotation?.ReadFromPath(path, ref value, depth + 1) ?? false;
 			}
+			else if (path.PathParts[depth] == "scale")
+			{
+				return Scale?.ReadFromPath(path, ref value, depth + 1) ?? false;
+			}
 			return false;
 		}
 
@@ -104,6 +142,7 @@ namespace MixedRealityExtension.Patching.Types
 		{
 			Position = null;
 			Rotation = null;
+			Scale = null;
 		}
 
 		public override void Restore(TargetPath path, int depth)
@@ -120,6 +159,10 @@ namespace MixedRealityExtension.Patching.Types
 					Rotation = savedRotation ?? new QuaternionPatch();
 					Rotation.Restore(path, depth + 1);
 					break;
+				case "scale":
+					Scale = savedScale ?? new Vector3Patch();
+					Scale.Restore(path, depth + 1);
+					break;
 			}
 		}
 
@@ -129,6 +172,8 @@ namespace MixedRealityExtension.Patching.Types
 			Position.RestoreAll();
 			Rotation = savedRotation ?? new QuaternionPatch();
 			Rotation.RestoreAll();
+			Scale = savedScale ?? new Vector3Patch();
+			Scale.RestoreAll();
 		}
 	}
 }

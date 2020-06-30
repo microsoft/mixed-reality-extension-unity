@@ -11,7 +11,7 @@ using System.Collections.Generic;
 
 namespace MixedRealityExtension.Patching.Types
 {
-	public class UserPatch : IPatchable
+	public class UserPatch : Patchable<UserPatch>
 	{
 		public Guid Id { get; set; }
 
@@ -39,31 +39,6 @@ namespace MixedRealityExtension.Patching.Types
 			Name = user.Name;
 			Groups = user.Groups;
 			Properties = user.UserInfo.Properties;
-		}
-
-		public void WriteToPath(TargetPath path, JToken value, int depth)
-		{
-
-		}
-
-		public bool ReadFromPath(TargetPath path, ref JToken value, int depth)
-		{
-			return false;
-		}
-
-		public void Clear()
-		{
-
-		}
-
-		public void Restore(TargetPath path, int depth)
-		{
-
-		}
-
-		public void RestoreAll()
-		{
-
 		}
 	}
 }
