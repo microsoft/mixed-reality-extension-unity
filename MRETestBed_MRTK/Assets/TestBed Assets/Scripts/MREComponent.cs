@@ -6,6 +6,7 @@ using Assets.Scripts.Behaviors;
 using MixedRealityExtension.API;
 using MixedRealityExtension.App;
 using MixedRealityExtension.Assets;
+using MixedRealityExtension.Core;
 using MixedRealityExtension.Core.Interfaces;
 using MixedRealityExtension.Factories;
 using MixedRealityExtension.PluginInterfaces;
@@ -62,6 +63,9 @@ public class MREComponent : MonoBehaviour
 	public bool AutoStart = false;
 
 	public bool AutoJoin = true;
+
+	[SerializeField]
+	private Permissions GrantedPermissions;
 
 	public Transform SceneRoot;
 
@@ -135,7 +139,6 @@ public class MREComponent : MonoBehaviour
 				defaultMaterial: DefaultPrimMaterial,
 				layerApplicator: new SimpleLayerApplicator(0, 9, 10, 5),
 				assetCache: assetCache,
-				behaviorFactory: new MRTKBehaviorFactory(),
 				textFactory: new TmpTextFactory()
 				{
 					DefaultFont = DefaultFont,
@@ -144,12 +147,14 @@ public class MREComponent : MonoBehaviour
 					MonospaceFont = MonospaceFont,
 					CursiveFont = CursiveFont
 				},
-				libraryFactory: new ResourceFactory(),
-				userInfoProvider: new UserInfoProvider(),
+				permissionManager: new SimplePermissionManager(GrantedPermissions),
+				behaviorFactory: new BehaviorFactory(),
 				dialogFactory: DialogFactory,
-				logger: new MRELogger(),
+				libraryFactory: new ResourceFactory(),
+				gltfImporterFactory: new VertexShadedGltfImporterFactory(),
 				materialPatcher: new VertexMaterialPatcher(),
-				gltfImporterFactory: new VertexShadedGltfImporterFactory()
+				userInfoProvider: new UserInfoProvider(),
+				logger: new MRELogger()
 			);
 			_apiInitialized = true;
 		}
