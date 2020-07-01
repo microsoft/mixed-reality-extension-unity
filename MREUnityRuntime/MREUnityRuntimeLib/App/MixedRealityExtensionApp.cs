@@ -349,7 +349,7 @@ namespace MixedRealityExtension.App
 				{
 					PhysicsTranformServerUploadPatch serverUploadPatch =
 						PhysicsBridge.GenerateServerTransformUploadPatch(InstanceId, systemTime);
-					// upload only if there is a real difference
+					// upload only if there is a real difference in the transforms
 					if (serverUploadPatch.TransformCount > 0)
 					{
 						EventManager.QueueEvent(new PhysicsTranformServerUploadUpdated(InstanceId, serverUploadPatch));
@@ -1014,7 +1014,7 @@ namespace MixedRealityExtension.App
 		{
 			if (UsePhysicsBridge)
 			{
-				PhysicsBridge.addSnapshot(payload.PhysicsBridgePatchContent.Id, payload.PhysicsBridgePatchContent.ToSnapshot());
+				PhysicsBridge.addSnapshot(payload.PhysicsBridgePatch.Id, payload.PhysicsBridgePatch.ToSnapshot());
 				onCompleteCallback?.Invoke();
 			}
 		}

@@ -555,8 +555,7 @@ namespace MixedRealityExtension.Core
 			}
 			// store the last time
 			_lastServerTransformUploadSentTime = systemTime;
-
-			// 
+			
 			return ret;
 		}
 	}

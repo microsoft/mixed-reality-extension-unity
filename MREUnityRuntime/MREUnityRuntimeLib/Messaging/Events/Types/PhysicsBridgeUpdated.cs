@@ -26,19 +26,19 @@ namespace MixedRealityExtension.Messaging.Events.Types
 
 			app.Protocol.Send(new PhysicsBridgeUpdate()
 			{
-				PhysicsBridgePatchContent = _physicsBridgePatch
+				PhysicsBridgePatch = _physicsBridgePatch
 			});
 		}
 	}
 
 	internal class PhysicsTranformServerUploadUpdated : MWEventBase
 	{
-		private readonly PhysicsTranformServerUploadPatch _physicsTransformUploadPatchPatch;
+		private readonly PhysicsTranformServerUploadPatch _physicsTransformUploadPatch;
 
 		public PhysicsTranformServerUploadUpdated(Guid id, PhysicsTranformServerUploadPatch physicsServerUploadPatch)
 			: base(id)
 		{
-			_physicsTransformUploadPatchPatch = physicsServerUploadPatch;
+			_physicsTransformUploadPatch = physicsServerUploadPatch;
 		}
 
 		internal override void SendEvent(MixedRealityExtensionApp app)
@@ -50,7 +50,7 @@ namespace MixedRealityExtension.Messaging.Events.Types
 
 			app.Protocol.Send(new PhysicsTranformServerUpload()
 			{
-				PhysicsTranformServer = _physicsTransformUploadPatchPatch
+				PhysicsTranformServer = _physicsTransformUploadPatch
 			});
 		}
 	}
