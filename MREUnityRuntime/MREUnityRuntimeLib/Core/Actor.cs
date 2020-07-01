@@ -1594,6 +1594,7 @@ namespace MixedRealityExtension.Core
 				// convert to a RigidBody and build a patch from the old one to this one.
 				var rigidBodyPatch = PatchingUtilMethods.GeneratePatch(RigidBody, _rigidbody,
 					App.SceneRoot.transform, addVelocities);
+
 				if (rigidBodyPatch != null && rigidBodyPatch.IsPatched())
 				{
 					actorPatch.RigidBody = rigidBodyPatch;

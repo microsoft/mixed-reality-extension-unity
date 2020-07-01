@@ -196,7 +196,7 @@ namespace MixedRealityExtension.Patching
 				return null;
 			}
 		}
-
+		
 		public static RigidBodyPatch GeneratePatch(RigidBody _old, Rigidbody _new,
 			Transform sceneRoot, bool addVelocities)
 		{
@@ -212,12 +212,12 @@ namespace MixedRealityExtension.Patching
 			var patch = new RigidBodyPatch()
 			{
 				// Do not include Position or Rotation in the patch.
-
+				
 				// we add velocities only if there is an explicit subscription for it, since it might cause significant bandwidth 
 				Velocity = ((addVelocities) ?
-				     GeneratePatch(_old.Velocity, sceneRoot.InverseTransformDirection(_new.velocity)) : null),
+				  GeneratePatch(_old.Velocity, sceneRoot.InverseTransformDirection(_new.velocity)) : null),
 				AngularVelocity = ((addVelocities) ?
-				     GeneratePatch(_old.AngularVelocity, sceneRoot.InverseTransformDirection(_new.angularVelocity)) : null),
+				  GeneratePatch(_old.AngularVelocity, sceneRoot.InverseTransformDirection(_new.angularVelocity)) : null),
 
 				CollisionDetectionMode = GeneratePatch(
 					_old.CollisionDetectionMode,
