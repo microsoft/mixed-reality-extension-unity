@@ -1895,6 +1895,13 @@ namespace MixedRealityExtension.Core
 		[CommandHandler(typeof(SetBehavior))]
 		private void OnSetBehavior(SetBehavior payload, Action onCompleteCallback)
 		{
+			// Don't create a behavior at all for this actor if the app is not interactable for any users.
+			if (!App.InteractionEnabled())
+			{
+				onCompleteCallback?.Invoke();
+				return;
+			}
+
 			var behaviorComponent = GetOrCreateActorComponent<BehaviorComponent>();
 
 			if (behaviorComponent.ContainsBehaviorContext())
@@ -1918,6 +1925,7 @@ namespace MixedRealityExtension.Core
 				// We need to update the new behavior's grabbable flag from the actor so that it can be grabbed in the case we cleared the previous behavior.
 				((ITargetBehavior)context.Behavior).Grabbable = Grabbable;
 			}
+
 			onCompleteCallback?.Invoke();
 		}
 

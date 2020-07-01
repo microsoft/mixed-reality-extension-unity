@@ -469,6 +469,12 @@ namespace MixedRealityExtension.App
 				// TODO @tombu - Wait for the app to send back a success for join?
 				_userManager.AddUser(user);
 
+				// Enable interactions for the user if given the UserInteraction permission.
+				if (GrantedPermissions.HasFlag(Permissions.UserInteraction))
+				{
+					EnableUserInteraction(user);
+				}
+
 				OnUserJoined?.Invoke(userInfo);
 			}
 
@@ -490,6 +496,11 @@ namespace MixedRealityExtension.App
 
 			if (user != null)
 			{
+				if (IsInteractableForUser(user))
+				{
+					DisableUserInteration(user);
+				}
+
 				_userManager.RemoveUser(user);
 				_interactingUserIds.Remove(user.Id);
 
