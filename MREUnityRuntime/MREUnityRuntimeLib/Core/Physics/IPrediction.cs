@@ -48,5 +48,8 @@ namespace MixedRealityExtension.Core.Physics
 		/// In the last step within the frame the owned bodies are added to the prediction
 		void PredictAllRemoteBodiesWithOwnedBodies(ref SortedList<Guid, RigidBodyPhysicsBridgeInfo> allRigidBodiesOfThePhysicsBridge,
 			PredictionTimeParameters timeInfo);
+
+		/// reset internal state
+		void Clear();
 	}
 }

@@ -54,14 +54,22 @@ namespace MixedRealityExtension.Core
 	/// </summary>
 	public class PhysicsBridge
 	{
+		/// <summary>
+		///  Local user, upload transforms owned by this user.
+		/// </summary>
+		public Guid? LocalUserId { get; set; } = null;
 
-		private int _countOwnedTransforms = 0;
-		private int _countStreamedTransforms = 0;
 		/// stores the number of transforms that should be have been sent (without cap) to all consumers
 		private int _lastNumberOfTransformsToBeSent = 0;
 
+		// indicates if all local rigid bodies are sleeping.
+		// if so, we can send updates less frequently.
+		bool _allOwnedBodiesAreSleeping = true;
+
+		// list of tracked rigid bodies
 		private SortedList<Guid, RigidBodyPhysicsBridgeInfo> _rigidBodies = new SortedList<Guid, RigidBodyPhysicsBridgeInfo>();
 
+		// provides transforms and timestamp for rigid bodies
 		TimeSnapshotManager _snapshotManager = new TimeSnapshotManager();
 
 		/// the prediction object
@@ -72,75 +80,72 @@ namespace MixedRealityExtension.Core
 		/// maximal estimated angular velocity
 		private const float _maxEstimatedAngularVelocity = 5.0F;
 
-		public PhysicsBridge()
-		{
-		}
-
 		#region Rigid Body Management
 
-		public void addRigidBody(Guid id, UnityEngine.Rigidbody rigidbody, bool ownership)
+		public void addRigidBody(Guid id, UnityEngine.Rigidbody rigidbody, Guid source, bool isKinematic)
 		{
 			UnityEngine.Debug.Assert(!_rigidBodies.ContainsKey(id), "PhysicsBridge already has an entry for rigid body with specified ID.");
 
-			_rigidBodies.Add(id, new RigidBodyPhysicsBridgeInfo(id, rigidbody, ownership));
+			bool isLocalSumulationAuthoritative = LocalUserId == source;
 
-			if (ownership)
+			var rb = new RigidBodyPhysicsBridgeInfo(id, rigidbody, isLocalSumulationAuthoritative);
+
+			_rigidBodies.Add(id, rb);
+
+			if (isLocalSumulationAuthoritative)
 			{
-				rigidbody.isKinematic = false;
-				_countOwnedTransforms++;
+				rb.IsKeyframed = isKinematic;
+				rigidbody.isKinematic = isKinematic;
 			}
 			else
 			{
 				rigidbody.isKinematic = true;
-				_countStreamedTransforms++;
+
+				_snapshotManager.RegisterOrUpateRigidBody(id, source);
 			}
 		}
 
 		public void removeRigidBody(Guid id)
-		{
-			UnityEngine.Debug.Assert(_rigidBodies.ContainsKey(id), "PhysicsBridge don't have rigid body with specified ID.");
-
-			var rb = _rigidBodies[id];
-
-			if (rb.Ownership)
-			{
-				_countOwnedTransforms--;
-			}
-			else
-			{
-				_countStreamedTransforms--;
-				//<todo> remove also from the last Jitter buffer for sleeping bodies (we should just set the motion type to dynamic)
-				_snapshotManager.DelteBodyFromBuffer(id);
-			}
-
-			_rigidBodies.Remove(id);
-		}
-
-		public void setRigidBodyOwnership(Guid id, bool ownership)
 		{
 			if (!_rigidBodies.ContainsKey(id))
 			{
 				return;
 			}
 
-			UnityEngine.Debug.Assert(_rigidBodies.ContainsKey(id), "PhysicsBridge don't have rigid body with specified ID.");
-			UnityEngine.Debug.Assert(_rigidBodies[id].Ownership != ownership, "Rigid body with specified ID is already registered with same ownership flag.");
+			var rb = _rigidBodies[id];
 
-			if (ownership)
+			if (!rb.Ownership)
 			{
-				_countOwnedTransforms++;
-				_countStreamedTransforms--;
+				_snapshotManager.UnregisterRigidBody(id);
+			}
+
+			_rigidBodies.Remove(id);
+		}
+
+		public void setRigidBodyOwnership(Guid id, Guid sourceId, bool isKinematic)
+		{
+			if (!_rigidBodies.ContainsKey(id))
+			{
+				return;
+			}
+
+			bool isLocalSumulationAuthoritative = LocalUserId == sourceId;
+
+			UnityEngine.Debug.Assert(_rigidBodies[id].Ownership != isLocalSumulationAuthoritative, "Rigid body with specified ID is already registered with same ownership flag.");
+
+			if (isLocalSumulationAuthoritative)
+			{
+				_rigidBodies[id].IsKeyframed = isKinematic;
+				_rigidBodies[id].RigidBody.isKinematic = isKinematic;
+
+				_snapshotManager.UnregisterRigidBody(id);
 			}
 			else
 			{
-				_countOwnedTransforms--;
-				_countStreamedTransforms++;
+				_snapshotManager.RegisterOrUpateRigidBody(id, sourceId);
 			}
 
-			//<todo> this could be done more efficiently
-			_snapshotManager.DelteBodyFromBuffer(id);
-			
-			_rigidBodies[id].Ownership = ownership;
+			_rigidBodies[id].Ownership = isLocalSumulationAuthoritative;
 		}
 
 		public void setKeyframed(Guid id, bool isKeyFramed)
@@ -166,10 +171,6 @@ namespace MixedRealityExtension.Core
 		/// <param name="snapshot">List of transform at specified timestamp.</param>
 		public void addSnapshot(Guid sourceId, Snapshot snapshot)
 		{
-
-			// <todo> jabenk now not all bodies will get an update here
-			//        we should just copy exactly over 
-
 			_snapshotManager.addSnapshot(sourceId, snapshot);
 		}
 
@@ -187,7 +188,8 @@ namespace MixedRealityExtension.Core
 			_predictor.StartBodyPredicitonForNextFrame();
 
 			int index = 0;
-			MultiSourceCombinedSnapshot snapshot = _snapshotManager.GetNextSnapshot(timeInfo.DT);
+			MultiSourceCombinedSnapshot snapshot;
+			_snapshotManager.Step(timeInfo.DT, out snapshot);
 
 			foreach (var rb in _rigidBodies.Values)
 			{
@@ -333,7 +335,6 @@ namespace MixedRealityExtension.Core
 
 			// call the predictor
 			_predictor.PredictAllRemoteBodiesWithOwnedBodies(ref _rigidBodies, timeInfo);
-
 		}
 
 		/// <summary>
@@ -346,7 +347,7 @@ namespace MixedRealityExtension.Core
 		{
 			// collect transforms from owned rigid bodies
 			// and generate update packet/snapshot
-			
+
 			// these constants define when a body is considered to be sleeping
 			const float globalToleranceMultipier = 1.0F;
 			const float maxSleepingSqrtLinearVelocity = 0.1F * globalToleranceMultipier;
@@ -437,13 +438,14 @@ namespace MixedRealityExtension.Core
 			}
 
 			Snapshot.SnapshotFlags snapshotFlag = Snapshot.SnapshotFlags.NoFlags;
-			// check if we should restart the jitter buffer 
-			if ( (_lastNumberOfTransformsToBeSent == 0 && numOwnedBodies != 0)
-				|| (_lastNumberOfTransformsToBeSent != 0 && numOwnedBodies == 0))
+
+			bool allBodiesAreSleepingNew = numOwnedBodies == numSleepingBodies;
+			if (allBodiesAreSleepingNew != _allOwnedBodiesAreSleeping)
 			{
+				_allOwnedBodiesAreSleeping = allBodiesAreSleepingNew;
 				snapshotFlag = Snapshot.SnapshotFlags.ResetJitterBuffer;
 			}
-			
+
 			_lastNumberOfTransformsToBeSent = numOwnedBodies;
 
 			var ret = new Snapshot(time, transforms, snapshotFlag);
@@ -457,9 +459,14 @@ namespace MixedRealityExtension.Core
 			return ret;
 		}
 
-		public void LateUpdate()
+		internal void Reset()
 		{
-			// smooth transform update to hide artifacts for rendering
+			_lastNumberOfTransformsToBeSent = 0;
+			_allOwnedBodiesAreSleeping = true;
+
+			_rigidBodies.Clear();
+			_snapshotManager.Clear();
+			_predictor.Clear();
 		}
 	}
 }
