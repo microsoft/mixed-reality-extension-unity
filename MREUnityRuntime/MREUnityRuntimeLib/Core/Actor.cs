@@ -489,6 +489,7 @@ namespace MixedRealityExtension.Core
 
 			if (generateAll)
 			{
+
 				var rigidBody = PatchingUtilMethods.GeneratePatch(
 					RigidBody, (Rigidbody)null, App.SceneRoot.transform, !App.UsePhysicsBridge);
 

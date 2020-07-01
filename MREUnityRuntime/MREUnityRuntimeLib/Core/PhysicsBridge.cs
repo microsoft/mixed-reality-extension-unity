@@ -6,6 +6,8 @@ using System;
 using System.Collections.Generic;
 using MixedRealityExtension.Util;
 using UnityEngine;
+using MixedRealityExtension.Patching.Types;
+using MixedRealityExtension.Patching;
 
 namespace MixedRealityExtension.Core
 {
@@ -79,6 +81,12 @@ namespace MixedRealityExtension.Core
 		private const float _maxEstimatedLinearVelocity = 30.0F;
 		/// maximal estimated angular velocity
 		private const float _maxEstimatedAngularVelocity = 5.0F;
+		
+		// ---- fields to be used to check for update the server side updates ----
+		private Dictionary<Guid, PhysicsTranformServerUploadPatch.OneActorUpdate> _lastServerUploadedTransforms  =
+			new Dictionary<Guid, PhysicsTranformServerUploadPatch.OneActorUpdate>();
+		/// for the low frequency server transforms upload the last time when the update happened
+		private float _lastServerTransformUploadSentTime = 0.0F;
 
 		#region Rigid Body Management
 
@@ -347,7 +355,7 @@ namespace MixedRealityExtension.Core
 		{
 			// collect transforms from owned rigid bodies
 			// and generate update packet/snapshot
-
+			
 			// these constants define when a body is considered to be sleeping
 			const float globalToleranceMultipier = 1.0F;
 			const float maxSleepingSqrtLinearVelocity = 0.1F * globalToleranceMultipier;
@@ -385,7 +393,7 @@ namespace MixedRealityExtension.Core
 				UnityEngine.Vector3 rotDiff = UtilMethods.TransformEulerAnglesToRadians(rb.lastValidAngularVelocityorAng - transform.Rotation.eulerAngles);
 
 				bool isBodySleepingInThisFrame =
-					!rb.IsKeyframed && // if body is key framed and owned then we should just feed the jitter buffer
+					(!rb.IsKeyframed) && // if body is key framed and owned then we should just feed the jitter buffer
 					( rb.RigidBody.velocity.sqrMagnitude < maxSleepingSqrtLinearVelocity
 					  && rb.RigidBody.angularVelocity.sqrMagnitude < maxSleepingSqrtAngularVelocity
 					  && posDiff.sqrMagnitude < maxSleepingSqrtPositionDiff
@@ -467,6 +475,88 @@ namespace MixedRealityExtension.Core
 			_rigidBodies.Clear();
 			_snapshotManager.Clear();
 			_predictor.Clear();
+		}
+
+		/// returns true if the low frequency upload should be sent to the server
+		public bool shouldSendLowFrequencyTransformUpload(float systemTime)
+		{
+			const float sendPeriod = 3.0F; // time period in seconds
+			return (systemTime - _lastServerTransformUploadSentTime > sendPeriod);
+		}
+
+		/// generates the message that updates the transforms on the server side (this is done in a low frequency manner)
+		/// <returns> message that should be sent to the server</returns>
+		public PhysicsTranformServerUploadPatch GenerateServerTransformUploadPatch(Guid instanceId, float systemTime)
+		{
+			var ret = new PhysicsTranformServerUploadPatch();
+			int numownedbodies = 0;
+			int numUpdatedTransform = 0;
+			List<PhysicsTranformServerUploadPatch.OneActorUpdate> allUpdates = new List<PhysicsTranformServerUploadPatch.OneActorUpdate>();
+
+			// first loop counts how many RBs do we own
+			foreach (var rb in _rigidBodies.Values)
+			{
+				if (rb.Ownership)
+				{
+					numownedbodies++;
+					var actor = rb.RigidBody.gameObject.GetComponent<Actor>();
+					if (actor != null)
+					{
+						// MUST be the same as  PatchingUtilMethods.GenerateLocalTransformPatch
+						// and  PatchingUtilMethods.GenerateAppTransformPatch
+						//update.localTransforms.Position = actor.transform.position;
+
+						var update = new PhysicsTranformServerUploadPatch.OneActorUpdate(
+							actor.Id,
+							actor.transform.position, actor.transform.rotation,
+							actor.App.SceneRoot.transform.InverseTransformPoint(actor.transform.position),
+							Quaternion.Inverse(actor.App.SceneRoot.transform.rotation) * actor.transform.rotation
+							);
+
+						// todo see if we sent this update already
+						if (_lastServerUploadedTransforms.ContainsKey(rb.Id))
+						{
+							var lastUpdate = _lastServerUploadedTransforms[rb.Id];
+							if (!lastUpdate.isEqual(update))
+							{
+								allUpdates.Add(update);
+								numUpdatedTransform++;
+								_lastServerUploadedTransforms[rb.Id] = update;
+							}
+						}
+						else
+						{
+							// add an update anyway
+							allUpdates.Add(update);
+							_lastServerUploadedTransforms.Add(rb.Id, update);
+							numUpdatedTransform++;
+						}
+					}
+				}
+				else
+				{
+					// remove if this is in this list
+					if (_lastServerUploadedTransforms.ContainsKey(rb.Id))
+					{
+						_lastServerUploadedTransforms.Remove(rb.Id);
+					}
+				}
+			}
+
+			ret.updates = new PhysicsTranformServerUploadPatch.OneActorUpdate[numownedbodies];
+			ret.TransformCount = numUpdatedTransform;
+			ret.Id = instanceId;
+
+			numownedbodies = 0;
+			foreach (var update in allUpdates)
+			{
+				// add the updates
+				ret.updates[numownedbodies++] = update;
+			}
+			// store the last time
+			_lastServerTransformUploadSentTime = systemTime;
+			
+			return ret;
 		}
 	}
 }

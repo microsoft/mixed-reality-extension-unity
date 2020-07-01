@@ -341,9 +341,25 @@ namespace MixedRealityExtension.App
 			{
 				EventManager.QueueEvent(new PhysicsBridgeUpdated(InstanceId, physicsPatch));
 			}
+			
+			//low frequency server upload transform stream
+			{
+				float systemTime = UnityEngine.Time.time;
+				if (PhysicsBridge.shouldSendLowFrequencyTransformUpload(systemTime))
+				{
+					PhysicsTranformServerUploadPatch serverUploadPatch =
+						PhysicsBridge.GenerateServerTransformUploadPatch(InstanceId, systemTime);
+					// upload only if there is a real difference in the transforms
+					if (serverUploadPatch.TransformCount > 0)
+					{
+						EventManager.QueueEvent(new PhysicsTranformServerUploadUpdated(InstanceId, serverUploadPatch));
+					}
+				}
+			}
 
 			_shouldSendPhysicsUpdate = false;
 			_timeSinceLastPhysicsUpdate = 0.0f;
+
 		}
 
 		/// <inheritdoc />
@@ -998,7 +1014,16 @@ namespace MixedRealityExtension.App
 		{
 			if (UsePhysicsBridge)
 			{
-				PhysicsBridge.addSnapshot(payload.PhysicsBridge.Id, payload.PhysicsBridge.ToSnapshot());
+				PhysicsBridge.addSnapshot(payload.PhysicsBridgePatch.Id, payload.PhysicsBridgePatch.ToSnapshot());
+				onCompleteCallback?.Invoke();
+			}
+		}
+
+		[CommandHandler(typeof(PhysicsTranformServerUpload))]
+		private void OnTransformsServerUpload(PhysicsTranformServerUpload payload, Action onCompleteCallback)
+		{
+			if (UsePhysicsBridge)
+			{
 				onCompleteCallback?.Invoke();
 			}
 		}
