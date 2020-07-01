@@ -13,7 +13,7 @@ using MRERigidBodyConstraints = MixedRealityExtension.Core.Interfaces.RigidBodyC
 namespace MixedRealityExtension.Patching.Types
 {
 	[JsonObject(MemberSerialization.OptOut)]
-	public class RigidBodyPatch : IPatchable
+	public class RigidBodyPatch : Patchable<RigidBodyPatch>
 	{
 		private MRERigidBodyConstraints? _constraintFlags;
 		private MRERigidBodyConstraints[] _constraints;
@@ -112,31 +112,6 @@ namespace MixedRealityExtension.Patching.Types
 			CollisionDetectionMode = (MRECollisionDetectionMode)Enum.Parse(typeof(MRECollisionDetectionMode), rigidbody.collisionDetectionMode.ToString());
 			UseGravity = rigidbody.useGravity;
 			ConstraintFlags = (MRERigidBodyConstraints)Enum.Parse(typeof(MRERigidBodyConstraints), rigidbody.constraints.ToString());
-		}
-
-		public void WriteToPath(TargetPath path, JToken value, int depth)
-		{
-
-		}
-
-		public bool ReadFromPath(TargetPath path, ref JToken value, int depth)
-		{
-			return false;
-		}
-
-		public void Clear()
-		{
-
-		}
-
-		public void Restore(TargetPath path, int depth)
-		{
-
-		}
-
-		public void RestoreAll()
-		{
-
 		}
 	}
 }

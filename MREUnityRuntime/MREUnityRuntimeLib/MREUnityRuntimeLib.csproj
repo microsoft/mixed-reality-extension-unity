@@ -128,11 +128,15 @@
     <Compile Include="Messaging\Events\Types\PhysicsBridgeUpdated.cs" />
     <Compile Include="Messaging\Events\Types\TriggerEvent.cs" />
     <Compile Include="Messaging\Payloads\Converters\UnsignedConverter.cs" />
+    <Compile Include="Patching\IPatchable.cs" />
+    <Compile Include="Patching\PatchProperty.cs" />
+    <Compile Include="Patching\Patchable.cs" />
     <Compile Include="Patching\Types\AnimationPatch.cs" />
     <Compile Include="Patching\Types\AppearancePatch.cs" />
     <Compile Include="Patching\Types\LookAtPatch.cs" />
     <Compile Include="Patching\Types\PhysicsBridgePatch.cs" />
     <Compile Include="Patching\Types\ActorTransformPatch.cs" />
+    <Compile Include="Patching\Types\ScaledTransformPatch.cs" />
     <Compile Include="PluginInterfaces\Behaviors\IToolBehavior.cs" />
     <Compile Include="PluginInterfaces\Behaviors\IPenBehavior.cs" />
     <Compile Include="PluginInterfaces\IDialogFactory.cs" />
@@ -215,10 +219,8 @@
     <Compile Include="Messaging\Payloads\Converters\DashFormattedEnumConverter.cs" />
     <Compile Include="Messaging\Protocols\Sync.cs" />
     <Compile Include="Messaging\Protocols\Protocol.cs" />
-    <Compile Include="Patching\IPatchable.cs" />
     <Compile Include="Messaging\Payloads\IPayload.cs" />
     <Compile Include="Messaging\Message.cs" />
-    <Compile Include="Patching\Patching.cs" />
     <Compile Include="Messaging\Payloads\Payload.cs" />
     <Compile Include="Messaging\Payloads\NetworkCommandPayloads.cs" />
     <Compile Include="Messaging\Payloads\PayloadConverter.cs" />
