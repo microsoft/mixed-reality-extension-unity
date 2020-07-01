@@ -354,5 +354,11 @@ namespace MixedRealityExtension.Core.Physics
 			} // end for each 
 
 		} // end of PredictAllRemoteBodiesWithOwnedBodies
+
+		public void Clear()
+		{
+			_switchCollisionInfos.Clear();
+			_monitorCollisionInfo.Clear();
+		}
 	}
 }
