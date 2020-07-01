@@ -5,8 +5,9 @@ using System.Collections.Generic;
 
 namespace MixedRealityExtension.Core
 {
+	// Note: Unity serialization will break with unsigned types, or types larger than 32 bits
 	[Flags]
-	public enum Permissions : long
+	public enum Permissions : int
 	{
 		None = 0,
 		Execution = 1,

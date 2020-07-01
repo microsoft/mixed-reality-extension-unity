@@ -302,9 +302,11 @@ namespace MixedRealityExtension.App
 			_physicsBridge.setRigidBodyOwnership(id, isOwner);
 		}
 
-		private void OnPermissionsUpdated(Uri serverUri, Permissions oldPermissions, Permissions newPermissions)
+		private void OnPermissionsUpdated(Uri updatedUrl, Permissions oldPermissions, Permissions newPermissions)
 		{
-			if (serverUri.GetLeftPart(UriPartial.Path) == ServerUri.GetLeftPart(UriPartial.Path)
+			// updated URI matches protocol, hostname, and port, and if it has a path, that matches too
+			if (updatedUrl.Scheme == ServerUri.Scheme && updatedUrl.Authority == ServerUri.Authority
+				&& (updatedUrl.AbsolutePath == "/" || updatedUrl.AbsolutePath == ServerUri.AbsolutePath)
 				&& _appState != AppState.Stopped)
 			{
 				Startup(ServerUri.ToString(), SessionId, PlatformId);
