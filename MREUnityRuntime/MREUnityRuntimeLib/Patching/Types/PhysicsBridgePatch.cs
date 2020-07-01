@@ -7,6 +7,7 @@ using MixedRealityExtension.Animation;
 using MixedRealityExtension.Core.Physics;
 using Newtonsoft.Json.Linq;
 using Unity.Collections;
+using UnityEngine;
 
 namespace MixedRealityExtension.Patching.Types
 {
@@ -110,6 +111,93 @@ namespace MixedRealityExtension.Patching.Types
 		public void WriteToPath(TargetPath path, JToken value, int depth)
 		{
 
+		}
+
+		public bool ReadFromPath(TargetPath path, ref JToken value, int depth)
+		{
+			return false;
+		}
+
+		public void Clear()
+		{
+
+		}
+
+		public void Restore(TargetPath path, int depth)
+		{
+
+		}
+
+		public void RestoreAll()
+		{
+
+		}
+	}
+
+	public class PhysicsTranformServerUploadPatch : IPatchable
+	{
+		public struct OneActorUpdate
+		{
+			public OneActorUpdate(Guid id,UnityEngine.Vector3 localPos, UnityEngine.Quaternion localQuat,
+				UnityEngine.Vector3 appPos, UnityEngine.Quaternion appQuat)
+			{
+				localTransform = new TransformPatch();
+				appTransform = new TransformPatch();
+
+				localTransform.Position = new Vector3Patch(localPos);
+				localTransform.Rotation = new QuaternionPatch(localQuat);
+
+				appTransform.Position = new Vector3Patch(appPos);
+				appTransform.Rotation = new QuaternionPatch(appQuat);
+				
+				actorGuid = id;
+			}
+
+			public OneActorUpdate(OneActorUpdate copyIn)
+			{
+				localTransform = copyIn.localTransform;
+				appTransform = copyIn.appTransform;
+				actorGuid = copyIn.actorGuid;
+			}
+
+			/// tests if 2 transforms equal
+			static internal bool isTransformEqual(TransformPatch a, TransformPatch b, float eps)
+			{
+				bool ret = ((Math.Abs(a.Position.X.Value - b.Position.X.Value) +
+					 Math.Abs(a.Position.Y.Value - b.Position.Y.Value) +
+					 Math.Abs(a.Position.Z.Value - b.Position.Z.Value)) < eps);
+				ret = ret &&
+					 ((Math.Abs(a.Rotation.X.Value - b.Rotation.X.Value) +
+					  Math.Abs(a.Rotation.Y.Value - b.Rotation.Y.Value) +
+					  Math.Abs(a.Rotation.Z.Value - b.Rotation.Z.Value) +
+					  Math.Abs(a.Rotation.W.Value - b.Rotation.W.Value)) < 10.0F * eps);
+				return ret;
+			}
+
+			/// test if the two actor updates are equal
+			public bool isEqual(OneActorUpdate inUpdate, float eps = 0.0001F)
+			{
+				return (inUpdate.actorGuid == actorGuid)
+					&& isTransformEqual(localTransform, inUpdate.localTransform, eps)
+					&& isTransformEqual(appTransform, inUpdate.appTransform, eps);
+			}
+
+			public TransformPatch localTransform { get; set; }
+			public TransformPatch appTransform { get; set; }
+			public Guid actorGuid { get; set; }
+		}
+
+		/// <summary>
+		/// source app id (of the sender)
+		/// </summary>
+		public Guid Id { get; set; }
+
+		public int TransformCount { get; set; }
+
+		public OneActorUpdate[] updates;
+
+		public void WriteToPath(TargetPath path, JToken value, int depth)
+		{
 		}
 
 		public bool ReadFromPath(TargetPath path, ref JToken value, int depth)

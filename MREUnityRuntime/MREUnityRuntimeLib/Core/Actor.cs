@@ -102,18 +102,12 @@ namespace MixedRealityExtension.Core
 				if (_isExclusiveToUser)
 					return true;
 
-				Attachment attachmentInHierarchy = FindAttachmentInHierarchy();
-				bool inAttachmentHeirarchy = (attachmentInHierarchy != null);
+				if (!Owner.HasValue)
+					return false;
 
-				bool inOwnedAttachmentHierarchy = (inAttachmentHeirarchy && LocalUser != null && attachmentInHierarchy.UserId == LocalUser.Id);
-
-				return Owner.HasValue ?
-					Owner.Value == App.LocalUser.Id :
-					inOwnedAttachmentHierarchy || App.IsAuthoritativePeer;
+				return Owner.Value == App.LocalUser.Id;
 			}
 		}
-
-		private bool _takeOwnership = false;
 
 		private bool _isExclusiveToUser = false;
 
@@ -323,12 +317,6 @@ namespace MixedRealityExtension.Core
 				if (ShouldSync(ActorComponentType.Attachment, ActorComponentType.Attachment))
 				{
 					GenerateAttachmentPatch(actorPatch);
-				}
-
-				if (_takeOwnership)
-				{
-					actorPatch.Owner = Owner;
-					_takeOwnership = false;
 				}
 
 				if (actorPatch.IsPatched())
@@ -852,23 +840,28 @@ namespace MixedRealityExtension.Core
 
 		void OnRigidBodyGrabbed(object sender, ActionStateChangedArgs args)
 		{
-			if (args.NewState == ActionState.Started && !IsSimulatedByLocalUser)
+			if (App.UsePhysicsBridge)
 			{
-				PatchOwner(App.LocalUser.Id);
-				_takeOwnership = true;
-			}
-
-			if (args.NewState != ActionState.Performing)
-			{
-				if (App.UsePhysicsBridge)
+				if (args.NewState != ActionState.Performing)
 				{
-					if (args.NewState == ActionState.Started)
+					if (_isExclusiveToUser)
 					{
-						App.PhysicsBridge.setKeyframed(Id, true);
+						// if rigid body is exclusive to user, manage rigid body directly
+						_rigidbody.isKinematic = args.NewState == ActionState.Started ? true : RigidBody.IsKinematic;
 					}
 					else
 					{
-						App.PhysicsBridge.setKeyframed(Id, RigidBody.IsKinematic);
+						// if rigid body needs to be synchronized, handle it trough physics bridge
+						if (args.NewState == ActionState.Started)
+						{
+							// set to kinematic when grab starts
+							App.PhysicsBridge.setKeyframed(Id, true);
+						}
+						else
+						{
+							// on grab end return original value
+							App.PhysicsBridge.setKeyframed(Id, RigidBody.IsKinematic);
+						}
 					}
 				}
 			}
@@ -879,12 +872,16 @@ namespace MixedRealityExtension.Core
 			if (_rigidbody == null)
 			{
 				_rigidbody = gameObject.AddComponent<Rigidbody>();
-				//_rigidbody.maxDepenetrationVelocity = 3.0F; // set very low de-penetration velocities
 				RigidBody = new RigidBody(_rigidbody, App.SceneRoot.transform);
 
 				if (App.UsePhysicsBridge)
 				{
-					App.PhysicsBridge.addRigidBody(Id, _rigidbody, IsSimulatedByLocalUser);
+					// Add rigid body to physics bridge only when source is known.
+					// Otherwise, do it once source is provided.
+					if (Owner.HasValue && !_isExclusiveToUser)
+					{
+						App.PhysicsBridge.addRigidBody(Id, _rigidbody, Owner.Value, RigidBody.IsKinematic);
+					}
 				}
 
 				var behaviorComponent = GetActorComponent<BehaviorComponent>();
@@ -1045,9 +1042,35 @@ namespace MixedRealityExtension.Core
 			{
 				if (ownerOrNull.HasValue)
 				{
-					Owner = ownerOrNull;
+					if (RigidBody != null)
+					{
+						if (!_isExclusiveToUser)
+						{
+							if (Owner.HasValue) // test the old value
+							{
+								// if body is already registered to physics bridge, just set the new owner
+								App.PhysicsBridge.setRigidBodyOwnership(Id, ownerOrNull.Value, RigidBody.IsKinematic);
+							}
+							else
+							{
+								// if this is first time owner is set, add body to physics bridge
+								App.PhysicsBridge.addRigidBody(Id, _rigidbody, ownerOrNull.Value, RigidBody.IsKinematic);
+							}
 
-					App.PhysicsBridge.setRigidBodyOwnership(Id, IsSimulatedByLocalUser);
+							Owner = ownerOrNull;
+
+							// If owject is grabbed make it kinematic
+							if (IsSimulatedByLocalUser && IsGrabbed)
+							{
+								App.PhysicsBridge.setKeyframed(Id, true);
+							}
+						}
+					}
+					else
+					{
+						Owner = ownerOrNull;
+					}
+
 				}
 			}
 		}
@@ -1402,14 +1425,11 @@ namespace MixedRealityExtension.Core
 					RigidBody.SynchronizeEngine(rigidBodyPatch, patchVelocities);
 				}
 
-				if (rigidBodyPatch.IsKinematic.HasValue)
+				if (App.UsePhysicsBridge)
 				{
-					if (wasKinematic != rigidBodyPatch.IsKinematic.Value)
+					if (rigidBodyPatch.IsKinematic.HasValue && rigidBodyPatch.IsKinematic.Value != wasKinematic)
 					{
-						if (App.UsePhysicsBridge)
-						{
-							App.PhysicsBridge.setKeyframed(Id, rigidBodyPatch.IsKinematic.Value);
-						}
+						App.PhysicsBridge.setKeyframed(Id, rigidBodyPatch.IsKinematic.Value);
 					}
 				}
 			}
@@ -1706,7 +1726,8 @@ namespace MixedRealityExtension.Core
 					_grabbedLastSync ||
 					inOwnedAttachmentHierarchy)) ||
 				(RigidBody != null &&
-					IsSimulatedByLocalUser))
+					(IsSimulatedByLocalUser || IsGrabbed ||
+					_grabbedLastSync )))
 			{
 				return true;
 			}

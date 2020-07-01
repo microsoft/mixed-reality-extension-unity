@@ -36,6 +36,7 @@ namespace MixedRealityExtension.Messaging.Payloads
 	[PayloadType(typeof(ObjectSpawned), "object-spawned")]
 	[PayloadType(typeof(OperationResult), "operation-result")]
 	[PayloadType(typeof(PhysicsBridgeUpdate), "physicsbridge-transforms-update")]
+	[PayloadType(typeof(PhysicsTranformServerUpload), "physicsbridge-server-transforms-upload")]
 	[PayloadType(typeof(RBAddForce), "rigidbody-add-force")]
 	[PayloadType(typeof(RBAddForceAtPosition), "rigidbody-add-force-at-position")]
 	[PayloadType(typeof(RBAddRelativeTorque), "rigidbody-add-relative-torque")]

@@ -39,19 +39,6 @@ namespace MixedRealityExtension.App
 		private readonly CommandManager _commandManager;
 		internal readonly AnimationManager AnimationManager;
 		private readonly AssetManager _assetManager;
-
-		internal PhysicsBridge PhysicsBridge { get; } = null;
-
-		internal bool UsePhysicsBridge
-		{
-			get
-			{
-				return PhysicsBridge != null;
-			}
-		}
-
-		private bool _shouldSendPhysicsUpdate = false;
-
 		private readonly MonoBehaviour _ownerScript;
 
 		private IConnectionInternal _conn;
@@ -59,6 +46,10 @@ namespace MixedRealityExtension.App
 		private ISet<Guid> _interactingUserIds = new HashSet<Guid>();
 		private IList<Action> _executionProtocolActionQueue = new List<Action>();
 		private IList<GameObject> _ownedGameObjects = new List<GameObject>();
+
+		private float _physicsUpdateTimestep = 0.016f;
+		private float _timeSinceLastPhysicsUpdate = 0.0f;
+		private bool _shouldSendPhysicsUpdate = false;
 
 		private enum AppState
 		{
@@ -159,6 +150,10 @@ namespace MixedRealityExtension.App
 		internal AssetLoader AssetLoader => _assetLoader;
 
 		public AssetManager AssetManager => _assetManager;
+
+		internal PhysicsBridge PhysicsBridge { get; } = null;
+
+		internal bool UsePhysicsBridge => PhysicsBridge != null;
 
 		#endregion
 
@@ -292,6 +287,7 @@ namespace MixedRealityExtension.App
 			_ownedGameObjects.Clear();
 			_actorManager.Reset();
 			AnimationManager.Reset();
+			PhysicsBridge.Reset();
 
 			foreach (Guid id in _assetLoader.ActiveContainers)
 			{
@@ -303,23 +299,41 @@ namespace MixedRealityExtension.App
 		/// <inheritdoc />
 		public void FixedUpdate()
 		{
+			if (_appState == AppState.Stopped)
+			{
+				return;
+			}
+
 			if (UsePhysicsBridge)
 			{
 				if (_shouldSendPhysicsUpdate)
 				{
 					SendPhysicsUpdate();
-					_shouldSendPhysicsUpdate = false;
 				}
 
 				PhysicsBridge.FixedUpdate(SceneRoot.transform);
 
-				_shouldSendPhysicsUpdate = true;
+				// add delta for next step
+				_timeSinceLastPhysicsUpdate += Time.fixedDeltaTime;
+
+				float updateDeltaTime = Math.Max(Time.fixedDeltaTime,
+					Time.fixedDeltaTime * (float)Math.Floor(_physicsUpdateTimestep / Time.fixedDeltaTime));
+
+				if (updateDeltaTime - _timeSinceLastPhysicsUpdate < 0.001f)
+				{
+					_shouldSendPhysicsUpdate = true;
+				}
 			}
 		}
 
 		private void SendPhysicsUpdate()
 		{
-			PhysicsBridgePatch physicsPatch = new PhysicsBridgePatch(InstanceId,
+			if (LocalUser == null)
+			{
+				return;
+			}
+
+			PhysicsBridgePatch physicsPatch = new PhysicsBridgePatch(LocalUser.Id,
 				PhysicsBridge.GenerateSnapshot(UnityEngine.Time.fixedTime, SceneRoot.transform));
 			// send only updates if there are any, to save band with
 			// in order to produce any updates for settled bodies this should be handled within the physics bridge
@@ -327,6 +341,25 @@ namespace MixedRealityExtension.App
 			{
 				EventManager.QueueEvent(new PhysicsBridgeUpdated(InstanceId, physicsPatch));
 			}
+			
+			//low frequency server upload transform stream
+			{
+				float systemTime = UnityEngine.Time.time;
+				if (PhysicsBridge.shouldSendLowFrequencyTransformUpload(systemTime))
+				{
+					PhysicsTranformServerUploadPatch serverUploadPatch =
+						PhysicsBridge.GenerateServerTransformUploadPatch(InstanceId, systemTime);
+					// upload only if there is a real difference in the transforms
+					if (serverUploadPatch.TransformCount > 0)
+					{
+						EventManager.QueueEvent(new PhysicsTranformServerUploadUpdated(InstanceId, serverUploadPatch));
+					}
+				}
+			}
+
+			_shouldSendPhysicsUpdate = false;
+			_timeSinceLastPhysicsUpdate = 0.0f;
+
 		}
 
 		/// <inheritdoc />
@@ -349,7 +382,6 @@ namespace MixedRealityExtension.App
 				if (_shouldSendPhysicsUpdate)
 				{
 					SendPhysicsUpdate();
-					_shouldSendPhysicsUpdate = false;
 				}
 			}
 
@@ -378,6 +410,8 @@ namespace MixedRealityExtension.App
 				});
 
 				LocalUser = user;
+
+				PhysicsBridge.LocalUserId = LocalUser.Id;
 
 				// TODO @tombu - Wait for the app to send back a success for join?
 				_userManager.AddUser(user);
@@ -980,7 +1014,16 @@ namespace MixedRealityExtension.App
 		{
 			if (UsePhysicsBridge)
 			{
-				PhysicsBridge.addSnapshot(payload.PhysicsBridge.Id, payload.PhysicsBridge.ToSnapshot());
+				PhysicsBridge.addSnapshot(payload.PhysicsBridgePatch.Id, payload.PhysicsBridgePatch.ToSnapshot());
+				onCompleteCallback?.Invoke();
+			}
+		}
+
+		[CommandHandler(typeof(PhysicsTranformServerUpload))]
+		private void OnTransformsServerUpload(PhysicsTranformServerUpload payload, Action onCompleteCallback)
+		{
+			if (UsePhysicsBridge)
+			{
 				onCompleteCallback?.Invoke();
 			}
 		}

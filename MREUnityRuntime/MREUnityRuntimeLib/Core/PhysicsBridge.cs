@@ -6,6 +6,8 @@ using System;
 using System.Collections.Generic;
 using MixedRealityExtension.Util;
 using UnityEngine;
+using MixedRealityExtension.Patching.Types;
+using MixedRealityExtension.Patching;
 
 namespace MixedRealityExtension.Core
 {
@@ -54,14 +56,22 @@ namespace MixedRealityExtension.Core
 	/// </summary>
 	public class PhysicsBridge
 	{
+		/// <summary>
+		///  Local user, upload transforms owned by this user.
+		/// </summary>
+		public Guid? LocalUserId { get; set; } = null;
 
-		private int _countOwnedTransforms = 0;
-		private int _countStreamedTransforms = 0;
 		/// stores the number of transforms that should be have been sent (without cap) to all consumers
 		private int _lastNumberOfTransformsToBeSent = 0;
 
+		// indicates if all local rigid bodies are sleeping.
+		// if so, we can send updates less frequently.
+		bool _allOwnedBodiesAreSleeping = true;
+
+		// list of tracked rigid bodies
 		private SortedList<Guid, RigidBodyPhysicsBridgeInfo> _rigidBodies = new SortedList<Guid, RigidBodyPhysicsBridgeInfo>();
 
+		// provides transforms and timestamp for rigid bodies
 		TimeSnapshotManager _snapshotManager = new TimeSnapshotManager();
 
 		/// the prediction object
@@ -71,76 +81,79 @@ namespace MixedRealityExtension.Core
 		private const float _maxEstimatedLinearVelocity = 30.0F;
 		/// maximal estimated angular velocity
 		private const float _maxEstimatedAngularVelocity = 5.0F;
-
-		public PhysicsBridge()
-		{
-		}
+		
+		// ---- fields to be used to check for update the server side updates ----
+		private Dictionary<Guid, PhysicsTranformServerUploadPatch.OneActorUpdate> _lastServerUploadedTransforms  =
+			new Dictionary<Guid, PhysicsTranformServerUploadPatch.OneActorUpdate>();
+		/// for the low frequency server transforms upload the last time when the update happened
+		private float _lastServerTransformUploadSentTime = 0.0F;
 
 		#region Rigid Body Management
 
-		public void addRigidBody(Guid id, UnityEngine.Rigidbody rigidbody, bool ownership)
+		public void addRigidBody(Guid id, UnityEngine.Rigidbody rigidbody, Guid source, bool isKinematic)
 		{
 			UnityEngine.Debug.Assert(!_rigidBodies.ContainsKey(id), "PhysicsBridge already has an entry for rigid body with specified ID.");
 
-			_rigidBodies.Add(id, new RigidBodyPhysicsBridgeInfo(id, rigidbody, ownership));
+			bool isLocalSumulationAuthoritative = LocalUserId == source;
 
-			if (ownership)
+			var rb = new RigidBodyPhysicsBridgeInfo(id, rigidbody, isLocalSumulationAuthoritative);
+
+			_rigidBodies.Add(id, rb);
+
+			if (isLocalSumulationAuthoritative)
 			{
-				rigidbody.isKinematic = false;
-				_countOwnedTransforms++;
+				rb.IsKeyframed = isKinematic;
+				rigidbody.isKinematic = isKinematic;
 			}
 			else
 			{
 				rigidbody.isKinematic = true;
-				_countStreamedTransforms++;
+
+				_snapshotManager.RegisterOrUpateRigidBody(id, source);
 			}
 		}
 
 		public void removeRigidBody(Guid id)
-		{
-			UnityEngine.Debug.Assert(_rigidBodies.ContainsKey(id), "PhysicsBridge don't have rigid body with specified ID.");
-
-			var rb = _rigidBodies[id];
-
-			if (rb.Ownership)
-			{
-				_countOwnedTransforms--;
-			}
-			else
-			{
-				_countStreamedTransforms--;
-				//<todo> remove also from the last Jitter buffer for sleeping bodies (we should just set the motion type to dynamic)
-				_snapshotManager.DelteBodyFromBuffer(id);
-			}
-
-			_rigidBodies.Remove(id);
-		}
-
-		public void setRigidBodyOwnership(Guid id, bool ownership)
 		{
 			if (!_rigidBodies.ContainsKey(id))
 			{
 				return;
 			}
 
-			UnityEngine.Debug.Assert(_rigidBodies.ContainsKey(id), "PhysicsBridge don't have rigid body with specified ID.");
-			UnityEngine.Debug.Assert(_rigidBodies[id].Ownership != ownership, "Rigid body with specified ID is already registered with same ownership flag.");
+			var rb = _rigidBodies[id];
 
-			if (ownership)
+			if (!rb.Ownership)
 			{
-				_countOwnedTransforms++;
-				_countStreamedTransforms--;
+				_snapshotManager.UnregisterRigidBody(id);
+			}
+
+			_rigidBodies.Remove(id);
+		}
+
+		public void setRigidBodyOwnership(Guid id, Guid sourceId, bool isKinematic)
+		{
+			if (!_rigidBodies.ContainsKey(id))
+			{
+				return;
+			}
+
+			bool isLocalSumulationAuthoritative = LocalUserId == sourceId;
+
+			UnityEngine.Debug.Assert(_rigidBodies[id].Ownership != isLocalSumulationAuthoritative, "Rigid body with specified ID is already registered with same ownership flag.");
+
+			if (isLocalSumulationAuthoritative)
+			{
+				_rigidBodies[id].IsKeyframed = isKinematic;
+				_rigidBodies[id].RigidBody.isKinematic = isKinematic;
+
+				_snapshotManager.UnregisterRigidBody(id);
 			}
 			else
 			{
-				_countOwnedTransforms--;
-				_countStreamedTransforms++;
+				_snapshotManager.RegisterOrUpateRigidBody(id, sourceId);
 			}
 
-			//<todo> this could be done more efficiently
-			_snapshotManager.DelteBodyFromBuffer(id);
-			
-			_rigidBodies[id].Ownership = ownership;
+			_rigidBodies[id].Ownership = isLocalSumulationAuthoritative;
 		}
 
 		public void setKeyframed(Guid id, bool isKeyFramed)
@@ -166,10 +179,6 @@ namespace MixedRealityExtension.Core
 		/// <param name="snapshot">List of transform at specified timestamp.</param>
 		public void addSnapshot(Guid sourceId, Snapshot snapshot)
 		{
-
-			// <todo> jabenk now not all bodies will get an update here
-			//        we should just copy exactly over 
-
 			_snapshotManager.addSnapshot(sourceId, snapshot);
 		}
 
@@ -187,7 +196,8 @@ namespace MixedRealityExtension.Core
 			_predictor.StartBodyPredicitonForNextFrame();
 
 			int index = 0;
-			MultiSourceCombinedSnapshot snapshot = _snapshotManager.GetNextSnapshot(timeInfo.DT);
+			MultiSourceCombinedSnapshot snapshot;
+			_snapshotManager.Step(timeInfo.DT, out snapshot);
 
 			foreach (var rb in _rigidBodies.Values)
 			{
@@ -333,7 +343,6 @@ namespace MixedRealityExtension.Core
 
 			// call the predictor
 			_predictor.PredictAllRemoteBodiesWithOwnedBodies(ref _rigidBodies, timeInfo);
-
 		}
 
 		/// <summary>
@@ -384,7 +393,7 @@ namespace MixedRealityExtension.Core
 				UnityEngine.Vector3 rotDiff = UtilMethods.TransformEulerAnglesToRadians(rb.lastValidAngularVelocityorAng - transform.Rotation.eulerAngles);
 
 				bool isBodySleepingInThisFrame =
-					!rb.IsKeyframed && // if body is key framed and owned then we should just feed the jitter buffer
+					(!rb.IsKeyframed) && // if body is key framed and owned then we should just feed the jitter buffer
 					( rb.RigidBody.velocity.sqrMagnitude < maxSleepingSqrtLinearVelocity
 					  && rb.RigidBody.angularVelocity.sqrMagnitude < maxSleepingSqrtAngularVelocity
 					  && posDiff.sqrMagnitude < maxSleepingSqrtPositionDiff
@@ -437,13 +446,14 @@ namespace MixedRealityExtension.Core
 			}
 
 			Snapshot.SnapshotFlags snapshotFlag = Snapshot.SnapshotFlags.NoFlags;
-			// check if we should restart the jitter buffer 
-			if ( (_lastNumberOfTransformsToBeSent == 0 && numOwnedBodies != 0)
-				|| (_lastNumberOfTransformsToBeSent != 0 && numOwnedBodies == 0))
+
+			bool allBodiesAreSleepingNew = numOwnedBodies == numSleepingBodies;
+			if (allBodiesAreSleepingNew != _allOwnedBodiesAreSleeping)
 			{
+				_allOwnedBodiesAreSleeping = allBodiesAreSleepingNew;
 				snapshotFlag = Snapshot.SnapshotFlags.ResetJitterBuffer;
 			}
-			
+
 			_lastNumberOfTransformsToBeSent = numOwnedBodies;
 
 			var ret = new Snapshot(time, transforms, snapshotFlag);
@@ -457,9 +467,96 @@ namespace MixedRealityExtension.Core
 			return ret;
 		}
 
-		public void LateUpdate()
+		internal void Reset()
 		{
-			// smooth transform update to hide artifacts for rendering
+			_lastNumberOfTransformsToBeSent = 0;
+			_allOwnedBodiesAreSleeping = true;
+
+			_rigidBodies.Clear();
+			_snapshotManager.Clear();
+			_predictor.Clear();
+		}
+
+		/// returns true if the low frequency upload should be sent to the server
+		public bool shouldSendLowFrequencyTransformUpload(float systemTime)
+		{
+			const float sendPeriod = 3.0F; // time period in seconds
+			return (systemTime - _lastServerTransformUploadSentTime > sendPeriod);
+		}
+
+		/// generates the message that updates the transforms on the server side (this is done in a low frequency manner)
+		/// <returns> message that should be sent to the server</returns>
+		public PhysicsTranformServerUploadPatch GenerateServerTransformUploadPatch(Guid instanceId, float systemTime)
+		{
+			var ret = new PhysicsTranformServerUploadPatch();
+			int numownedbodies = 0;
+			int numUpdatedTransform = 0;
+			List<PhysicsTranformServerUploadPatch.OneActorUpdate> allUpdates = new List<PhysicsTranformServerUploadPatch.OneActorUpdate>();
+
+			// first loop counts how many RBs do we own
+			foreach (var rb in _rigidBodies.Values)
+			{
+				if (rb.Ownership)
+				{
+					numownedbodies++;
+					var actor = rb.RigidBody.gameObject.GetComponent<Actor>();
+					if (actor != null)
+					{
+						// MUST be the same as  PatchingUtilMethods.GenerateLocalTransformPatch
+						// and  PatchingUtilMethods.GenerateAppTransformPatch
+						//update.localTransforms.Position = actor.transform.position;
+
+						var update = new PhysicsTranformServerUploadPatch.OneActorUpdate(
+							actor.Id,
+							actor.transform.position, actor.transform.rotation,
+							actor.App.SceneRoot.transform.InverseTransformPoint(actor.transform.position),
+							Quaternion.Inverse(actor.App.SceneRoot.transform.rotation) * actor.transform.rotation
+							);
+
+						// todo see if we sent this update already
+						if (_lastServerUploadedTransforms.ContainsKey(rb.Id))
+						{
+							var lastUpdate = _lastServerUploadedTransforms[rb.Id];
+							if (!lastUpdate.isEqual(update))
+							{
+								allUpdates.Add(update);
+								numUpdatedTransform++;
+								_lastServerUploadedTransforms[rb.Id] = update;
+							}
+						}
+						else
+						{
+							// add an update anyway
+							allUpdates.Add(update);
+							_lastServerUploadedTransforms.Add(rb.Id, update);
+							numUpdatedTransform++;
+						}
+					}
+				}
+				else
+				{
+					// remove if this is in this list
+					if (_lastServerUploadedTransforms.ContainsKey(rb.Id))
+					{
+						_lastServerUploadedTransforms.Remove(rb.Id);
+					}
+				}
+			}
+
+			ret.updates = new PhysicsTranformServerUploadPatch.OneActorUpdate[numownedbodies];
+			ret.TransformCount = numUpdatedTransform;
+			ret.Id = instanceId;
+
+			numownedbodies = 0;
+			foreach (var update in allUpdates)
+			{
+				// add the updates
+				ret.updates[numownedbodies++] = update;
+			}
+			// store the last time
+			_lastServerTransformUploadSentTime = systemTime;
+			
+			return ret;
 		}
 	}
 }
