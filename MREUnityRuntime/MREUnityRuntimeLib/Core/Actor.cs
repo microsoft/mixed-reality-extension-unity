@@ -314,7 +314,10 @@ namespace MixedRealityExtension.Core
 
 				if (ShouldSync(subscriptions, ActorComponentType.Rigidbody))
 				{
-					GenerateRigidBodyPatch(actorPatch);
+					// we should include the velocities either when the old sync model is used
+					// OR when there is an explicit subscription to it.
+					GenerateRigidBodyPatch(actorPatch,
+						(!App.UsePhysicsBridge || subscriptions.HasFlag(ActorComponentType.RigidbodyVelocity)));
 				}
 
 				if (ShouldSync(ActorComponentType.Attachment, ActorComponentType.Attachment))
@@ -501,7 +504,8 @@ namespace MixedRealityExtension.Core
 
 			if (generateAll)
 			{
-				var rigidBody = PatchingUtilMethods.GeneratePatch(RigidBody, (Rigidbody)null, App.SceneRoot.transform);
+				var rigidBody = PatchingUtilMethods.GeneratePatch(RigidBody, (Rigidbody)null,
+					App.SceneRoot.transform, !App.UsePhysicsBridge);
 
 				ColliderPatch collider = null;
 				_collider = gameObject.GetComponent<UnityCollider>();
@@ -1583,12 +1587,13 @@ namespace MixedRealityExtension.Core
 			actorPatch.Transform = transformPatch.IsPatched() ? transformPatch : null;
 		}
 
-		private void GenerateRigidBodyPatch(ActorPatch actorPatch)
+		private void GenerateRigidBodyPatch(ActorPatch actorPatch, bool addVelocities)
 		{
 			if (_rigidbody != null && RigidBody != null)
 			{
 				// convert to a RigidBody and build a patch from the old one to this one.
-				var rigidBodyPatch = PatchingUtilMethods.GeneratePatch(RigidBody, _rigidbody, App.SceneRoot.transform);
+				var rigidBodyPatch = PatchingUtilMethods.GeneratePatch(RigidBody, _rigidbody,
+					App.SceneRoot.transform, addVelocities);
 				if (rigidBodyPatch != null && rigidBodyPatch.IsPatched())
 				{
 					actorPatch.RigidBody = rigidBodyPatch;
@@ -1644,6 +1649,7 @@ namespace MixedRealityExtension.Core
 			}
 
 			// If the actor has a rigid body then always sync the transform and the rigid body.
+			// but not the velocity, only 
 			if (RigidBody != null)
 			{
 				subscriptions |= ActorComponentType.Transform;
