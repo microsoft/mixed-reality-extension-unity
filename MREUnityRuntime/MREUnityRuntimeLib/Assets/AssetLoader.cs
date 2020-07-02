@@ -182,7 +182,7 @@ namespace MixedRealityExtension.Assets
 				try
 				{
 					stream = await loader.LoadStreamAsync(URIHelper.GetFileFromUri(source.ParsedUri));
-					source.Version = loader.LastResponse.Headers.ETag?.Tag ?? "unversioned";
+					source.Version = loader.LastResponse.Headers.ETag?.Tag ?? "";
 				}
 				catch (HttpRequestException)
 				{
