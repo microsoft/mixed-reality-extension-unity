@@ -198,6 +198,7 @@ namespace MixedRealityExtension.Core
 			int index = 0;
 			MultiSourceCombinedSnapshot snapshot;
 			_snapshotManager.Step(timeInfo.DT, out snapshot);
+			_snapshotManager.UpdateDebugDisplay(rootTransform);	// guarded by ifdef internally
 
 			foreach (var rb in _rigidBodies.Values)
 			{
@@ -242,7 +243,20 @@ namespace MixedRealityExtension.Core
 					{
 						// <todo> for long running times the time difference could be a problem
 						// the minimal step is the half step size, even with jitter buffer
-						float invUpdateDT = 1.0f / Math.Max( (timeInfo.halfDT), (timeOfSnapshot - rb.lastTimeKeyFramedUpdate));
+
+						float timestep;
+						if (rb.lastTimeKeyFramedUpdate != float.MinValue)
+						{
+							timestep = timeOfSnapshot - rb.lastTimeKeyFramedUpdate;
+							timestep = Math.Min(2 * timestep, Time.fixedDeltaTime);
+							timestep = Math.Max(timeInfo.halfDT, timestep);
+						}
+						else
+						{
+							timestep = Time.fixedDeltaTime;
+						}
+
+						float invUpdateDT = 1.0f / timestep;
 
 						rb.lastValidLinerVelocityOrPos = (keyFramedPos - rb.RigidBody.transform.position) * invUpdateDT;
 						// transform to radians and take the angular velocity 
@@ -325,6 +339,7 @@ namespace MixedRealityExtension.Core
 							+ " KF:" + rb.IsKeyframed);
 #endif
 					}
+
 					rb.lastTimeKeyFramedUpdate = timeOfSnapshot;
 					rb.IsKeyframed = (snapshot.RigidBodies.Values[index].motionType == Patching.Types.MotionType.Keyframed);
 
