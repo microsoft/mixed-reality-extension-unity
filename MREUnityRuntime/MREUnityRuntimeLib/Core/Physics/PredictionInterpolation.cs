@@ -1,4 +1,7 @@
-﻿using System;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -264,7 +267,7 @@ namespace MixedRealityExtension.Core.Physics
 								&& collisionMonitorInfo.keyframedInterpolationRatio > limitCollisionInterpolation)
 							{
 #if MRE_PHYSICS_DEBUG
-								Debug.Log(" Stop interpolation time with DT:" + DT +
+								Debug.Log(" Stop interpolation time with DT:" + timeInfo.DT +
 									" Ratio:" + collisionMonitorInfo.keyframedInterpolationRatio +
 									" relDist:" + collisionMonitorInfo.relativeDistance +
 									" t=" + collisionMonitorInfo.timeFromStartCollision);

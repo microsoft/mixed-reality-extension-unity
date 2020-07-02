@@ -125,6 +125,10 @@ namespace MixedRealityExtension.Core.Physics
 			public MotionType MotionType;
 
 			public bool Updated;
+
+#if DEBUG_JITTER_BUFFER
+			public GameObject GO = null;
+#endif
 		}
 
 		public Guid SourceId { get; }
@@ -139,11 +143,6 @@ namespace MixedRealityExtension.Core.Physics
 		/// Snapshots sorted by snapshot timestamp.
 		/// </summary>
 		private SortedList<float, Snapshot> _snapshots = new SortedList<float, Snapshot>();
-
-		/// <summary>
-		/// Processed snapshot, may be needed for further interpolation.
-		/// </summary>
-		private Snapshot _previousSnapshot = null;
 
 		/// <summary>
 		/// Rigid body data sorted by rigid body id.
@@ -163,7 +162,7 @@ namespace MixedRealityExtension.Core.Physics
 		/// in order to reset the jitter buffer properly we need to know if the last updates only has sleeping bodies
 		private bool _areAllRigidBodiesSleeping = true;
 
-		#region Public API
+#region Public API
 
 		public SnapshotBuffer(Guid id)
 		{
@@ -192,6 +191,7 @@ namespace MixedRealityExtension.Core.Physics
 		/// <param name="timestep">Requested time to forward.</param>
 		public void Step(float timestep)
 		{
+			// Create or delete rigid body entries
 			processPendingActions();
 
 			// First snapshot has not arrived yet.
@@ -209,20 +209,10 @@ namespace MixedRealityExtension.Core.Physics
 			}
 
 			// Next timestamp may vary depending network jitter
-			float nextTimeStep = caclNextTimeStamp(timestep);
+			float nextTimeStamp = caclNextTimeStamp(timestep);
 
 			// Update state from available snapshots
-			stepBufferAndUpdateRigidBodies(nextTimeStep);
-
-			if ((_areAllRigidBodiesSleeping && CurrentLocalTime - LastSnapshotLocalTime >= 0.001f) ||
-				(!_areAllRigidBodiesSleeping && _snapshots.Count > 0 && _snapshots.Last().Value.Flags == Snapshot.SnapshotFlags.ResetJitterBuffer))
-			{
-				_snapshots.Clear();
-				_runningStats.Reset();
-				_areAllRigidBodiesSleeping = true;
-
-				_previousSnapshot = null;
-			}
+			stepBufferAndUpdateRigidBodies(nextTimeStamp);
 		}
 
 		private enum Action
@@ -241,9 +231,9 @@ namespace MixedRealityExtension.Core.Physics
 			_pendingRigidBodyManagementActions[id] = Action.Remove;
 		}
 
-		#endregion
+#endregion
 
-		#region Running Stats
+#region Running Stats
 
 		/// <summary>
 		/// Calculates running stats: mean, variance and deviation.
@@ -273,7 +263,7 @@ namespace MixedRealityExtension.Core.Physics
 			public void Reset()
 			{
 				_count = 0;
-				_mean = 0.0f;
+				_mean = 0.016f;
 				_variance = 0.0f;
 			}
 
@@ -330,9 +320,9 @@ namespace MixedRealityExtension.Core.Physics
 			private DebugStats _debugStats = new DebugStats();
 #endif
 
-		#endregion
+#endregion
 
-		#region Time Management
+#region Time Management
 
 		/// <summary>
 		/// Time precision is 1 millisecond.
@@ -392,39 +382,46 @@ namespace MixedRealityExtension.Core.Physics
 			}
 
 #if DEBUG_JITTER_BUFFER
-					_debugStats.add(bufferedTime, _stats.mean(), targetBufferTime, biasedTargetBufferTime, timeShift, nextTimestamp);
+					_debugStats.add(bufferedTime, _runningStats.Mean, targetBufferTime, biasedTargetBufferTime, timeShift, nextTimestamp);
 #endif
 
 			return nextTimestamp;
 		}
 
-		#endregion
+#endregion
 
-		#region Buffer Management
+#region Buffer Management
 
 		/// <summary>
 		/// Get previous and next snapshot for specified timestamp.
 		/// Snapshots older than timestamp will be deleted.
 		/// </summary>
-		private void findSnapshots(float time, out Snapshot previous, out Snapshot nextOrCurrent)
-		{
-			UnityEngine.Debug.Assert(_snapshots.Count == 0 || time <= _snapshots.Count);
+		//private void findSnapshots(float time, out Snapshot previous, out Snapshot nextOrCurrent)
+		//{
+		//	UnityEngine.Debug.Assert(_snapshots.Count == 0 || time <= _snapshots.Count);
 
-			// Find appropriate snapshots
-			int index = 0;
-			while (index < _snapshots.Count && time - _snapshots.Keys[index] > _timePrecision) index++;
+		//	// Find appropriate snapshots
+		//	int index = 0;
+		//	while (index < _snapshots.Count && time - _snapshots.Keys[index] > _timePrecision) index++;
 
-			previous = index == 0 ? null : _snapshots.Values[index - 1];
-			nextOrCurrent = index < _snapshots.Count ? _snapshots.Values[index] : null;
+		//	previous = index == 0 ? null : _snapshots.Values[index - 1];
+		//	nextOrCurrent = index < _snapshots.Count ? _snapshots.Values[index] : null;
 
-			// Remove old snapshots
-			int removeThreshold = time - nextOrCurrent.Time >= -_timePrecision ? index : index - 1;
-			for (int r = 0; r < removeThreshold; r++) _snapshots.RemoveAt(0);
-		}
+		//	// Remove old snapshots
+		//	if (nextOrCurrent != null)
+		//	{
+		//		int removeThreshold = time - nextOrCurrent.Time >= -_timePrecision ? index : index - 1;
+		//		for (int r = 0; r < removeThreshold; r++) _snapshots.RemoveAt(0);
+		//	}
+		//	else
+		//	{
+		//		_snapshots.Clear();
+		//	}
+		//}
 
-		#endregion
+#endregion
 
-		#region Rigid Body Management
+#region Rigid Body Management
 
 		private void processPendingActions()
 		{
@@ -454,6 +451,12 @@ namespace MixedRealityExtension.Core.Physics
 					if (action.Value == Action.Remove)
 					{
 						// just skip it
+#if DEBUG_JITTER_BUFFER
+						if (_rigidBodies.Values[rigidBodyIndex].GO)
+						{
+							GameObject.Destroy(_rigidBodies.Values[rigidBodyIndex].GO);
+						}
+#endif
 					}
 					else
 					{
@@ -635,7 +638,7 @@ namespace MixedRealityExtension.Core.Physics
 		{
 			// No available snapshot, snapshot can not be interpolated from the buffers
 			// Keep whatever state is already there
-			if (_snapshots.Count == 0 || nextTimestamp - LastSnapshotLocalTime > 0.001f)
+			if (_snapshots.Count == 0)
 			{
 				HasUpdate = false;
 				CurrentLocalTime = nextTimestamp;
@@ -643,58 +646,52 @@ namespace MixedRealityExtension.Core.Physics
 				return;
 			}
 
-			// Snapshot can be interpolated from buffer
-			HasUpdate = true;
+			float appliedSnapshotTimestamp = float.MinValue;
+			bool reset = false;
+			int index = 0;
 
-			Snapshot prev, nextOrCurrent;
-			findSnapshots(nextTimestamp, out prev, out nextOrCurrent);
-
-			// If time offset is less than a threshold (e.g. 1 ms) just use it as current snapshot
-			if (Math.Abs(nextOrCurrent.Time - nextTimestamp) <= _timePrecision)
+			while (index < _snapshots.Count && _snapshots.Keys[index] - nextTimestamp <= _timePrecision)
 			{
-				CurrentLocalTime = nextOrCurrent.Time;
-				updateRigidBodies(new SnapshotSource(nextOrCurrent));
+				updateRigidBodies(new SnapshotSource(_snapshots.Values[index]));
 
-				_previousSnapshot = nextOrCurrent;
-
-				return;
+				reset = reset || _snapshots.Values[index].Flags == Snapshot.SnapshotFlags.ResetJitterBuffer;
+				appliedSnapshotTimestamp = _snapshots.Keys[index];
+				index++;
 			}
 
-			if (prev == null)
+			if (Math.Abs(appliedSnapshotTimestamp - nextTimestamp) <= _timePrecision)
 			{
-				prev = _previousSnapshot;
+				// we have matching snapshot
+				CurrentLocalTime = appliedSnapshotTimestamp;
 			}
 			else
 			{
-				_previousSnapshot = prev;
-			}
-
-			// If prev snapshot is missing, just use current transforms with past timestamp
-			if (prev == null)
-			{
 				CurrentLocalTime = nextTimestamp;
-				updateRigidBodies(new SnapshotSource(nextOrCurrent));
 
-				return;
+				if (appliedSnapshotTimestamp < nextTimestamp)
+				{
+					// if there are more snapshots so we can interpolate
+					if (index != 0 && index < _snapshots.Count && _snapshots.Count > 1)
+					{
+						updateRigidBodies(new InterpolationSource(_snapshots.Values[index-1], _snapshots.Values[index], nextTimestamp));
+					}
+				}
 			}
 
-			// If time offset is less than a millisecond, just use 'prev' snapshot time
-			if (Math.Abs(prev.Time - nextTimestamp) <= 0.001)
+			// delete processed snapshots
+			for (int r = 0; r < index; r++) _snapshots.RemoveAt(0);
+
+			if (reset)
 			{
-				CurrentLocalTime = prev.Time;
-				updateRigidBodies(new SnapshotSource(prev));
-
-				return;
+				reset = false;
+				_runningStats.Reset();
+				_areAllRigidBodiesSleeping = true;
 			}
-
-			// interpolate state between two snapshots
-			CurrentLocalTime = nextTimestamp;
-			updateRigidBodies(new InterpolationSource(prev, nextOrCurrent, nextTimestamp));
 		}
 
-		#endregion
+#endregion
 
-		#region Iterator
+#region Iterator
 
 		int _iteratorIndex = 0;
 
@@ -721,7 +718,34 @@ namespace MixedRealityExtension.Core.Physics
 			}
 		}
 
-		#endregion
+#endregion
+
+#region Debug
+
+#if DEBUG_JITTER_BUFFER
+		internal void UpdateDebugDisplay(Transform root)
+		{
+			foreach (var rb in _rigidBodies.Values)
+			{
+				if (rb.GO == null)
+				{
+					rb.GO = new GameObject();
+					rb.GO = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+					var sc = rb.GO.GetComponent<SphereCollider>();
+					sc.enabled = false;
+
+					// display 1.cm sphere
+					rb.GO.transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
+				}
+
+
+				rb.GO.transform.position = root.TransformPoint(rb.Transform.Position);
+				rb.GO.transform.rotation = root.rotation * rb.Transform.Rotation;
+			}
+		}
+#endif
+
+#endregion
 	}
 
 	/// <summary>
@@ -857,6 +881,16 @@ namespace MixedRealityExtension.Core.Physics
 		{
 			_sources.Clear();
 			_rigidBodySourceMap.Clear();
+		}
+
+		internal void UpdateDebugDisplay(UnityEngine.Transform root)
+		{
+#if DEBUG_JITTER_BUFFER
+			foreach (var source in _sources.Values)
+			{
+				source.UpdateDebugDisplay(root);
+			}
+#endif
 		}
 	}
 }
