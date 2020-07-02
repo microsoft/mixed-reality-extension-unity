@@ -148,16 +148,11 @@ namespace MixedRealityExtension.App
 		void UserLeave(GameObject userGO);
 
 		/// <summary>
-		/// Enable user interaction with the app.
+		/// Gets whether this app is interactable for the given user.
 		/// </summary>
-		/// <param name="user">The user to enable interaction for.</param>
-		void EnableUserInteraction(IUser user);
-
-		/// <summary>
-		/// Disable user interaction with the app.
-		/// </summary>
-		/// <param name="user">The user to disable interaction for.</param>
-		void DisableUserInteration(IUser user);
+		/// <param name="user">The user to check interactability for.</param>
+		/// <returns>Whether the app is interactable for the given user.</returns>
+		bool IsInteractableForUser(IUser user);
 
 		/// <summary>
 		/// Find an actor with the given id or null if none exists.
