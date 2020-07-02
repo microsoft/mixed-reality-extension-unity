@@ -1670,7 +1670,7 @@ namespace MixedRealityExtension.Core
 			}
 
 			// If the actor has a rigid body then always sync the transform and the rigid body.
-			// but not the velocity, only 
+			// but not the velocities (due to bandwidth), sync only when there is an explicit subscription for the velocities
 			if (RigidBody != null)
 			{
 				subscriptions |= ActorComponentType.Transform;
