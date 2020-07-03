@@ -766,7 +766,8 @@ namespace MixedRealityExtension.Core
 				DetachFromAttachPointParent();
 
 				IUserInfo userInfo = MREAPI.AppsAPI.UserInfoProvider.GetUserInfo(App, Attachment.UserId);
-				if (userInfo != null)
+				if (userInfo != null &&
+					(Attachment.UserId != App.LocalUser?.Id || App.GrantedPermissions.HasFlag(Permissions.UserInteraction)))
 				{
 					userInfo.BeforeAvatarDestroyed -= UserInfo_BeforeAvatarDestroyed;
 
@@ -1737,7 +1738,7 @@ namespace MixedRealityExtension.Core
 
 #endregion
 
-#region Command Handlers
+		#region Command Handlers
 
 		[CommandHandler(typeof(LocalCommand))]
 		private void OnLocalCommand(LocalCommand payload, Action onCompleteCallback)
@@ -1956,6 +1957,13 @@ namespace MixedRealityExtension.Core
 		[CommandHandler(typeof(SetBehavior))]
 		private void OnSetBehavior(SetBehavior payload, Action onCompleteCallback)
 		{
+			// Don't create a behavior at all for this actor if the app is not interactable for any users.
+			if (!App.InteractionEnabled())
+			{
+				onCompleteCallback?.Invoke();
+				return;
+			}
+
 			var behaviorComponent = GetOrCreateActorComponent<BehaviorComponent>();
 
 			if (behaviorComponent.ContainsBehaviorContext())
@@ -1979,12 +1987,13 @@ namespace MixedRealityExtension.Core
 				// We need to update the new behavior's grabbable flag from the actor so that it can be grabbed in the case we cleared the previous behavior.
 				((ITargetBehavior)context.Behavior).Grabbable = Grabbable;
 			}
+
 			onCompleteCallback?.Invoke();
 		}
 
-#endregion
+		#endregion
 
-#region Command Handlers - Rigid Body Commands
+		#region Command Handlers - Rigid Body Commands
 
 		[CommandHandler(typeof(RBMovePosition))]
 		private void OnRBMovePosition(RBMovePosition payload, Action onCompleteCallback)
@@ -2035,6 +2044,6 @@ namespace MixedRealityExtension.Core
 			onCompleteCallback?.Invoke();
 		}
 
-#endregion
+		#endregion
 	}
 }

@@ -4,7 +4,7 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{534F3A2C-9DC5-4E0A-9AEB-7945D939B1B7}</ProjectGuid>
+    <ProjectGuid>{4D8EA76B-B56F-405E-96BD-15E15B0F3A6A}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>MixedRealityExtension</RootNamespace>
@@ -12,15 +12,9 @@
     <TargetFrameworkVersion>v4.7.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <OutputPath>..\bin\$(Configuration)</OutputPath>
+    <Deterministic>true</Deterministic>
     <TargetFrameworkProfile />
     <LangVersion>7.2</LangVersion>
-  </PropertyGroup>
-  <PropertyGroup>
-    <ProjectTypeGuids>{E097FAD1-6243-4DAD-9C02-E9B9EFC3FFC1};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
-    <UnityProjectGenerator>Unity/VSTU</UnityProjectGenerator>
-    <UnityProjectType>Game:1</UnityProjectType>
-    <UnityBuildTarget>StandaloneWindows:5</UnityBuildTarget>
-    <UnityVersion>2019.2.12f1</UnityVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -29,17 +23,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <NoWarn>1591;1573</NoWarn>
-    <DocumentationFile>..\bin\Debug\MREUnityRuntimeLib.xml</DocumentationFile>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug_Android|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <DefineConstants>DEBUG;TRACE;ANDROID_DEBUG</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <NoWarn>1591;1573</NoWarn>
+    <NoWarn>1591;1573; 0067;</NoWarn>
     <DocumentationFile>..\bin\Debug\MREUnityRuntimeLib.xml</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
@@ -48,7 +32,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <NoWarn>1591;1573</NoWarn>
+    <NoWarn>1591;1573; 0067;</NoWarn>
     <DocumentationFile>..\bin\Release\MREUnityRuntimeLib.xml</DocumentationFile>
     <CodeAnalysisRuleSet>..\..\tools\VSCodeAnalysis\MRESDK_Ruleset.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
@@ -111,6 +95,7 @@
     <Compile Include="Behaviors\Contexts\PenBehaviorContext.cs" />
     <Compile Include="Behaviors\Contexts\PhysicalToolBehaviorContext.cs" />
     <Compile Include="Behaviors\Contexts\TargetBehaviorContext.cs" />
+    <Compile Include="App\AppManifest.cs" />
     <Compile Include="Core\CollisionLayers.cs" />
     <Compile Include="Assets\AssetManager.cs" />
     <Compile Include="Assets\AssetGroup.cs" />
@@ -125,6 +110,7 @@
     <Compile Include="Core\Interfaces\ICollider.cs" />
     <Compile Include="Core\Interfaces\IUserInfo.cs" />
     <Compile Include="Core\MediaCommand.cs" />
+    <Compile Include="Core\Permissions.cs" />
     <Compile Include="Core\PhysicsBridge.cs" />
     <Compile Include="Core\Physics\IPrediction.cs" />
     <Compile Include="Core\Physics\JitterBuffer.cs" />
@@ -136,20 +122,26 @@
     <Compile Include="Core\VideoStreamDescription.cs" />
     <Compile Include="Factories\DefaultMaterialPatcher.cs" />
     <Compile Include="Factories\SimpleLayerApplicator.cs" />
+    <Compile Include="Factories\SimplePermissionsManager.cs" />
     <Compile Include="Messaging\Events\Types\ActorCorrectionEvent.cs" />
     <Compile Include="Messaging\Events\Types\ColliderEvent.cs" />
     <Compile Include="Messaging\Events\Types\PhysicsBridgeUpdated.cs" />
     <Compile Include="Messaging\Events\Types\TriggerEvent.cs" />
     <Compile Include="Messaging\Payloads\Converters\UnsignedConverter.cs" />
+    <Compile Include="Patching\IPatchable.cs" />
+    <Compile Include="Patching\PatchProperty.cs" />
+    <Compile Include="Patching\Patchable.cs" />
     <Compile Include="Patching\Types\AnimationPatch.cs" />
     <Compile Include="Patching\Types\AppearancePatch.cs" />
     <Compile Include="Patching\Types\LookAtPatch.cs" />
     <Compile Include="Patching\Types\PhysicsBridgePatch.cs" />
     <Compile Include="Patching\Types\ActorTransformPatch.cs" />
+    <Compile Include="Patching\Types\ScaledTransformPatch.cs" />
     <Compile Include="PluginInterfaces\Behaviors\IToolBehavior.cs" />
     <Compile Include="PluginInterfaces\Behaviors\IPenBehavior.cs" />
     <Compile Include="PluginInterfaces\IDialogFactory.cs" />
     <Compile Include="PluginInterfaces\ILayerApplicator.cs" />
+    <Compile Include="PluginInterfaces\IPermissionManager.cs" />
     <Compile Include="PluginInterfaces\IUserInfoProvider.cs" />
     <Compile Include="Messaging\Payloads\AssetCommandPayloads.cs" />
     <Compile Include="Patching\Types\AttachmentPatch.cs" />
@@ -227,10 +219,8 @@
     <Compile Include="Messaging\Payloads\Converters\DashFormattedEnumConverter.cs" />
     <Compile Include="Messaging\Protocols\Sync.cs" />
     <Compile Include="Messaging\Protocols\Protocol.cs" />
-    <Compile Include="Patching\IPatchable.cs" />
     <Compile Include="Messaging\Payloads\IPayload.cs" />
     <Compile Include="Messaging\Message.cs" />
-    <Compile Include="Patching\Patching.cs" />
     <Compile Include="Messaging\Payloads\Payload.cs" />
     <Compile Include="Messaging\Payloads\NetworkCommandPayloads.cs" />
     <Compile Include="Messaging\Payloads\PayloadConverter.cs" />
@@ -306,10 +296,10 @@
     <Compile Include="Assets\AssetFetcher.cs" />
     <Compile Include="Util\UtilMethods.cs" />
   </ItemGroup>
-  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>
+	  copy "$(ProjectDir)\link.xml" "$(ProjectDir)\..\bin\$(Configuration)\link.xml"
       cd $(ProjectDir)\..\
       if not exist "$(ProjectDir)\..\MREUnityProjects.xml" copy "$(ProjectDir)\..\MREUnityProjects.default.xml" "$(ProjectDir)\..\MREUnityProjects.xml"
       PostBuildTool.exe $(ConfigurationName)

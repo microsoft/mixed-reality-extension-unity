@@ -11,7 +11,7 @@ namespace MixedRealityExtension.Patching.Types
 	/// <summary>
 	/// A serialized animation definition
 	/// </summary>
-	public class AnimationPatch : IPatchable
+	public class AnimationPatch : Patchable<AnimationPatch>
 	{
 		/// <summary>
 		/// Generated unique ID of this animation
@@ -83,31 +83,6 @@ namespace MixedRealityExtension.Patching.Types
 			if (other.Speed.HasValue) Speed = other.Speed;
 			if (other.Weight.HasValue) Weight = other.Weight;
 			if (other.WrapMode.HasValue) WrapMode = other.WrapMode;
-		}
-
-		public void WriteToPath(TargetPath path, JToken value, int depth)
-		{
-
-		}
-
-		public bool ReadFromPath(TargetPath path, ref JToken value, int depth)
-		{
-			return false;
-		}
-
-		public void Clear()
-		{
-			
-		}
-
-		public void Restore(TargetPath path, int depth)
-		{
-
-		}
-
-		public void RestoreAll()
-		{
-
 		}
 	}
 }

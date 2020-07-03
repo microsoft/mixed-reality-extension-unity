@@ -75,11 +75,18 @@ namespace MixedRealityExtension.Assets
 		///<inheritdoc/>
 		public GameObject CacheRootGO { get; set; }
 
+		[SerializeField]
+		private GameObject SerializedCacheRoot = null;
+
 		/// <inheritdoc />
 		public bool SupportsSync { get; protected set; } = true;
 
 		protected virtual void Start()
 		{
+			if (SerializedCacheRoot != null)
+			{
+				CacheRootGO = SerializedCacheRoot;
+			}
 			Application.lowMemory += CleanUnusedResources;
 		}
 

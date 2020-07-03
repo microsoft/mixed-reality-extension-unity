@@ -293,6 +293,7 @@ MonoBehaviour:
   UserProperties: []
   AutoStart: 0
   AutoJoin: 1
+  GrantedPermissions: -1
   SceneRoot: {fileID: 368773028}
   PlaceholderObject: {fileID: 164408130}
   UserGameObject: {fileID: 1767571516}
@@ -517,6 +518,7 @@ MonoBehaviour:
   UserProperties: []
   AutoStart: 0
   AutoJoin: 1
+  GrantedPermissions: -1
   SceneRoot: {fileID: 1141388990}
   PlaceholderObject: {fileID: 582437838}
   UserGameObject: {fileID: 1767571516}

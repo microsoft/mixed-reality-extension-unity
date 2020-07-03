@@ -46,7 +46,7 @@ namespace MixedRealityExtension.Patching.Types
 		public TransformPatch Transform { get; set; }
 	}
 
-	public class PhysicsBridgePatch : IPatchable
+	public class PhysicsBridgePatch : Patchable<PhysicsBridgePatch>
 	{
 		public PhysicsBridgePatch()
 		{
@@ -107,31 +107,6 @@ namespace MixedRealityExtension.Patching.Types
 		/// https://www.newtonsoft.com/json/help/html/SerializationGuide.htm
 		/// </summary>
 		public byte[] TransformsBLOB { get; set; }
-
-		public void WriteToPath(TargetPath path, JToken value, int depth)
-		{
-
-		}
-
-		public bool ReadFromPath(TargetPath path, ref JToken value, int depth)
-		{
-			return false;
-		}
-
-		public void Clear()
-		{
-
-		}
-
-		public void Restore(TargetPath path, int depth)
-		{
-
-		}
-
-		public void RestoreAll()
-		{
-
-		}
 	}
 
 	public class PhysicsTranformServerUploadPatch : IPatchable
@@ -195,6 +170,11 @@ namespace MixedRealityExtension.Patching.Types
 		public int TransformCount { get; set; }
 
 		public OneActorUpdate[] updates;
+
+		public bool IsPatched()
+		{
+			return (TransformCount > 0);
+		}
 
 		public void WriteToPath(TargetPath path, JToken value, int depth)
 		{
