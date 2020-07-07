@@ -494,8 +494,8 @@ namespace MixedRealityExtension.Messaging.Payloads
 	}
 
 	/// <summary>
-	/// Unidirectional
-	/// low frequency to upload the positions to the server.
+	/// Engine => App
+	/// Payload to update positions to the server at low frequency.
 	/// </summary>
 	public class PhysicsTranformServerUpload : NetworkCommandPayload
 	{

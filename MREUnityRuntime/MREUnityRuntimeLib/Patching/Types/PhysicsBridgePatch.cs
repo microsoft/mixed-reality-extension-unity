@@ -12,6 +12,7 @@ using UnityEngine;
 namespace MixedRealityExtension.Patching.Types
 {
 	/// type of the motion that helps on the other side to predict its trajectory
+	[Flags]
 	public enum MotionType : byte
 	{
 		/// body that is simulated and should react to impacts
