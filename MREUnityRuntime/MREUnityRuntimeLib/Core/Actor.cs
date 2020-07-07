@@ -1043,7 +1043,7 @@ namespace MixedRealityExtension.Core
 			{
 				// Should be set only once when actor is initialized
 				// and only for single user who receives the patch.
-				// The comparisson check is not actually required.
+				// The comparison check is not actually required.
 				_isExclusiveToUser = App.LocalUser.Id == exclusiveToUser.Value;
 			}
 		}

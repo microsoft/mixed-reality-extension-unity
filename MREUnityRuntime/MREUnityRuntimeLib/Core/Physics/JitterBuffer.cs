@@ -303,7 +303,7 @@ namespace MixedRealityExtension.Core.Physics
 			private float[] _bufferTimeHeuristics = new float[_count];
 
 			/// <summary>
-			/// Estimated update availability if output is slown down.
+			/// Estimated update availability if output is slowed down.
 			/// </summary>
 			public float SlowDownIndicator { get { return _bufferTimeHeuristics[_current + 1]; } }
 
@@ -313,7 +313,7 @@ namespace MixedRealityExtension.Core.Physics
 			public float CurrentRateQuality { get { return _bufferTimeHeuristics[_current]; } }
 
 			/// <summary>
-			/// Estimated update availability if output is sped down.
+			/// Estimated update availability if output is sped up.
 			/// </summary>
 			public float SpeedUpIndicator { get { return _bufferTimeHeuristics[_current - 1]; } }
 
