@@ -490,6 +490,18 @@ namespace MixedRealityExtension.Messaging.Payloads
 		/// <summary>
 		/// Physics bridge update with transforms for owned rigid bodies.
 		/// </summary>
-		public PhysicsBridgePatch PhysicsBridge { get; set; }
+		public PhysicsBridgePatch PhysicsBridgePatch { get; set; }
+	}
+
+	/// <summary>
+	/// Engine => App
+	/// Payload to update positions to the server at low frequency.
+	/// </summary>
+	public class PhysicsTranformServerUpload : NetworkCommandPayload
+	{
+		/// <summary>
+		/// Physics bridge updates transforms with low frequency on the server.
+		/// </summary>
+		public PhysicsTranformServerUploadPatch PhysicsTranformServer { get; set; }
 	}
 }

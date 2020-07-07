@@ -1,4 +1,7 @@
-﻿using System;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -42,7 +45,7 @@ namespace MixedRealityExtension.Core.Physics
 		Dictionary<Guid, CollisionMonitorInfo> _monitorCollisionInfo = new Dictionary<Guid, CollisionMonitorInfo>();
 
 		// ---------- all the method specific parameters ---------
-		const float startInterpolatingBack = 0.6f; // time in seconds
+		const float startInterpolatingBack = 0.8f; // time in seconds
 		const float endInterpolatingBack = 2.0f; // time in seconds
 		const float invInterpolationTimeWindows = 1.0f / (endInterpolatingBack - startInterpolatingBack);
 		const float limitCollisionInterpolation = 0.2f;
@@ -115,7 +118,7 @@ namespace MixedRealityExtension.Core.Physics
 								+ " dyn:" + rb.RigidBody.transform.position
 							    + " interp pos:" + interpolatedPos
 								+ " rb vel:" + rb.RigidBody.velocity
-								+ " KF vel:" + rb.lastValidLinerVelocity);
+								+ " KF vel:" + rb.lastValidLinerVelocityOrPos);
 #endif
 					// apply these changes only if they are significant in order to not to bother the physics engine
 					// for settled objects
@@ -147,8 +150,8 @@ namespace MixedRealityExtension.Core.Physics
 				rb.RigidBody.transform.rotation = keyFramedOrientation;
 				rb.RigidBody.velocity.Set(0.0f, 0.0f, 0.0f);
 				rb.RigidBody.angularVelocity.Set(0.0f, 0.0f, 0.0f);
-				collisionInfo.linearVelocity = rb.lastValidLinerVelocity;
-				collisionInfo.angularVelocity = rb.lastValidAngularVelocity;
+				collisionInfo.linearVelocity = rb.lastValidLinerVelocityOrPos;
+				collisionInfo.angularVelocity = rb.lastValidAngularVelocityorAng;
 				collisionInfo.monitorInfo = new CollisionMonitorInfo();
 #if MRE_PHYSICS_DEBUG
 				if (rb.IsKeyframed)
@@ -264,7 +267,7 @@ namespace MixedRealityExtension.Core.Physics
 								&& collisionMonitorInfo.keyframedInterpolationRatio > limitCollisionInterpolation)
 							{
 #if MRE_PHYSICS_DEBUG
-								Debug.Log(" Stop interpolation time with DT:" + DT +
+								Debug.Log(" Stop interpolation time with DT:" + timeInfo.DT +
 									" Ratio:" + collisionMonitorInfo.keyframedInterpolationRatio +
 									" relDist:" + collisionMonitorInfo.relativeDistance +
 									" t=" + collisionMonitorInfo.timeFromStartCollision);
@@ -354,5 +357,11 @@ namespace MixedRealityExtension.Core.Physics
 			} // end for each 
 
 		} // end of PredictAllRemoteBodiesWithOwnedBodies
+
+		public void Clear()
+		{
+			_switchCollisionInfos.Clear();
+			_monitorCollisionInfo.Clear();
+		}
 	}
 }

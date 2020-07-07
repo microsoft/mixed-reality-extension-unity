@@ -39,12 +39,6 @@ namespace MixedRealityExtension.App
 		private readonly CommandManager _commandManager;
 		internal readonly AnimationManager AnimationManager;
 		private readonly AssetManager _assetManager;
-
-		internal bool UsePhysicsBridge { get; set; }
-
-		private PhysicsBridge _physicsBridge;
-		private bool _shouldSendPhysicsUpdate = false;
-
 		private readonly MonoBehaviour _ownerScript;
 
 		private IConnectionInternal _conn;
@@ -52,6 +46,15 @@ namespace MixedRealityExtension.App
 		private ISet<Guid> _interactingUserIds = new HashSet<Guid>();
 		private IList<Action> _executionProtocolActionQueue = new List<Action>();
 		private IList<GameObject> _ownedGameObjects = new List<GameObject>();
+
+		// If physics simulation time step is larger than specified value, physics update will be sent with
+		// the same time step. If smaller, physics upate will be send with closest smaller multiple time step.
+		// For example if update timestep is 0.33, and if simulation time step is 40ms then update step is also 40ms,
+		// or if simulation step is 16ms then update step is 32ms.
+		private float _physicsUpdateTimestep = 0.016f;
+
+		private float _timeSinceLastPhysicsUpdate = 0.0f;
+		private bool _shouldSendPhysicsUpdate = false;
 
 		private enum AppState
 		{
@@ -162,6 +165,10 @@ namespace MixedRealityExtension.App
 
 		internal Permissions GrantedPermissions = Permissions.None;
 
+		internal PhysicsBridge PhysicsBridge { get; } = null;
+
+		internal bool UsePhysicsBridge => PhysicsBridge != null;
+
 		#endregion
 
 		/// <summary>
@@ -178,11 +185,9 @@ namespace MixedRealityExtension.App
 			_userManager = new UserManager(this);
 			_actorManager = new ActorManager(this);
 
-			UsePhysicsBridge = Constants.UsePhysicsBridge;
-
-			if (UsePhysicsBridge)
+			if (Constants.UsePhysicsBridge)
 			{
-				_physicsBridge = new PhysicsBridge();
+				PhysicsBridge = new PhysicsBridge();
 			}
 
 			SoundManager = new SoundManager(this);
@@ -210,22 +215,6 @@ namespace MixedRealityExtension.App
 #else
 			Logger = logger ?? new ConsoleLogger(this);
 #endif
-		}
-
-		private void OnRigidBodyKinematicsChanged(Guid id, bool isKinematic)
-		{
-			_physicsBridge.setKeyframed(id, isKinematic);
-		}
-
-		private void OnRigidBodyAdded(Guid id, Rigidbody rigidbody, Guid? owner)
-		{
-			bool isOwner = owner.HasValue ? owner.Value == LocalUser.Id : IsAuthoritativePeer;
-			_physicsBridge.addRigidBody(id, rigidbody, isOwner);
-		}
-
-		private void OnRigidBodyRemoved(Guid id)
-		{
-			_physicsBridge.removeRigidBody(id);
 		}
 
 		/// <inheritdoc />
@@ -271,14 +260,6 @@ namespace MixedRealityExtension.App
 
 			_appState = AppState.Starting;
 
-			if (UsePhysicsBridge)
-			{
-				_actorManager.RigidBodyAdded += OnRigidBodyAdded;
-				_actorManager.RigidBodyRemoved += OnRigidBodyRemoved;
-				_actorManager.RigidBodyKinematicsChanged += OnRigidBodyKinematicsChanged;
-				_actorManager.RigidBodyOwnerChanged += OnRigidBodyOwnerChanged;
-			}
-			
 			var connection = new WebSocket();
 			connection.Url = url;
 			connection.Headers.Add(Constants.SessionHeader, SessionId);
@@ -292,14 +273,7 @@ namespace MixedRealityExtension.App
 			connection.OnDisconnected += Conn_OnDisconnected;
 			connection.OnError += Connection_OnError;
 			_conn = connection;
-
 			_conn.Open();
-		}
-
-		private void OnRigidBodyOwnerChanged(Guid id, Guid? owner)
-		{
-			bool isOwner = owner.HasValue ? owner.Value == LocalUser.Id : IsAuthoritativePeer;
-			_physicsBridge.setRigidBodyOwnership(id, isOwner);
 		}
 
 		private void OnPermissionsUpdated(Uri updatedUrl, Permissions oldPermissions, Permissions newPermissions)
@@ -363,17 +337,10 @@ namespace MixedRealityExtension.App
 				UnityEngine.Object.Destroy(go);
 			}
 
-			if (UsePhysicsBridge)
-			{
-				_actorManager.RigidBodyAdded -= OnRigidBodyAdded;
-				_actorManager.RigidBodyRemoved -= OnRigidBodyRemoved;
-				_actorManager.RigidBodyKinematicsChanged -= OnRigidBodyKinematicsChanged;
-				_actorManager.RigidBodyOwnerChanged -= OnRigidBodyOwnerChanged;
-			}
-
 			_ownedGameObjects.Clear();
 			_actorManager.Reset();
 			AnimationManager.Reset();
+			PhysicsBridge.Reset();
 
 			foreach (Guid id in _assetLoader.ActiveContainers)
 			{
@@ -385,30 +352,67 @@ namespace MixedRealityExtension.App
 		/// <inheritdoc />
 		public void FixedUpdate()
 		{
+			if (_appState == AppState.Stopped)
+			{
+				return;
+			}
+
 			if (UsePhysicsBridge)
 			{
 				if (_shouldSendPhysicsUpdate)
 				{
 					SendPhysicsUpdate();
-					_shouldSendPhysicsUpdate = false;
 				}
 
-				_physicsBridge.FixedUpdate(SceneRoot.transform);
+				PhysicsBridge.FixedUpdate(SceneRoot.transform);
 
-				_shouldSendPhysicsUpdate = true;
+				// add delta for next step
+				_timeSinceLastPhysicsUpdate += Time.fixedDeltaTime;
+
+				float updateDeltaTime = Math.Max(Time.fixedDeltaTime,
+					Time.fixedDeltaTime * (float)Math.Floor(_physicsUpdateTimestep / Time.fixedDeltaTime));
+
+				if (updateDeltaTime - _timeSinceLastPhysicsUpdate < 0.001f)
+				{
+					_shouldSendPhysicsUpdate = true;
+				}
 			}
 		}
 
 		private void SendPhysicsUpdate()
 		{
-			PhysicsBridgePatch physicsPatch = new PhysicsBridgePatch(InstanceId,
-				_physicsBridge.GenerateSnapshot(UnityEngine.Time.fixedTime, SceneRoot.transform));
+			if (LocalUser == null)
+			{
+				return;
+			}
+
+			PhysicsBridgePatch physicsPatch = new PhysicsBridgePatch(LocalUser.Id,
+				PhysicsBridge.GenerateSnapshot(UnityEngine.Time.fixedTime, SceneRoot.transform));
 			// send only updates if there are any, to save band with
 			// in order to produce any updates for settled bodies this should be handled within the physics bridge
-			if (physicsPatch.TransformCount > 0)
+			if (physicsPatch.DoSendThisPatch())
 			{
 				EventManager.QueueEvent(new PhysicsBridgeUpdated(InstanceId, physicsPatch));
 			}
+			
+			//low frequency server upload transform stream
+			{
+				float systemTime = UnityEngine.Time.time;
+				if (PhysicsBridge.shouldSendLowFrequencyTransformUpload(systemTime))
+				{
+					PhysicsTranformServerUploadPatch serverUploadPatch =
+						PhysicsBridge.GenerateServerTransformUploadPatch(InstanceId, systemTime);
+					// upload only if there is a real difference in the transforms
+					if (serverUploadPatch.IsPatched())
+					{
+						EventManager.QueueEvent(new PhysicsTranformServerUploadUpdated(InstanceId, serverUploadPatch));
+					}
+				}
+			}
+
+			_shouldSendPhysicsUpdate = false;
+			_timeSinceLastPhysicsUpdate = 0.0f;
+
 		}
 
 		/// <inheritdoc />
@@ -431,7 +435,6 @@ namespace MixedRealityExtension.App
 				if (_shouldSendPhysicsUpdate)
 				{
 					SendPhysicsUpdate();
-					_shouldSendPhysicsUpdate = false;
 				}
 			}
 
@@ -467,6 +470,8 @@ namespace MixedRealityExtension.App
 				});
 
 				LocalUser = user;
+
+				PhysicsBridge.LocalUserId = LocalUser.Id;
 
 				// TODO @tombu - Wait for the app to send back a success for join?
 				_userManager.AddUser(user);
@@ -1090,7 +1095,16 @@ namespace MixedRealityExtension.App
 		{
 			if (UsePhysicsBridge)
 			{
-				_physicsBridge.addSnapshot(payload.PhysicsBridge.Id, payload.PhysicsBridge.ToSnapshot());
+				PhysicsBridge.addSnapshot(payload.PhysicsBridgePatch.Id, payload.PhysicsBridgePatch.ToSnapshot());
+				onCompleteCallback?.Invoke();
+			}
+		}
+
+		[CommandHandler(typeof(PhysicsTranformServerUpload))]
+		private void OnTransformsServerUpload(PhysicsTranformServerUpload payload, Action onCompleteCallback)
+		{
+			if (UsePhysicsBridge)
+			{
 				onCompleteCallback?.Invoke();
 			}
 		}
