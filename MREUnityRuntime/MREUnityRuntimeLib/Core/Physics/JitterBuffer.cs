@@ -6,7 +6,6 @@
 using MixedRealityExtension.Patching.Types;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 
 namespace MixedRealityExtension.Core.Physics
@@ -35,6 +34,7 @@ namespace MixedRealityExtension.Core.Physics
 		/// <summary>
 		/// Flags that mark special properties of the snapshot
 		/// </summary>
+		[Flags]
 		public enum SnapshotFlags : byte
 		{
 			/// No special treatment
@@ -137,6 +137,8 @@ namespace MixedRealityExtension.Core.Physics
 
 		public float LastSnapshotLocalTime { get; private set; }  = float.MinValue;
 
+		private float _prevStepLastSnapshotLocalTime = float.MinValue;
+
 		public bool HasUpdate { get; private set; } = false;
 
 		/// <summary>
@@ -155,9 +157,14 @@ namespace MixedRealityExtension.Core.Physics
 		private SortedList<Guid, Action> _pendingRigidBodyManagementActions = new SortedList<Guid, Action>();
 
 		/// <summary>
-		/// Running average buffered time and deviation.
+		/// Running average for packet availability at different time checkpoints relative to current output.
 		/// </summary>
 		private RunningStats _runningStats = new RunningStats();
+
+		/// <summary>
+		/// Tracks updated time within the last second.
+		/// </summary>
+		private UpdateTimeHealth _upateHealth = new UpdateTimeHealth();
 
 		/// in order to reset the jitter buffer properly we need to know if the last updates only has sleeping bodies
 		private bool _areAllRigidBodiesSleeping = true;
@@ -204,15 +211,36 @@ namespace MixedRealityExtension.Core.Physics
 			if (_areAllRigidBodiesSleeping && _snapshots.Count == 0)
 			{
 				CurrentLocalTime = float.MinValue;
+				_prevStepLastSnapshotLocalTime = float.MinValue;
 
 				return;
 			}
 
+			float receivedUpdateTime = _prevStepLastSnapshotLocalTime > 0 ? LastSnapshotLocalTime - _prevStepLastSnapshotLocalTime : 0.0f;
+			_prevStepLastSnapshotLocalTime = LastSnapshotLocalTime;
+
+			_upateHealth.addSample(receivedUpdateTime);
+			_isNetworkHealthy = _upateHealth.UpdatedTime >= 0.9f;
+
 			// Next timestamp may vary depending network jitter
 			float nextTimeStamp = caclNextTimeStamp(timestep);
 
+			if (!_wasNetworkHealthy && _isNetworkHealthy)
+			{
+				nextTimeStamp = Math.Min(nextTimeStamp, LastSnapshotLocalTime);
+			}
+
+			// if network is healthy, we don't want large buffer time
+			if (_isNetworkHealthy)
+			{
+				const float maxBufferTime = 0.1f;
+				nextTimeStamp = Math.Max(nextTimeStamp, LastSnapshotLocalTime - maxBufferTime);
+			}
+
 			// Update state from available snapshots
 			stepBufferAndUpdateRigidBodies(nextTimeStamp);
+
+			_wasNetworkHealthy = _isNetworkHealthy;
 		}
 
 		private enum Action
@@ -231,29 +259,65 @@ namespace MixedRealityExtension.Core.Physics
 			_pendingRigidBodyManagementActions[id] = Action.Remove;
 		}
 
-#endregion
+		#endregion
 
-#region Running Stats
+		#region Stats
+
+		bool _isNetworkHealthy = true;
+		bool _wasNetworkHealthy = true;
 
 		/// <summary>
-		/// Calculates running stats: mean, variance and deviation.
+		/// Based on time covered by updates received with last second.
+		/// </summary>
+		class UpdateTimeHealth
+		{
+			/// <summary>
+			/// Running average time covered with updates within past second.
+			/// </summary>
+			public float UpdatedTime = 1.0f;
+
+			private int _runningWindowsSize = 60;
+
+			public void addSample(float updateTime)
+			{
+				UpdatedTime -= UpdatedTime / _runningWindowsSize;
+				UpdatedTime += updateTime;
+			}
+		}
+
+		/// <summary>
+		/// Running average for update availability at different time checkpoints relative to current output.
 		/// </summary>
 		class RunningStats
 		{
-			private int _count;
-			private float _mean;
-			private float _variance;
+			const int _numRunningWindowSamples = 100;
+
+			public const float TimeStep = 1.0f / 120;
+
+			const float _timespan = 0.1f;
+
+			const int _count = (int)(2 * _timespan / TimeStep) + 1;
+
+			const int _current = _count / 2;
+
+			private float[] _bufferTimeHeuristics = new float[_count];
 
 			/// <summary>
-			/// Number of samples to build running stats.
+			/// Estimated update availability if output is slown down.
 			/// </summary>
-			int _windowSize = 120;
+			public float SlowDownIndicator { get { return _bufferTimeHeuristics[_current + 1]; } }
 
-			public float Mean => _mean;
+			/// <summary>
+			/// Estimated update availability with current output rate.
+			/// </summary>
+			public float CurrentRateQuality { get { return _bufferTimeHeuristics[_current]; } }
 
-			public float Variance => ((_count > 1) ? _variance / (_count - 1) : 0.0f);
+			/// <summary>
+			/// Estimated update availability if output is sped down.
+			/// </summary>
+			public float SpeedUpIndicator { get { return _bufferTimeHeuristics[_current - 1]; } }
 
-			public float Deviation => (float)Math.Sqrt(Variance);
+			public float AverageBufferTime = 0.0f;
 
 			public RunningStats()
 			{
@@ -262,166 +326,123 @@ namespace MixedRealityExtension.Core.Physics
 
 			public void Reset()
 			{
-				_count = 0;
-				_mean = 0.016f;
-				_variance = 0.0f;
-			}
-
-			// if out time if shifted, we need to apply that shift here as well
-			// e.g. if we decided to hold packets longer, we need to put that into running stats as well
-			public void ShiftTime(float time)
-			{
-				_mean += time;
-			}
-
-			// add buffer remaining time to running stats
-			public void AddSample(float value)
-			{
-				_count = Math.Min(_windowSize, _count + 1);
-
-				float averageOld = _mean;
-				float varianceOld = _variance;
-
-				float oldDiff = value - _mean;
-
-				_mean -= _mean / _count;
-				_mean += value / _count;
-
-				float newDiff = value - _mean;
-
-				_variance -= _variance / _count;
-				_variance += oldDiff * newDiff;
-			}
-		}
-
-#if DEBUG_JITTER_BUFFER
-			private class DebugStats
-			{
-				const int _capacity = 5000;
-
-				public void add(float bufferTime, float meanBufferTime, float targetBufferTime, float biasedTargetBufferTime, float timeShift, float outputTime)
+				for (int i = _current; i < _bufferTimeHeuristics.Length; i++)
 				{
-					_bufferTime.Add(bufferTime);
-					_meanBufferTime.Add(meanBufferTime);
-					_targetBufferTime.Add(targetBufferTime);
-					_biasedTargetBufferTime.Add(biasedTargetBufferTime);
-					_timeShift.Add(timeShift);
-					_outputTime.Add(outputTime);
+					// at current buffering time and later, updates are always available
+					_bufferTimeHeuristics[i] = 1.0f;
 				}
 
-				List<float> _bufferTime = new List<float>(_capacity);
-				List<float> _meanBufferTime = new List<float>(_capacity);
-				List<float> _targetBufferTime = new List<float>(_capacity);
-				List<float> _biasedTargetBufferTime = new List<float>(_capacity);
-				List<float> _timeShift = new List<float>(_capacity);
-				List<float> _outputTime = new List<float>(_capacity);
+				for (int i = _current - 1; i >= 0; i--)
+				{
+					// halve the initial probability for each folowing speedup increment
+					_bufferTimeHeuristics[i] = _bufferTimeHeuristics[i + 1] / 2;
+				}
 			}
 
-			private DebugStats _debugStats = new DebugStats();
-#endif
+			public void addSample(float bufferTime)
+			{
+				// Update buffer time running average
+				AverageBufferTime -= AverageBufferTime / _numRunningWindowSamples;
+				AverageBufferTime += bufferTime / _numRunningWindowSamples;
 
-#endregion
+				const float increment = 1.0f / _numRunningWindowSamples;
 
-#region Time Management
+				// update fixed step buffer time availability
+				for (int i = 0; i < _bufferTimeHeuristics.Length; i++)
+				{
+					int offset = i - _current;
+					float value = bufferTime + offset * TimeStep;
+
+					_bufferTimeHeuristics[i] -= _bufferTimeHeuristics[i] / _numRunningWindowSamples;
+					_bufferTimeHeuristics[i] = Math.Max(0.0f, _bufferTimeHeuristics[i]);
+
+					if (value >= 0.0f)
+					{
+						_bufferTimeHeuristics[i] += increment;
+						_bufferTimeHeuristics[i] = Math.Min(1.0f, _bufferTimeHeuristics[i]);
+					}
+				}
+			}
+
+			/// <summary>
+			/// Output time is shifting, we need to shift heuristic values as well.
+			/// </summary>
+			public void SlowDown()
+			{
+				int i = 0;
+				for (; i < _bufferTimeHeuristics.Length - 1; i++)
+				{
+					_bufferTimeHeuristics[i] = _bufferTimeHeuristics[i + 1];
+				}
+
+				_bufferTimeHeuristics[i] = 0.0f;
+			}
+
+			/// <summary>
+			/// Output time is shifting, we need to shift heuristic values as well.
+			/// </summary>
+			public void SpeedUp()
+			{
+				int i = _bufferTimeHeuristics.Length - 1;
+				for (; i > 0; i--)
+				{
+					_bufferTimeHeuristics[i] = _bufferTimeHeuristics[i - 1];
+				}
+
+				_bufferTimeHeuristics[i] = 0.0f;
+			}
+
+		}
+
+		#endregion
+
+		#region Time Management
 
 		/// <summary>
 		/// Time precision is 1 millisecond.
 		/// </summary>
 		private const float _timePrecision = 0.001f;
 
-		/// <summary>
-		/// todo: add comment
-		/// </summary>
-		private float _speedUpCoef = 0.2f;
-
-		/// <summary>
-		/// todo: add comment
-		/// </summary>
-		private float _speedDownCoef = 0.5f;
-
 		private float caclNextTimeStamp(float timestep)
 		{
+			// if it was not running just use last received value
 			if (CurrentLocalTime < 0.0f)
 			{
 				return LastSnapshotLocalTime;
 			}
 
-			const float bufferTimeBiasTimeUnit = 1.0f / 60;
-
-			float targetBufferTime = _runningStats.Mean - _runningStats.Deviation;
-
-			float biasedTargetBufferTime = targetBufferTime / bufferTimeBiasTimeUnit;
-			biasedTargetBufferTime = targetBufferTime > 0 ?
-				((int)biasedTargetBufferTime) * bufferTimeBiasTimeUnit : ((int)biasedTargetBufferTime - 1) * bufferTimeBiasTimeUnit;
-
-			float nextTimestamp = CurrentLocalTime + timestep;
-			float bufferedTime = LastSnapshotLocalTime - nextTimestamp;
-
-			if (bufferedTime > 1.0f)
+			// if there is a durable packet loss, skip updating stats and just pretend time passes as expected
+			if (!_isNetworkHealthy)
 			{
-				int x = 0;
-				x++;
+				return CurrentLocalTime + timestep * 0.999f; // let's be a bit conservative
 			}
 
-			_runningStats.AddSample(bufferedTime);
+			float nextTimeStamp = CurrentLocalTime + timestep;
+			float bufferedTime = LastSnapshotLocalTime - nextTimeStamp;
 
-			// check if time shift is required
-			float timeShift;
-			if (Math.Abs(biasedTargetBufferTime) > 0.001)
-			{
-				// todo: limit slow-down, don't allow time to move to the past
-				timeShift = biasedTargetBufferTime > 0 ?
-					_speedUpCoef * biasedTargetBufferTime : _speedDownCoef * biasedTargetBufferTime;
+			_runningStats.addSample(bufferedTime);
 
-				nextTimestamp += timeShift;
-				_runningStats.ShiftTime(-timeShift);
-			}
-			else
+			// there is bad quality with current output time pace, slow down if it would help
+			if (_runningStats.CurrentRateQuality < 0.85f &&
+				_runningStats.SlowDownIndicator > _runningStats.CurrentRateQuality)
 			{
-				timeShift = 0;
+				_runningStats.SlowDown();
+				return nextTimeStamp - RunningStats.TimeStep;
 			}
 
-#if DEBUG_JITTER_BUFFER
-					_debugStats.add(bufferedTime, _runningStats.Mean, targetBufferTime, biasedTargetBufferTime, timeShift, nextTimestamp);
-#endif
+			// speed up if can have good quality with shorted buffer time
+			if (_runningStats.SpeedUpIndicator > 0.95f)
+			{
+				_runningStats.SpeedUp();
+				return nextTimeStamp + RunningStats.TimeStep;
+			}
 
-			return nextTimestamp;
+			return nextTimeStamp;
 		}
 
-#endregion
+		#endregion
 
-#region Buffer Management
-
-		/// <summary>
-		/// Get previous and next snapshot for specified timestamp.
-		/// Snapshots older than timestamp will be deleted.
-		/// </summary>
-		//private void findSnapshots(float time, out Snapshot previous, out Snapshot nextOrCurrent)
-		//{
-		//	UnityEngine.Debug.Assert(_snapshots.Count == 0 || time <= _snapshots.Count);
-
-		//	// Find appropriate snapshots
-		//	int index = 0;
-		//	while (index < _snapshots.Count && time - _snapshots.Keys[index] > _timePrecision) index++;
-
-		//	previous = index == 0 ? null : _snapshots.Values[index - 1];
-		//	nextOrCurrent = index < _snapshots.Count ? _snapshots.Values[index] : null;
-
-		//	// Remove old snapshots
-		//	if (nextOrCurrent != null)
-		//	{
-		//		int removeThreshold = time - nextOrCurrent.Time >= -_timePrecision ? index : index - 1;
-		//		for (int r = 0; r < removeThreshold; r++) _snapshots.RemoveAt(0);
-		//	}
-		//	else
-		//	{
-		//		_snapshots.Clear();
-		//	}
-		//}
-
-#endregion
-
-#region Rigid Body Management
+		#region Rigid Body Management
 
 		private void processPendingActions()
 		{
@@ -650,6 +671,7 @@ namespace MixedRealityExtension.Core.Physics
 			bool reset = false;
 			int index = 0;
 
+			// go through all the snapshots in the past
 			while (index < _snapshots.Count && _snapshots.Keys[index] - nextTimestamp <= _timePrecision)
 			{
 				updateRigidBodies(new SnapshotSource(_snapshots.Values[index]));
@@ -684,14 +706,13 @@ namespace MixedRealityExtension.Core.Physics
 			if (reset)
 			{
 				reset = false;
-				_runningStats.Reset();
 				_areAllRigidBodiesSleeping = true;
 			}
 		}
 
-#endregion
+		#endregion
 
-#region Iterator
+		#region Iterator
 
 		int _iteratorIndex = 0;
 
@@ -718,9 +739,9 @@ namespace MixedRealityExtension.Core.Physics
 			}
 		}
 
-#endregion
+		#endregion
 
-#region Debug
+		#region Debug
 
 #if DEBUG_JITTER_BUFFER
 		internal void UpdateDebugDisplay(Transform root)
@@ -745,7 +766,7 @@ namespace MixedRealityExtension.Core.Physics
 		}
 #endif
 
-#endregion
+		#endregion
 	}
 
 	/// <summary>
@@ -800,13 +821,12 @@ namespace MixedRealityExtension.Core.Physics
 
 				if (oldSourceId != sourceId)
 				{
-					// Unregidter from old source
+					// Unregister from old source
 					_sources[oldSourceId].UnregisterRigidBody(rigidBodyId);
 
 					// Register for new source
 					_sources[sourceId].RegisterRigidBody(rigidBodyId);
 					_rigidBodySourceMap[rigidBodyId] = sourceId;
-
 				}
 			}
 			else
@@ -823,7 +843,7 @@ namespace MixedRealityExtension.Core.Physics
 			{
 				Guid oldSourceId = _rigidBodySourceMap[rigidBodyId];
 
-				// Unregidter from source
+				// Unregister from source
 				_sources[oldSourceId].UnregisterRigidBody(rigidBodyId);
 				_rigidBodySourceMap.Remove(rigidBodyId);
 			}
@@ -847,7 +867,7 @@ namespace MixedRealityExtension.Core.Physics
 
 		public void Step(float timestep, out MultiSourceCombinedSnapshot snapshotOut)
 		{
-			// Update transforms holded by each source
+			// Update transforms held by each source
 			foreach (var source in _sources.Values)
 			{
 				// Update current state

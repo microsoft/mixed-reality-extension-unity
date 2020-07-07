@@ -95,15 +95,23 @@ namespace MixedRealityExtension.Core
 			}
 		}
 
+		/// <summary>
+		/// Checks if rigid body is simulated locally.
+		/// </summary>
 		internal bool IsSimulatedByLocalUser
 		{
 			get
 			{
 				if (_isExclusiveToUser)
+				{
 					return true;
+				}
 
+				// Should always be true after rigid body is fully initialized.
 				if (!Owner.HasValue)
+				{
 					return false;
+				}
 
 				return Owner.Value == App.LocalUser.Id;
 			}
@@ -852,7 +860,7 @@ namespace MixedRealityExtension.Core
 					}
 					else
 					{
-						// if rigid body needs to be synchronized, handle it trough physics bridge
+						// if rigid body needs to be synchronized, handle it through physics bridge
 						if (args.NewState == ActionState.Started)
 						{
 							// set to kinematic when grab starts
@@ -860,7 +868,7 @@ namespace MixedRealityExtension.Core
 						}
 						else
 						{
-							// on grab end return original value
+							// on end of grab, return to original value
 							App.PhysicsBridge.setKeyframed(Id, RigidBody.IsKinematic);
 						}
 					}
@@ -1033,6 +1041,9 @@ namespace MixedRealityExtension.Core
 		{
 			if (App.UsePhysicsBridge && exclusiveToUser.HasValue)
 			{
+				// Should be set only once when actor is initialized
+				// and only for single user who receives the patch.
+				// The comparisson check is not actually required.
 				_isExclusiveToUser = App.LocalUser.Id == exclusiveToUser.Value;
 			}
 		}
@@ -1060,7 +1071,7 @@ namespace MixedRealityExtension.Core
 
 							Owner = ownerOrNull;
 
-							// If owject is grabbed make it kinematic
+							// If object is grabbed make it kinematic
 							if (IsSimulatedByLocalUser && IsGrabbed)
 							{
 								App.PhysicsBridge.setKeyframed(Id, true);
