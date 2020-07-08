@@ -3,6 +3,7 @@
 using MixedRealityExtension.Animation;
 using MixedRealityExtension.Core.Types;
 using Newtonsoft.Json.Linq;
+using System;
 
 namespace MixedRealityExtension.Patching.Types
 {
@@ -51,6 +52,24 @@ namespace MixedRealityExtension.Patching.Types
 		{
 			Position = new Vector3Patch(position);
 			Rotation = new QuaternionPatch(rotation);
+		}
+
+		/// tests if 2 transforms equal up to eps if all values are defined and non-null
+		static public bool areTransformsEqual(TransformPatch a, TransformPatch b, float eps)
+		{
+			float largeEps = 1000.0F * eps;
+			bool ret = (
+			  ((a.Position.X.HasValue && b.Position.X.HasValue) ? Math.Abs(a.Position.X.Value - b.Position.X.Value) : largeEps) +
+			  ((a.Position.Y.HasValue && b.Position.Y.HasValue) ? Math.Abs(a.Position.Y.Value - b.Position.Y.Value) : largeEps) +
+			  ((a.Position.Z.HasValue && b.Position.Z.HasValue) ? Math.Abs(a.Position.Z.Value - b.Position.Z.Value) : largeEps)
+			     < eps);
+			ret = ret && ((
+			   ((a.Rotation.X.HasValue && b.Rotation.X.HasValue) ? Math.Abs(a.Rotation.X.Value - b.Rotation.X.Value) : largeEps) +
+			   ((a.Rotation.Y.HasValue && b.Rotation.Y.HasValue) ? Math.Abs(a.Rotation.Y.Value - b.Rotation.Y.Value) : largeEps) +
+			   ((a.Rotation.Z.HasValue && b.Rotation.Z.HasValue) ? Math.Abs(a.Rotation.Z.Value - b.Rotation.Z.Value) : largeEps) +
+			   ((a.Rotation.W.HasValue && b.Rotation.W.HasValue) ? Math.Abs(a.Rotation.W.Value - b.Rotation.W.Value) : largeEps)
+				  ) < 10.0F * eps);
+			return ret;
 		}
 
 		public override void WriteToPath(TargetPath path, JToken value, int depth)

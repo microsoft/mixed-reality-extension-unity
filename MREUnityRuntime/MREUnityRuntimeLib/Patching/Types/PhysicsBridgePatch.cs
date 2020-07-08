@@ -136,26 +136,12 @@ namespace MixedRealityExtension.Patching.Types
 				actorGuid = copyIn.actorGuid;
 			}
 
-			/// tests if 2 transforms equal
-			static internal bool isTransformEqual(TransformPatch a, TransformPatch b, float eps)
-			{
-				bool ret = ((Math.Abs(a.Position.X.Value - b.Position.X.Value) +
-					 Math.Abs(a.Position.Y.Value - b.Position.Y.Value) +
-					 Math.Abs(a.Position.Z.Value - b.Position.Z.Value)) < eps);
-				ret = ret &&
-					 ((Math.Abs(a.Rotation.X.Value - b.Rotation.X.Value) +
-					  Math.Abs(a.Rotation.Y.Value - b.Rotation.Y.Value) +
-					  Math.Abs(a.Rotation.Z.Value - b.Rotation.Z.Value) +
-					  Math.Abs(a.Rotation.W.Value - b.Rotation.W.Value)) < 10.0F * eps);
-				return ret;
-			}
-
 			/// test if the two actor updates are equal
 			public bool isEqual(OneActorUpdate inUpdate, float eps = 0.0001F)
 			{
 				return (inUpdate.actorGuid == actorGuid)
-					&& isTransformEqual(localTransform, inUpdate.localTransform, eps)
-					&& isTransformEqual(appTransform, inUpdate.appTransform, eps);
+					&& TransformPatch.areTransformsEqual(localTransform, inUpdate.localTransform, eps)
+					&& TransformPatch.areTransformsEqual(appTransform, inUpdate.appTransform, eps);
 			}
 
 			public TransformPatch localTransform { get; set; }
