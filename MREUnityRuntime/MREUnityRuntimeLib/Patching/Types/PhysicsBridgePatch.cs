@@ -135,7 +135,7 @@ namespace MixedRealityExtension.Patching.Types
 				appTransform = copyIn.appTransform;
 				actorGuid = copyIn.actorGuid;
 			}
-
+			
 			/// test if the two actor updates are equal
 			public bool isEqual(OneActorUpdate inUpdate, float eps = 0.0001F)
 			{
