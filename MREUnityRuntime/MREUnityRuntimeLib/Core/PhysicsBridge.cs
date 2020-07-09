@@ -225,13 +225,6 @@ namespace MixedRealityExtension.Core
 
 				if (index < snapshot.RigidBodies.Count && rb.Id == snapshot.RigidBodies.Values[index].Id)
 				{
-					// todo: kick-in prediction if we are missing an update for this rigid body
-					//if (!snapshot.RigidBodies.Values[index].HasUpdate)
-					//{
-					//	rb.RigidBody.isKinematic = false;
-					//	continue;
-					//}
-
 					RigidBodyTransform transform = snapshot.RigidBodies.Values[index].Transform;
 					float timeOfSnapshot = snapshot.RigidBodies.Values[index].LocalTime;
 
@@ -352,7 +345,10 @@ namespace MixedRealityExtension.Core
 
 					// call the predictor with this remotely owned body
 					_predictor.AddAndProcessRemoteBodyForPrediction(rb, transform,
-						keyFramedPos, keyFramedOrientation, timeOfSnapshot, timeInfo);
+						keyFramedPos, keyFramedOrientation, timeOfSnapshot, timeInfo,
+						// <todo> turn this on only after HasUpdate has the right values
+						//snapshot.RigidBodies.Values[index].HasUpdate);
+						true);
 				}
 			}
 
