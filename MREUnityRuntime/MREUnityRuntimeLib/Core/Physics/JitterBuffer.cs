@@ -227,6 +227,7 @@ namespace MixedRealityExtension.Core.Physics
 
 			if (!_wasNetworkHealthy && _isNetworkHealthy)
 			{
+				// if there is recovery from network glitch, allow next time stamp to go backwards in time
 				nextTimeStamp = Math.Min(nextTimeStamp, LastSnapshotLocalTime);
 			}
 
@@ -408,7 +409,11 @@ namespace MixedRealityExtension.Core.Physics
 			// if it was not running just use last received value
 			if (CurrentLocalTime < 0.0f)
 			{
-				return LastSnapshotLocalTime;
+				float initBufferTime = Math.Max(_runningStats.AverageBufferTime, 0.08f);
+				initBufferTime = Math.Min(initBufferTime, 0.05f);
+
+				// start a bit conservative, give buffer time to fill up and avoid jitter in first few frames
+				return LastSnapshotLocalTime - initBufferTime;
 			}
 
 			// if there is a durable packet loss, skip updating stats and just pretend time passes as expected
@@ -424,7 +429,7 @@ namespace MixedRealityExtension.Core.Physics
 
 			// there is bad quality with current output time pace, slow down if it would help
 			if (_runningStats.CurrentRateQuality < 0.85f &&
-				_runningStats.SlowDownIndicator > _runningStats.CurrentRateQuality)
+				_runningStats.SlowDownIndicator >= _runningStats.CurrentRateQuality)
 			{
 				_runningStats.SlowDown();
 				return nextTimeStamp - RunningStats.TimeStep;
