@@ -204,12 +204,19 @@ namespace MixedRealityExtension.Core.Physics
 			// First snapshot has not arrived yet.
 			if (LastSnapshotLocalTime < 0)
 			{
+				// there are still no updates from this source
+				HasUpdate = false;
+
 				return;
 			}
 
 			// No need for an update if all rigid bodies are sleeping and no new snapshots
 			if (_areAllRigidBodiesSleeping && _snapshots.Count == 0)
 			{
+				// If all bodies are sleeping, there are no new updates.
+				// However, since all the bodies are sleeping we can assume state is still valid.
+				HasUpdate = true;
+
 				CurrentLocalTime = float.MinValue;
 				_prevStepLastSnapshotLocalTime = float.MinValue;
 
@@ -662,12 +669,12 @@ namespace MixedRealityExtension.Core.Physics
 
 		private void stepBufferAndUpdateRigidBodies(float nextTimestamp)
 		{
-			// No available snapshot, snapshot can not be interpolated from the buffers
-			// Keep whatever state is already there
+			// No available snapshot and snapshot can not be interpolated from the buffer.
+			// Keep whatever state is already there, but set the flag that we don't have correct state.
 			if (_snapshots.Count == 0)
 			{
-				HasUpdate = false;
 				CurrentLocalTime = nextTimestamp;
+				HasUpdate = false;
 
 				return;
 			}
@@ -688,7 +695,8 @@ namespace MixedRealityExtension.Core.Physics
 
 			if (Math.Abs(appliedSnapshotTimestamp - nextTimestamp) <= _timePrecision)
 			{
-				// we have matching snapshot
+				// we have a matching snapshot
+				HasUpdate = true;
 				CurrentLocalTime = appliedSnapshotTimestamp;
 			}
 			else
@@ -700,8 +708,17 @@ namespace MixedRealityExtension.Core.Physics
 					// if there are more snapshots so we can interpolate
 					if (index != 0 && index < _snapshots.Count && _snapshots.Count > 1)
 					{
-						updateRigidBodies(new InterpolationSource(_snapshots.Values[index-1], _snapshots.Values[index], nextTimestamp));
+						HasUpdate = true;
+						updateRigidBodies(new InterpolationSource(_snapshots.Values[index - 1], _snapshots.Values[index], nextTimestamp));
 					}
+					else
+					{
+						HasUpdate = false;
+					}
+				}
+				else
+				{
+					HasUpdate = true;
 				}
 			}
 
