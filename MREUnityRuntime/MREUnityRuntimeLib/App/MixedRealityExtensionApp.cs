@@ -48,10 +48,10 @@ namespace MixedRealityExtension.App
 		private IList<GameObject> _ownedGameObjects = new List<GameObject>();
 
 		// If physics simulation time step is larger than specified value, physics update will be sent with
-		// the same time step. If smaller, physics upate will be send with closest smaller multiple time step.
-		// For example if update timestep is 0.33, and if simulation time step is 40ms then update step is also 40ms,
+		// the same time step. If smaller, physics update will be send with closest smaller multiple time step.
+		// For example if update time-step is 0.33, and if simulation time step is 40ms then update step is also 40ms,
 		// or if simulation step is 16ms then update step is 32ms.
-		private float _physicsUpdateTimestep = 0.016f;
+		private float _physicsUpdateTimestep = 0.033f;
 
 		private float _timeSinceLastPhysicsUpdate = 0.0f;
 		private bool _shouldSendPhysicsUpdate = false;
@@ -855,7 +855,7 @@ namespace MixedRealityExtension.App
 					}
 					else
 					{
-						var message = $"Prefab {payload.PrefabId} failed to load, cancelling actor creation";
+						var message = $"Prefab {payload.PrefabId} failed to load, canceling actor creation";
 						SendCreateActorResponse(payload, failureMessage: message, onCompleteCallback: onCompleteCallback);
 					}
 				});
