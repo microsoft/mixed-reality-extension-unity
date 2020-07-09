@@ -342,7 +342,7 @@ namespace MixedRealityExtension.Core.Physics
 
 				for (int i = _current - 1; i >= 0; i--)
 				{
-					// halve the initial probability for each folowing speedup increment
+					// halve the initial probability for each following speedup increment
 					_bufferTimeHeuristics[i] = _bufferTimeHeuristics[i + 1] / 2;
 				}
 			}

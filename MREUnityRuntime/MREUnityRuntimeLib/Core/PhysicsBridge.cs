@@ -347,8 +347,9 @@ namespace MixedRealityExtension.Core
 					_predictor.AddAndProcessRemoteBodyForPrediction(rb, transform,
 						keyFramedPos, keyFramedOrientation, timeOfSnapshot, timeInfo,
 						// <todo> turn this on only after HasUpdate has the right values
-						//snapshot.RigidBodies.Values[index].HasUpdate);
-						true);
+						snapshot.RigidBodies.Values[index].HasUpdate ||
+						snapshot.RigidBodies.Values[index].motionType == MotionType.Sleeping);
+						//true);
 				}
 			}
 

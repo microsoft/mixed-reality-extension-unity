@@ -98,12 +98,18 @@ namespace MixedRealityExtension.Core.Physics
 				collisionInfo.monitorInfo.timeFromStartCollision += timeInfo.DT;
 				collisionInfo.linearVelocity = rb.RigidBody.velocity;
 				collisionInfo.angularVelocity = rb.RigidBody.angularVelocity;
+#if MRE_PHYSICS_DEBUG
+				if (collisionInfo.monitorInfo.numStepsWithoutJBUpdate > 0)
+				{
+					Debug.Log(" HAD no UPDATE: " + rb.Id.ToString() + " turn now to dynamic:");
+				}
+#endif
 				collisionInfo.monitorInfo.numStepsWithoutJBUpdate =
 					((hasJBUpdate) ? 0 : (collisionInfo.monitorInfo.numStepsWithoutJBUpdate + 1));
 #if MRE_PHYSICS_DEBUG
-						Debug.Log(" Remote body: " + rb.Id.ToString() + " is dynamic since:"
-							+ collisionInfo.monitorInfo.timeFromStartCollision + " relative distance:" + collisionInfo.monitorInfo.relativeDistance
-							+ " interpolation:" + collisionInfo.monitorInfo.keyframedInterpolationRatio);
+				Debug.Log(" Remote body: " + rb.Id.ToString() + " is dynamic since:"
+					+ collisionInfo.monitorInfo.timeFromStartCollision + " relative distance:" + collisionInfo.monitorInfo.relativeDistance
+					+ " interpolation:" + collisionInfo.monitorInfo.keyframedInterpolationRatio);
 #endif
 				// if time passes by then make a transformation between key framed and dynamic
 				// but only change the positions not the velocity
@@ -171,8 +177,7 @@ namespace MixedRealityExtension.Core.Physics
 			// but for small number of bodies should be OK
 			_switchCollisionInfos.Add(collisionInfo);
 		}
-
-
+		
 		public void PredictAllRemoteBodiesWithOwnedBodies(
 			ref SortedList<Guid, RigidBodyPhysicsBridgeInfo> allRigidBodiesOfThePhysicsBridge,
 			PredictionTimeParameters timeInfo)
@@ -349,7 +354,10 @@ namespace MixedRealityExtension.Core.Physics
 								// the interpolation back to key framing
 								if (remoteBodyInfo.monitorInfo.numStepsWithoutJBUpdate == 1)
 								{
-									collisionMonitorInfo.timeFromStartCollision = 0.95F * startInterpolatingBack;
+									collisionMonitorInfo.timeFromStartCollision = startInterpolatingBack;
+#if MRE_PHYSICS_DEBUG
+									Debug.Log(" No JB update: " + rb.Id.ToString() + " turn now to dynamic:");
+#endif
 								}
 #if MRE_PHYSICS_DEBUG
 								//if (remoteBodyInfo.isKeyframed)
