@@ -786,8 +786,6 @@ namespace MixedRealityExtension.App
 					StringBuilder idString = new StringBuilder();
 					idString.Append($"{hostAppUser.HostUserId}:{GlobalAppId}");
 
-					Debug.Log($"Id to obfuscate: {idString.ToString()}");
-
 					var hashedId = Convert.ToBase64String(
 						hasher.ComputeHash(
 							encoder.GetBytes(idString.ToString())
