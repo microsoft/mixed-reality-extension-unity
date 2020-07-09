@@ -1,11 +1,9 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
-using MixedRealityExtension.Animation;
+
 using MixedRealityExtension.Core;
-using MixedRealityExtension.Core.Types;
 using MixedRealityExtension.Messaging.Payloads.Converters;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 
@@ -38,7 +36,7 @@ namespace MixedRealityExtension.Patching.Types
 		{
 			Name = user.Name;
 			Groups = user.Groups;
-			Properties = user.UserInfo.Properties;
+			Properties = user.HostAppUser.Properties;
 		}
 	}
 }

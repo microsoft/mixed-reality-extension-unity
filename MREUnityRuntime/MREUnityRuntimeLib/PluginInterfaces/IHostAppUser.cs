@@ -1,29 +1,22 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
+
 using MixedRealityExtension.IPC;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using UnityEngine;
 
-namespace MixedRealityExtension.Core.Interfaces
+namespace MixedRealityExtension.PluginInterfaces
 {
 	/// <summary>
 	/// Interface for providing information about a user.
 	/// </summary>
-	public interface IUserInfo
+	public interface IHostAppUser
 	{
 		/// <summary>
-		/// The obfuscated id of the user.
+		/// The unobfuscated id of the user for the host app. Handle with care.
 		/// </summary>
-		Guid Id { get; }
-
-		/// <summary>
-		/// The unobfuscated id of the user. Handle with care.
-		/// </summary>
-		string InvariantId { get; }
+		string HostUserId { get; }
 
 		/// <summary>
 		/// The user's display name. Null if user not found.

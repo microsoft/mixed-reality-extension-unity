@@ -15,7 +15,6 @@ using MixedRealityExtension.Messaging.Events;
 using MixedRealityExtension.Messaging.Events.Types;
 using MixedRealityExtension.Messaging.Payloads;
 using MixedRealityExtension.Messaging.Protocols;
-using MixedRealityExtension.Patching;
 using MixedRealityExtension.Patching.Types;
 using MixedRealityExtension.PluginInterfaces;
 using MixedRealityExtension.RPC;
@@ -28,6 +27,8 @@ using UnityEngine;
 
 using Trace = MixedRealityExtension.Messaging.Trace;
 using Regex = System.Text.RegularExpressions.Regex;
+using System.Text;
+using System.Security.Cryptography;
 
 namespace MixedRealityExtension.App
 {
@@ -67,9 +68,6 @@ namespace MixedRealityExtension.App
 		private AppState _appState = AppState.Stopped;
 		private int generation = 0;
 
-		[Obsolete]
-		private string PlatformId;
-
 		public IMRELogger Logger { get; private set; }
 
 		#region Events - Public
@@ -100,10 +98,10 @@ namespace MixedRealityExtension.App
 		}
 
 		/// <inheritdoc />
-		public event MWEventHandler<IUserInfo> OnUserJoined;
+		public event MWEventHandler<IUser> OnUserJoined;
 
 		/// <inheritdoc />
-		public event MWEventHandler<IUserInfo> OnUserLeft;
+		public event MWEventHandler<IUser> OnUserLeft;
 
 		#endregion
 
@@ -229,7 +227,7 @@ namespace MixedRealityExtension.App
 		}
 
 		/// <inheritdoc />
-		public async void Startup(string url, string sessionId, string platformId)
+		public async void Startup(string url, string sessionId)
 		{
 			if (_appState != AppState.Stopped)
 			{
@@ -239,7 +237,6 @@ namespace MixedRealityExtension.App
 			ServerUri = new Uri(url, UriKind.Absolute);
 			ServerAssetUri = new Uri(Regex.Replace(ServerUri.AbsoluteUri, "^ws(s?):", "http$1:"));
 			SessionId = sessionId;
-			PlatformId = platformId;
 
 			_appState = AppState.WaitingForPermission;
 
@@ -282,7 +279,6 @@ namespace MixedRealityExtension.App
 			var connection = new WebSocket();
 			connection.Url = url;
 			connection.Headers.Add(Constants.SessionHeader, SessionId);
-			connection.Headers.Add(Constants.PlatformHeader, PlatformId);
 			connection.Headers.Add(Constants.LegacyProtocolVersionHeader, $"{Constants.LegacyProtocolVersion}");
 			connection.Headers.Add(Constants.CurrentClientVersionHeader, Constants.CurrentClientVersion);
 			connection.Headers.Add(Constants.MinimumSupportedSDKVersionHeader, Constants.MinimumSupportedSDKVersion);
@@ -309,7 +305,7 @@ namespace MixedRealityExtension.App
 				&& (updatedUrl.AbsolutePath == "/" || updatedUrl.AbsolutePath == ServerUri.AbsolutePath)
 				&& _appState != AppState.Stopped)
 			{
-				Startup(ServerUri.ToString(), SessionId, PlatformId);
+				Startup(ServerUri.ToString(), SessionId);
 			}
 		}
 
@@ -441,7 +437,7 @@ namespace MixedRealityExtension.App
 		}
 
 		/// <inheritdoc />
-		public void UserJoin(GameObject userGO, IUserInfo userInfo)
+		public void UserJoin(GameObject userGO, IHostAppUser hostAppUser)
 		{
 			void PerformUserJoin()
 			{
@@ -458,7 +454,8 @@ namespace MixedRealityExtension.App
 				if (user == null)
 				{
 					user = userGO.AddComponent<User>();
-					user.Initialize(userInfo, this);
+					// Generate the obfuscated user ID based on user tracking permission.
+					user.Initialize(hostAppUser, GenerateObfuscatedUserId(hostAppUser), this);
 				}
 
 				Protocol.Send(new UserJoined()
@@ -471,13 +468,13 @@ namespace MixedRealityExtension.App
 				// TODO @tombu - Wait for the app to send back a success for join?
 				_userManager.AddUser(user);
 
-				// Enable interactions for the user if given the UserInteraction permission.
-				if (GrantedPermissions.HasFlag(Permissions.UserInteraction))
-				{
-					EnableUserInteraction(user);
-				}
+			// Enable interactions for the user if given the UserInteraction permission.
+			if (GrantedPermissions.HasFlag(Permissions.UserInteraction))
+			{
+				EnableUserInteraction(user);
+}
 
-				OnUserJoined?.Invoke(userInfo);
+				OnUserJoined?.Invoke(user);
 			}
 
 			if (Protocol is Execution)
@@ -511,7 +508,7 @@ namespace MixedRealityExtension.App
 					Protocol.Send(new UserLeft() { UserId = user.Id });
 				}
 
-				OnUserLeft?.Invoke(user.UserInfo);
+				OnUserLeft?.Invoke(user);
 			}
 		}
 
@@ -757,7 +754,7 @@ namespace MixedRealityExtension.App
 
 		private GameObject[] GetDistinctTreeRoots(GameObject[] gos)
 		{
-			// identify gameobjects whose ancestors are not also flagged to be actors
+			// identify game objects whose ancestors are not also flagged to be actors
 			var goIds = new HashSet<int>(gos.Select(go => go.GetInstanceID()));
 			var rootGos = new List<GameObject>(gos.Length);
 			foreach (var go in gos)
@@ -775,6 +772,35 @@ namespace MixedRealityExtension.App
 				return go != null && go.transform.parent != null && (
 					goIds.Contains(go.transform.parent.gameObject.GetInstanceID()) ||
 					ancestorInList(go.transform.parent.gameObject));
+			}
+		}
+
+		private Guid GenerateObfuscatedUserId(IHostAppUser hostAppUser)
+		{
+			if (GrantedPermissions.HasFlag(Permissions.UserTracking) && GlobalAppId != string.Empty)
+			{
+				using (SHA256 hasher = SHA256.Create())
+				{
+					var encoder = new UTF8Encoding();
+
+					StringBuilder idString = new StringBuilder();
+					idString.Append($"{hostAppUser.HostUserId}:{GlobalAppId}");
+
+					Debug.Log($"Id to obfuscate: {idString.ToString()}");
+
+					var hashedId = Convert.ToBase64String(
+						hasher.ComputeHash(
+							encoder.GetBytes(idString.ToString())
+						)
+					);
+
+					return UtilMethods.StringToGuid(hashedId);
+				}
+			}
+			else
+			{
+				// Generate a new Guid each time we are asked to generate the user ID on join.
+				return Guid.NewGuid();
 			}
 		}
 

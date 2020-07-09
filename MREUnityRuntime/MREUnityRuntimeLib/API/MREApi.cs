@@ -53,7 +53,6 @@ namespace MixedRealityExtension.API
 			IPrimitiveFactory primitiveFactory = null,
 			IGLTFImporterFactory gltfImporterFactory = null,
 			IMaterialPatcher materialPatcher = null,
-			IUserInfoProvider userInfoProvider = null,
 			IMRELogger logger = null)
 		{
 			// required properties
@@ -73,7 +72,6 @@ namespace MixedRealityExtension.API
 			AppsAPI.PrimitiveFactory = primitiveFactory ?? new MWPrimitiveFactory();
 			AppsAPI.GLTFImporterFactory = gltfImporterFactory ?? new GLTFImporterFactory();
 			AppsAPI.MaterialPatcher = materialPatcher ?? new DefaultMaterialPatcher();
-			AppsAPI.UserInfoProvider = userInfoProvider ?? new NullUserInfoProvider();
 
 #if ANDROID_DEBUG
 			Logger = logger ?? new UnityLogger(null);
@@ -132,11 +130,6 @@ namespace MixedRealityExtension.API
 
 		internal IMaterialPatcher MaterialPatcher { get; set; }
 
-		/// <summary>
-		/// Provider of app/session scoped IUserInfo interfaces.
-		/// </summary>
-		public IUserInfoProvider UserInfoProvider { get; set; }
-
 		internal IDialogFactory DialogFactory { get; set; }
 
 		internal IPermissionManager PermissionManager { get; set; }
@@ -144,12 +137,12 @@ namespace MixedRealityExtension.API
 		/// <summary>
 		/// Creates a new mixed reality extension app and adds it to the MRE runtime.
 		/// </summary>
-		/// <param name="globalAppId">The global app id for the app being instanced.</param>
 		/// <param name="ownerScript">The owner unity script for the app.</param>
+		/// <param name="globalAppId">The global app id for the app being instanced, or empty if there is no global app id.</param>
 		/// <returns>Returns the newly created mixed reality extension app.</returns>
-		public IMixedRealityExtensionApp CreateMixedRealityExtensionApp(string globalAppId, MonoBehaviour ownerScript)
+		public IMixedRealityExtensionApp CreateMixedRealityExtensionApp(MonoBehaviour ownerScript, string globalAppId = "")
 		{
-			var mreApp = new MixedRealityExtensionApp(globalAppId, ownerScript)
+			var mreApp = new MixedRealityExtensionApp(globalAppId ?? string.Empty, ownerScript)
 			{
 				InstanceId = Guid.NewGuid()
 			};
