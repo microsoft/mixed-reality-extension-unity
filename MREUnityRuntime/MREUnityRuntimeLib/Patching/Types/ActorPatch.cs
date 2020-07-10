@@ -8,7 +8,7 @@ using System.Collections.Generic;
 
 namespace MixedRealityExtension.Patching.Types
 {
-	public class ActorPatch : IPatchable
+	public class ActorPatch : Patchable<ActorPatch>
 	{
 		public Guid Id { get; set; }
 
@@ -32,6 +32,10 @@ namespace MixedRealityExtension.Patching.Types
 				transform = value;
 			}
 		}
+
+
+		[PatchProperty]
+		public Guid? ExclusiveToUser { get; set; }
 
 		[PatchProperty]
 		public Guid? Owner { get; set; }
@@ -75,7 +79,7 @@ namespace MixedRealityExtension.Patching.Types
 			Id = id;
 		}
 
-		public void WriteToPath(TargetPath path, JToken value, int depth)
+		public override void WriteToPath(TargetPath path, JToken value, int depth)
 		{
 			if (depth == path.PathParts.Length)
 			{
@@ -97,7 +101,7 @@ namespace MixedRealityExtension.Patching.Types
 				// an unrecognized path, do nothing
 		}
 
-		public bool ReadFromPath(TargetPath path, ref JToken value, int depth)
+		public override bool ReadFromPath(TargetPath path, ref JToken value, int depth)
 		{
 			if (path.PathParts[depth] == "transform")
 			{
@@ -106,7 +110,7 @@ namespace MixedRealityExtension.Patching.Types
 			return false;
 		}
 
-		public void Clear()
+		public override void Clear()
 		{
 			Transform = null;
 		}
@@ -127,7 +131,7 @@ namespace MixedRealityExtension.Patching.Types
 				&& Subscriptions == null;
 		}
 
-		public void Restore(TargetPath path, int depth)
+		public override void Restore(TargetPath path, int depth)
 		{
 			if (path.AnimatibleType != "actor" || depth >= path.PathParts.Length) return;
 
@@ -140,7 +144,7 @@ namespace MixedRealityExtension.Patching.Types
 			}
 		}
 
-		public void RestoreAll()
+		public override void RestoreAll()
 		{
 			Transform = savedTransform ?? new ActorTransformPatch();
 			Transform.RestoreAll();

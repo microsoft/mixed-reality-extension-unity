@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace MixedRealityExtension.Patching.Types
 {
-	public class QuaternionPatch : IEquatable<QuaternionPatch>, IPatchable
+	public class QuaternionPatch : Patchable<QuaternionPatch>, IEquatable<QuaternionPatch>
 	{
 		// TODO: Make X, Y, Z, and W fields non-optional, since you can't just specify one and maintain a valid unit quaternion
 		[PatchProperty]
@@ -87,7 +87,7 @@ namespace MixedRealityExtension.Patching.Types
 			return string.Format("({0}, {1}, {2}, {3})", X, Y, Z, W);
 		}
 
-		public void WriteToPath(TargetPath path, JToken value, int depth)
+		public override void WriteToPath(TargetPath path, JToken value, int depth)
 		{
 			if (depth == path.PathParts.Length)
 			{
@@ -100,7 +100,7 @@ namespace MixedRealityExtension.Patching.Types
 			// an unrecognized path, do nothing
 		}
 
-		public bool ReadFromPath(TargetPath path, ref JToken value, int depth)
+		public override bool ReadFromPath(TargetPath path, ref JToken value, int depth)
 		{
 			if (depth == path.PathParts.Length && X.HasValue && Y.HasValue && Z.HasValue && W.HasValue)
 			{
@@ -112,21 +112,6 @@ namespace MixedRealityExtension.Patching.Types
 				return true;
 			}
 			return false;
-		}
-
-		public void Clear()
-		{
-			
-		}
-
-		public void Restore(TargetPath path, int depth)
-		{
-
-		}
-
-		public void RestoreAll()
-		{
-
 		}
 	}
 }

@@ -23,6 +23,12 @@ namespace MixedRealityExtension.Core
 		private Queue<Action<Rigidbody>> _updateActions = new Queue<Action<Rigidbody>>();
 
 		/// <inheritdoc />
+		public MWVector3 Velocity { get; set; } = new MWVector3();
+
+		/// <inheritdoc />
+		public MWVector3 AngularVelocity { get; set; } = new MWVector3();
+
+		/// <inheritdoc />
 		public float Mass { get; set; }
 
 		/// <inheritdoc />
@@ -130,18 +136,33 @@ namespace MixedRealityExtension.Core
 
 		internal void Update(Rigidbody rigidbody)
 		{
+			Velocity.FromUnityVector3(_sceneRoot.InverseTransformDirection(rigidbody.velocity));
+			AngularVelocity.FromUnityVector3(_sceneRoot.InverseTransformDirection(rigidbody.angularVelocity));
+
 			// No need to read Position or Rotation. They're write-only from the patch to the component.
 			Mass = rigidbody.mass;
 			DetectCollisions = rigidbody.detectCollisions;
 			CollisionDetectionMode = (MRECollisionDetectionMode)Enum.Parse(typeof(MRECollisionDetectionMode), rigidbody.collisionDetectionMode.ToString());
 			UseGravity = rigidbody.useGravity;
-			IsKinematic = rigidbody.isKinematic;
 			ConstraintFlags = (MRERigidBodyConstraints)Enum.Parse(typeof(MRERigidBodyConstraints), rigidbody.constraints.ToString());
 		}
 
-		internal void ApplyPatch(RigidBodyPatch patch)
+		internal void ApplyPatch(RigidBodyPatch patch, bool patchVelocities)
 		{
 			// Apply any changes made to the state of the mixed reality extension runtime version of the rigid body.
+
+			if (patchVelocities)
+			{
+				if (patch.Velocity != null && patch.Velocity.IsPatched())
+				{
+					_rigidbody.velocity = _rigidbody.velocity.GetPatchApplied(_sceneRoot.TransformDirection(Velocity.ApplyPatch(patch.Velocity).ToVector3()));
+				}
+				if (patch.AngularVelocity != null && patch.AngularVelocity.IsPatched())
+				{
+					_rigidbody.angularVelocity = _rigidbody.angularVelocity.GetPatchApplied(_sceneRoot.TransformDirection(AngularVelocity.ApplyPatch(patch.AngularVelocity).ToVector3()));
+				}
+			}
+
 			if (patch.Mass.HasValue)
 			{
 				_rigidbody.mass = _rigidbody.mass.GetPatchApplied(Mass.ApplyPatch(patch.Mass));
@@ -160,7 +181,7 @@ namespace MixedRealityExtension.Core
 			}
 			if (patch.IsKinematic.HasValue)
 			{
-				_rigidbody.isKinematic = _rigidbody.isKinematic.GetPatchApplied(IsKinematic.ApplyPatch(patch.IsKinematic));
+				IsKinematic = patch.IsKinematic.Value;
 			}
 			_rigidbody.constraints = (RigidbodyConstraints)((int)_rigidbody.constraints).GetPatchApplied((int)ConstraintFlags.ApplyPatch(patch.ConstraintFlags));
 		}
@@ -182,9 +203,9 @@ namespace MixedRealityExtension.Core
 			_updateActions.Enqueue((rigidBody) => UpdateTransform(update));
 		}
 
-		internal void SynchronizeEngine(RigidBodyPatch patch)
+		internal void SynchronizeEngine(RigidBodyPatch patch, bool patchVelocities)
 		{
-			_updateActions.Enqueue((rigidbody) => ApplyPatch(patch));
+			_updateActions.Enqueue((rigidbody) => ApplyPatch(patch, patchVelocities));
 		}
 
 		internal struct RigidBodyTransformUpdate

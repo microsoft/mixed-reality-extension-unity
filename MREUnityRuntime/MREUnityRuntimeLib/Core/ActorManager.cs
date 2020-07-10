@@ -25,7 +25,7 @@ namespace MixedRealityExtension.Core
 
 		internal Dictionary<Guid, Actor>.ValueCollection Actors => _actorMapping.Values;
 
-		public delegate void RigidBodyAddedHandler(Guid id, UnityEngine.Rigidbody rigidbody, bool isOwned);
+		public delegate void RigidBodyAddedHandler(Guid id, UnityEngine.Rigidbody rigidbody, Guid? owner);
 		internal event RigidBodyAddedHandler RigidBodyAdded;
 
 		public delegate void RigidBodyRemovedHandler(Guid id);
@@ -34,14 +34,17 @@ namespace MixedRealityExtension.Core
 		public delegate void RigidBodyKinematicsChangedHandler(Guid id, bool isKinematic);
 		internal event RigidBodyKinematicsChangedHandler RigidBodyKinematicsChanged;
 
+		public delegate void RigidBodyOwnerChangedHandler(Guid id, Guid? owner);
+		public event RigidBodyOwnerChangedHandler RigidBodyOwnerChanged;
+
 		internal ActorManager(MixedRealityExtensionApp app)
 		{
 			_app = app;
 		}
 
-		private void OnRigidBodyAdded(Guid id, UnityEngine.Rigidbody rigidbody, bool isOwned)
+		private void OnRigidBodyAdded(Guid id, UnityEngine.Rigidbody rigidbody, Guid? owner)
 		{
-			RigidBodyAdded?.Invoke(id, rigidbody, isOwned);
+			RigidBodyAdded?.Invoke(id, rigidbody, owner);
 		}
 
 		private void OnRigidBodyRemoved(Guid id)
@@ -49,19 +52,20 @@ namespace MixedRealityExtension.Core
 			RigidBodyRemoved?.Invoke(id);
 		}
 
-		private void OnActorRigidBodyKinematicsChanged(Guid id, bool isKinematic)
+		private void OnRigidBodyKinematicsChanged(Guid id, bool isKinematic)
 		{
 			RigidBodyKinematicsChanged?.Invoke(id, isKinematic);
+		}
+
+		private void OnRigidBodyOwnerChanged(Guid id, Guid? owner)
+		{
+			RigidBodyOwnerChanged?.Invoke(id, owner);
 		}
 
 		internal Actor AddActor(Guid id, Actor actor)
 		{
 			actor.Initialize(id, _app);
 			_actorMapping[id] = actor;
-
-			actor.RigidBodyAdded += OnRigidBodyAdded;
-			actor.RigidBodyRemoved += OnRigidBodyRemoved;
-			actor.RigidBodyKinematicsChanged += OnActorRigidBodyKinematicsChanged;
 
 			OnActorCreated?.Invoke(actor);
 			return actor;
@@ -92,23 +96,12 @@ namespace MixedRealityExtension.Core
 						_app.Logger.LogError(e.ToString());
 					}
 					// Is there any other cleanup?  Do it here.
-
-					actor.RigidBodyAdded -= OnRigidBodyAdded;
-					actor.RigidBodyRemoved -= OnRigidBodyRemoved;
-					actor.RigidBodyKinematicsChanged -= OnActorRigidBodyKinematicsChanged;
 				}
 			}
 		}
 
 		internal void Reset()
 		{
-			foreach (var actor in _actorMapping.Values)
-			{
-				actor.RigidBodyAdded -= OnRigidBodyAdded;
-				actor.RigidBodyRemoved -= OnRigidBodyRemoved;
-				actor.RigidBodyKinematicsChanged -= OnActorRigidBodyKinematicsChanged;
-			}
-
 			_actorMapping.Clear();
 			_actorCommandQueues.Clear();
 			_uponStable.Clear();
@@ -184,12 +177,6 @@ namespace MixedRealityExtension.Core
 			bool removed = false;
 			if (_actorMapping.ContainsKey(id))
 			{
-				var actor = _actorMapping[id];
-
-				actor.RigidBodyAdded -= OnRigidBodyAdded;
-				actor.RigidBodyRemoved -= OnRigidBodyRemoved;
-				actor.RigidBodyKinematicsChanged -= OnActorRigidBodyKinematicsChanged;
-
 				_actorMapping.Remove(id);
 				removed = true;
 			}

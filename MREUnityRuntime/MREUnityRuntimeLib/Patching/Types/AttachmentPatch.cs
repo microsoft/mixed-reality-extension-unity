@@ -13,10 +13,12 @@ namespace MixedRealityExtension.Patching.Types
 	/// <summary>
 	/// Attachment patch.
 	/// </summary>
-	public class AttachmentPatch : IEquatable<AttachmentPatch>, IPatchable
+	public class AttachmentPatch : Patchable<AttachmentPatch>, IEquatable<AttachmentPatch>
 	{
+		[PatchProperty]
 		public string AttachPoint { get; set; }
 
+		[PatchProperty]
 		public Guid? UserId { get; set; }
 
 		public bool Equals(AttachmentPatch other)
@@ -33,36 +35,6 @@ namespace MixedRealityExtension.Patching.Types
 		public override int GetHashCode()
 		{
 			return base.GetHashCode();
-		}
-
-		public bool IsPatched()
-		{
-			return AttachPoint != null || UserId != null;
-		}
-
-		public void WriteToPath(TargetPath path, JToken value, int depth)
-		{
-
-		}
-
-		public bool ReadFromPath(TargetPath path, ref JToken value, int depth)
-		{
-			return false;
-		}
-
-		public void Clear()
-		{
-
-		}
-
-		public void Restore(TargetPath path, int depth)
-		{
-
-		}
-
-		public void RestoreAll()
-		{
-
 		}
 	}
 }

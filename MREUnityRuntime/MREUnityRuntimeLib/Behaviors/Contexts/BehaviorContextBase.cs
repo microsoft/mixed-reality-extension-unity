@@ -15,6 +15,17 @@ namespace MixedRealityExtension.Behaviors.Contexts
 		private Guid _attachedActorId;
 		private BehaviorType? _behaviorType;
 
+		public bool IsInteractableForUser(IUser user)
+		{
+			var app = App;
+			if (app != null)
+			{
+				return app.IsInteractableForUser(user);
+			}
+
+			return false;
+		}
+
 		internal MixedRealityExtensionApp App
 		{
 			get

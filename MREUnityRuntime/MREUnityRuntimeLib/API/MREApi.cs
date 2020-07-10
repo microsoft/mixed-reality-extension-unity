@@ -26,43 +26,54 @@ namespace MixedRealityExtension.API
 		/// <param name="defaultMaterial">The material template used for all SDK-spawned meshes.</param>
 		/// <param name="layerApplicator">The class used to apply MRE layers to Unity colliders.</param>
 		/// <param name="assetCache">The class responsible for long-term asset caching.</param>
-		/// <param name="behaviorFactory">The behavior factory to use within the runtime.</param>
 		/// <param name="textFactory">The text factory to use within the runtime.</param>
-		/// <param name="primitiveFactory">The primitive factory to use within the runtime.</param>
+		/// <param name="permissionManager">The instance responsible for presenting users with permission requests.</param>
+		/// <param name="behaviorFactory">The behavior factory to use within the runtime.</param>
+		/// <param name="dialogFactory"></param>
 		/// <param name="libraryFactory">The library resource factory to use within the runtime.</param>
+		/// <param name="videoPlayerFactory"></param>
+		/// <param name="primitiveFactory">The primitive factory to use within the runtime.</param>
 		/// <param name="gltfImporterFactory">The glTF loader factory. Uses default GLTFSceneImporter if omitted.</param>
 		/// <param name="materialPatcher">Overrides default material property map (color and mainTexture only).</param>
-		/// <param name="videoPlayerFactory"></param>
 		/// <param name="userInfoProvider">Provides appId/sessionId scoped IUserInfo instances.</param>
-		/// <param name="dialogFactory"></param>
 		/// <param name="logger">The logger to be used by the MRE SDK.</param>
 		public static void InitializeAPI(
+			// required properties
 			UnityEngine.Material defaultMaterial,
 			ILayerApplicator layerApplicator,
 			IAssetCache assetCache,
+			ITextFactory textFactory,
+			IPermissionManager permissionManager,
+			// missing features if omitted
 			IBehaviorFactory behaviorFactory = null,
-			ITextFactory textFactory = null,
-			IPrimitiveFactory primitiveFactory = null,
+			IDialogFactory dialogFactory = null,
 			ILibraryResourceFactory libraryFactory = null,
+			IVideoPlayerFactory videoPlayerFactory = null,
+			// reasonable defaults provided
+			IPrimitiveFactory primitiveFactory = null,
 			IGLTFImporterFactory gltfImporterFactory = null,
 			IMaterialPatcher materialPatcher = null,
-			IVideoPlayerFactory videoPlayerFactory = null,
 			IUserInfoProvider userInfoProvider = null,
-			IDialogFactory dialogFactory = null,
 			IMRELogger logger = null)
 		{
+			// required properties
 			AppsAPI.DefaultMaterial = defaultMaterial;
 			AppsAPI.LayerApplicator = layerApplicator;
 			AppsAPI.AssetCache = assetCache;
+			AppsAPI.TextFactory = textFactory;
+			AppsAPI.PermissionManager = permissionManager;
+
+			// missing features if omitted
 			AppsAPI.BehaviorFactory = behaviorFactory;
-			AppsAPI.TextFactory = textFactory ?? throw new ArgumentException($"{nameof(textFactory)} cannot be null");
-			AppsAPI.PrimitiveFactory = primitiveFactory ?? new MWPrimitiveFactory();
+			AppsAPI.DialogFactory = dialogFactory;
 			AppsAPI.LibraryResourceFactory = libraryFactory;
 			AppsAPI.VideoPlayerFactory = videoPlayerFactory;
+
+			// reasonable defaults provided
+			AppsAPI.PrimitiveFactory = primitiveFactory ?? new MWPrimitiveFactory();
 			AppsAPI.GLTFImporterFactory = gltfImporterFactory ?? new GLTFImporterFactory();
 			AppsAPI.MaterialPatcher = materialPatcher ?? new DefaultMaterialPatcher();
 			AppsAPI.UserInfoProvider = userInfoProvider ?? new NullUserInfoProvider();
-			AppsAPI.DialogFactory = dialogFactory;
 
 #if ANDROID_DEBUG
 			Logger = logger ?? new UnityLogger(null);
@@ -127,6 +138,8 @@ namespace MixedRealityExtension.API
 		public IUserInfoProvider UserInfoProvider { get; set; }
 
 		internal IDialogFactory DialogFactory { get; set; }
+
+		internal IPermissionManager PermissionManager { get; set; }
 
 		/// <summary>
 		/// Creates a new mixed reality extension app and adds it to the MRE runtime.

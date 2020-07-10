@@ -16,7 +16,7 @@ namespace MixedRealityExtension.Assets
 	/// </summary>
 	public class AssetCache : MonoBehaviour, IAssetCache
 	{
-		private class CacheItem
+		protected class CacheItem
 		{
 			public readonly Uri Uri;
 			public readonly IEnumerable<Object> Assets;
@@ -61,7 +61,10 @@ namespace MixedRealityExtension.Assets
 			}
 		}
 
-		private readonly Dictionary<Uri, CacheItem> Cache = new Dictionary<Uri, CacheItem>(10);
+		// needed to prevent UnityEngine.Resources.UnloadUnusedAssets from unloading the cache
+		[SerializeField] protected List<Object> CacheInspector = new List<Object>(30);
+
+		protected readonly Dictionary<Uri, CacheItem> Cache = new Dictionary<Uri, CacheItem>(10);
 		private Coroutine CleanTimer = null;
 
 		/// <summary>
@@ -72,11 +75,23 @@ namespace MixedRealityExtension.Assets
 		///<inheritdoc/>
 		public GameObject CacheRootGO { get; set; }
 
+		[SerializeField]
+		private GameObject SerializedCacheRoot = null;
+
 		/// <inheritdoc />
-		public bool SupportsSync { get; } = true;
+		public bool SupportsSync { get; protected set; } = true;
+
+		protected virtual void Start()
+		{
+			if (SerializedCacheRoot != null)
+			{
+				CacheRootGO = SerializedCacheRoot;
+			}
+			Application.lowMemory += CleanUnusedResources;
+		}
 
 		///<inheritdoc/>
-		public void StoreAssets(Uri uri, IEnumerable<Object> assets, string version)
+		public virtual void StoreAssets(Uri uri, IEnumerable<Object> assets, string version)
 		{
 			// already a cached asset for this uri
 			if (Cache.TryGetValue(uri, out CacheItem cacheItem))
@@ -100,6 +115,7 @@ namespace MixedRealityExtension.Assets
 					Cache[uri] = new CacheItem(uri, assets.ToArray(), version,
 						referenceCount: assets.Count(),
 						previousVersion: cacheItem);
+					CacheInspector.AddRange(assets);
 				}
 			}
 			// no previously cached assets, just store
@@ -107,17 +123,18 @@ namespace MixedRealityExtension.Assets
 			{
 				cacheItem = new CacheItem(uri, assets.ToArray(), version, assets.Count());
 				Cache.Add(uri, cacheItem);
+				CacheInspector.AddRange(assets);
 			}
 		}
 
 		/// <inheritdoc />
-		public Task<IEnumerable<Object>> LeaseAssets(Uri uri, string ifMatchesVersion = null)
+		public virtual Task<IEnumerable<Object>> LeaseAssets(Uri uri, string ifMatchesVersion = null)
 		{
 			return Task.FromResult(LeaseAssetsSync(uri, ifMatchesVersion));
 		}
 
 		///<inheritdoc/>
-		public IEnumerable<Object> LeaseAssetsSync(Uri uri, string ifMatchesVersion = null)
+		public virtual IEnumerable<Object> LeaseAssetsSync(Uri uri, string ifMatchesVersion = null)
 		{
 			if (Cache.TryGetValue(uri, out CacheItem cacheItem))
 			{
@@ -131,13 +148,13 @@ namespace MixedRealityExtension.Assets
 		}
 
 		/// <inheritdoc />
-		public Task<string> GetVersion(Uri uri)
+		public virtual Task<string> GetVersion(Uri uri)
 		{
 			return Task.FromResult(GetVersionSync(uri));
 		}
 
 		///<inheritdoc/>
-		public string GetVersionSync(Uri uri)
+		public virtual string GetVersionSync(Uri uri)
 		{
 			if (Cache.TryGetValue(uri, out CacheItem cacheItem))
 			{
@@ -152,7 +169,7 @@ namespace MixedRealityExtension.Assets
 		/// <summary>
 		/// Deallocates any cache items that have zero references.
 		/// </summary>
-		public void CleanUnusedResources()
+		public virtual void CleanUnusedResources()
 		{
 			// returns whether the item was deallocated
 			bool CleanBottomUp(CacheItem item)
@@ -166,6 +183,7 @@ namespace MixedRealityExtension.Assets
 				{
 					foreach (var o in item.Assets)
 					{
+						CacheInspector.Remove(o);
 						Object.Destroy(o);
 					}
 					return true;

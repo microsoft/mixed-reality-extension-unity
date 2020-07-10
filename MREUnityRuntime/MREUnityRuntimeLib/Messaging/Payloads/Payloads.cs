@@ -68,9 +68,15 @@ namespace MixedRealityExtension.Messaging.Payloads
 		Attachment = 1 << 3,
 
 		/// <summary>
+		/// The rigid body velocity component flag.
+		/// The app can subscribe to this component and needs to also subscribe to Rigidbody.
+		/// </summary>
+		RigidbodyVelocity = 1 << 4,
+
+		/// <summary>
 		/// All subscribable component flags.
 		/// </summary>
-		AllSubscriptions = Transform | Rigidbody,
+		AllSubscriptions = Transform | Rigidbody | RigidbodyVelocity,
 
 		/// <summary>
 		/// All possible component flags.

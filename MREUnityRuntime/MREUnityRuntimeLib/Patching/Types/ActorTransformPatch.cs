@@ -1,14 +1,11 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 using MixedRealityExtension.Animation;
-using MixedRealityExtension.Messaging.Payloads;
 using Newtonsoft.Json.Linq;
-using System;
-using System.Collections.Generic;
 
 namespace MixedRealityExtension.Patching.Types
 {
-	public class ActorTransformPatch : IPatchable
+	public class ActorTransformPatch : Patchable<ActorTransformPatch>
 	{
 		private TransformPatch app;
 		private TransformPatch savedApp;
@@ -44,7 +41,7 @@ namespace MixedRealityExtension.Patching.Types
 			}
 		}
 
-		public void WriteToPath(TargetPath path, JToken value, int depth)
+		public override void WriteToPath(TargetPath path, JToken value, int depth)
 		{
 			if (depth == path.PathParts.Length)
 			{
@@ -78,7 +75,7 @@ namespace MixedRealityExtension.Patching.Types
 			// an unrecognized path, do nothing
 		}
 
-		public bool ReadFromPath(TargetPath path, ref JToken value, int depth)
+		public override bool ReadFromPath(TargetPath path, ref JToken value, int depth)
 		{
 			if (path.PathParts[depth] == "local")
 			{
@@ -91,13 +88,13 @@ namespace MixedRealityExtension.Patching.Types
 			return false;
 		}
 
-		public void Clear()
+		public override void Clear()
 		{
 			App = null;
 			Local = null;
 		}
 
-		public void Restore(TargetPath path, int depth)
+		public override void Restore(TargetPath path, int depth)
 		{
 			if (depth >= path.PathParts.Length) return;
 
@@ -114,7 +111,7 @@ namespace MixedRealityExtension.Patching.Types
 			}
 		}
 
-		public void RestoreAll()
+		public override void RestoreAll()
 		{
 			Local = savedLocal ?? new ScaledTransformPatch();
 			Local.RestoreAll();

@@ -7,14 +7,20 @@ using MixedRealityExtension.Animation;
 using MixedRealityExtension.Core.Physics;
 using Newtonsoft.Json.Linq;
 using Unity.Collections;
+using UnityEngine;
 
 namespace MixedRealityExtension.Patching.Types
 {
 	/// type of the motion that helps on the other side to predict its trajectory
-	public enum MotionType : int
+	[Flags]
+	public enum MotionType : byte
 	{
-		Dynamic,
-		Keyframed
+		/// body that is simulated and should react to impacts
+		Dynamic = 1,
+		/// body is key framed, has infinite mass used for animation or mouse pick 
+		Keyframed = 2,
+		/// special flag to signal that this body is now sleeping and will not move (can become key framed stationary until collision)
+		Sleeping = 4
 	};
 
 	public class TransformPatchInfo
@@ -41,7 +47,7 @@ namespace MixedRealityExtension.Patching.Types
 		public TransformPatch Transform { get; set; }
 	}
 
-	public class PhysicsBridgePatch : IPatchable
+	public class PhysicsBridgePatch : Patchable<PhysicsBridgePatch>
 	{
 		public PhysicsBridgePatch()
 		{
@@ -53,7 +59,7 @@ namespace MixedRealityExtension.Patching.Types
 		{
 			Id = sourceId;
 			Time = snapshot.Time;
-
+			Flags = snapshot.Flags;
 			TransformCount = snapshot.Transforms.Count;
 
 			if (TransformCount > 0)
@@ -77,11 +83,14 @@ namespace MixedRealityExtension.Patching.Types
 
 				// todo: use native array in snapshot
 				Unity.Collections.NativeSlice<Snapshot.TransformInfo> transforms = new NativeSlice<byte>(blob).SliceConvert<Snapshot.TransformInfo>();
-				return new Snapshot(Time, new List<Snapshot.TransformInfo>(transforms.ToArray()));
+				return new Snapshot(Time, new List<Snapshot.TransformInfo>(transforms.ToArray()), Flags);
 			}
 
-			return new Snapshot(Time, new List<Snapshot.TransformInfo>());
+			return new Snapshot(Time, new List<Snapshot.TransformInfo>(), Flags);
 		}
+
+		/// returns true if this snapshot should be send even if it has no transforms
+		public bool DoSendThisPatch() { return (TransformCount > 0 || Flags != Snapshot.SnapshotFlags.NoFlags); }
 
 		/// <summary>
 		/// source app id (of the sender)
@@ -92,15 +101,70 @@ namespace MixedRealityExtension.Patching.Types
 
 		public int TransformCount { get; set; }
 
+		public Snapshot.SnapshotFlags Flags { get; set; }
+
 		/// <summary>
 		/// Serialized as a string in Json.
 		/// https://www.newtonsoft.com/json/help/html/SerializationGuide.htm
 		/// </summary>
 		public byte[] TransformsBLOB { get; set; }
+	}
+
+	public class PhysicsTranformServerUploadPatch : IPatchable
+	{
+		public struct OneActorUpdate
+		{
+			public OneActorUpdate(Guid id,UnityEngine.Vector3 localPos, UnityEngine.Quaternion localQuat,
+				UnityEngine.Vector3 appPos, UnityEngine.Quaternion appQuat)
+			{
+				localTransform = new TransformPatch();
+				appTransform = new TransformPatch();
+
+				localTransform.Position = new Vector3Patch(localPos);
+				localTransform.Rotation = new QuaternionPatch(localQuat);
+
+				appTransform.Position = new Vector3Patch(appPos);
+				appTransform.Rotation = new QuaternionPatch(appQuat);
+				
+				actorGuid = id;
+			}
+
+			public OneActorUpdate(OneActorUpdate copyIn)
+			{
+				localTransform = copyIn.localTransform;
+				appTransform = copyIn.appTransform;
+				actorGuid = copyIn.actorGuid;
+			}
+
+			/// test if the two actor updates are equal
+			public bool isEqual(OneActorUpdate inUpdate, float eps = 0.0001F)
+			{
+				return (inUpdate.actorGuid == actorGuid)
+					&& TransformPatch.areTransformsEqual(localTransform, inUpdate.localTransform, eps)
+					&& TransformPatch.areTransformsEqual(appTransform, inUpdate.appTransform, eps);
+			}
+
+			public TransformPatch localTransform { get; set; }
+			public TransformPatch appTransform { get; set; }
+			public Guid actorGuid { get; set; }
+		}
+
+		/// <summary>
+		/// source app id (of the sender)
+		/// </summary>
+		public Guid Id { get; set; }
+
+		public int TransformCount { get; set; }
+
+		public OneActorUpdate[] updates;
+
+		public bool IsPatched()
+		{
+			return (TransformCount > 0);
+		}
 
 		public void WriteToPath(TargetPath path, JToken value, int depth)
 		{
-
 		}
 
 		public bool ReadFromPath(TargetPath path, ref JToken value, int depth)
