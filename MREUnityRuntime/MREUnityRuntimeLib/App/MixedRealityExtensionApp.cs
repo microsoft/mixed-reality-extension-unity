@@ -234,7 +234,20 @@ namespace MixedRealityExtension.App
 
 			// download manifest
 			var manifestUri = new Uri(ServerAssetUri, "./manifest.json");
-			var manifest = await AppManifest.DownloadManifest(manifestUri);
+			AppManifest manifest;
+			try
+			{
+				manifest = await AppManifest.DownloadManifest(manifestUri);
+			}
+			catch (Exception e)
+			{
+				Debug.LogErrorFormat("Error downloading MRE manifest \"{0}\":\n{1}", manifestUri, e.ToString());
+				manifest = new AppManifest()
+				{
+					OptionalPermissions = new Permissions[] { Permissions.UserTracking, Permissions.UserInteraction }
+				};
+			}
+
 			var neededFlags = Permissions.Execution | (manifest.Permissions?.ToFlags() ?? Permissions.None);
 			var wantedFlags = manifest.OptionalPermissions?.ToFlags() ?? Permissions.None;
 
