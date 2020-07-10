@@ -787,13 +787,9 @@ namespace MixedRealityExtension.App
 				using (SHA256 hasher = SHA256.Create())
 				{
 					var encoder = new UTF8Encoding();
-
-					StringBuilder idString = new StringBuilder();
-					idString.Append($"{hostAppUser.HostUserId}:{GlobalAppId}");
-
 					var hashedId = Convert.ToBase64String(
 						hasher.ComputeHash(
-							encoder.GetBytes(idString.ToString())
+							encoder.GetBytes($"{hostAppUser.HostUserId}:{GlobalAppId}")
 						)
 					);
 
