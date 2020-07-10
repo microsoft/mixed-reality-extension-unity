@@ -43,7 +43,7 @@ namespace MixedRealityExtension.Core
 			var aggregate = new List<Permissions>(allPerms.Length);
 			foreach (Permissions perm in allPerms)
 			{
-				if (flags.HasFlag(perm))
+				if ((flags & perm) != 0)
 				{
 					aggregate.Add(perm);
 				}

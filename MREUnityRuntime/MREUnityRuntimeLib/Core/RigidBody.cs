@@ -144,7 +144,6 @@ namespace MixedRealityExtension.Core
 			DetectCollisions = rigidbody.detectCollisions;
 			CollisionDetectionMode = (MRECollisionDetectionMode)Enum.Parse(typeof(MRECollisionDetectionMode), rigidbody.collisionDetectionMode.ToString());
 			UseGravity = rigidbody.useGravity;
-			IsKinematic = rigidbody.isKinematic;
 			ConstraintFlags = (MRERigidBodyConstraints)Enum.Parse(typeof(MRERigidBodyConstraints), rigidbody.constraints.ToString());
 		}
 
@@ -182,7 +181,7 @@ namespace MixedRealityExtension.Core
 			}
 			if (patch.IsKinematic.HasValue)
 			{
-				_rigidbody.isKinematic = _rigidbody.isKinematic.GetPatchApplied(IsKinematic.ApplyPatch(patch.IsKinematic));
+				IsKinematic = patch.IsKinematic.Value;
 			}
 			_rigidbody.constraints = (RigidbodyConstraints)((int)_rigidbody.constraints).GetPatchApplied((int)ConstraintFlags.ApplyPatch(patch.ConstraintFlags));
 		}
