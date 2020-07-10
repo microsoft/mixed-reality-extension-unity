@@ -27,15 +27,21 @@ namespace MixedRealityExtension.Behaviors.Contexts
 
 		internal static BehaviorContextBase CreateContext(BehaviorType behaviorType, IActor actor, WeakReference<MixedRealityExtensionApp> appRef)
 		{
+			MixedRealityExtensionApp app;
+			appRef.TryGetTarget(out app);
+
+			if (MREAPI.AppsAPI.BehaviorFactory == null)
+			{
+				app?.Logger.LogWarning("Host app does not provide a behavior factory.  Behavior system not available");
+				return null;
+			}
+
 			if (s_factoryMethods.TryGetValue(behaviorType, out FactoryFunc factoryMethod))
 			{
 				return factoryMethod.Invoke(actor, appRef);
 			}
 
-			if (appRef.TryGetTarget(out MixedRealityExtensionApp app))
-			{
-				app.Logger.LogError($"Trying to create a behavior of type {behaviorType.ToString()}, but no handler is registered for the given type.");
-			}
+			app?.Logger.LogError($"Trying to create a behavior of type {behaviorType.ToString()}, but no handler is registered for the given type.");
 			return null;
 		}
 

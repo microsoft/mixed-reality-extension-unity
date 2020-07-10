@@ -47,19 +47,31 @@ namespace MixedRealityExtension.App
 		private IList<Action> _executionProtocolActionQueue = new List<Action>();
 		private IList<GameObject> _ownedGameObjects = new List<GameObject>();
 
-		private float _physicsUpdateTimestep = 0.016f;
+		// If physics simulation time step is larger than specified value, physics update will be sent with
+		// the same time step. If smaller, physics update will be send with closest smaller multiple time step.
+		// For example if update time-step is 0.33, and if simulation time step is 40ms then update step is also 40ms,
+		// or if simulation step is 16ms then update step is 32ms.
+		private float _physicsUpdateTimestep = 0.033f;
+
 		private float _timeSinceLastPhysicsUpdate = 0.0f;
 		private bool _shouldSendPhysicsUpdate = false;
 
 		private enum AppState
 		{
 			Stopped,
+			/// <summary>
+			/// Startup has been called, but we might be waiting for permission to run.
+			/// </summary>
+			WaitingForPermission,
 			Starting,
 			Running
 		}
 
 		private AppState _appState = AppState.Stopped;
 		private int generation = 0;
+
+		[Obsolete]
+		private string PlatformId;
 
 		public IMRELogger Logger { get; private set; }
 
@@ -129,6 +141,8 @@ namespace MixedRealityExtension.App
 		/// <inheritdoc />
 		public RPCChannelInterface RPCChannels { get; }
 
+		public AssetManager AssetManager => _assetManager;
+
 		#endregion
 
 		#region Properties - Internal
@@ -149,7 +163,7 @@ namespace MixedRealityExtension.App
 
 		internal AssetLoader AssetLoader => _assetLoader;
 
-		public AssetManager AssetManager => _assetManager;
+		internal Permissions GrantedPermissions = Permissions.None;
 
 		internal PhysicsBridge PhysicsBridge { get; } = null;
 
@@ -204,36 +218,73 @@ namespace MixedRealityExtension.App
 		}
 
 		/// <inheritdoc />
-		public void Startup(string url, string sessionId, string platformId)
+		public async void Startup(string url, string sessionId, string platformId)
 		{
+			if (_appState != AppState.Stopped)
+			{
+				Shutdown();
+			}
+
 			ServerUri = new Uri(url, UriKind.Absolute);
 			ServerAssetUri = new Uri(Regex.Replace(ServerUri.AbsoluteUri, "^ws(s?):", "http$1:"));
+			SessionId = sessionId;
+			PlatformId = platformId;
 
-			if (_conn == null)
+			_appState = AppState.WaitingForPermission;
+
+			// download manifest
+			var manifestUri = new Uri(ServerAssetUri, "./manifest.json");
+			var manifest = await AppManifest.DownloadManifest(manifestUri);
+			var neededFlags = Permissions.Execution | (manifest.Permissions?.ToFlags() ?? Permissions.None);
+			var wantedFlags = manifest.OptionalPermissions?.ToFlags() ?? Permissions.None;
+
+			// get permission to run from host app
+			var grantedPerms = await MREAPI.AppsAPI.PermissionManager.PromptForPermissions(
+				appLocation: ServerUri,
+				permissionsNeeded: new HashSet<Permissions>(manifest.Permissions ?? new Permissions[0]) { Permissions.Execution },
+				permissionsWanted: manifest.OptionalPermissions,
+				permissionFlagsNeeded: neededFlags,
+				permissionFlagsWanted: wantedFlags,
+				appManifest: manifest);
+
+			// only use permissions that are requested, even if the user offers more
+			GrantedPermissions = grantedPerms & (neededFlags | wantedFlags);
+
+			MREAPI.AppsAPI.PermissionManager.OnPermissionDecisionsChanged += OnPermissionsUpdated;
+
+			if (!grantedPerms.HasFlag(Permissions.Execution))
 			{
-				if (_appState == AppState.Stopped)
-				{
-					_appState = AppState.Starting;
-				}
-
-				SessionId = sessionId;
-
-				var connection = new WebSocket();
-
-				connection.Url = url;
-				connection.Headers.Add(Constants.SessionHeader, sessionId);
-				connection.Headers.Add(Constants.PlatformHeader, platformId);
-				connection.Headers.Add(Constants.LegacyProtocolVersionHeader, $"{Constants.LegacyProtocolVersion}");
-				connection.Headers.Add(Constants.CurrentClientVersionHeader, Constants.CurrentClientVersion);
-				connection.Headers.Add(Constants.MinimumSupportedSDKVersionHeader, Constants.MinimumSupportedSDKVersion);
-				connection.OnConnecting += Conn_OnConnecting;
-				connection.OnConnectFailed += Conn_OnConnectFailed;
-				connection.OnConnected += Conn_OnConnected;
-				connection.OnDisconnected += Conn_OnDisconnected;
-				connection.OnError += Connection_OnError;
-				_conn = connection;
+				Debug.LogError($"User has denied permission for the MRE '{ServerUri}' to run");
+				return;
 			}
+
+			_appState = AppState.Starting;
+
+			var connection = new WebSocket();
+			connection.Url = url;
+			connection.Headers.Add(Constants.SessionHeader, SessionId);
+			connection.Headers.Add(Constants.PlatformHeader, PlatformId);
+			connection.Headers.Add(Constants.LegacyProtocolVersionHeader, $"{Constants.LegacyProtocolVersion}");
+			connection.Headers.Add(Constants.CurrentClientVersionHeader, Constants.CurrentClientVersion);
+			connection.Headers.Add(Constants.MinimumSupportedSDKVersionHeader, Constants.MinimumSupportedSDKVersion);
+			connection.OnConnecting += Conn_OnConnecting;
+			connection.OnConnectFailed += Conn_OnConnectFailed;
+			connection.OnConnected += Conn_OnConnected;
+			connection.OnDisconnected += Conn_OnDisconnected;
+			connection.OnError += Connection_OnError;
+			_conn = connection;
 			_conn.Open();
+		}
+
+		private void OnPermissionsUpdated(Uri updatedUrl, Permissions oldPermissions, Permissions newPermissions)
+		{
+			// updated URI matches protocol, hostname, and port, and if it has a path, that matches too
+			if (updatedUrl.Scheme == ServerUri.Scheme && updatedUrl.Authority == ServerUri.Authority
+				&& (updatedUrl.AbsolutePath == "/" || updatedUrl.AbsolutePath == ServerUri.AbsolutePath)
+				&& _appState != AppState.Stopped)
+			{
+				Startup(ServerUri.ToString(), SessionId, PlatformId);
+			}
 		}
 
 		/// <inheritdoc />
@@ -269,6 +320,8 @@ namespace MixedRealityExtension.App
 		{
 			Disconnect();
 			FreeResources();
+
+			MREAPI.AppsAPI.PermissionManager.OnPermissionDecisionsChanged -= OnPermissionsUpdated;
 
 			if (_appState != AppState.Stopped)
 			{
@@ -350,7 +403,7 @@ namespace MixedRealityExtension.App
 					PhysicsTranformServerUploadPatch serverUploadPatch =
 						PhysicsBridge.GenerateServerTransformUploadPatch(InstanceId, systemTime);
 					// upload only if there is a real difference in the transforms
-					if (serverUploadPatch.TransformCount > 0)
+					if (serverUploadPatch.IsPatched())
 					{
 						EventManager.QueueEvent(new PhysicsTranformServerUploadUpdated(InstanceId, serverUploadPatch));
 					}
@@ -395,6 +448,13 @@ namespace MixedRealityExtension.App
 		{
 			void PerformUserJoin()
 			{
+				// only join the user if required
+				if (!GrantedPermissions.HasFlag(Permissions.UserInteraction)
+					&& !GrantedPermissions.HasFlag(Permissions.UserTracking))
+				{
+					return;
+				}
+
 				var user = userGO.GetComponents<User>()
 					.FirstOrDefault(_user => _user.AppInstanceId == this.InstanceId);
 
@@ -415,6 +475,12 @@ namespace MixedRealityExtension.App
 
 				// TODO @tombu - Wait for the app to send back a success for join?
 				_userManager.AddUser(user);
+
+				// Enable interactions for the user if given the UserInteraction permission.
+				if (GrantedPermissions.HasFlag(Permissions.UserInteraction))
+				{
+					EnableUserInteraction(user);
+				}
 
 				OnUserJoined?.Invoke(userInfo);
 			}
@@ -437,6 +503,11 @@ namespace MixedRealityExtension.App
 
 			if (user != null)
 			{
+				if (IsInteractableForUser(user))
+				{
+					DisableUserInteration(user);
+				}
+
 				_userManager.RemoveUser(user);
 				_interactingUserIds.Remove(user.Id);
 
@@ -450,23 +521,7 @@ namespace MixedRealityExtension.App
 		}
 
 		/// <inheritdoc />
-		public void EnableUserInteraction(IUser user)
-		{
-			if (_userManager.HasUser(user.Id))
-			{
-				_interactingUserIds.Add(user.Id);
-			}
-			else
-			{
-				throw new Exception("Enabling interaction on this app for a user that has not joined the app.");
-			}
-		}
-
-		/// <inheritdoc />
-		public void DisableUserInteration(IUser user)
-		{
-			_interactingUserIds.Remove(user.Id);
-		}
+		public bool IsInteractableForUser(IUser user) => _interactingUserIds.Contains(user.Id);
 
 		/// <inheritdoc />
 		public IActor FindActor(Guid id)
@@ -599,7 +654,25 @@ namespace MixedRealityExtension.App
 			return FindActor(actor.Id) != null;
 		}
 
-		internal bool IsInteractable(IUser user) => _interactingUserIds.Contains(user.Id);
+		internal void EnableUserInteraction(IUser user)
+		{
+			if (_userManager.HasUser(user.Id))
+			{
+				_interactingUserIds.Add(user.Id);
+			}
+			else
+			{
+				throw new Exception("Enabling interaction on this app for a user that has not joined the app.");
+			}
+		}
+
+		/// <inheritdoc />
+		internal void DisableUserInteration(IUser user)
+		{
+			_interactingUserIds.Remove(user.Id);
+		}
+
+		internal bool InteractionEnabled() => _interactingUserIds.Count != 0;
 
 		#endregion
 
@@ -782,7 +855,7 @@ namespace MixedRealityExtension.App
 					}
 					else
 					{
-						var message = $"Prefab {payload.PrefabId} failed to load, cancelling actor creation";
+						var message = $"Prefab {payload.PrefabId} failed to load, canceling actor creation";
 						SendCreateActorResponse(payload, failureMessage: message, onCompleteCallback: onCompleteCallback);
 					}
 				});
@@ -992,6 +1065,14 @@ namespace MixedRealityExtension.App
 			{
 				Protocol.Send(
 					new DialogResponse() { FailureMessage = "This client has not implemented dialogs" },
+					payload.MessageId
+				);
+				onCompleteCallback?.Invoke();
+			}
+			else if (!GrantedPermissions.HasFlag(Permissions.UserInteraction))
+			{
+				Protocol.Send(
+					new DialogResponse() { FailureMessage = "The user has refused the MRE permission to open dialogs" },
 					payload.MessageId
 				);
 				onCompleteCallback?.Invoke();

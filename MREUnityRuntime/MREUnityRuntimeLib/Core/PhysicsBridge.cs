@@ -198,6 +198,7 @@ namespace MixedRealityExtension.Core
 			int index = 0;
 			MultiSourceCombinedSnapshot snapshot;
 			_snapshotManager.Step(timeInfo.DT, out snapshot);
+			_snapshotManager.UpdateDebugDisplay(rootTransform);	// guarded by ifdef internally
 
 			foreach (var rb in _rigidBodies.Values)
 			{
@@ -224,13 +225,6 @@ namespace MixedRealityExtension.Core
 
 				if (index < snapshot.RigidBodies.Count && rb.Id == snapshot.RigidBodies.Values[index].Id)
 				{
-					// todo: kick-in prediction if we are missing an update for this rigid body
-					//if (!snapshot.RigidBodies.Values[index].HasUpdate)
-					//{
-					//	rb.RigidBody.isKinematic = false;
-					//	continue;
-					//}
-
 					RigidBodyTransform transform = snapshot.RigidBodies.Values[index].Transform;
 					float timeOfSnapshot = snapshot.RigidBodies.Values[index].LocalTime;
 
@@ -242,7 +236,20 @@ namespace MixedRealityExtension.Core
 					{
 						// <todo> for long running times the time difference could be a problem
 						// the minimal step is the half step size, even with jitter buffer
-						float invUpdateDT = 1.0f / Math.Max( (timeInfo.halfDT), (timeOfSnapshot - rb.lastTimeKeyFramedUpdate));
+
+						float timestep;
+						if (rb.lastTimeKeyFramedUpdate != float.MinValue)
+						{
+							timestep = timeOfSnapshot - rb.lastTimeKeyFramedUpdate;
+							timestep = Math.Min(2 * timestep, Time.fixedDeltaTime);
+							timestep = Math.Max(timeInfo.halfDT, timestep);
+						}
+						else
+						{
+							timestep = Time.fixedDeltaTime;
+						}
+
+						float invUpdateDT = 1.0f / timestep;
 
 						rb.lastValidLinerVelocityOrPos = (keyFramedPos - rb.RigidBody.transform.position) * invUpdateDT;
 						// transform to radians and take the angular velocity 
@@ -325,6 +332,7 @@ namespace MixedRealityExtension.Core
 							+ " KF:" + rb.IsKeyframed);
 #endif
 					}
+
 					rb.lastTimeKeyFramedUpdate = timeOfSnapshot;
 					rb.IsKeyframed = (snapshot.RigidBodies.Values[index].motionType == Patching.Types.MotionType.Keyframed);
 
@@ -337,7 +345,11 @@ namespace MixedRealityExtension.Core
 
 					// call the predictor with this remotely owned body
 					_predictor.AddAndProcessRemoteBodyForPrediction(rb, transform,
-						keyFramedPos, keyFramedOrientation, timeOfSnapshot, timeInfo);
+						keyFramedPos, keyFramedOrientation, timeOfSnapshot, timeInfo,
+						// <todo> turn this on only after HasUpdate has the right values
+						//snapshot.RigidBodies.Values[index].HasUpdate ||
+						//snapshot.RigidBodies.Values[index].motionType == MotionType.Sleeping);
+						true);
 				}
 			}
 

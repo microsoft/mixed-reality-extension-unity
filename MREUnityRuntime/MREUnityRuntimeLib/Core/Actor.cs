@@ -95,15 +95,23 @@ namespace MixedRealityExtension.Core
 			}
 		}
 
+		/// <summary>
+		/// Checks if rigid body is simulated locally.
+		/// </summary>
 		internal bool IsSimulatedByLocalUser
 		{
 			get
 			{
 				if (_isExclusiveToUser)
+				{
 					return true;
+				}
 
+				// Should always be true after rigid body is fully initialized.
 				if (!Owner.HasValue)
+				{
 					return false;
+				}
 
 				return Owner.Value == App.LocalUser.Id;
 			}
@@ -308,7 +316,10 @@ namespace MixedRealityExtension.Core
 
 				if (ShouldSync(subscriptions, ActorComponentType.Rigidbody))
 				{
-					GenerateRigidBodyPatch(actorPatch);
+					// we should include the velocities either when the old sync model is used
+					// OR when there is an explicit subscription to it.
+					GenerateRigidBodyPatch(actorPatch,
+						(!App.UsePhysicsBridge || subscriptions.HasFlag(ActorComponentType.RigidbodyVelocity)));
 				}
 
 				if (ShouldSync(ActorComponentType.Attachment, ActorComponentType.Attachment))
@@ -489,9 +500,8 @@ namespace MixedRealityExtension.Core
 
 			if (generateAll)
 			{
-
-				var rigidBody = PatchingUtilMethods.GeneratePatch(
-					RigidBody, (Rigidbody)null, App.SceneRoot.transform, !App.UsePhysicsBridge);
+				var rigidBody = PatchingUtilMethods.GeneratePatch(RigidBody, (Rigidbody)null,
+					App.SceneRoot.transform, !App.UsePhysicsBridge);
 
 				ColliderPatch collider = null;
 				_collider = gameObject.GetComponent<UnityCollider>();
@@ -764,7 +774,8 @@ namespace MixedRealityExtension.Core
 				DetachFromAttachPointParent();
 
 				IUserInfo userInfo = MREAPI.AppsAPI.UserInfoProvider.GetUserInfo(App, Attachment.UserId);
-				if (userInfo != null)
+				if (userInfo != null &&
+					(Attachment.UserId != App.LocalUser?.Id || App.GrantedPermissions.HasFlag(Permissions.UserInteraction)))
 				{
 					userInfo.BeforeAvatarDestroyed -= UserInfo_BeforeAvatarDestroyed;
 
@@ -849,7 +860,7 @@ namespace MixedRealityExtension.Core
 					}
 					else
 					{
-						// if rigid body needs to be synchronized, handle it trough physics bridge
+						// if rigid body needs to be synchronized, handle it through physics bridge
 						if (args.NewState == ActionState.Started)
 						{
 							// set to kinematic when grab starts
@@ -857,7 +868,7 @@ namespace MixedRealityExtension.Core
 						}
 						else
 						{
-							// on grab end return original value
+							// on end of grab, return to original value
 							App.PhysicsBridge.setKeyframed(Id, RigidBody.IsKinematic);
 						}
 					}
@@ -1030,6 +1041,9 @@ namespace MixedRealityExtension.Core
 		{
 			if (App.UsePhysicsBridge && exclusiveToUser.HasValue)
 			{
+				// Should be set only once when actor is initialized
+				// and only for single user who receives the patch.
+				// The comparison check is not actually required.
 				_isExclusiveToUser = App.LocalUser.Id == exclusiveToUser.Value;
 			}
 		}
@@ -1057,7 +1071,7 @@ namespace MixedRealityExtension.Core
 
 							Owner = ownerOrNull;
 
-							// If owject is grabbed make it kinematic
+							// If object is grabbed make it kinematic
 							if (IsSimulatedByLocalUser && IsGrabbed)
 							{
 								App.PhysicsBridge.setKeyframed(Id, true);
@@ -1605,13 +1619,13 @@ namespace MixedRealityExtension.Core
 			actorPatch.Transform = transformPatch.IsPatched() ? transformPatch : null;
 		}
 
-		private void GenerateRigidBodyPatch(ActorPatch actorPatch)
+		private void GenerateRigidBodyPatch(ActorPatch actorPatch, bool addVelocities)
 		{
 			if (_rigidbody != null && RigidBody != null)
 			{
 				// convert to a RigidBody and build a patch from the old one to this one.
-				var rigidBodyPatch = PatchingUtilMethods.GeneratePatch(
-					RigidBody, _rigidbody, App.SceneRoot.transform, !App.UsePhysicsBridge);
+				var rigidBodyPatch = PatchingUtilMethods.GeneratePatch(RigidBody, _rigidbody,
+					App.SceneRoot.transform, addVelocities);
 
 				if (rigidBodyPatch != null && rigidBodyPatch.IsPatched())
 				{
@@ -1668,6 +1682,7 @@ namespace MixedRealityExtension.Core
 			}
 
 			// If the actor has a rigid body then always sync the transform and the rigid body.
+			// but not the velocities (due to bandwidth), sync only when there is an explicit subscription for the velocities
 			if (RigidBody != null)
 			{
 				subscriptions |= ActorComponentType.Transform;
@@ -1734,7 +1749,7 @@ namespace MixedRealityExtension.Core
 
 #endregion
 
-#region Command Handlers
+		#region Command Handlers
 
 		[CommandHandler(typeof(LocalCommand))]
 		private void OnLocalCommand(LocalCommand payload, Action onCompleteCallback)
@@ -1953,6 +1968,13 @@ namespace MixedRealityExtension.Core
 		[CommandHandler(typeof(SetBehavior))]
 		private void OnSetBehavior(SetBehavior payload, Action onCompleteCallback)
 		{
+			// Don't create a behavior at all for this actor if the app is not interactable for any users.
+			if (!App.InteractionEnabled())
+			{
+				onCompleteCallback?.Invoke();
+				return;
+			}
+
 			var behaviorComponent = GetOrCreateActorComponent<BehaviorComponent>();
 
 			if (behaviorComponent.ContainsBehaviorContext())
@@ -1976,12 +1998,13 @@ namespace MixedRealityExtension.Core
 				// We need to update the new behavior's grabbable flag from the actor so that it can be grabbed in the case we cleared the previous behavior.
 				((ITargetBehavior)context.Behavior).Grabbable = Grabbable;
 			}
+
 			onCompleteCallback?.Invoke();
 		}
 
-#endregion
+		#endregion
 
-#region Command Handlers - Rigid Body Commands
+		#region Command Handlers - Rigid Body Commands
 
 		[CommandHandler(typeof(RBMovePosition))]
 		private void OnRBMovePosition(RBMovePosition payload, Action onCompleteCallback)
@@ -2032,6 +2055,6 @@ namespace MixedRealityExtension.Core
 			onCompleteCallback?.Invoke();
 		}
 
-#endregion
+		#endregion
 	}
 }

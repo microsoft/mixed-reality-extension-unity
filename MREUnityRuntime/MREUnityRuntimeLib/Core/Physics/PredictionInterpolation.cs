@@ -1,4 +1,7 @@
-﻿using System;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -15,6 +18,8 @@ namespace MixedRealityExtension.Core.Physics
 		public float relativeDistance = float.MaxValue;
 		/// how much we interpolate between the jitter buffer and the simulation
 		public float keyframedInterpolationRatio = 0.0f;
+		/// here we count how many consequent steps were made without update from the jitter buffer
+		public int numStepsWithoutJBUpdate = 0;
 	}
 
 	/// for interactive collisions we need to store the implicit velocities and other information	
@@ -27,7 +32,7 @@ namespace MixedRealityExtension.Core.Physics
 		public Guid rigidBodyId;
 		public CollisionMonitorInfo monitorInfo;
 		/// if a body is really key framed on the owner side then we should not turn it to dynamic on the remote side
-		public bool isKeyframed; 
+		public bool isKeyframed;
 	}
 
 	/// This class implements one strategy for the prediction where in the neighborhood of the
@@ -77,7 +82,7 @@ namespace MixedRealityExtension.Core.Physics
 		public void AddAndProcessRemoteBodyForPrediction(RigidBodyPhysicsBridgeInfo rb,
 			RigidBodyTransform transform, UnityEngine.Vector3 keyFramedPos,
 			UnityEngine.Quaternion keyFramedOrientation, float timeOfSnapshot,
-			PredictionTimeParameters timeInfo)
+			PredictionTimeParameters timeInfo, bool hasJBUpdate)
 		{
 			var collisionInfo = new CollisionSwitchInfo();
 			collisionInfo.startPosition = rb.RigidBody.transform.position;
@@ -94,9 +99,17 @@ namespace MixedRealityExtension.Core.Physics
 				collisionInfo.linearVelocity = rb.RigidBody.velocity;
 				collisionInfo.angularVelocity = rb.RigidBody.angularVelocity;
 #if MRE_PHYSICS_DEBUG
-						Debug.Log(" Remote body: " + rb.Id.ToString() + " is dynamic since:"
-							+ collisionInfo.monitorInfo.timeFromStartCollision + " relative distance:" + collisionInfo.monitorInfo.relativeDistance
-							+ " interpolation:" + collisionInfo.monitorInfo.keyframedInterpolationRatio);
+				if (collisionInfo.monitorInfo.numStepsWithoutJBUpdate > 0)
+				{
+					Debug.Log(" HAD no UPDATE: " + rb.Id.ToString() + " turn now to dynamic:");
+				}
+#endif
+				collisionInfo.monitorInfo.numStepsWithoutJBUpdate =
+					((hasJBUpdate) ? 0 : (collisionInfo.monitorInfo.numStepsWithoutJBUpdate + 1));
+#if MRE_PHYSICS_DEBUG
+				Debug.Log(" Remote body: " + rb.Id.ToString() + " is dynamic since:"
+					+ collisionInfo.monitorInfo.timeFromStartCollision + " relative distance:" + collisionInfo.monitorInfo.relativeDistance
+					+ " interpolation:" + collisionInfo.monitorInfo.keyframedInterpolationRatio);
 #endif
 				// if time passes by then make a transformation between key framed and dynamic
 				// but only change the positions not the velocity
@@ -150,6 +163,7 @@ namespace MixedRealityExtension.Core.Physics
 				collisionInfo.linearVelocity = rb.lastValidLinerVelocityOrPos;
 				collisionInfo.angularVelocity = rb.lastValidAngularVelocityorAng;
 				collisionInfo.monitorInfo = new CollisionMonitorInfo();
+				collisionInfo.monitorInfo.numStepsWithoutJBUpdate = ((hasJBUpdate) ? 0 : 1);
 #if MRE_PHYSICS_DEBUG
 				if (rb.IsKeyframed)
 				{
@@ -163,8 +177,7 @@ namespace MixedRealityExtension.Core.Physics
 			// but for small number of bodies should be OK
 			_switchCollisionInfos.Add(collisionInfo);
 		}
-
-
+		
 		public void PredictAllRemoteBodiesWithOwnedBodies(
 			ref SortedList<Guid, RigidBodyPhysicsBridgeInfo> allRigidBodiesOfThePhysicsBridge,
 			PredictionTimeParameters timeInfo)
@@ -228,24 +241,32 @@ namespace MixedRealityExtension.Core.Physics
 #endif
 
 						// unconditionally add to the monitor stream if this is a reasonable collision and we are only at the beginning
-						if (collisionMonitorInfo.timeFromStartCollision > timeInfo.halfDT &&
-							timeSinceCollisionStart <= startInterpolatingBack &&
-							collisionMonitorInfo.relativeDistance < inCollisionRangeRelativeDistanceFactor)
+						if ((collisionMonitorInfo.timeFromStartCollision > timeInfo.halfDT &&
+							 timeSinceCollisionStart <= startInterpolatingBack &&
+							 collisionMonitorInfo.relativeDistance < inCollisionRangeRelativeDistanceFactor)
+							 // if we run out of jitter buffer update then also unconditionally add to the monitor stream
+							|| (remoteBodyInfo.monitorInfo.numStepsWithoutJBUpdate > 0) )
 						{
 #if MRE_PHYSICS_DEBUG
 							//if (remoteBodyInfo.isKeyframed)
 							{
 								Debug.Log(" unconditionally add to collision stream time:" + timeSinceCollisionStart +
-									" relative dist:" + collisionMonitorInfo.relativeDistance);
+									" relative dist:" + collisionMonitorInfo.relativeDistance +
+							        " noUpdate:" + remoteBodyInfo.monitorInfo.numStepsWithoutJBUpdate);
 							}
 #endif
+							// for remote bodies who are just missing updates be ready to interpolate back
+							if (remoteBodyInfo.monitorInfo.numStepsWithoutJBUpdate > 3)
+							{
+								collisionMonitorInfo.timeFromStartCollision = startInterpolatingBack;
+							}
 							addToMonitor = true;
 						}
 
 						// switch over smoothly to the key framing
 						if (!addToMonitor &&
 							timeSinceCollisionStart > 5 * timeInfo.DT && // some basic check for lower limit
-																		 //(!isAlreadyInMonitor || collisionMonitorInfo.relativeDistance > 1.2f) && // if this is already added then ignore large values
+							//(!isAlreadyInMonitor || collisionMonitorInfo.relativeDistance > 1.2f) && // if this is already added then ignore large values
 							timeSinceCollisionStart <= endInterpolatingBack)
 						{
 							addToMonitor = true;
@@ -264,7 +285,7 @@ namespace MixedRealityExtension.Core.Physics
 								&& collisionMonitorInfo.keyframedInterpolationRatio > limitCollisionInterpolation)
 							{
 #if MRE_PHYSICS_DEBUG
-								Debug.Log(" Stop interpolation time with DT:" + DT +
+								Debug.Log(" Stop interpolation time with DT:" + timeInfo.DT +
 									" Ratio:" + collisionMonitorInfo.keyframedInterpolationRatio +
 									" relDist:" + collisionMonitorInfo.relativeDistance +
 									" t=" + collisionMonitorInfo.timeFromStartCollision);
@@ -280,7 +301,7 @@ namespace MixedRealityExtension.Core.Physics
 							}
 						}
 
-						// we add to the collision stream either when it is within range or 
+						// we add to the collision stream either when it is within range or when there is no JB update or when we are interpolating back
 						if (isWithinCollisionRange || addToMonitor)
 						{
 							// add to the monitor stream
@@ -329,6 +350,15 @@ namespace MixedRealityExtension.Core.Physics
 								remoteBody.transform.rotation = remoteBodyInfo.startOrientation;
 								remoteBody.velocity = remoteBodyInfo.linearVelocity;
 								remoteBody.angularVelocity = remoteBodyInfo.angularVelocity;
+								// remote bodies that became dynamic just because of missing updates should be ready to start immediately
+								// the interpolation back to key framing
+								if (remoteBodyInfo.monitorInfo.numStepsWithoutJBUpdate == 1)
+								{
+									collisionMonitorInfo.timeFromStartCollision = startInterpolatingBack;
+#if MRE_PHYSICS_DEBUG
+									Debug.Log(" No JB update: " + rb.Id.ToString() + " turn now to dynamic:");
+#endif
+								}
 #if MRE_PHYSICS_DEBUG
 								//if (remoteBodyInfo.isKeyframed)
 								{

@@ -7,7 +7,7 @@ using System;
 
 namespace MixedRealityExtension.Patching.Types
 {
-	public class ColorPatch : IEquatable<ColorPatch>, IPatchable
+	public class ColorPatch : Patchable<ColorPatch>, IEquatable<ColorPatch>
 	{
 		[PatchProperty]
 		public float? R { get; set; }
@@ -54,31 +54,6 @@ namespace MixedRealityExtension.Patching.Types
 					B.Equals(other.B) &&
 					A.Equals(other.A);
 			}
-		}
-
-		public void WriteToPath(TargetPath path, JToken value, int depth)
-		{
-
-		}
-
-		public bool ReadFromPath(TargetPath path, ref JToken value, int depth)
-		{
-			return false;
-		}
-
-		public void Clear()
-		{
-
-		}
-
-		public void Restore(TargetPath path, int depth)
-		{
-
-		}
-
-		public void RestoreAll()
-		{
-
 		}
 	}
 }

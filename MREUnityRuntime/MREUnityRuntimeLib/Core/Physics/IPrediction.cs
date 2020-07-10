@@ -43,7 +43,7 @@ namespace MixedRealityExtension.Core.Physics
 		void AddAndProcessRemoteBodyForPrediction(RigidBodyPhysicsBridgeInfo rb,
 			RigidBodyTransform transform, UnityEngine.Vector3 keyFramedPos,
 			UnityEngine.Quaternion keyFramedOrientation, float timeOfSnapshot,
-			PredictionTimeParameters timeInfo);
+			PredictionTimeParameters timeInfo, bool hasJBUpdate);
 
 		/// In the last step within the frame the owned bodies are added to the prediction
 		void PredictAllRemoteBodiesWithOwnedBodies(ref SortedList<Guid, RigidBodyPhysicsBridgeInfo> allRigidBodiesOfThePhysicsBridge,

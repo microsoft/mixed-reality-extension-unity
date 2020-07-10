@@ -293,6 +293,7 @@ MonoBehaviour:
   UserProperties: []
   AutoStart: 0
   AutoJoin: 1
+  GrantedPermissions: -1
   SceneRoot: {fileID: 368773028}
   PlaceholderObject: {fileID: 164408130}
   UserGameObject: {fileID: 1767571516}
@@ -304,6 +305,7 @@ MonoBehaviour:
   DefaultPrimMaterial: {fileID: 2100000, guid: 265cb5b418966a64ea212597d469fa33, type: 2}
   DialogFactory: {fileID: 114153473817070278, guid: f1f77a0b742ec0841858c35dc9348515,
     type: 3}
+  EnableMRTK: 0
 --- !u!4 &368773028
 Transform:
   m_ObjectHideFlags: 0
@@ -517,6 +519,7 @@ MonoBehaviour:
   UserProperties: []
   AutoStart: 0
   AutoJoin: 1
+  GrantedPermissions: -1
   SceneRoot: {fileID: 1141388990}
   PlaceholderObject: {fileID: 582437838}
   UserGameObject: {fileID: 1767571516}
@@ -528,6 +531,7 @@ MonoBehaviour:
   DefaultPrimMaterial: {fileID: 2100000, guid: 265cb5b418966a64ea212597d469fa33, type: 2}
   DialogFactory: {fileID: 114153473817070278, guid: f1f77a0b742ec0841858c35dc9348515,
     type: 3}
+  EnableMRTK: 0
 --- !u!1 &1256608368
 GameObject:
   m_ObjectHideFlags: 0

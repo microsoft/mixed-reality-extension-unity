@@ -12,6 +12,7 @@ using UnityEngine;
 namespace MixedRealityExtension.Patching.Types
 {
 	/// type of the motion that helps on the other side to predict its trajectory
+	[Flags]
 	public enum MotionType : byte
 	{
 		/// body that is simulated and should react to impacts
@@ -46,7 +47,7 @@ namespace MixedRealityExtension.Patching.Types
 		public TransformPatch Transform { get; set; }
 	}
 
-	public class PhysicsBridgePatch : IPatchable
+	public class PhysicsBridgePatch : Patchable<PhysicsBridgePatch>
 	{
 		public PhysicsBridgePatch()
 		{
@@ -107,10 +108,63 @@ namespace MixedRealityExtension.Patching.Types
 		/// https://www.newtonsoft.com/json/help/html/SerializationGuide.htm
 		/// </summary>
 		public byte[] TransformsBLOB { get; set; }
+	}
+
+	public class PhysicsTranformServerUploadPatch : IPatchable
+	{
+		public struct OneActorUpdate
+		{
+			public OneActorUpdate(Guid id,UnityEngine.Vector3 localPos, UnityEngine.Quaternion localQuat,
+				UnityEngine.Vector3 appPos, UnityEngine.Quaternion appQuat)
+			{
+				localTransform = new TransformPatch();
+				appTransform = new TransformPatch();
+
+				localTransform.Position = new Vector3Patch(localPos);
+				localTransform.Rotation = new QuaternionPatch(localQuat);
+
+				appTransform.Position = new Vector3Patch(appPos);
+				appTransform.Rotation = new QuaternionPatch(appQuat);
+				
+				actorGuid = id;
+			}
+
+			public OneActorUpdate(OneActorUpdate copyIn)
+			{
+				localTransform = copyIn.localTransform;
+				appTransform = copyIn.appTransform;
+				actorGuid = copyIn.actorGuid;
+			}
+			
+			/// test if the two actor updates are equal
+			public bool isEqual(OneActorUpdate inUpdate, float eps = 0.0001F)
+			{
+				return (inUpdate.actorGuid == actorGuid)
+					&& TransformPatch.areTransformsEqual(localTransform, inUpdate.localTransform, eps)
+					&& TransformPatch.areTransformsEqual(appTransform, inUpdate.appTransform, eps);
+			}
+
+			public TransformPatch localTransform { get; set; }
+			public TransformPatch appTransform { get; set; }
+			public Guid actorGuid { get; set; }
+		}
+
+		/// <summary>
+		/// source app id (of the sender)
+		/// </summary>
+		public Guid Id { get; set; }
+
+		public int TransformCount { get; set; }
+
+		public OneActorUpdate[] updates;
+
+		public bool IsPatched()
+		{
+			return (TransformCount > 0);
+		}
 
 		public void WriteToPath(TargetPath path, JToken value, int depth)
 		{
-
 		}
 
 		public bool ReadFromPath(TargetPath path, ref JToken value, int depth)
