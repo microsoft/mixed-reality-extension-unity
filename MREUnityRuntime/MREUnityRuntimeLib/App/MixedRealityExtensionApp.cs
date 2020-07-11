@@ -370,10 +370,11 @@ namespace MixedRealityExtension.App
 				_timeSinceLastPhysicsUpdate += Time.fixedDeltaTime;
 
 				float updateDeltaTime = Math.Max(Time.fixedDeltaTime,
-					Time.fixedDeltaTime * (float)Math.Floor(_physicsUpdateTimestep / Time.fixedDeltaTime));
+					Time.fixedDeltaTime * (float)Math.Round(_physicsUpdateTimestep / Time.fixedDeltaTime));
 
 				if (updateDeltaTime - _timeSinceLastPhysicsUpdate < 0.001f)
 				{
+					//Debug.Log(" Send delta TIme: " + (Time.fixedDeltaTime * (float)Math.Round(_physicsUpdateTimestep / Time.fixedDeltaTime)));
 					_shouldSendPhysicsUpdate = true;
 				}
 			}
