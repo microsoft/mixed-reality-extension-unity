@@ -108,7 +108,6 @@
     <Compile Include="Core\Components\MREAttachmentComponent.cs" />
     <Compile Include="Core\ColliderGeometry.cs" />
     <Compile Include="Core\Interfaces\ICollider.cs" />
-    <Compile Include="Core\Interfaces\IUserInfo.cs" />
     <Compile Include="Core\MediaCommand.cs" />
     <Compile Include="Core\Permissions.cs" />
     <Compile Include="Core\PhysicsBridge.cs" />
@@ -140,9 +139,9 @@
     <Compile Include="PluginInterfaces\Behaviors\IToolBehavior.cs" />
     <Compile Include="PluginInterfaces\Behaviors\IPenBehavior.cs" />
     <Compile Include="PluginInterfaces\IDialogFactory.cs" />
+    <Compile Include="PluginInterfaces\IHostAppUser.cs" />
     <Compile Include="PluginInterfaces\ILayerApplicator.cs" />
     <Compile Include="PluginInterfaces\IPermissionManager.cs" />
-    <Compile Include="PluginInterfaces\IUserInfoProvider.cs" />
     <Compile Include="Messaging\Payloads\AssetCommandPayloads.cs" />
     <Compile Include="Patching\Types\AttachmentPatch.cs" />
     <Compile Include="Messaging\Payloads\Converters\CollisionGeometryConverter.cs" />

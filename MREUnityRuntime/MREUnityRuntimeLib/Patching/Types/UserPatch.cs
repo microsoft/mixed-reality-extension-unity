@@ -1,12 +1,9 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
-using MixedRealityExtension.Animation;
-using MixedRealityExtension.API;
+
 using MixedRealityExtension.Core;
-using MixedRealityExtension.Core.Types;
 using MixedRealityExtension.Messaging.Payloads.Converters;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -45,7 +42,7 @@ namespace MixedRealityExtension.Patching.Types
 			Groups = user.Groups;
 			// the server doesn't need to care about the execution permission, it's assumed if you're connected
 			GrantedPermissions = user.App.GrantedPermissions.ToEnumerable().Where(p => p != Permissions.Execution).ToArray();
-			Properties = user.UserInfo.Properties;
+			Properties = user.HostAppUser.Properties;
 		}
 	}
 }

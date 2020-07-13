@@ -289,7 +289,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   MREURL: ws://localhost:3901
   SessionID: foo
-  AppID: solar-system-app
+  AppID: 
   UserProperties: []
   AutoStart: 0
   AutoJoin: 1
