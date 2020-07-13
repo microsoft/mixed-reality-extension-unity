@@ -238,33 +238,16 @@ namespace MixedRealityExtension.Core
 					// get the key framed stream, and compute implicit velocities
 					UnityEngine.Vector3 keyFramedPos = rootTransform.TransformPoint(transform.Position);
 					UnityEngine.Quaternion keyFramedOrientation = rootTransform.rotation * transform.Rotation;
+					UnityEngine.Vector3 JBLinearVelocity =
+						rootTransform.rotation * snapshot.RigidBodies.Values[index].LinearVelocity;
+					UnityEngine.Vector3 JBAngularVelocity =
+						rootTransform.rotation * snapshot.RigidBodies.Values[index].AngularVelocity;
 					// if there is a really new update then also store the implicit velocity
 					if (rb.lastTimeKeyFramedUpdate < timeOfSnapshot)
 					{
-						// <todo> for long running times the time difference could be a problem
-						// the minimal step is the half step size, even with jitter buffer
-
-						float timestep;
-						if (rb.lastTimeKeyFramedUpdate != float.MinValue)
-						{
-							timestep = timeOfSnapshot - rb.lastTimeKeyFramedUpdate;
-							timestep = Math.Min(2 * timestep, Time.fixedDeltaTime);
-							timestep = Math.Max(timeInfo.halfDT, timestep);
-						}
-						else
-						{
-							timestep = Time.fixedDeltaTime;
-						}
-
-						float invUpdateDT = 1.0f / timestep;
-
-						rb.lastValidLinerVelocityOrPos = (keyFramedPos - rb.RigidBody.transform.position) * invUpdateDT;
-						// transform to radians and take the angular velocity 
-						UnityEngine.Vector3 eulerAngles = (
-							  UnityEngine.Quaternion.Inverse(rb.RigidBody.transform.rotation)
-							* keyFramedOrientation).eulerAngles;
-						UnityEngine.Vector3 radianAngles = UtilMethods.TransformEulerAnglesToRadians(eulerAngles);
-						rb.lastValidAngularVelocityorAng = radianAngles * invUpdateDT;
+						// we moved the velocity estimation into the jitter buffer 
+						rb.lastValidLinerVelocityOrPos = JBLinearVelocity;
+						rb.lastValidAngularVelocityorAng = JBAngularVelocity;
 
 #if MRE_PHYSICS_DEBUG
 						// test the source of large velocities
@@ -273,7 +256,7 @@ namespace MixedRealityExtension.Core
 							// limited debug version
 							Debug.Log(" ACTIVE SPEED LIMIT TRAP RB: " //+ rb.Id.ToString() + " got update lin vel:"
 								+ rb.lastValidLinerVelocityOrPos + " ang vel:" + rb.lastValidAngularVelocityorAng
-								+ " incUpdateDt:" + invUpdateDT + " time:" + timeOfSnapshot
+								+ " time:" + timeOfSnapshot
 								+ " newR:" + rb.lastTimeKeyFramedUpdate
 								+ " hasupdate:" + snapshot.RigidBodies.Values[index].HasUpdate
 								+  " DangE:" + eulerAngles + " DangR:" + radianAngles );
@@ -297,7 +280,7 @@ namespace MixedRealityExtension.Core
 						    // limited debug version
 							Debug.Log(" Remote body: " + rb.Id.ToString() + " got update lin vel:"
 								+ rb.lastValidLinerVelocityOrPos + " ang vel:" + rb.lastValidAngularVelocityorAng
-								+ " incUpdateDt:" + invUpdateDT + " time:" + timeOfSnapshot + " newR:" + rb.lastTimeKeyFramedUpdate);						    
+								+ " time:" + timeOfSnapshot + " newR:" + rb.lastTimeKeyFramedUpdate);						    
 						}
 						else
 						{
@@ -306,7 +289,6 @@ namespace MixedRealityExtension.Core
 								//+ " DangE:" + eulerAngles + " DangR:" + radianAngles
 								+ " time:" + timeOfSnapshot + " newp:" + keyFramedPos
 								+ " newR:" + keyFramedOrientation
-								+ " incUpdateDt:" + invUpdateDT
 								+ " oldP:" + rb.RigidBody.transform.position
 								+ " oldR:" + rb.RigidBody.transform.rotation
 								+ " OriginalRot:" + transform.Rotation

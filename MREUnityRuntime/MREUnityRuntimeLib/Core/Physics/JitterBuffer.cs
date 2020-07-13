@@ -4,6 +4,7 @@
 //#define DEBUG_JITTER_BUFFER
 
 using MixedRealityExtension.Patching.Types;
+using MixedRealityExtension.Util;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -108,6 +109,30 @@ namespace MixedRealityExtension.Core.Physics
 			{
 				RigidBodyId = id;
 				Time = float.MinValue;
+				SetZeroVelocities();
+			}
+
+			public void SetZeroVelocities()
+			{
+				LinearVelocity.Set(0.0F, 0.0F, 0.0F);
+				AngularVelocity.Set(0.0F, 0.0F, 0.0F);
+			}
+
+			public void SetVelocitiesFromTransformsDiff(float DT, RigidBodyTransform current,
+				RigidBodyTransform prev)
+			{
+				if (Math.Abs(DT) > 0.0005f)
+				{
+					float invUpdateDT = 1.0f / (DT); // DT has to be different from zero
+					UnityEngine.Vector3 eulerAngles = (UnityEngine.Quaternion.Inverse(prev.Rotation) * current.Rotation).eulerAngles;
+					UnityEngine.Vector3 radianAngles = UtilMethods.TransformEulerAnglesToRadians(eulerAngles);
+					//if (radianAngles.sqrMagnitude < 0.02F)
+					//{
+					//	Debug.Log( "NULL DT=" + DT + " prevRot=" + prevRot.ToString() + " next=" + curentRot.ToString());
+					//}
+					AngularVelocity = radianAngles * invUpdateDT;
+					LinearVelocity = (current.Position - prev.Position) * invUpdateDT;
+				}
 			}
 
 			public Guid RigidBodyId;
@@ -118,9 +143,9 @@ namespace MixedRealityExtension.Core.Physics
 
 			public RigidBodyTransform Transform;
 
-			//public Vector3 LinearVelocity;
+			public Vector3 LinearVelocity;
 
-			//public Vector3 AngualrVelocity;
+			public Vector3 AngularVelocity;
 
 			public MotionType MotionType;
 
@@ -135,7 +160,7 @@ namespace MixedRealityExtension.Core.Physics
 
 		public float CurrentLocalTime { get; private set; } = float.MinValue;
 
-		public float LastSnapshotLocalTime { get; private set; }  = float.MinValue;
+		public float LastSnapshotLocalTime { get; private set; } = float.MinValue;
 
 		private float _prevStepLastSnapshotLocalTime = float.MinValue;
 
@@ -169,7 +194,7 @@ namespace MixedRealityExtension.Core.Physics
 		/// in order to reset the jitter buffer properly we need to know if the last updates only has sleeping bodies
 		private bool _areAllRigidBodiesSleeping = true;
 
-#region Public API
+		#region Public API
 
 		public SnapshotBuffer(Guid id)
 		{
@@ -533,17 +558,33 @@ namespace MixedRealityExtension.Core.Physics
 		private class SnapshotSource : ISource
 		{
 			private Snapshot _snapshot;
+			// used only for velocity estimation
+			private Snapshot _prevSnapshot;
 			private int _iteratorIndex = 0;
+			private int _prevIndex = 0;
 
-			public SnapshotSource(Snapshot snapshot)
+			public SnapshotSource(Snapshot snapshot, Snapshot prevsnapShot)
 			{
 				_snapshot = snapshot;
+				_prevSnapshot = prevsnapShot;
 			}
 
 			public void Update(ref RigidBodyData entry)
 			{
+				while (_prevIndex < _prevSnapshot.Transforms.Count &&
+					_prevSnapshot.Transforms[_prevIndex].RigidBodyId.CompareTo(entry.RigidBodyId) < 0)
+				{
+					_prevIndex++;
+				}
+
 				while (_iteratorIndex < _snapshot.Transforms.Count &&
-					_snapshot.Transforms[_iteratorIndex].RigidBodyId.CompareTo(entry.RigidBodyId) < 0) _iteratorIndex++;
+					_snapshot.Transforms[_iteratorIndex].RigidBodyId.CompareTo(entry.RigidBodyId) < 0)
+				{
+					_iteratorIndex++;
+				}
+
+				//Debug.Log(" SnapshotSource Update cI:" + _iteratorIndex + " pI:" + _prevIndex +
+				//	" DT=" + (_snapshot.Time - _prevSnapshot.Time));
 
 				if (_iteratorIndex < _snapshot.Transforms.Count &&
 					_snapshot.Transforms[_iteratorIndex].RigidBodyId == entry.RigidBodyId)
@@ -553,13 +594,22 @@ namespace MixedRealityExtension.Core.Physics
 					entry.MotionType = rb.MotionType;
 					entry.Transform = rb.Transform;
 					entry.Time = _snapshot.Time;
-
+					entry.SetZeroVelocities();
+					if (_prevIndex < _prevSnapshot.Transforms.Count &&
+						_prevSnapshot.Transforms[_prevIndex].RigidBodyId == entry.RigidBodyId)
+					{
+						// estimate velocity
+						float DT = _snapshot.Time - _prevSnapshot.Time;
+						var prevRB = _prevSnapshot.Transforms[_prevIndex].Transform;
+						entry.SetVelocitiesFromTransformsDiff(DT, rb.Transform, prevRB);
+					}
 					entry.Updated = true;
 				}
 				else if (entry.MotionType == MotionType.Sleeping)
 				{
 					entry.Time = _snapshot.Time;
 					entry.Updated = true;
+					entry.SetZeroVelocities();
 				}
 				else
 				{
@@ -598,9 +648,18 @@ namespace MixedRealityExtension.Core.Physics
 					_nextIndex++;
 				}
 
+				while (_prevIndex < _prev.Transforms.Count &&
+					_prev.Transforms[_prevIndex].RigidBodyId.CompareTo(entry.RigidBodyId) < 0)
+				{
+					_prevIndex++;
+				}
+
 				if (_nextIndex >= _next.Transforms.Count ||
 					_next.Transforms[_nextIndex].RigidBodyId != entry.RigidBodyId)
 				{
+					// velocity is zero
+					entry.SetZeroVelocities();
+
 					if (entry.MotionType == MotionType.Sleeping)
 					{
 						entry.Time = _timestamp;
@@ -610,16 +669,9 @@ namespace MixedRealityExtension.Core.Physics
 					{
 						entry.Updated = false;
 					}
-
 					return;
 				}
-
-				while (_prevIndex < _prev.Transforms.Count &&
-					_prev.Transforms[_prevIndex].RigidBodyId.CompareTo(entry.RigidBodyId) < 0)
-				{
-					_prevIndex++;
-				}
-
+			 
 				if (_prevIndex < _prev.Transforms.Count &&
 						_prev.Transforms[_prevIndex].RigidBodyId == _next.Transforms[_nextIndex].RigidBodyId)
 				{
@@ -627,13 +679,18 @@ namespace MixedRealityExtension.Core.Physics
 					{
 						t.Lerp(_prev.Transforms[_prevIndex].Transform, _next.Transforms[_nextIndex].Transform, _frac);
 					}
-
 					entry.Transform = t;
+					entry.SetZeroVelocities();
+					// estimate velocity
+					float DT = _next.Time - _prev.Time;
+					var prevT = _prev.Transforms[_prevIndex].Transform;
+					var currentT = _next.Transforms[_nextIndex].Transform;
+					entry.SetVelocitiesFromTransformsDiff(DT, currentT, prevT);
 				}
 				else
 				{
-					
 					entry.Transform = _next.Transforms[_nextIndex].Transform;
+					entry.SetZeroVelocities();
 				}
 
 				entry.Time = _timestamp;
@@ -686,7 +743,9 @@ namespace MixedRealityExtension.Core.Physics
 			// go through all the snapshots in the past
 			while (index < _snapshots.Count && _snapshots.Keys[index] - nextTimestamp <= _timePrecision)
 			{
-				updateRigidBodies(new SnapshotSource(_snapshots.Values[index]));
+				//Debug.Log(" stepBufferAndUpdateRigidBodies index=" + index + " count=" + _snapshots.Count);
+				updateRigidBodies(new SnapshotSource(_snapshots.Values[index],
+						(index + 1 < _snapshots.Count) ? (_snapshots.Values[index + 1]) : _snapshots.Values[index]));
 
 				reset = reset || _snapshots.Values[index].Flags == Snapshot.SnapshotFlags.ResetJitterBuffer;
 				appliedSnapshotTimestamp = _snapshots.Keys[index];
@@ -798,11 +857,15 @@ namespace MixedRealityExtension.Core.Physics
 	{
 		public struct RigidBodyState
 		{
-			public RigidBodyState(Guid id, float time, RigidBodyTransform transform, bool hasUpdate, MotionType mType)
+			public RigidBodyState(Guid id, float time, RigidBodyTransform transform,
+				Vector3 linearVelocity, Vector3 angularVelocity, 
+				bool hasUpdate, MotionType mType)
 			{
 				Id = id;
 				LocalTime = time;
 				Transform = transform;
+				LinearVelocity = linearVelocity;
+				AngularVelocity = angularVelocity;
 				HasUpdate = hasUpdate;
 				motionType = mType;
 			}
@@ -816,6 +879,10 @@ namespace MixedRealityExtension.Core.Physics
 			public bool HasUpdate;
 
 			public RigidBodyTransform Transform;
+
+			public Vector3 LinearVelocity;
+
+			public Vector3 AngularVelocity;
 		}
 
 		public SortedList<Guid, RigidBodyState> RigidBodies = new SortedList<Guid, RigidBodyState>();
@@ -912,7 +979,9 @@ namespace MixedRealityExtension.Core.Physics
 				{
 					snapshot.RigidBodies.Add(rb.Key,
 							new MultiSourceCombinedSnapshot.RigidBodyState(
-								rb.Key, source.CurrentLocalTime, data.Transform, source.HasUpdate, data.MotionType));
+								rb.Key, source.CurrentLocalTime, data.Transform,
+								data.LinearVelocity, data.AngularVelocity,
+								source.HasUpdate, data.MotionType));
 				}
 			}
 
