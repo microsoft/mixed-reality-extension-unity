@@ -115,7 +115,7 @@ namespace MixedRealityExtension.Core.Physics
 			public void SetVelocitiesToZero()
 			{
 				LinearVelocity.Set(0.0F, 0.0F, 0.0F);
-				AngualrVelocity.Set(0.0F, 0.0F, 0.0F);
+				AngularVelocity.Set(0.0F, 0.0F, 0.0F);
 			}
 
 			public void SetVelocitiesFromTransformsDiff(float DT, Vector3 currentPos,
@@ -124,7 +124,11 @@ namespace MixedRealityExtension.Core.Physics
 				float invUpdateDT = 1.0f / (DT); // DT has to be different from zero
 				UnityEngine.Vector3 eulerAngles = (UnityEngine.Quaternion.Inverse(prevRot) * curentRot).eulerAngles;
 				UnityEngine.Vector3 radianAngles = UtilMethods.TransformEulerAnglesToRadians(eulerAngles);
-				AngualrVelocity = radianAngles * invUpdateDT;
+				//if (radianAngles.sqrMagnitude < 0.02F)
+				//{
+				//	Debug.Log( "NULL DT=" + DT + " prevRot=" + prevRot.ToString() + " next=" + curentRot.ToString());
+				//}
+				AngularVelocity = radianAngles * invUpdateDT;
 				LinearVelocity = (currentPos - prevPos) * invUpdateDT;
 			}
 
@@ -138,7 +142,7 @@ namespace MixedRealityExtension.Core.Physics
 
 			public Vector3 LinearVelocity;
 
-			public Vector3 AngualrVelocity;
+			public Vector3 AngularVelocity;
 
 			public MotionType MotionType;
 
@@ -599,6 +603,7 @@ namespace MixedRealityExtension.Core.Physics
 							entry.SetVelocitiesFromTransformsDiff(DT, rb.Transform.Position, prevRB.Position,
 								rb.Transform.Rotation, prevRB.Rotation);
 							//Debug.Log(" SnapshotSource Estimate lin velocity:" + entry.LinearVelocity.ToString() );
+							//Debug.Log(" SnapshotSource Estimate ang velocity:" + entry.AngularVelocity.ToString() );
 						}
 					}
 					entry.Updated = true;
@@ -672,6 +677,7 @@ namespace MixedRealityExtension.Core.Physics
 								entry.SetVelocitiesFromTransformsDiff(DT, nextRB.Position, prevRB.Position,
 									nextRB.Rotation, prevRB.Rotation);
 								//Debug.Log(" InterpolationSource 1 Estimate lin velocity:" + entry.LinearVelocity.ToString());
+								//Debug.Log(" InterpolationSource 1 Estimate ang velocity:" + entry.AngularVelocity.ToString());
 							}
 						}
 						entry.Updated = true;
@@ -701,6 +707,7 @@ namespace MixedRealityExtension.Core.Physics
 						entry.SetVelocitiesFromTransformsDiff(DT, currentT.Position, prevT.Position,
 							currentT.Rotation, prevT.Rotation);
 						//Debug.Log(" InterpolationSource 2 Estimate lin velocity:" + entry.LinearVelocity.ToString());
+						//Debug.Log(" InterpolationSource 2 Estimate ang velocity:" + entry.AngularVelocity.ToString());
 					}
 				}
 				else
@@ -996,7 +1003,7 @@ namespace MixedRealityExtension.Core.Physics
 					snapshot.RigidBodies.Add(rb.Key,
 							new MultiSourceCombinedSnapshot.RigidBodyState(
 								rb.Key, source.CurrentLocalTime, data.Transform,
-								data.LinearVelocity, data.AngualrVelocity,
+								data.LinearVelocity, data.AngularVelocity,
 								source.HasUpdate, data.MotionType));
 				}
 			}
