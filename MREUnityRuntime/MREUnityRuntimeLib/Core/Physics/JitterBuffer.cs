@@ -30,7 +30,7 @@ namespace MixedRealityExtension.Core.Physics
 	/// <summary>
 	/// Snapshot of rigid body transforms at specified point in time.
 	/// </summary>
-	public struct Snapshot
+	public class Snapshot
 	{
 		/// <summary>
 		/// Flags that mark special properties of the snapshot
@@ -109,27 +109,30 @@ namespace MixedRealityExtension.Core.Physics
 			{
 				RigidBodyId = id;
 				Time = float.MinValue;
-				SetVelocitiesToZero();
+				SetZeroVelocities();
 			}
 
-			public void SetVelocitiesToZero()
+			public void SetZeroVelocities()
 			{
 				LinearVelocity.Set(0.0F, 0.0F, 0.0F);
 				AngularVelocity.Set(0.0F, 0.0F, 0.0F);
 			}
 
-			public void SetVelocitiesFromTransformsDiff(float DT, Vector3 currentPos,
-				Vector3 prevPos, Quaternion curentRot, Quaternion prevRot)
+			public void SetVelocitiesFromTransformsDiff(float DT, RigidBodyTransform current,
+				RigidBodyTransform prev)
 			{
-				float invUpdateDT = 1.0f / (DT); // DT has to be different from zero
-				UnityEngine.Vector3 eulerAngles = (UnityEngine.Quaternion.Inverse(prevRot) * curentRot).eulerAngles;
-				UnityEngine.Vector3 radianAngles = UtilMethods.TransformEulerAnglesToRadians(eulerAngles);
-				//if (radianAngles.sqrMagnitude < 0.02F)
-				//{
-				//	Debug.Log( "NULL DT=" + DT + " prevRot=" + prevRot.ToString() + " next=" + curentRot.ToString());
-				//}
-				AngularVelocity = radianAngles * invUpdateDT;
-				LinearVelocity = (currentPos - prevPos) * invUpdateDT;
+				if (Math.Abs(DT) > 0.0005f)
+				{
+					float invUpdateDT = 1.0f / (DT); // DT has to be different from zero
+					UnityEngine.Vector3 eulerAngles = (UnityEngine.Quaternion.Inverse(prev.Rotation) * current.Rotation).eulerAngles;
+					UnityEngine.Vector3 radianAngles = UtilMethods.TransformEulerAnglesToRadians(eulerAngles);
+					//if (radianAngles.sqrMagnitude < 0.02F)
+					//{
+					//	Debug.Log( "NULL DT=" + DT + " prevRot=" + prevRot.ToString() + " next=" + curentRot.ToString());
+					//}
+					AngularVelocity = radianAngles * invUpdateDT;
+					LinearVelocity = (current.Position - prev.Position) * invUpdateDT;
+				}
 			}
 
 			public Guid RigidBodyId;
@@ -591,20 +594,14 @@ namespace MixedRealityExtension.Core.Physics
 					entry.MotionType = rb.MotionType;
 					entry.Transform = rb.Transform;
 					entry.Time = _snapshot.Time;
-					entry.SetVelocitiesToZero();
+					entry.SetZeroVelocities();
 					if (_prevIndex < _prevSnapshot.Transforms.Count &&
 						_prevSnapshot.Transforms[_prevIndex].RigidBodyId == entry.RigidBodyId)
 					{
 						// estimate velocity
 						float DT = _snapshot.Time - _prevSnapshot.Time;
-						if (Math.Abs(DT) > 0.0005F)
-						{
-							var prevRB = _prevSnapshot.Transforms[_prevIndex].Transform;
-							entry.SetVelocitiesFromTransformsDiff(DT, rb.Transform.Position, prevRB.Position,
-								rb.Transform.Rotation, prevRB.Rotation);
-							//Debug.Log(" SnapshotSource Estimate lin velocity:" + entry.LinearVelocity.ToString() );
-							//Debug.Log(" SnapshotSource Estimate ang velocity:" + entry.AngularVelocity.ToString() );
-						}
+						var prevRB = _prevSnapshot.Transforms[_prevIndex].Transform;
+						entry.SetVelocitiesFromTransformsDiff(DT, rb.Transform, prevRB);
 					}
 					entry.Updated = true;
 				}
@@ -612,7 +609,7 @@ namespace MixedRealityExtension.Core.Physics
 				{
 					entry.Time = _snapshot.Time;
 					entry.Updated = true;
-					entry.SetVelocitiesToZero();
+					entry.SetZeroVelocities();
 				}
 				else
 				{
@@ -660,26 +657,12 @@ namespace MixedRealityExtension.Core.Physics
 				if (_nextIndex >= _next.Transforms.Count ||
 					_next.Transforms[_nextIndex].RigidBodyId != entry.RigidBodyId)
 				{
+					// velocity is zero
+					entry.SetZeroVelocities();
+
 					if (entry.MotionType == MotionType.Sleeping)
 					{
 						entry.Time = _timestamp;
-						entry.SetVelocitiesToZero();
-						// velocity estimation if necessary
-						if (_prevIndex < _prev.Transforms.Count &&
-							_prev.Transforms[_prevIndex].RigidBodyId == entry.RigidBodyId)
-						{
-							// estimate velocity
-							float DT = _next.Time - _prev.Time;
-							if (Math.Abs(DT) > 0.0005F && _nextIndex < _next.Transforms.Count)
-							{
-								var prevRB = _prev.Transforms[_prevIndex].Transform;
-								var nextRB = _next.Transforms[_nextIndex].Transform;
-								entry.SetVelocitiesFromTransformsDiff(DT, nextRB.Position, prevRB.Position,
-									nextRB.Rotation, prevRB.Rotation);
-								//Debug.Log(" InterpolationSource 1 Estimate lin velocity:" + entry.LinearVelocity.ToString());
-								//Debug.Log(" InterpolationSource 1 Estimate ang velocity:" + entry.AngularVelocity.ToString());
-							}
-						}
 						entry.Updated = true;
 					}
 					else
@@ -697,23 +680,17 @@ namespace MixedRealityExtension.Core.Physics
 						t.Lerp(_prev.Transforms[_prevIndex].Transform, _next.Transforms[_nextIndex].Transform, _frac);
 					}
 					entry.Transform = t;
-					entry.SetVelocitiesToZero();
+					entry.SetZeroVelocities();
+					// estimate velocity
 					float DT = _next.Time - _prev.Time;
-					// estimate the velocities if there is significant DT
-					if (Math.Abs(DT) > 0.0005F)
-					{
-						var prevT = _prev.Transforms[_prevIndex].Transform;
-						var currentT = _next.Transforms[_nextIndex].Transform;
-						entry.SetVelocitiesFromTransformsDiff(DT, currentT.Position, prevT.Position,
-							currentT.Rotation, prevT.Rotation);
-						//Debug.Log(" InterpolationSource 2 Estimate lin velocity:" + entry.LinearVelocity.ToString());
-						//Debug.Log(" InterpolationSource 2 Estimate ang velocity:" + entry.AngularVelocity.ToString());
-					}
+					var prevT = _prev.Transforms[_prevIndex].Transform;
+					var currentT = _next.Transforms[_nextIndex].Transform;
+					entry.SetVelocitiesFromTransformsDiff(DT, currentT, prevT);
 				}
 				else
 				{
 					entry.Transform = _next.Transforms[_nextIndex].Transform;
-					entry.SetVelocitiesToZero();
+					entry.SetZeroVelocities();
 				}
 
 				entry.Time = _timestamp;
