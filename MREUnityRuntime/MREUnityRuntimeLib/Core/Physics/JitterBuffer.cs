@@ -128,7 +128,7 @@ namespace MixedRealityExtension.Core.Physics
 					UnityEngine.Vector3 radianAngles = UtilMethods.TransformEulerAnglesToRadians(eulerAngles);
 					//if (radianAngles.sqrMagnitude < 0.02F)
 					//{
-					//	Debug.Log( "NULL DT=" + DT + " prevRot=" + prevRot.ToString() + " next=" + curentRot.ToString());
+					//	Debug.Log("NULL DT=" + DT + " prevRot=" + prev.Rotation.ToString() + " next=" + current.Rotation.ToString());
 					//}
 					AngularVelocity = radianAngles * invUpdateDT;
 					LinearVelocity = (current.Position - prev.Position) * invUpdateDT;
@@ -170,6 +170,11 @@ namespace MixedRealityExtension.Core.Physics
 		/// Snapshots sorted by snapshot timestamp.
 		/// </summary>
 		private SortedList<float, Snapshot> _snapshots = new SortedList<float, Snapshot>();
+
+		/// <summary>
+		/// We might need last applied snapshot for further intepolations.
+		/// </summary>
+		private Snapshot _lastAppliedSnapshot = null;
 
 		/// <summary>
 		/// Rigid body data sorted by rigid body id.
@@ -571,10 +576,13 @@ namespace MixedRealityExtension.Core.Physics
 
 			public void Update(ref RigidBodyData entry)
 			{
-				while (_prevIndex < _prevSnapshot.Transforms.Count &&
-					_prevSnapshot.Transforms[_prevIndex].RigidBodyId.CompareTo(entry.RigidBodyId) < 0)
+				if (_prevSnapshot != null)
 				{
-					_prevIndex++;
+					while (_prevIndex < _prevSnapshot.Transforms.Count &&
+						_prevSnapshot.Transforms[_prevIndex].RigidBodyId.CompareTo(entry.RigidBodyId) < 0)
+					{
+						_prevIndex++;
+					}
 				}
 
 				while (_iteratorIndex < _snapshot.Transforms.Count &&
@@ -595,14 +603,19 @@ namespace MixedRealityExtension.Core.Physics
 					entry.Transform = rb.Transform;
 					entry.Time = _snapshot.Time;
 					entry.SetZeroVelocities();
-					if (_prevIndex < _prevSnapshot.Transforms.Count &&
-						_prevSnapshot.Transforms[_prevIndex].RigidBodyId == entry.RigidBodyId)
+
+					if (_prevSnapshot != null)
 					{
-						// estimate velocity
-						float DT = _snapshot.Time - _prevSnapshot.Time;
-						var prevRB = _prevSnapshot.Transforms[_prevIndex].Transform;
-						entry.SetVelocitiesFromTransformsDiff(DT, rb.Transform, prevRB);
+						if (_prevIndex < _prevSnapshot.Transforms.Count &&
+							_prevSnapshot.Transforms[_prevIndex].RigidBodyId == entry.RigidBodyId)
+						{
+							// estimate velocity
+							float DT = _snapshot.Time - _prevSnapshot.Time;
+							var prevRB = _prevSnapshot.Transforms[_prevIndex].Transform;
+							entry.SetVelocitiesFromTransformsDiff(DT, rb.Transform, prevRB);
+						}
 					}
+
 					entry.Updated = true;
 				}
 				else if (entry.MotionType == MotionType.Sleeping)
@@ -744,11 +757,14 @@ namespace MixedRealityExtension.Core.Physics
 			while (index < _snapshots.Count && _snapshots.Keys[index] - nextTimestamp <= _timePrecision)
 			{
 				//Debug.Log(" stepBufferAndUpdateRigidBodies index=" + index + " count=" + _snapshots.Count);
-				updateRigidBodies(new SnapshotSource(_snapshots.Values[index],
-						(index + 1 < _snapshots.Count) ? (_snapshots.Values[index + 1]) : _snapshots.Values[index]));
+				updateRigidBodies(new SnapshotSource(_snapshots.Values[index], _lastAppliedSnapshot));
 
-				reset = reset || _snapshots.Values[index].Flags == Snapshot.SnapshotFlags.ResetJitterBuffer;
+				bool resetCurrent = _snapshots.Values[index].Flags == Snapshot.SnapshotFlags.ResetJitterBuffer;
+				reset = reset || resetCurrent;
+
+				_lastAppliedSnapshot = resetCurrent ? null : _snapshots.Values[index];
 				appliedSnapshotTimestamp = _snapshots.Keys[index];
+
 				index++;
 			}
 
@@ -765,10 +781,10 @@ namespace MixedRealityExtension.Core.Physics
 				if (appliedSnapshotTimestamp < nextTimestamp)
 				{
 					// if there are more snapshots so we can interpolate
-					if (index != 0 && index < _snapshots.Count && _snapshots.Count > 1)
+					if (_lastAppliedSnapshot != null && index < _snapshots.Count)
 					{
 						HasUpdate = true;
-						updateRigidBodies(new InterpolationSource(_snapshots.Values[index - 1], _snapshots.Values[index], nextTimestamp));
+						updateRigidBodies(new InterpolationSource(_lastAppliedSnapshot, _snapshots.Values[index], nextTimestamp));
 					}
 					else
 					{

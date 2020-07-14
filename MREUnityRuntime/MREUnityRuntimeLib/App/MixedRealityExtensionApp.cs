@@ -51,7 +51,7 @@ namespace MixedRealityExtension.App
 		// the same time step. If smaller, physics update will be send with closest smaller multiple time step.
 		// For example if update time-step is 0.33, and if simulation time step is 40ms then update step is also 40ms,
 		// or if simulation step is 16ms then update step is 32ms.
-		private float _physicsUpdateTimestep = 0.033f;
+		private float _physicsUpdateTimestep = 0.034f;
 
 		private float _timeSinceLastPhysicsUpdate = 0.0f;
 		private bool _shouldSendPhysicsUpdate = false;
@@ -361,7 +361,9 @@ namespace MixedRealityExtension.App
 			{
 				if (_shouldSendPhysicsUpdate)
 				{
-					SendPhysicsUpdate();
+					// Sending snapshot which represents the state before physics step is done,
+					// hence we are using time stamp from the start of the fixed update.
+					SendPhysicsUpdate(Time.fixedTime);
 				}
 
 				PhysicsBridge.FixedUpdate(SceneRoot.transform);
@@ -370,17 +372,17 @@ namespace MixedRealityExtension.App
 				_timeSinceLastPhysicsUpdate += Time.fixedDeltaTime;
 
 				float updateDeltaTime = Math.Max(Time.fixedDeltaTime,
-					Time.fixedDeltaTime * (float)Math.Round(_physicsUpdateTimestep / Time.fixedDeltaTime));
+					Time.fixedDeltaTime * (float)Math.Floor(_physicsUpdateTimestep / Time.fixedDeltaTime));
 
 				if (updateDeltaTime - _timeSinceLastPhysicsUpdate < 0.001f)
 				{
-					//Debug.Log(" Send delta TIme: " + (Time.fixedDeltaTime * (float)Math.Round(_physicsUpdateTimestep / Time.fixedDeltaTime)));
+					//Debug.Log(" Send delta TIme: " + (Time.fixedDeltaTime * (float)Math.Floor(_physicsUpdateTimestep / Time.fixedDeltaTime)));
 					_shouldSendPhysicsUpdate = true;
 				}
 			}
 		}
 
-		private void SendPhysicsUpdate()
+		private void SendPhysicsUpdate(float timestamp)
 		{
 			if (LocalUser == null)
 			{
@@ -388,7 +390,7 @@ namespace MixedRealityExtension.App
 			}
 
 			PhysicsBridgePatch physicsPatch = new PhysicsBridgePatch(LocalUser.Id,
-				PhysicsBridge.GenerateSnapshot(UnityEngine.Time.fixedTime, SceneRoot.transform));
+				PhysicsBridge.GenerateSnapshot(timestamp, SceneRoot.transform));
 			// send only updates if there are any, to save band with
 			// in order to produce any updates for settled bodies this should be handled within the physics bridge
 			if (physicsPatch.DoSendThisPatch())
@@ -434,7 +436,9 @@ namespace MixedRealityExtension.App
 			{
 				if (_shouldSendPhysicsUpdate)
 				{
-					SendPhysicsUpdate();
+					// Sending snapshot which represents the state after physics step is done,
+					// hence we need to add time step to the time stamp from the start of the fixed update.
+					SendPhysicsUpdate(Time.fixedTime + Time.fixedDeltaTime);
 				}
 			}
 
