@@ -11,6 +11,7 @@ using MixedRealityExtension.Core;
 using MixedRealityExtension.Core.Interfaces;
 using MixedRealityExtension.Factories;
 using MixedRealityExtension.PluginInterfaces;
+using MixedRealityExtension.PluginInterfaces.Behaviors;
 using MixedRealityExtension.RPC;
 using TMPro;
 using UnityEngine;
@@ -137,7 +138,7 @@ public class MREComponent : MonoBehaviour
 					CursiveFont = CursiveFont
 				},
 				permissionManager: new SimplePermissionManager(GrantedPermissions),
-				behaviorFactory: new BehaviorFactory(),
+				behaviorFactory: new MRTKBehaviorFactory(),
 				dialogFactory: DialogFactory,
 				libraryFactory: new ResourceFactory(),
 				gltfImporterFactory: new VertexShadedGltfImporterFactory(),

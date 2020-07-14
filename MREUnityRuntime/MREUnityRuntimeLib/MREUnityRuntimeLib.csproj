@@ -36,6 +36,9 @@
     <DocumentationFile>..\bin\Release\MREUnityRuntimeLib.xml</DocumentationFile>
     <CodeAnalysisRuleSet>..\..\tools\VSCodeAnalysis\MRESDK_Ruleset.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
+  <PropertyGroup>
+    <UnityVersion>2019.4.2f1</UnityVersion>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="GLTFSerialization, Version=1.0.0.0, Culture=neutral, processorArchitecture=x86">
       <SpecificVersion>False</SpecificVersion>
