@@ -184,11 +184,6 @@ namespace MixedRealityExtension.Core
 
 		#endregion
 
-
-		List<float> _vel = new List<float>();
-		List<bool> _upd = new List<bool>();
-
-
 		public void FixedUpdate(UnityEngine.Transform rootTransform)
 		{
 			// - physics rigid body management
@@ -236,9 +231,6 @@ namespace MixedRealityExtension.Core
 					//	rb.RigidBody.isKinematic = false;
 					//	continue;
 					//}
-
-					_vel.Add(snapshot.RigidBodies.Values[index].LinearVelocity.magnitude);
-					_upd.Add(snapshot.RigidBodies.Values[index].HasUpdate);
 
 					RigidBodyTransform transform = snapshot.RigidBodies.Values[index].Transform;
 					float timeOfSnapshot = snapshot.RigidBodies.Values[index].LocalTime;
