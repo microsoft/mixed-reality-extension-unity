@@ -367,19 +367,6 @@ namespace MixedRealityExtension.Core
 			int numSleepingBodies = 0;
 			int numOwnedBodies = 0;
 
-			// these constants define when a body is considered to be sleeping
-			const float globalToleranceMultipier = 1.0F;
-			const float maxSleepingSqrtLinearVelocity = 0.1F * globalToleranceMultipier;
-			const float maxSleepingSqrtAngularVelocity = 0.1F * globalToleranceMultipier;
-			const float maxSleepingSqrtPositionDiff = 0.02F * globalToleranceMultipier;
-			const float maxSleepingSqrtAngularEulerDiff = 0.15F * globalToleranceMultipier;
-
-			const short limitNoUpdateForSleepingBodies = 500;
-			const short numConsecutiveSleepingTrueConditionForNoUpdate = 5;
-
-			int numSleepingBodies = 0;
-			int numOwnedBodies = 0;
-
 			List<Snapshot.TransformInfo> transforms = new List<Snapshot.TransformInfo>(_rigidBodies.Count);
 
 			foreach (var rb in _rigidBodies.Values)
