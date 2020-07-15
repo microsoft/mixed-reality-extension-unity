@@ -684,7 +684,7 @@ namespace MixedRealityExtension.Core.Physics
 					}
 					return;
 				}
-			 
+
 				if (_prevIndex < _prev.Transforms.Count &&
 						_prev.Transforms[_prevIndex].RigidBodyId == _next.Transforms[_nextIndex].RigidBodyId)
 				{
@@ -874,7 +874,7 @@ namespace MixedRealityExtension.Core.Physics
 		public struct RigidBodyState
 		{
 			public RigidBodyState(Guid id, float time, RigidBodyTransform transform,
-				Vector3 linearVelocity, Vector3 angularVelocity, 
+				Vector3 linearVelocity, Vector3 angularVelocity,
 				bool hasUpdate, MotionType mType)
 			{
 				Id = id;

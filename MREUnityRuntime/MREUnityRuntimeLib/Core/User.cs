@@ -6,6 +6,7 @@ using MixedRealityExtension.Messaging.Commands;
 using MixedRealityExtension.Messaging.Payloads;
 using MixedRealityExtension.Patching;
 using MixedRealityExtension.Patching.Types;
+using MixedRealityExtension.PluginInterfaces;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -16,16 +17,16 @@ namespace MixedRealityExtension.Core
 	{
 		private IList<MixedRealityExtensionApp> _joinedApps = new List<MixedRealityExtensionApp>();
 
-		public override string Name => UserInfo.Name;
+		public override string Name => HostAppUser.Name;
 
-		public IUserInfo UserInfo { get; private set; }
+		public IHostAppUser HostAppUser { get; private set; }
 
 		public UInt32 Groups { get; internal set; } = 1;
 
-		internal void Initialize(IUserInfo userInfo, MixedRealityExtensionApp app)
+		internal void Initialize(IHostAppUser hostAppUser, Guid userId, MixedRealityExtensionApp app)
 		{
-			UserInfo = userInfo;
-			base.Initialize(UserInfo.Id, app);
+			HostAppUser = hostAppUser;
+			base.Initialize(userId, app);
 		}
 
 		internal void JoinApp(MixedRealityExtensionApp app)

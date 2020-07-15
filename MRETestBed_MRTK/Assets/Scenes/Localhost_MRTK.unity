@@ -216,7 +216,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   MREURL: ws://localhost:3901
   SessionID: testbed
-  AppID: helloworld
+  AppID: local-host-app
   UserProperties: []
   AutoStart: 0
   AutoJoin: 1

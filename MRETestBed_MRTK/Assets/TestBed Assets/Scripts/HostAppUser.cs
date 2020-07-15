@@ -1,18 +1,17 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
-using MixedRealityExtension.Core.Interfaces;
+
 using MixedRealityExtension.IPC;
+using MixedRealityExtension.PluginInterfaces;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-internal class UserInfo : IUserInfo
+internal class HostAppUser : IHostAppUser
 {
 	public GameObject UserGO { get; set; }
 
-	public Guid Id { get; }
-
-	public string InvariantId { get; }
+	public string HostUserId { get; }
 
 	public string Name { get; private set; }
 
@@ -27,11 +26,11 @@ internal class UserInfo : IUserInfo
 	public event MWEventHandler BeforeAvatarDestroyed;
 	public event MWEventHandler AfterAvatarCreated;
 
-	public UserInfo(Guid id, string name, string invariantId)
+	public HostAppUser(string hostUserId, string name)
 	{
-		Id = id;
+		Debug.Log($"Creating host app with host user id: {hostUserId}");
+		HostUserId = hostUserId;
 		Name = name;
-		InvariantId = invariantId;
 	}
 
 	private static Transform FindChildRecursive(Transform parent, string name)

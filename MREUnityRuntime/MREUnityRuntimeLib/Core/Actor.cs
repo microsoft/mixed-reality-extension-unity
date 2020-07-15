@@ -27,6 +27,7 @@ using MixedRealityExtension.PluginInterfaces.Behaviors;
 using MixedRealityExtension.Util;
 using IVideoPlayer = MixedRealityExtension.PluginInterfaces.IVideoPlayer;
 using MixedRealityExtension.Behaviors.Contexts;
+using MixedRealityExtension.PluginInterfaces;
 
 namespace MixedRealityExtension.Core
 {
@@ -644,10 +645,10 @@ namespace MixedRealityExtension.Core
 			//CleanUp();
 			//App.OnActorDestroyed(this.Id);
 
-			IUserInfo userInfo = MREAPI.AppsAPI.UserInfoProvider.GetUserInfo(App, Attachment.UserId);
-			if (userInfo != null)
+			IHostAppUser hostAppUser = App.FindUser(Attachment.UserId)?.HostAppUser;
+			if (hostAppUser != null)
 			{
-				userInfo.BeforeAvatarDestroyed -= UserInfo_BeforeAvatarDestroyed;
+				hostAppUser.BeforeAvatarDestroyed -= UserInfo_BeforeAvatarDestroyed;
 			}
 
 			if (_mediaInstances != null)
@@ -773,20 +774,20 @@ namespace MixedRealityExtension.Core
 			{
 				DetachFromAttachPointParent();
 
-				IUserInfo userInfo = MREAPI.AppsAPI.UserInfoProvider.GetUserInfo(App, Attachment.UserId);
-				if (userInfo != null &&
+				IHostAppUser hostAppUser = App.FindUser(Attachment.UserId)?.HostAppUser;
+				if (hostAppUser != null &&
 					(Attachment.UserId != App.LocalUser?.Id || App.GrantedPermissions.HasFlag(Permissions.UserInteraction)))
 				{
-					userInfo.BeforeAvatarDestroyed -= UserInfo_BeforeAvatarDestroyed;
+					hostAppUser.BeforeAvatarDestroyed -= UserInfo_BeforeAvatarDestroyed;
 
-					Transform attachPoint = userInfo.GetAttachPoint(Attachment.AttachPoint);
+					Transform attachPoint = hostAppUser.GetAttachPoint(Attachment.AttachPoint);
 					if (attachPoint != null)
 					{
 						var attachmentComponent = attachPoint.gameObject.AddComponent<MREAttachmentComponent>();
 						attachmentComponent.Actor = this;
 						attachmentComponent.UserId = Attachment.UserId;
 						transform.SetParent(attachPoint, false);
-						userInfo.BeforeAvatarDestroyed += UserInfo_BeforeAvatarDestroyed;
+						hostAppUser.BeforeAvatarDestroyed += UserInfo_BeforeAvatarDestroyed;
 						return true;
 					}
 				}
@@ -809,13 +810,13 @@ namespace MixedRealityExtension.Core
 			// transform when reattaching.
 			DetachFromAttachPointParent();
 
-			IUserInfo userInfo = MREAPI.AppsAPI.UserInfoProvider.GetUserInfo(App, Attachment.UserId);
-			if (userInfo != null)
+			IHostAppUser hostAppUser = App.FindUser(Attachment.UserId)?.HostAppUser;
+			if (hostAppUser != null)
 			{
 				void Reattach()
 				{
 					// Restore the local transform and reattach.
-					userInfo.AfterAvatarCreated -= Reattach;
+					hostAppUser.AfterAvatarCreated -= Reattach;
 					// In the interim time this actor might have been destroyed.
 					if (transform != null)
 					{
@@ -827,7 +828,7 @@ namespace MixedRealityExtension.Core
 				}
 
 				// Register for a callback once the avatar is recreated.
-				userInfo.AfterAvatarCreated += Reattach;
+				hostAppUser.AfterAvatarCreated += Reattach;
 			}
 		}
 
@@ -1747,7 +1748,7 @@ namespace MixedRealityExtension.Core
 			return false;
 		}
 
-#endregion
+		#endregion
 
 		#region Command Handlers
 
