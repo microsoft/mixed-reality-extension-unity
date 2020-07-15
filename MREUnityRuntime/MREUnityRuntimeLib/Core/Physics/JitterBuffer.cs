@@ -236,7 +236,7 @@ namespace MixedRealityExtension.Core.Physics
 			{
 				// there are still no updates from this source
 				HasUpdate = false;
-
+        
 				return;
 			}
 

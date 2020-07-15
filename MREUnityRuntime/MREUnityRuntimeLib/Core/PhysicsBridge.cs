@@ -84,6 +84,7 @@ namespace MixedRealityExtension.Core
 
 		// ---- fields to be used to check for update the server side updates ----
 		private Dictionary<Guid, PhysicsTranformServerUploadPatch.OneActorUpdate> _lastServerUploadedTransforms =
+
 			new Dictionary<Guid, PhysicsTranformServerUploadPatch.OneActorUpdate>();
 		/// for the low frequency server transforms upload the last time when the update happened
 		private float _lastServerTransformUploadSentTime = 0.0F;
@@ -352,6 +353,19 @@ namespace MixedRealityExtension.Core
 		{
 			// collect transforms from owned rigid bodies
 			// and generate update packet/snapshot
+			
+			// these constants define when a body is considered to be sleeping
+			const float globalToleranceMultipier = 1.0F;
+			const float maxSleepingSqrtLinearVelocity = 0.1F * globalToleranceMultipier;
+			const float maxSleepingSqrtAngularVelocity = 0.1F * globalToleranceMultipier;
+			const float maxSleepingSqrtPositionDiff = 0.02F * globalToleranceMultipier;
+			const float maxSleepingSqrtAngularEulerDiff = 0.15F * globalToleranceMultipier;
+
+			const short limitNoUpdateForSleepingBodies = 500;
+			const short numConsecutiveSleepingTrueConditionForNoUpdate = 5;
+
+			int numSleepingBodies = 0;
+			int numOwnedBodies = 0;
 
 			// these constants define when a body is considered to be sleeping
 			const float globalToleranceMultipier = 1.0F;
@@ -552,7 +566,6 @@ namespace MixedRealityExtension.Core
 			}
 			// store the last time
 			_lastServerTransformUploadSentTime = systemTime;
-
 			return ret;
 		}
 	}
