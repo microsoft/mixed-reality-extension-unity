@@ -3,14 +3,15 @@
 using System;
 using System.Collections.Generic;
 using Assets.Scripts.Behaviors;
+using Assets.TestBed_Assets.Scripts.Player;
 using MixedRealityExtension.API;
 using MixedRealityExtension.App;
 using MixedRealityExtension.Assets;
 using MixedRealityExtension.Core;
+using MixedRealityExtension.Core.Interfaces;
 using MixedRealityExtension.Factories;
 using MixedRealityExtension.PluginInterfaces;
 using MixedRealityExtension.RPC;
-using Newtonsoft.Json.Linq;
 using TMPro;
 using UnityEngine;
 
@@ -108,17 +109,7 @@ public class MREComponent : MonoBehaviour
 	[SerializeField]
 	private DialogFactory DialogFactory;
 
-	private static Dictionary<Guid, UserInfo> joinedUsers = new Dictionary<Guid, UserInfo>();
-
-	internal static UserInfo GetUserInfo(Guid userId)
-	{
-		UserInfo result;
-		if (joinedUsers.TryGetValue(userId, out result))
-		{
-			return result;
-		}
-		return null;
-	}
+	private Dictionary<Guid, HostAppUser> hostAppUsers = new Dictionary<Guid, HostAppUser>();
 
 	void Start()
 	{
@@ -148,13 +139,12 @@ public class MREComponent : MonoBehaviour
 				libraryFactory: new ResourceFactory(),
 				gltfImporterFactory: new VertexShadedGltfImporterFactory(),
 				materialPatcher: new VertexMaterialPatcher(),
-				userInfoProvider: new UserInfoProvider(),
 				logger: new MRELogger()
 			);
 			_apiInitialized = true;
 		}
 
-		MREApp = MREAPI.AppsAPI.CreateMixedRealityExtensionApp(AppID, this);
+		MREApp = MREAPI.AppsAPI.CreateMixedRealityExtensionApp(this, AppID);
 
 		if (SceneRoot == null)
 		{
@@ -162,13 +152,6 @@ public class MREComponent : MonoBehaviour
 		}
 
 		MREApp.SceneRoot = SceneRoot.gameObject;
-
-		MREApp.OnConnecting += MREApp_OnConnecting;
-		MREApp.OnConnectFailed += MREApp_OnConnectFailed;
-		MREApp.OnConnected += MREApp_OnConnected;
-		MREApp.OnDisconnected += MREApp_OnDisconnected;
-		MREApp.OnAppStarted += MREApp_OnAppStarted;
-		MREApp.OnAppShutdown += MREApp_OnAppShutdown;
 
 		if (AutoStart)
 		{
@@ -245,6 +228,17 @@ public class MREComponent : MonoBehaviour
 		}
 	}
 
+	private void MRE_OnUserJoined(IUser user)
+	{
+		Debug.Log($"User joined with host id: {user.HostAppUser.HostUserId} and mre user id: {user.Id}");
+		hostAppUsers.Add(user.Id, (HostAppUser)user.HostAppUser);
+	}
+
+	private void MRE_OnUserLeft(IUser user)
+	{
+		hostAppUsers.Remove(user.Id);
+	}
+
 	private void FixedUpdate()
 	{
 		MREApp?.FixedUpdate();
@@ -300,7 +294,15 @@ public class MREComponent : MonoBehaviour
 		var uri = overrideUri != null && overrideUri.Scheme.StartsWith("ws") ? overrideUri.AbsoluteUri : MREURL;
 		try
 		{
-			MREApp?.Startup(uri, SessionID, "MRETestBed");
+			MREApp.OnConnecting += MREApp_OnConnecting;
+			MREApp.OnConnectFailed += MREApp_OnConnectFailed;
+			MREApp.OnConnected += MREApp_OnConnected;
+			MREApp.OnDisconnected += MREApp_OnDisconnected;
+			MREApp.OnAppStarted += MREApp_OnAppStarted;
+			MREApp.OnAppShutdown += MREApp_OnAppShutdown;
+			MREApp.OnUserJoined += MRE_OnUserJoined;
+			MREApp.OnUserLeft += MRE_OnUserLeft;
+			MREApp?.Startup(uri, SessionID);
 		}
 		catch (Exception e)
 		{
@@ -311,6 +313,14 @@ public class MREComponent : MonoBehaviour
 	public void DisableApp()
 	{
 		MREApp?.Shutdown();
+		MREApp.OnConnecting -= MREApp_OnConnecting;
+		MREApp.OnConnectFailed -= MREApp_OnConnectFailed;
+		MREApp.OnConnected -= MREApp_OnConnected;
+		MREApp.OnDisconnected -= MREApp_OnDisconnected;
+		MREApp.OnAppStarted -= MREApp_OnAppStarted;
+		MREApp.OnAppShutdown -= MREApp_OnAppShutdown;
+		MREApp.OnUserJoined -= MRE_OnUserJoined;
+		MREApp.OnUserLeft -= MRE_OnUserLeft;
 
 		if (PlaceholderObject != null)
 		{
@@ -320,22 +330,17 @@ public class MREComponent : MonoBehaviour
 
 	public void UserJoin()
 	{
-		var rng = new System.Random();
-		string invariantId = rng.Next().ToString("X8");
-		string source = $"{invariantId}-{AppID}-{SessionID}-{gameObject.GetInstanceID()}";
-		Guid userId = UtilMethods.StringToGuid(source);
-		UserInfo userInfo = new UserInfo(userId, "TestBed User", invariantId)
+		var hostAppUser = new HostAppUser(LocalPlayer.PlayerId, $"TestBed User: {LocalPlayer.PlayerId}")
 		{
 			UserGO = UserGameObject
 		};
 
 		foreach (var kv in UserProperties)
 		{
-			userInfo.Properties[kv.Name] = kv.Value;
+			hostAppUser.Properties[kv.Name] = kv.Value;
 		}
 
-		joinedUsers[userInfo.Id] = userInfo;
-		MREApp?.UserJoin(UserGameObject, userInfo);
+		MREApp?.UserJoin(UserGameObject, hostAppUser);
 	}
 
 	public void UserLeave()

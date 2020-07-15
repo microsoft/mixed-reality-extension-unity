@@ -1,13 +1,12 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
-using MixedRealityExtension.Animation;
+
 using MixedRealityExtension.Core;
-using MixedRealityExtension.Core.Types;
 using MixedRealityExtension.Messaging.Payloads.Converters;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace MixedRealityExtension.Patching.Types
 {
@@ -21,6 +20,9 @@ namespace MixedRealityExtension.Patching.Types
 		[PatchProperty]
 		[JsonConverter(typeof(UnsignedConverter))]
 		public UInt32? Groups { get; set; }
+
+		[PatchProperty]
+		public Permissions[] GrantedPermissions { get; set; }
 
 		public Dictionary<string, string> Properties { get; set; }
 
@@ -38,7 +40,9 @@ namespace MixedRealityExtension.Patching.Types
 		{
 			Name = user.Name;
 			Groups = user.Groups;
-			Properties = user.UserInfo.Properties;
+			// the server doesn't need to care about the execution permission, it's assumed if you're connected
+			GrantedPermissions = user.App.GrantedPermissions.ToEnumerable().Where(p => p != Permissions.Execution).ToArray();
+			Properties = user.HostAppUser.Properties;
 		}
 	}
 }

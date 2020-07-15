@@ -54,12 +54,12 @@ namespace MixedRealityExtension.App
 		/// <summary>
 		/// Event that is raised when the local user joins the MRE application.
 		/// </summary>
-		event MWEventHandler<IUserInfo> OnUserJoined;
+		event MWEventHandler<IUser> OnUserJoined;
 
 		/// <summary>
 		/// Event that is raised when the local user leaves the MRE application.
 		/// </summary>
-		event MWEventHandler<IUserInfo> OnUserLeft;
+		event MWEventHandler<IUser> OnUserLeft;
 
 		/// <summary>
 		/// Gets the global id of the mixed reality extension app.
@@ -115,9 +115,8 @@ namespace MixedRealityExtension.App
 		/// Connect the mixed reality extension app to the given url with the given session id.
 		/// <param name="url">The url to connect to for the app.</param>
 		/// <param name="sessionId">The session id of the app.</param>
-		/// <param name="platformId">Information about the host platform.</param>
 		/// </summary>
-		void Startup(string url, string sessionId, string platformId);
+		void Startup(string url, string sessionId);
 
 		/// <summary>
 		/// Called to shut down the engine mixed reality extension app by the app process.
@@ -138,8 +137,8 @@ namespace MixedRealityExtension.App
 		/// User is joining the app.
 		/// </summary>
 		/// <param name="userGO">The game object that serves as the user in unity.</param>
-		/// <param name="userInfo">Interface for providing information about the user.</param>
-		void UserJoin(GameObject userGO, IUserInfo userInfo);
+		/// <param name="hostAppUser">Interface for providing a representation of the host app user.</param>
+		void UserJoin(GameObject userGO, IHostAppUser hostAppUser);
 
 		/// <summary>
 		/// User is leaving the app.

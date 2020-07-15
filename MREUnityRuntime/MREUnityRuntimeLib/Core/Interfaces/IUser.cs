@@ -1,5 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
+using MixedRealityExtension.PluginInterfaces;
 using System;
 
 namespace MixedRealityExtension.Core.Interfaces
@@ -10,9 +11,9 @@ namespace MixedRealityExtension.Core.Interfaces
 	public interface IUser : IMixedRealityExtensionObject, IEquatable<IUser>
 	{
 		/// <summary>
-		/// Host-provided IUserInfo instance.
+		/// Host-provided host app user instance.
 		/// </summary>
-		IUserInfo UserInfo { get; }
+		IHostAppUser HostAppUser { get; }
 
 		/// <summary>
 		/// The group mask for this user.

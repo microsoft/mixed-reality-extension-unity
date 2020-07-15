@@ -81,9 +81,9 @@ namespace MixedRealityExtension.Core
 		private const float _maxEstimatedLinearVelocity = 30.0F;
 		/// maximal estimated angular velocity
 		private const float _maxEstimatedAngularVelocity = 5.0F;
-		
+
 		// ---- fields to be used to check for update the server side updates ----
-		private Dictionary<Guid, PhysicsTranformServerUploadPatch.OneActorUpdate> _lastServerUploadedTransforms  =
+		private Dictionary<Guid, PhysicsTranformServerUploadPatch.OneActorUpdate> _lastServerUploadedTransforms =
 			new Dictionary<Guid, PhysicsTranformServerUploadPatch.OneActorUpdate>();
 		/// for the low frequency server transforms upload the last time when the update happened
 		private float _lastServerTransformUploadSentTime = 0.0F;
@@ -198,7 +198,7 @@ namespace MixedRealityExtension.Core
 			int index = 0;
 			MultiSourceCombinedSnapshot snapshot;
 			_snapshotManager.Step(timeInfo.DT, out snapshot);
-			_snapshotManager.UpdateDebugDisplay(rootTransform);	// guarded by ifdef internally
+			_snapshotManager.UpdateDebugDisplay(rootTransform); // guarded by ifdef internally
 
 			foreach (var rb in _rigidBodies.Values)
 			{
@@ -269,7 +269,7 @@ namespace MixedRealityExtension.Core
 						rb.lastValidAngularVelocityorAng = UnityEngine.Vector3.ClampMagnitude(
 							rb.lastValidAngularVelocityorAng, _maxEstimatedAngularVelocity);
 						// if body is sleeping then all velocities are zero
-						if (snapshot.RigidBodies.Values[index].motionType == Patching.Types.MotionType.Sleeping )
+						if (snapshot.RigidBodies.Values[index].motionType == Patching.Types.MotionType.Sleeping)
 						{
 							rb.lastValidLinerVelocityOrPos.Set(0.0F, 0.0F, 0.0F);
 							rb.lastValidAngularVelocityorAng.Set(0.0F, 0.0F, 0.0F);
@@ -302,7 +302,7 @@ namespace MixedRealityExtension.Core
 						rb.lastValidAngularVelocityorAng = UnityEngine.Vector3.ClampMagnitude(
 							rb.lastValidAngularVelocityorAng, _maxEstimatedAngularVelocity);
 						// if body is sleeping then all velocities are zero
-						if (snapshot.RigidBodies.Values[index].motionType == Patching.Types.MotionType.Sleeping )
+						if (snapshot.RigidBodies.Values[index].motionType == Patching.Types.MotionType.Sleeping)
 						{
 							rb.lastValidLinerVelocityOrPos.Set(0.0F, 0.0F, 0.0F);
 							rb.lastValidAngularVelocityorAng.Set(0.0F, 0.0F, 0.0F);
@@ -352,7 +352,7 @@ namespace MixedRealityExtension.Core
 		{
 			// collect transforms from owned rigid bodies
 			// and generate update packet/snapshot
-			
+
 			// these constants define when a body is considered to be sleeping
 			const float globalToleranceMultipier = 1.0F;
 			const float maxSleepingSqrtLinearVelocity = 0.1F * globalToleranceMultipier;
@@ -391,7 +391,7 @@ namespace MixedRealityExtension.Core
 
 				bool isBodySleepingInThisFrame =
 					(!rb.IsKeyframed) && // if body is key framed and owned then we should just feed the jitter buffer
-					( rb.RigidBody.velocity.sqrMagnitude < maxSleepingSqrtLinearVelocity
+					(rb.RigidBody.velocity.sqrMagnitude < maxSleepingSqrtLinearVelocity
 					  && rb.RigidBody.angularVelocity.sqrMagnitude < maxSleepingSqrtAngularVelocity
 					  && posDiff.sqrMagnitude < maxSleepingSqrtPositionDiff
 					  && rotDiff.sqrMagnitude < maxSleepingSqrtAngularEulerDiff);
@@ -412,12 +412,12 @@ namespace MixedRealityExtension.Core
 
 				// test if this is sleeping, and when this was newly added then 
 				if (rb.lastTimeKeyFramedUpdate > 0.001F && isBodySleeping &&
-					rb.sendMotionType == Patching.Types.MotionType.Sleeping && 
+					rb.sendMotionType == Patching.Types.MotionType.Sleeping &&
 					rb.numOfConsequentSleepingFrames < limitNoUpdateForSleepingBodies)
 				{
 					// condition for velocity and positions are triggered and we already told the consumers to make body sleep, so just skip this update
 					numSleepingBodies++;
-				    continue;
+					continue;
 				}
 
 				mType = (isBodySleeping) ? (Patching.Types.MotionType.Sleeping) : mType;
@@ -552,7 +552,7 @@ namespace MixedRealityExtension.Core
 			}
 			// store the last time
 			_lastServerTransformUploadSentTime = systemTime;
-			
+
 			return ret;
 		}
 	}
