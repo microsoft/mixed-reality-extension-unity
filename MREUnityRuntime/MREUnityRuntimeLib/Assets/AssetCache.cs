@@ -90,6 +90,11 @@ namespace MixedRealityExtension.Assets
 			Application.lowMemory += CleanUnusedResources;
 		}
 
+		protected virtual void OnDestroy()
+		{
+			Application.lowMemory -= CleanUnusedResources;
+		}
+
 		///<inheritdoc/>
 		public virtual void StoreAssets(Uri uri, IEnumerable<Object> assets, string version)
 		{
