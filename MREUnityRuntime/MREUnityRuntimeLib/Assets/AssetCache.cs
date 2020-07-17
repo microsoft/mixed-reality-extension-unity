@@ -81,7 +81,7 @@ namespace MixedRealityExtension.Assets
 		/// <inheritdoc />
 		public bool SupportsSync { get; protected set; } = true;
 
-		protected virtual void Start()
+		protected virtual void Awake()
 		{
 			if (SerializedCacheRoot != null)
 			{
