@@ -398,7 +398,7 @@ namespace MixedRealityExtension.App
 			}
 
 			PhysicsBridgePatch physicsPatch = new PhysicsBridgePatch(LocalUser.Id,
-			    	PhysicsBridge.GenerateSnapshot(timestamp, SceneRoot.transform));
+					PhysicsBridge.GenerateSnapshot(timestamp, SceneRoot.transform));
 			// send only updates if there are any, to save band with
 			// in order to produce any updates for settled bodies this should be handled within the physics bridge
 			if (physicsPatch.DoSendThisPatch())
