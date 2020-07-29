@@ -55,15 +55,10 @@ namespace MixedRealityExtension.Core
 		{
 			var webClient = new HttpClient();
 			var response = await webClient.GetAsync(manifestUri, HttpCompletionOption.ResponseContentRead);
-			if (response.IsSuccessStatusCode)
-			{
-				var manifestString = await response.Content.ReadAsStringAsync();
-				return JsonConvert.DeserializeObject<AppManifest>(manifestString, Constants.SerializerSettings);
-			}
-			else
-			{
-				return new AppManifest();
-			}
+			response.EnsureSuccessStatusCode();
+
+			var manifestString = await response.Content.ReadAsStringAsync();
+			return JsonConvert.DeserializeObject<AppManifest>(manifestString, Constants.SerializerSettings);
 		}
 	}
 }
