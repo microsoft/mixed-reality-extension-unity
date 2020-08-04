@@ -138,7 +138,8 @@ namespace MixedRealityExtension.App
 		/// </summary>
 		/// <param name="userGO">The game object that serves as the user in unity.</param>
 		/// <param name="hostAppUser">Interface for providing a representation of the host app user.</param>
-		void UserJoin(GameObject userGO, IHostAppUser hostAppUser);
+		/// <param name="isLocalUser">Indicates whether this user originates on this client, or is a local representation of a remote user.</param>
+		void UserJoin(GameObject userGO, IHostAppUser hostAppUser, bool isLocalUser);
 
 		/// <summary>
 		/// User is leaving the app.

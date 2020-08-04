@@ -457,12 +457,13 @@ namespace MixedRealityExtension.App
 		}
 
 		/// <inheritdoc />
-		public void UserJoin(GameObject userGO, IHostAppUser hostAppUser)
+		public void UserJoin(GameObject userGO, IHostAppUser hostAppUser, bool isLocalUser)
 		{
 			void PerformUserJoin()
 			{
 				// only join the user if required
-				if (!GrantedPermissions.HasFlag(Permissions.UserInteraction)
+				if (isLocalUser
+					&& !GrantedPermissions.HasFlag(Permissions.UserInteraction)
 					&& !GrantedPermissions.HasFlag(Permissions.UserTracking))
 				{
 					return;
@@ -478,23 +479,26 @@ namespace MixedRealityExtension.App
 					user.Initialize(hostAppUser, GenerateObfuscatedUserId(hostAppUser), this);
 				}
 
-				Protocol.Send(new UserJoined()
-				{
-					User = new UserPatch(user)
-				});
-
-				LocalUser = user;
-
-				PhysicsBridge.LocalUserId = LocalUser.Id;
-
 				// TODO @tombu - Wait for the app to send back a success for join?
 				_userManager.AddUser(user);
 
-			// Enable interactions for the user if given the UserInteraction permission.
-			if (GrantedPermissions.HasFlag(Permissions.UserInteraction))
-			{
-				EnableUserInteraction(user);
-}
+				if (isLocalUser)
+				{
+					Protocol.Send(new UserJoined()
+					{
+						User = new UserPatch(user)
+					});
+
+					LocalUser = user;
+
+					PhysicsBridge.LocalUserId = LocalUser.Id;
+
+					// Enable interactions for the user if given the UserInteraction permission.
+					if (GrantedPermissions.HasFlag(Permissions.UserInteraction))
+					{
+						EnableUserInteraction(user);
+					}
+				}
 
 				OnUserJoined?.Invoke(user);
 			}
