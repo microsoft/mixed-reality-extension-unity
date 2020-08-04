@@ -139,11 +139,11 @@ namespace MixedRealityExtension.API
 		/// </summary>
 		/// <param name="ownerScript">The owner unity script for the app.</param>
 		/// <param name="globalAppId">The global app id for the app being instanced, or empty if there is no global app id.</param>
-		/// <param name="localAppId">A string uniquely identifying the MRE instance on all clients.</param>
+		/// <param name="ephemeralAppId">A string uniquely identifying the MRE instance on all clients.</param>
 		/// <returns>Returns the newly created mixed reality extension app.</returns>
-		public IMixedRealityExtensionApp CreateMixedRealityExtensionApp(MonoBehaviour ownerScript, string globalAppId = "", string localAppId = "")
+		public IMixedRealityExtensionApp CreateMixedRealityExtensionApp(MonoBehaviour ownerScript, string ephemeralAppId, string globalAppId = "")
 		{
-			var mreApp = new MixedRealityExtensionApp(globalAppId ?? string.Empty, localAppId, ownerScript)
+			var mreApp = new MixedRealityExtensionApp(globalAppId ?? string.Empty, ephemeralAppId, ownerScript)
 			{
 				InstanceId = Guid.NewGuid()
 			};

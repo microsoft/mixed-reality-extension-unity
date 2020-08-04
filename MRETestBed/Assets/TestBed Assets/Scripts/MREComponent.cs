@@ -50,6 +50,8 @@ public class MREComponent : MonoBehaviour
 
 	public string AppID;
 
+	public string EphemeralAppID;
+
 	[Serializable]
 	public class UserProperty
 	{
@@ -144,7 +146,7 @@ public class MREComponent : MonoBehaviour
 			_apiInitialized = true;
 		}
 
-		MREApp = MREAPI.AppsAPI.CreateMixedRealityExtensionApp(this, AppID);
+		MREApp = MREAPI.AppsAPI.CreateMixedRealityExtensionApp(this, EphemeralAppID, AppID);
 
 		if (SceneRoot == null)
 		{
@@ -340,7 +342,7 @@ public class MREComponent : MonoBehaviour
 			hostAppUser.Properties[kv.Name] = kv.Value;
 		}
 
-		MREApp?.UserJoin(UserGameObject, hostAppUser);
+		MREApp?.UserJoin(UserGameObject, hostAppUser, true);
 	}
 
 	public void UserLeave()
