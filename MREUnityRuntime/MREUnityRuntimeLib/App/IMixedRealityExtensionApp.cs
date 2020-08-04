@@ -62,14 +62,16 @@ namespace MixedRealityExtension.App
 		event MWEventHandler<IUser> OnUserLeft;
 
 		/// <summary>
-		/// Gets the global id of the mixed reality extension app.
+		/// A string uniquely identifying the MRE behind the server URL. Used for generating consistent user IDs when
+		/// user tracking is enabled.
 		/// </summary>
 		string GlobalAppId { get; }
 
 		/// <summary>
-		/// A string uniquely identifying the MRE instance, shared across all clients.
+		/// A string uniquely identifying the MRE instance in the shared space across all clients. Used for generating
+		/// user IDs when user tracking is disabled.
 		/// </summary>
-		string LocalAppId { get; }
+		string EphemeralAppId { get; }
 
 		/// <summary>
 		/// Gets the session id of the mixed reality extension app.

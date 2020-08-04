@@ -113,7 +113,7 @@ namespace MixedRealityExtension.App
 		/// <inheritdoc />
 		public string GlobalAppId { get; }
 
-		public string LocalAppId { get; }
+		public string EphemeralAppId { get; }
 
 		/// <inheritdoc />
 		public string SessionId { get; private set; }
@@ -174,13 +174,15 @@ namespace MixedRealityExtension.App
 		/// <summary>
 		/// Initializes a new instance of the class <see cref="MixedRealityExtensionApp"/>
 		/// </summary>
-		/// <param name="globalAppId">The global id of the app.</param>
-		/// <param name="localAppId">A string uniquely identifying the MRE instance on all clients.</param>
+		/// <param name="globalAppId">A string uniquely identifying the MRE behind the server URL. Used for generating
+		/// consistent user IDs when user tracking is enabled.</param>
+		/// <param name="ephemeralAppId">A string uniquely identifying the MRE instance in the shared space across
+		/// all clients. Used for generating user IDs when user tracking is disabled.</param>
 		/// <param name="ownerScript">The owner mono behaviour script for the app.</param>
-		internal MixedRealityExtensionApp(string globalAppId, string localAppId, MonoBehaviour ownerScript, IMRELogger logger = null)
+		internal MixedRealityExtensionApp(string globalAppId, string ephemeralAppId, MonoBehaviour ownerScript, IMRELogger logger = null)
 		{
 			GlobalAppId = globalAppId;
-			LocalAppId = localAppId;
+			EphemeralAppId = ephemeralAppId;
 			_ownerScript = ownerScript;
 			EventManager = new MWEventManager(this);
 			_assetLoader = new AssetLoader(ownerScript, this);
@@ -479,8 +481,14 @@ namespace MixedRealityExtension.App
 				if (user == null)
 				{
 					user = userGO.AddComponent<User>();
+
 					// Generate the obfuscated user ID based on user tracking permission.
-					user.Initialize(hostAppUser, GenerateObfuscatedUserId(hostAppUser), this);
+					Guid instancedUserId = GenerateObfuscatedUserId(hostAppUser, EphemeralAppId);
+					Guid userId = instancedUserId;
+					if ((!isLocalUser || GrantedPermissions.HasFlag(Permissions.UserTracking)) && !string.IsNullOrEmpty(GlobalAppId))
+						userId = GenerateObfuscatedUserId(hostAppUser, GlobalAppId);
+
+					user.Initialize(hostAppUser, userId, instancedUserId, this);
 				}
 
 				// TODO @tombu - Wait for the app to send back a success for join?
@@ -805,19 +813,11 @@ namespace MixedRealityExtension.App
 			}
 		}
 
-		private Guid GenerateObfuscatedUserId(IHostAppUser hostAppUser)
+		private Guid GenerateObfuscatedUserId(IHostAppUser hostAppUser, string salt)
 		{
 			using (SHA256 hasher = SHA256.Create())
 			{
-				string hashString;
-				if (GrantedPermissions.HasFlag(Permissions.UserTracking) && GlobalAppId != string.Empty)
-				{
-					hashString = $"{hostAppUser.HostUserId}:{GlobalAppId}";
-				}
-				else
-				{
-					hashString = $"{hostAppUser.HostUserId}:{LocalAppId}";
-				}
+				string hashString = $"{hostAppUser.HostUserId}:{salt}";
 
 				var encoder = new UTF8Encoding();
 				var hashedId = Convert.ToBase64String(

@@ -21,6 +21,7 @@ namespace MixedRealityExtension.Core
 		internal void AddUser(User user)
 		{
 			_userMapping[user.Id] = user;
+			_userMapping[user.InstancedUserId] = user;
 			user.JoinApp(_app);
 		}
 
