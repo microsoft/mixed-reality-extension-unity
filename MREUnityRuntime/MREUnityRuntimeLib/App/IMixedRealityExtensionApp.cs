@@ -67,6 +67,11 @@ namespace MixedRealityExtension.App
 		string GlobalAppId { get; }
 
 		/// <summary>
+		/// A string uniquely identifying the MRE instance, shared across all clients.
+		/// </summary>
+		string LocalAppId { get; }
+
+		/// <summary>
 		/// Gets the session id of the mixed reality extension app.
 		/// </summary>
 		string SessionId { get; }

@@ -113,6 +113,8 @@ namespace MixedRealityExtension.App
 		/// <inheritdoc />
 		public string GlobalAppId { get; }
 
+		public string LocalAppId { get; }
+
 		/// <inheritdoc />
 		public string SessionId { get; private set; }
 
@@ -173,10 +175,12 @@ namespace MixedRealityExtension.App
 		/// Initializes a new instance of the class <see cref="MixedRealityExtensionApp"/>
 		/// </summary>
 		/// <param name="globalAppId">The global id of the app.</param>
+		/// <param name="localAppId">A string uniquely identifying the MRE instance on all clients.</param>
 		/// <param name="ownerScript">The owner mono behaviour script for the app.</param>
-		internal MixedRealityExtensionApp(string globalAppId, MonoBehaviour ownerScript, IMRELogger logger = null)
+		internal MixedRealityExtensionApp(string globalAppId, string localAppId, MonoBehaviour ownerScript, IMRELogger logger = null)
 		{
 			GlobalAppId = globalAppId;
+			LocalAppId = localAppId;
 			_ownerScript = ownerScript;
 			EventManager = new MWEventManager(this);
 			_assetLoader = new AssetLoader(ownerScript, this);
@@ -803,24 +807,24 @@ namespace MixedRealityExtension.App
 
 		private Guid GenerateObfuscatedUserId(IHostAppUser hostAppUser)
 		{
-			if (GrantedPermissions.HasFlag(Permissions.UserTracking) && GlobalAppId != string.Empty)
+			using (SHA256 hasher = SHA256.Create())
 			{
-				using (SHA256 hasher = SHA256.Create())
+				string hashString;
+				if (GrantedPermissions.HasFlag(Permissions.UserTracking) && GlobalAppId != string.Empty)
 				{
-					var encoder = new UTF8Encoding();
-					var hashedId = Convert.ToBase64String(
-						hasher.ComputeHash(
-							encoder.GetBytes($"{hostAppUser.HostUserId}:{GlobalAppId}")
-						)
-					);
-
-					return UtilMethods.StringToGuid(hashedId);
+					hashString = $"{hostAppUser.HostUserId}:{GlobalAppId}";
 				}
-			}
-			else
-			{
-				// Generate a new Guid each time we are asked to generate the user ID on join.
-				return Guid.NewGuid();
+				else
+				{
+					hashString = $"{hostAppUser.HostUserId}:{LocalAppId}";
+				}
+
+				var encoder = new UTF8Encoding();
+				var hashedId = Convert.ToBase64String(
+					hasher.ComputeHash(encoder.GetBytes(hashString))
+				);
+
+				return UtilMethods.StringToGuid(hashedId);
 			}
 		}
 
