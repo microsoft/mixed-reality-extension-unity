@@ -52,14 +52,16 @@ namespace MixedRealityExtension.App
 		event MWEventHandler<IActor> OnActorCreated;
 
 		/// <summary>
-		/// Event that is raised when the local user joins the MRE application.
+		/// Event that is raised when the local user joins the MRE application. Is passed the user and a boolean
+		/// indicating whether the user joined from the local client, or from a remote client.
 		/// </summary>
-		event MWEventHandler<IUser> OnUserJoined;
+		event MWEventHandler<IUser, bool> OnUserJoined;
 
 		/// <summary>
-		/// Event that is raised when the local user leaves the MRE application.
+		/// Event that is raised when the local user leaves the MRE application. Is passed the user and a boolean
+		/// indicating whether the user left from the local client, or from a remote client.
 		/// </summary>
-		event MWEventHandler<IUser> OnUserLeft;
+		event MWEventHandler<IUser, bool> OnUserLeft;
 
 		/// <summary>
 		/// A string uniquely identifying the MRE behind the server URL. Used for generating consistent user IDs when

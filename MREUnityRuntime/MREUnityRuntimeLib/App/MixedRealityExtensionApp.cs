@@ -101,10 +101,10 @@ namespace MixedRealityExtension.App
 		}
 
 		/// <inheritdoc />
-		public event MWEventHandler<IUser> OnUserJoined;
+		public event MWEventHandler<IUser, bool> OnUserJoined;
 
 		/// <inheritdoc />
-		public event MWEventHandler<IUser> OnUserLeft;
+		public event MWEventHandler<IUser, bool> OnUserLeft;
 
 		#endregion
 
@@ -512,7 +512,7 @@ namespace MixedRealityExtension.App
 					}
 				}
 
-				OnUserJoined?.Invoke(user);
+				OnUserJoined?.Invoke(user, isLocalUser);
 			}
 
 			if (Protocol is Execution)
@@ -541,12 +541,15 @@ namespace MixedRealityExtension.App
 				_userManager.RemoveUser(user);
 				_interactingUserIds.Remove(user.Id);
 
-				if (Protocol is Execution)
+				var isLocalUser = user == LocalUser;
+				LocalUser = null;
+
+				if (isLocalUser && Protocol is Execution)
 				{
 					Protocol.Send(new UserLeft() { UserId = user.Id });
 				}
 
-				OnUserLeft?.Invoke(user);
+				OnUserLeft?.Invoke(user, isLocalUser);
 			}
 		}
 

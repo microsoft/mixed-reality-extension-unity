@@ -18,6 +18,15 @@ namespace MixedRealityExtension.IPC
 	public delegate void MWEventHandler<ArgsT>(ArgsT args);
 
 	/// <summary>
+	/// Event handler type with two arguments.
+	/// </summary>
+	/// <typeparam name="ArgsT"></typeparam>
+	/// <typeparam name="ArgsU"></typeparam>
+	/// <param name="arg1"></param>
+	/// <param name="arg2"></param>
+	public delegate void MWEventHandler<ArgsT, ArgsU>(ArgsT arg1, ArgsU arg2);
+
+	/// <summary>
 	/// The set of possible reason codes passed to the OnConnectFailed event.
 	/// </summary>
 	public enum ConnectFailedReason
