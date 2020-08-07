@@ -150,7 +150,7 @@ namespace MixedRealityExtension.API
 		public IMixedRealityExtensionApp CreateMixedRealityExtensionApp(
 			MonoBehaviour ownerScript,
 			string ephemeralAppId,
-			string globalAppId = "")
+			string globalAppId)
 		{
 			var mreApp = new MixedRealityExtensionApp(globalAppId ?? string.Empty, ephemeralAppId, ownerScript)
 			{
