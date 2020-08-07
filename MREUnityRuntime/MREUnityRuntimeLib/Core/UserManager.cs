@@ -21,6 +21,7 @@ namespace MixedRealityExtension.Core
 		internal void AddUser(User user)
 		{
 			_userMapping[user.Id] = user;
+			_userMapping[user.EphemeralUserId] = user;
 			user.JoinApp(_app);
 		}
 
@@ -28,6 +29,7 @@ namespace MixedRealityExtension.Core
 		{
 			user.LeaveApp(_app);
 			_userMapping.Remove(user.Id);
+			_userMapping.Remove(user.EphemeralUserId);
 		}
 
 		internal User FindUser(Guid userId)

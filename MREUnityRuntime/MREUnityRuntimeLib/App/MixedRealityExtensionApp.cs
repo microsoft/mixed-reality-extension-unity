@@ -101,10 +101,10 @@ namespace MixedRealityExtension.App
 		}
 
 		/// <inheritdoc />
-		public event MWEventHandler<IUser> OnUserJoined;
+		public event MWEventHandler<IUser, bool> OnUserJoined;
 
 		/// <inheritdoc />
-		public event MWEventHandler<IUser> OnUserLeft;
+		public event MWEventHandler<IUser, bool> OnUserLeft;
 
 		#endregion
 
@@ -112,6 +112,8 @@ namespace MixedRealityExtension.App
 
 		/// <inheritdoc />
 		public string GlobalAppId { get; }
+
+		public string EphemeralAppId { get; }
 
 		/// <inheritdoc />
 		public string SessionId { get; private set; }
@@ -172,11 +174,15 @@ namespace MixedRealityExtension.App
 		/// <summary>
 		/// Initializes a new instance of the class <see cref="MixedRealityExtensionApp"/>
 		/// </summary>
-		/// <param name="globalAppId">The global id of the app.</param>
+		/// <param name="globalAppId">A string uniquely identifying the MRE behind the server URL. Used for generating
+		/// consistent user IDs when user tracking is enabled.</param>
+		/// <param name="ephemeralAppId">A string uniquely identifying the MRE instance in the shared space across
+		/// all clients. Used for generating user IDs when user tracking is disabled.</param>
 		/// <param name="ownerScript">The owner mono behaviour script for the app.</param>
-		internal MixedRealityExtensionApp(string globalAppId, MonoBehaviour ownerScript, IMRELogger logger = null)
+		internal MixedRealityExtensionApp(string globalAppId, string ephemeralAppId, MonoBehaviour ownerScript, IMRELogger logger = null)
 		{
 			GlobalAppId = globalAppId;
+			EphemeralAppId = ephemeralAppId;
 			_ownerScript = ownerScript;
 			EventManager = new MWEventManager(this);
 			_assetLoader = new AssetLoader(ownerScript, this);
@@ -457,12 +463,13 @@ namespace MixedRealityExtension.App
 		}
 
 		/// <inheritdoc />
-		public void UserJoin(GameObject userGO, IHostAppUser hostAppUser)
+		public void UserJoin(GameObject userGO, IHostAppUser hostAppUser, bool isLocalUser)
 		{
 			void PerformUserJoin()
 			{
 				// only join the user if required
-				if (!GrantedPermissions.HasFlag(Permissions.UserInteraction)
+				if (isLocalUser
+					&& !GrantedPermissions.HasFlag(Permissions.UserInteraction)
 					&& !GrantedPermissions.HasFlag(Permissions.UserTracking))
 				{
 					return;
@@ -474,29 +481,38 @@ namespace MixedRealityExtension.App
 				if (user == null)
 				{
 					user = userGO.AddComponent<User>();
+
 					// Generate the obfuscated user ID based on user tracking permission.
-					user.Initialize(hostAppUser, GenerateObfuscatedUserId(hostAppUser), this);
+					Guid instancedUserId = GenerateObfuscatedUserId(hostAppUser, EphemeralAppId);
+					Guid userId = instancedUserId;
+					if ((!isLocalUser || GrantedPermissions.HasFlag(Permissions.UserTracking)) && !string.IsNullOrEmpty(GlobalAppId))
+						userId = GenerateObfuscatedUserId(hostAppUser, GlobalAppId);
+
+					user.Initialize(hostAppUser, userId, instancedUserId, this);
 				}
-
-				Protocol.Send(new UserJoined()
-				{
-					User = new UserPatch(user)
-				});
-
-				LocalUser = user;
-
-				PhysicsBridge.LocalUserId = LocalUser.Id;
 
 				// TODO @tombu - Wait for the app to send back a success for join?
 				_userManager.AddUser(user);
 
-			// Enable interactions for the user if given the UserInteraction permission.
-			if (GrantedPermissions.HasFlag(Permissions.UserInteraction))
-			{
-				EnableUserInteraction(user);
-}
+				if (isLocalUser)
+				{
+					Protocol.Send(new UserJoined()
+					{
+						User = new UserPatch(user)
+					});
 
-				OnUserJoined?.Invoke(user);
+					LocalUser = user;
+
+					PhysicsBridge.LocalUserId = LocalUser.Id;
+
+					// Enable interactions for the user if given the UserInteraction permission.
+					if (GrantedPermissions.HasFlag(Permissions.UserInteraction))
+					{
+						EnableUserInteraction(user);
+					}
+				}
+
+				OnUserJoined?.Invoke(user, isLocalUser);
 			}
 
 			if (Protocol is Execution)
@@ -525,12 +541,15 @@ namespace MixedRealityExtension.App
 				_userManager.RemoveUser(user);
 				_interactingUserIds.Remove(user.Id);
 
-				if (Protocol is Execution)
+				var isLocalUser = user == LocalUser;
+				LocalUser = null;
+
+				if (isLocalUser && Protocol is Execution)
 				{
 					Protocol.Send(new UserLeft() { UserId = user.Id });
 				}
 
-				OnUserLeft?.Invoke(user);
+				OnUserLeft?.Invoke(user, isLocalUser);
 			}
 		}
 
@@ -797,26 +816,18 @@ namespace MixedRealityExtension.App
 			}
 		}
 
-		private Guid GenerateObfuscatedUserId(IHostAppUser hostAppUser)
+		private Guid GenerateObfuscatedUserId(IHostAppUser hostAppUser, string salt)
 		{
-			if (GrantedPermissions.HasFlag(Permissions.UserTracking) && GlobalAppId != string.Empty)
+			using (SHA256 hasher = SHA256.Create())
 			{
-				using (SHA256 hasher = SHA256.Create())
-				{
-					var encoder = new UTF8Encoding();
-					var hashedId = Convert.ToBase64String(
-						hasher.ComputeHash(
-							encoder.GetBytes($"{hostAppUser.HostUserId}:{GlobalAppId}")
-						)
-					);
+				string hashString = $"{hostAppUser.HostUserId}:{salt}";
 
-					return UtilMethods.StringToGuid(hashedId);
-				}
-			}
-			else
-			{
-				// Generate a new Guid each time we are asked to generate the user ID on join.
-				return Guid.NewGuid();
+				var encoder = new UTF8Encoding();
+				var hashedId = Convert.ToBase64String(
+					hasher.ComputeHash(encoder.GetBytes(hashString))
+				);
+
+				return UtilMethods.StringToGuid(hashedId);
 			}
 		}
 

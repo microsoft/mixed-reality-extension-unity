@@ -52,19 +52,28 @@ namespace MixedRealityExtension.App
 		event MWEventHandler<IActor> OnActorCreated;
 
 		/// <summary>
-		/// Event that is raised when the local user joins the MRE application.
+		/// Event that is raised when the local user joins the MRE application. Is passed the user and a boolean
+		/// indicating whether the user joined from the local client, or from a remote client.
 		/// </summary>
-		event MWEventHandler<IUser> OnUserJoined;
+		event MWEventHandler<IUser, bool> OnUserJoined;
 
 		/// <summary>
-		/// Event that is raised when the local user leaves the MRE application.
+		/// Event that is raised when the local user leaves the MRE application. Is passed the user and a boolean
+		/// indicating whether the user left from the local client, or from a remote client.
 		/// </summary>
-		event MWEventHandler<IUser> OnUserLeft;
+		event MWEventHandler<IUser, bool> OnUserLeft;
 
 		/// <summary>
-		/// Gets the global id of the mixed reality extension app.
+		/// A string uniquely identifying the MRE behind the server URL. Used for generating consistent user IDs when
+		/// user tracking is enabled.
 		/// </summary>
 		string GlobalAppId { get; }
+
+		/// <summary>
+		/// A string uniquely identifying the MRE instance in the shared space across all clients. Used for generating
+		/// user IDs when user tracking is disabled.
+		/// </summary>
+		string EphemeralAppId { get; }
 
 		/// <summary>
 		/// Gets the session id of the mixed reality extension app.
@@ -138,7 +147,8 @@ namespace MixedRealityExtension.App
 		/// </summary>
 		/// <param name="userGO">The game object that serves as the user in unity.</param>
 		/// <param name="hostAppUser">Interface for providing a representation of the host app user.</param>
-		void UserJoin(GameObject userGO, IHostAppUser hostAppUser);
+		/// <param name="isLocalUser">Indicates whether this user originates on this client, or is a local representation of a remote user.</param>
+		void UserJoin(GameObject userGO, IHostAppUser hostAppUser, bool isLocalUser);
 
 		/// <summary>
 		/// User is leaving the app.

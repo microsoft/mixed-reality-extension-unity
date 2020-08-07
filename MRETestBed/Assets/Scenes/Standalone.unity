@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 1966163892}
-  m_IndirectSpecularColor: {r: 0, g: 0.99999946, b: 0.99999946, a: 1}
+  m_IndirectSpecularColor: {r: 0.45135576, g: 0.500937, b: 0.57278883, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -232,6 +232,7 @@ MonoBehaviour:
   MREURL: ws://localhost:3901
   SessionID: testbed
   AppID: helloworld
+  EphemeralAppID: helloworld-temp
   UserProperties: []
   AutoStart: 0
   AutoJoin: 1

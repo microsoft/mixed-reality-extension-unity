@@ -23,10 +23,13 @@ namespace MixedRealityExtension.Core
 
 		public UInt32 Groups { get; internal set; } = 1;
 
-		internal void Initialize(IHostAppUser hostAppUser, Guid userId, MixedRealityExtensionApp app)
+		public Guid EphemeralUserId { get; private set; }
+
+		internal void Initialize(IHostAppUser hostAppUser, Guid userId, Guid ephemeralUserId, MixedRealityExtensionApp app)
 		{
 			HostAppUser = hostAppUser;
 			base.Initialize(userId, app);
+			EphemeralUserId = ephemeralUserId;
 		}
 
 		internal void JoinApp(MixedRealityExtensionApp app)
