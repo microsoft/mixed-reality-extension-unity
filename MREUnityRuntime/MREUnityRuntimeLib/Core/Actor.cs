@@ -758,7 +758,7 @@ namespace MixedRealityExtension.Core
 						Destroy(attachmentComponent);
 					}
 
-					transform.SetParent(App.SceneRoot.transform, true);
+					transform.SetParent(App.SceneRoot.transform, false);
 				}
 			}
 			catch (Exception e)
