@@ -541,12 +541,14 @@ namespace MixedRealityExtension.App
 				_userManager.RemoveUser(user);
 				_interactingUserIds.Remove(user.Id);
 
-				var isLocalUser = user == LocalUser;
-				LocalUser = null;
-
-				if (isLocalUser && Protocol is Execution)
+				var isLocalUser = (IUser)user == LocalUser;
+				if (isLocalUser)
 				{
-					Protocol.Send(new UserLeft() { UserId = user.Id });
+					LocalUser = null;
+					if (Protocol is Execution)
+					{
+						Protocol.Send(new UserLeft() { UserId = user.Id });
+					}
 				}
 
 				OnUserLeft?.Invoke(user, isLocalUser);
