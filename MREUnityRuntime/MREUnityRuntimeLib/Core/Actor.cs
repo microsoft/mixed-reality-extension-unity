@@ -757,10 +757,8 @@ namespace MixedRealityExtension.Core
 						attachmentComponent.Actor = null;
 						Destroy(attachmentComponent);
 
-						if (Parent != null)
-						{
-							transform.SetParent((Parent as Actor).transform, false);
-						}
+						var parent = Parent != null ? (Parent as Actor).transform : App.SceneRoot.transform;
+						transform.SetParent(parent, false);
 					}
 				}
 			}
