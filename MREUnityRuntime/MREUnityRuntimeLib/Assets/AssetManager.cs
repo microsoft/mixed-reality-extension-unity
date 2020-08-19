@@ -280,7 +280,30 @@ namespace MixedRealityExtension.Assets
 					if (a.Asset is GameObject prefab)
 					{
 						var renderers = prefab.GetComponentsInChildren<Renderer>();
-						return renderers.Any(r => r.sharedMaterial == mat);
+
+						// if prefab is already write-safe, just update
+						if (a.Source == null)
+						{
+							foreach (var r in renderers)
+							{
+								var sharedMats = r.sharedMaterials;
+								for (int i = 0; i < sharedMats.Length; i++)
+								{
+									if (sharedMats[i] == mat)
+									{
+										sharedMats[i] = (UnityEngine.Material)copyAsset;
+										r.sharedMaterials = sharedMats;
+										break;
+									}
+								}
+							}
+							return false;
+						}
+						// gotta make the prefab write-safe
+						else
+						{
+							return renderers.Any(r => r.sharedMaterials.Any(m => m == mat));
+						}
 					}
 					else return false;
 				}).ToArray();
@@ -296,9 +319,15 @@ namespace MixedRealityExtension.Assets
 					var renderers = prefab.GetComponentsInChildren<Renderer>();
 					foreach (var r in renderers)
 					{
-						if (r.sharedMaterial == (UnityEngine.Material)dependency.Value.Asset)
+						var sharedMats = r.sharedMaterials;
+						for (int i = 0; i < sharedMats.Length; i++)
 						{
-							r.sharedMaterial = (UnityEngine.Material)updatedDependency.Value.Asset;
+							if (sharedMats[i] == (UnityEngine.Material)dependency.Value.Asset)
+							{
+								sharedMats[i] = (UnityEngine.Material)updatedDependency.Value.Asset;
+								r.sharedMaterials = sharedMats;
+								break;
+							}
 						}
 					}
 				}

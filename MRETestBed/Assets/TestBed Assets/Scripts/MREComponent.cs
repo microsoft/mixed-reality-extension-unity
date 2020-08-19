@@ -230,13 +230,13 @@ public class MREComponent : MonoBehaviour
 		}
 	}
 
-	private void MRE_OnUserJoined(IUser user)
+	private void MRE_OnUserJoined(IUser user, bool isLocalUser)
 	{
 		Debug.Log($"User joined with host id: {user.HostAppUser.HostUserId} and mre user id: {user.Id}");
 		hostAppUsers.Add(user.Id, (HostAppUser)user.HostAppUser);
 	}
 
-	private void MRE_OnUserLeft(IUser user)
+	private void MRE_OnUserLeft(IUser user, bool isLocalUser)
 	{
 		hostAppUsers.Remove(user.Id);
 	}
