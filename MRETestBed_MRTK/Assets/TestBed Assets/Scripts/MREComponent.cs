@@ -148,7 +148,7 @@ public class MREComponent : MonoBehaviour
 			_apiInitialized = true;
 		}
 
-		MREApp = MREAPI.AppsAPI.CreateMixedRealityExtensionApp(this, AppID);
+		MREApp = MREAPI.AppsAPI.CreateMixedRealityExtensionApp(this, string.Empty, AppID);
 
 		if (SceneRoot == null)
 		{
@@ -232,13 +232,13 @@ public class MREComponent : MonoBehaviour
 		}
 	}
 
-	private void MRE_OnUserJoined(IUser user)
+	private void MRE_OnUserJoined(IUser user, bool isLocalUser)
 	{
 		Debug.Log($"User joined with host id: {user.HostAppUser.HostUserId} and mre user id: {user.Id}");
 		hostAppUsers.Add(user.Id, (HostAppUser)user.HostAppUser);
 	}
 
-	private void MRE_OnUserLeft(IUser user)
+	private void MRE_OnUserLeft(IUser user, bool isLocalUser)
 	{
 		hostAppUsers.Remove(user.Id);
 	}
@@ -344,7 +344,7 @@ public class MREComponent : MonoBehaviour
 			hostAppUser.Properties[kv.Name] = kv.Value;
 		}
 
-		MREApp?.UserJoin(UserGameObject, hostAppUser);
+		MREApp?.UserJoin(UserGameObject, hostAppUser, true);
 	}
 
 	public void UserLeave()
