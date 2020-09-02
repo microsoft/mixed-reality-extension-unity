@@ -545,6 +545,8 @@ namespace MixedRealityExtension.App
 				if (isLocalUser)
 				{
 					LocalUser = null;
+					PhysicsBridge.LocalUserId = null;
+
 					if (Protocol is Execution)
 					{
 						Protocol.Send(new UserLeft() { UserId = user.Id });
