@@ -103,18 +103,8 @@ namespace MixedRealityExtension.Core
 		{
 			get
 			{
-				if (_isExclusiveToUser)
-				{
-					return true;
-				}
-
-				// Should always be true after rigid body is fully initialized.
-				if (!Owner.HasValue)
-				{
-					return false;
-				}
-
-				return Owner.Value == App.LocalUser.Id;
+				return _isExclusiveToUser
+					|| Owner.HasValue && App.LocalUser != null && Owner.Value == App.LocalUser.Id;
 			}
 		}
 
