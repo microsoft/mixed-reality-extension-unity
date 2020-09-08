@@ -155,12 +155,18 @@ namespace MixedRealityExtension.Assets
 		{
 			WebRequestLoader loader = null;
 			Stream stream = null;
-
 			source.ParsedUri = new Uri(_app.ServerAssetUri, source.ParsedUri);
 			var rootUri = URIHelper.GetDirectoryName(source.ParsedUri.AbsoluteUri);
-			var cachedVersion = MREAPI.AppsAPI.AssetCache.SupportsSync ?
-				MREAPI.AppsAPI.AssetCache.GetVersionSync(source.ParsedUri) :
-				await MREAPI.AppsAPI.AssetCache.GetVersion(source.ParsedUri);
+
+			// acquire the exclusive right to load this asset
+			if (!await MREAPI.AppsAPI.AssetCache.AcquireLoadingLock(source.ParsedUri))
+			{
+				throw new TimeoutException("Failed to acquire exclusive loading rights for " + source.ParsedUri);
+			}
+
+			var cachedVersion = MREAPI.AppsAPI.AssetCache.SupportsSync
+				? MREAPI.AppsAPI.AssetCache.TryGetVersionSync(source.ParsedUri)
+				: await MREAPI.AppsAPI.AssetCache.TryGetVersion(source.ParsedUri);
 
 			// Wait asynchronously until the load throttler lets us through.
 			using (var scope = await AssetLoadThrottling.AcquireLoadScope())
@@ -210,11 +216,14 @@ namespace MixedRealityExtension.Assets
 			}
 			else
 			{
-				var assetsEnum = MREAPI.AppsAPI.AssetCache.SupportsSync ?
-					MREAPI.AppsAPI.AssetCache.LeaseAssetsSync(source.ParsedUri) :
-					await MREAPI.AppsAPI.AssetCache.LeaseAssets(source.ParsedUri);
+				var assetsEnum = MREAPI.AppsAPI.AssetCache.SupportsSync
+					? MREAPI.AppsAPI.AssetCache.LeaseAssetsSync(source.ParsedUri)
+					: await MREAPI.AppsAPI.AssetCache.LeaseAssets(source.ParsedUri);
 				assets = assetsEnum.ToList();
 			}
+
+			// the cache is updated, release the lock
+			MREAPI.AppsAPI.AssetCache.ReleaseLoadingLock(source.ParsedUri);
 
 			// catalog assets
 			int textureIndex = 0, meshIndex = 0, materialIndex = 0, prefabIndex = 0;

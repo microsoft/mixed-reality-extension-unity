@@ -25,14 +25,20 @@ namespace MixedRealityExtension.Assets
 
 		public static async Task<FetchResult> LoadTask(MonoBehaviour runner, Uri uri)
 		{
+			// acquire the exclusive right to load this asset
+			if (!await MREAPI.AppsAPI.AssetCache.AcquireLoadingLock(uri))
+			{
+				throw new TimeoutException("Failed to acquire exclusive loading rights for " + uri);
+			}
+
 			FetchResult result = new FetchResult()
 			{
 				Asset = null,
 				FailureMessage = null
 			};
-			var ifNoneMatch = MREAPI.AppsAPI.AssetCache.SupportsSync ?
-				MREAPI.AppsAPI.AssetCache.GetVersionSync(uri) :
-				await MREAPI.AppsAPI.AssetCache.GetVersion(uri);
+			var ifNoneMatch = MREAPI.AppsAPI.AssetCache.SupportsSync
+				? MREAPI.AppsAPI.AssetCache.TryGetVersionSync(uri)
+				: await MREAPI.AppsAPI.AssetCache.TryGetVersion(uri);
 
 			runner.StartCoroutine(LoadCoroutine());
 
@@ -45,9 +51,9 @@ namespace MixedRealityExtension.Assets
 			// handle caching
 			if (ifNoneMatch != null && result.ReturnCode == 304)
 			{
-				var assets = MREAPI.AppsAPI.AssetCache.SupportsSync ?
-					MREAPI.AppsAPI.AssetCache.LeaseAssetsSync(uri) :
-					await MREAPI.AppsAPI.AssetCache.LeaseAssets(uri);
+				var assets = MREAPI.AppsAPI.AssetCache.SupportsSync
+					? MREAPI.AppsAPI.AssetCache.LeaseAssetsSync(uri)
+					: await MREAPI.AppsAPI.AssetCache.LeaseAssets(uri);
 				result.Asset = assets.FirstOrDefault() as T;
 			}
 			else if (result.Asset != null)
@@ -58,6 +64,7 @@ namespace MixedRealityExtension.Assets
 					result.ETag);
 			}
 
+			MREAPI.AppsAPI.AssetCache.ReleaseLoadingLock(uri);
 			return result;
 
 			IEnumerator LoadCoroutine()
@@ -90,7 +97,7 @@ namespace MixedRealityExtension.Assets
 					{
 						www.SetRequestHeader("If-None-Match", ifNoneMatch);
 					}
-					
+
 					yield return www.SendWebRequest();
 					if (www.isNetworkError)
 					{

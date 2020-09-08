@@ -5,6 +5,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
 using Object = UnityEngine.Object;
@@ -64,8 +65,8 @@ namespace MixedRealityExtension.Assets
 		// needed to prevent UnityEngine.Resources.UnloadUnusedAssets from unloading the cache
 		[SerializeField] protected List<Object> CacheInspector = new List<Object>(30);
 
-		protected readonly Dictionary<Uri, CacheItem> Cache = new Dictionary<Uri, CacheItem>(10);
-		protected readonly Dictionary<Uri, Task> LoadingTasks = new Dictionary<Uri, Task>(10);
+		protected readonly Dictionary<Uri, CacheItem> Cache = new Dictionary<Uri, CacheItem>(100);
+		protected readonly Dictionary<Uri, SemaphoreSlim> LoadingLocks = new Dictionary<Uri, SemaphoreSlim>(100);
 		private Coroutine CleanTimer = null;
 
 		/// <summary>
@@ -78,6 +79,9 @@ namespace MixedRealityExtension.Assets
 
 		[SerializeField]
 		private GameObject SerializedCacheRoot = null;
+
+		/// <inheritdoc />
+		public bool SupportsSync { get; protected set; } = true;
 
 		protected virtual void Awake()
 		{
@@ -94,14 +98,20 @@ namespace MixedRealityExtension.Assets
 		}
 
 		///<inheritdoc/>
-		public virtual void BlockWhileLoading(Uri uri, Task loadingTask)
+		public virtual Task<bool> AcquireLoadingLock(Uri uri)
 		{
-			if (LoadingTasks.ContainsKey(uri))
+			if (!LoadingLocks.TryGetValue(uri, out SemaphoreSlim sema))
 			{
-				throw new Exception("A load is already in progress!");
+				sema = LoadingLocks[uri] = new SemaphoreSlim(1, 1);
 			}
-			LoadingTasks[uri] = loadingTask;
-			loadingTask.ContinueWith((_) => LoadingTasks.Remove(uri));
+
+			return sema.WaitAsync(30_000);
+		}
+
+		///<inheritdoc/>
+		public virtual void ReleaseLoadingLock(Uri uri)
+		{
+			LoadingLocks[uri].Release();
 		}
 
 		///<inheritdoc/>
@@ -142,13 +152,14 @@ namespace MixedRealityExtension.Assets
 		}
 
 		/// <inheritdoc />
-		public virtual async Task<IEnumerable<Object>> LeaseAssets(Uri uri, string ifMatchesVersion = null)
+		public virtual Task<IEnumerable<Object>> LeaseAssets(Uri uri, string ifMatchesVersion = null)
 		{
-			if (LoadingTasks.TryGetValue(uri, out Task loadingTask))
-			{
-				await loadingTask;
-			}
+			return Task.FromResult(LeaseAssetsSync(uri, ifMatchesVersion));
+		}
 
+		///<inheritdoc/>
+		public virtual IEnumerable<Object> LeaseAssetsSync(Uri uri, string ifMatchesVersion = null)
+		{
 			if (Cache.TryGetValue(uri, out CacheItem cacheItem))
 			{
 				cacheItem.ReferenceCount += cacheItem.Assets.Count();
@@ -161,13 +172,14 @@ namespace MixedRealityExtension.Assets
 		}
 
 		/// <inheritdoc />
-		public virtual async Task<string> TryGetVersion(Uri uri)
+		public virtual Task<string> TryGetVersion(Uri uri)
 		{
-			if (LoadingTasks.TryGetValue(uri, out Task loadingTask))
-			{
-				await loadingTask;
-			}
+			return Task.FromResult(TryGetVersionSync(uri));
+		}
 
+		///<inheritdoc/>
+		public virtual string TryGetVersionSync(Uri uri)
+		{
 			if (Cache.TryGetValue(uri, out CacheItem cacheItem))
 			{
 				return cacheItem.Version;
@@ -211,6 +223,11 @@ namespace MixedRealityExtension.Assets
 				if (CleanBottomUp(cacheItem))
 				{
 					Cache.Remove(cacheItem.Uri);
+					if (LoadingLocks.TryGetValue(cacheItem.Uri, out SemaphoreSlim sema))
+					{
+						LoadingLocks.Remove(cacheItem.Uri);
+						sema.Dispose();
+					}
 				}
 			}
 		}
