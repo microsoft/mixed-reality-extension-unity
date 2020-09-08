@@ -65,6 +65,7 @@ namespace MixedRealityExtension.Assets
 		[SerializeField] protected List<Object> CacheInspector = new List<Object>(30);
 
 		protected readonly Dictionary<Uri, CacheItem> Cache = new Dictionary<Uri, CacheItem>(10);
+		protected readonly Dictionary<Uri, Task> LoadingTasks = new Dictionary<Uri, Task>(10);
 		private Coroutine CleanTimer = null;
 
 		/// <summary>
@@ -78,9 +79,6 @@ namespace MixedRealityExtension.Assets
 		[SerializeField]
 		private GameObject SerializedCacheRoot = null;
 
-		/// <inheritdoc />
-		public bool SupportsSync { get; protected set; } = true;
-
 		protected virtual void Awake()
 		{
 			if (SerializedCacheRoot != null)
@@ -93,6 +91,17 @@ namespace MixedRealityExtension.Assets
 		protected virtual void OnDestroy()
 		{
 			Application.lowMemory -= CleanUnusedResources;
+		}
+
+		///<inheritdoc/>
+		public virtual void BlockWhileLoading(Uri uri, Task loadingTask)
+		{
+			if (LoadingTasks.ContainsKey(uri))
+			{
+				throw new Exception("A load is already in progress!");
+			}
+			LoadingTasks[uri] = loadingTask;
+			loadingTask.ContinueWith((_) => LoadingTasks.Remove(uri));
 		}
 
 		///<inheritdoc/>
@@ -133,14 +142,13 @@ namespace MixedRealityExtension.Assets
 		}
 
 		/// <inheritdoc />
-		public virtual Task<IEnumerable<Object>> LeaseAssets(Uri uri, string ifMatchesVersion = null)
+		public virtual async Task<IEnumerable<Object>> LeaseAssets(Uri uri, string ifMatchesVersion = null)
 		{
-			return Task.FromResult(LeaseAssetsSync(uri, ifMatchesVersion));
-		}
+			if (LoadingTasks.TryGetValue(uri, out Task loadingTask))
+			{
+				await loadingTask;
+			}
 
-		///<inheritdoc/>
-		public virtual IEnumerable<Object> LeaseAssetsSync(Uri uri, string ifMatchesVersion = null)
-		{
 			if (Cache.TryGetValue(uri, out CacheItem cacheItem))
 			{
 				cacheItem.ReferenceCount += cacheItem.Assets.Count();
@@ -153,14 +161,13 @@ namespace MixedRealityExtension.Assets
 		}
 
 		/// <inheritdoc />
-		public virtual Task<string> GetVersion(Uri uri)
+		public virtual async Task<string> TryGetVersion(Uri uri)
 		{
-			return Task.FromResult(GetVersionSync(uri));
-		}
+			if (LoadingTasks.TryGetValue(uri, out Task loadingTask))
+			{
+				await loadingTask;
+			}
 
-		///<inheritdoc/>
-		public virtual string GetVersionSync(Uri uri)
-		{
 			if (Cache.TryGetValue(uri, out CacheItem cacheItem))
 			{
 				return cacheItem.Version;

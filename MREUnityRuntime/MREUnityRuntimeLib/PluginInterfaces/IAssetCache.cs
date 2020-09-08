@@ -14,14 +14,17 @@ namespace MixedRealityExtension.PluginInterfaces
 	public interface IAssetCache
 	{
 		/// <summary>
-		/// Specifies whether the cache supports synchronous reads
-		/// </summary>
-		bool SupportsSync { get; }
-
-		/// <summary>
 		/// The GameObject that assets requiring a parent should be put.
 		/// </summary>
 		UnityEngine.GameObject CacheRootGO { get; }
+
+		/// <summary>
+		/// Indicate that the assets at the provided URL are loading but not ready yet. Any requests to [[LeaseAssets]]
+		/// or [[TryGetVersion]] for these resources will be delayed until loading is complete.
+		/// </summary>
+		/// <param name="uri">The resource identifier.</param>
+		/// <param name="blockingTask">A pending Task that should complete after the assets are loaded and cached.</param>
+		void BlockWhileLoading(Uri uri, Task blockingTask);
 
 		/// <summary>
 		/// If either the cache contains no assets for the resource, or the cached
@@ -39,8 +42,7 @@ namespace MixedRealityExtension.PluginInterfaces
 		/// <summary>
 		/// Asynchronously return the cached assets at the given URI, and increment the internal reference counter
 		/// for this resource. Will return null if no assets are cached for that resource, or if ifMatchesVersion
-		/// does not match the stored assets' version. This should be async in case the asset needs to be loaded
-		/// from persistent storage, but that's not implemented yet.
+		/// does not match the stored assets' version. Will wait for any loading tasks to complete.
 		/// </summary>
 		/// <param name="uri">The resource identifier</param>
 		/// <param name="ifMatchesVersion">Return null if the cached assets are not of this version</param>
@@ -48,26 +50,11 @@ namespace MixedRealityExtension.PluginInterfaces
 		Task<IEnumerable<UnityEngine.Object>> LeaseAssets(Uri uri, string ifMatchesVersion = null);
 
 		/// <summary>
-		/// Same as LeaseAssets, but is only valid if SupportsSync is true.
-		/// </summary>
-		/// <param name="uri">The resource identifier</param>
-		/// <param name="ifMatchesVersion">Return null if the cached assets are not of this version</param>
-		/// <returns></returns>
-		IEnumerable<UnityEngine.Object> LeaseAssetsSync(Uri uri, string ifMatchesVersion = null);
-
-		/// <summary>
 		/// Returns the stored version of the given resource, or null if not cached. We'll need this for If-Not-Match
-		/// HTTP headers.
+		/// HTTP headers. Will wait for any loading tasks to complete.
 		/// </summary>
 		/// <param name="uri">The resource identifier</param>
 		/// <returns></returns>
-		Task<string> GetVersion(Uri uri);
-
-		/// <summary>
-		/// Same as GetVersion, but is only valid if SupportsSync is true.
-		/// </summary>
-		/// <param name="uri"></param>
-		/// <returns></returns>
-		string GetVersionSync(Uri uri);
+		Task<string> TryGetVersion(Uri uri);
 	}
 }
