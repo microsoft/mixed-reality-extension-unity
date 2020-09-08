@@ -1,5 +1,5 @@
 {
-    "name": "Microsoft.MRE.UnityRuntime",
+    "name": "MREUnityRuntimeLib",
     "references": [],
     "includePlatforms": [],
     "excludePlatforms": [],
