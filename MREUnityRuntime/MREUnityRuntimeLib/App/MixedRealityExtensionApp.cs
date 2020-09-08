@@ -512,7 +512,14 @@ namespace MixedRealityExtension.App
 					}
 				}
 
-				OnUserJoined?.Invoke(user, isLocalUser);
+				try
+				{
+					OnUserJoined?.Invoke(user, isLocalUser);
+				}
+				catch (Exception e)
+				{
+					Debug.LogException(e);
+				}
 			}
 
 			if (Protocol is Execution)
@@ -553,7 +560,14 @@ namespace MixedRealityExtension.App
 					}
 				}
 
-				OnUserLeft?.Invoke(user, isLocalUser);
+				try
+				{
+					OnUserLeft?.Invoke(user, isLocalUser);
+				}
+				catch (Exception e)
+				{
+					Debug.LogException(e);
+				}
 			}
 		}
 
