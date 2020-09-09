@@ -5,6 +5,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
 using Object = UnityEngine.Object;
@@ -64,7 +65,8 @@ namespace MixedRealityExtension.Assets
 		// needed to prevent UnityEngine.Resources.UnloadUnusedAssets from unloading the cache
 		[SerializeField] protected List<Object> CacheInspector = new List<Object>(30);
 
-		protected readonly Dictionary<Uri, CacheItem> Cache = new Dictionary<Uri, CacheItem>(10);
+		protected readonly Dictionary<Uri, CacheItem> Cache = new Dictionary<Uri, CacheItem>(100);
+		protected readonly Dictionary<Uri, SemaphoreSlim> LoadingLocks = new Dictionary<Uri, SemaphoreSlim>(100);
 		private Coroutine CleanTimer = null;
 
 		/// <summary>
@@ -93,6 +95,23 @@ namespace MixedRealityExtension.Assets
 		protected virtual void OnDestroy()
 		{
 			Application.lowMemory -= CleanUnusedResources;
+		}
+
+		///<inheritdoc/>
+		public virtual Task<bool> AcquireLoadingLock(Uri uri)
+		{
+			if (!LoadingLocks.TryGetValue(uri, out SemaphoreSlim sema))
+			{
+				sema = LoadingLocks[uri] = new SemaphoreSlim(1, 1);
+			}
+
+			return sema.WaitAsync(30_000);
+		}
+
+		///<inheritdoc/>
+		public virtual void ReleaseLoadingLock(Uri uri)
+		{
+			LoadingLocks[uri].Release();
 		}
 
 		///<inheritdoc/>
@@ -153,13 +172,13 @@ namespace MixedRealityExtension.Assets
 		}
 
 		/// <inheritdoc />
-		public virtual Task<string> GetVersion(Uri uri)
+		public virtual Task<string> TryGetVersion(Uri uri)
 		{
-			return Task.FromResult(GetVersionSync(uri));
+			return Task.FromResult(TryGetVersionSync(uri));
 		}
 
 		///<inheritdoc/>
-		public virtual string GetVersionSync(Uri uri)
+		public virtual string TryGetVersionSync(Uri uri)
 		{
 			if (Cache.TryGetValue(uri, out CacheItem cacheItem))
 			{
@@ -204,6 +223,11 @@ namespace MixedRealityExtension.Assets
 				if (CleanBottomUp(cacheItem))
 				{
 					Cache.Remove(cacheItem.Uri);
+					if (LoadingLocks.TryGetValue(cacheItem.Uri, out SemaphoreSlim sema))
+					{
+						LoadingLocks.Remove(cacheItem.Uri);
+						sema.Dispose();
+					}
 				}
 			}
 		}
