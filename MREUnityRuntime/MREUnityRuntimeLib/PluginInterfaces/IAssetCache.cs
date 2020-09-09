@@ -29,7 +29,9 @@ namespace MixedRealityExtension.PluginInterfaces
 		/// to avoid deadlock.
 		/// </summary>
 		/// <param name="uri">The resource URL.</param>
-		/// <returns>`true` if the lock was successfully acquired; `false` otherwise.</returns>
+		/// <returns>
+		/// A task that completes with `true` if the lock was successfully acquired; `false` otherwise.
+		/// </returns>
 		Task<bool> AcquireLoadingLock(Uri uri);
 
 		/// <summary>
@@ -55,34 +57,38 @@ namespace MixedRealityExtension.PluginInterfaces
 		/// Asynchronously return the cached assets at the given URI, and increment the internal reference counter
 		/// for this resource. Will return null if no assets are cached for that resource, or if ifMatchesVersion
 		/// does not match the stored assets' version. This should be async in case the asset needs to be loaded
-		/// from persistent storage, but that's not implemented yet.
+		/// from persistent storage.
 		/// </summary>
 		/// <param name="uri">The resource identifier</param>
 		/// <param name="ifMatchesVersion">Return null if the cached assets are not of this version</param>
-		/// <returns></returns>
+		/// <returns>A task that completes with the cached assets, or null if no assets are cached.</returns>
 		Task<IEnumerable<UnityEngine.Object>> LeaseAssets(Uri uri, string ifMatchesVersion = null);
 
 		/// <summary>
-		/// Same as LeaseAssets, but is only valid if SupportsSync is true.
+		/// Same as <see cref="LeaseAssets(Uri, string)"/>, but is only valid if <see cref="SupportsSync"/> is true.
 		/// </summary>
 		/// <param name="uri">The resource identifier</param>
 		/// <param name="ifMatchesVersion">Return null if the cached assets are not of this version</param>
-		/// <returns></returns>
+		/// <returns>The cached assets, or null if no assets are cached.</returns>
 		IEnumerable<UnityEngine.Object> LeaseAssetsSync(Uri uri, string ifMatchesVersion = null);
 
 		/// <summary>
 		/// Returns the stored version of the given resource, or null if not cached. We'll need this for If-Not-Match
 		/// HTTP headers.
 		/// </summary>
-		/// <param name="uri">The resource identifier</param>
-		/// <returns></returns>
+		/// <param name="uri">The resource identifier.</param>
+		/// <returns>
+		/// A task that completes with the version string of the cached assets, or null if nothing is cached.
+		/// </returns>
 		Task<string> TryGetVersion(Uri uri);
 
 		/// <summary>
-		/// Same as GetVersion, but is only valid if SupportsSync is true.
+		/// Same as <see cref="TryGetVersion(Uri)"/>, but is only valid if <see cref="SupportsSync"/> is true.
 		/// </summary>
-		/// <param name="uri"></param>
-		/// <returns></returns>
+		/// <param name="uri">The resource identifier.</param>
+		/// <returns>
+		/// The version string of the cached assets, or null if nothing is cached.
+		/// </returns>
 		string TryGetVersionSync(Uri uri);
 	}
 }
