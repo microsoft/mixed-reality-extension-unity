@@ -68,6 +68,9 @@ namespace MixedRealityExtension.Patching.Types
 		public bool? Grabbable { get; set; }
 
 		[PatchProperty]
+		public int? UpdateFrequency { get; set; }
+
+		[PatchProperty]
 		public List<ActorComponentType> Subscriptions { get; set; }
 
 		public ActorPatch()
@@ -128,6 +131,7 @@ namespace MixedRealityExtension.Patching.Types
 				&& Attachment == null
 				&& LookAt == null
 				&& Grabbable == null
+				&& UpdateFrequency == null
 				&& Subscriptions == null;
 		}
 

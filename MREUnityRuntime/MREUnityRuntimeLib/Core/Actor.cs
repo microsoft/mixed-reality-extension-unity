@@ -41,6 +41,8 @@ namespace MixedRealityExtension.Core
 		private UnityCollider _collider;
 		private ColliderPatch _pendingColliderPatch;
 		private LookAtComponent _lookAt;
+		private int _updateFrequency = 5;
+
 		class MediaInstance
 		{
 			public Guid MediaAssetId { get; }
@@ -372,6 +374,7 @@ namespace MixedRealityExtension.Core
 			PatchAttachment(actorPatch.Attachment);
 			PatchLookAt(actorPatch.LookAt);
 			PatchGrabbable(actorPatch.Grabbable);
+			PatchUpdateFrequency(actorPatch.UpdateFrequency);
 			PatchSubscriptions(actorPatch.Subscriptions);
 		}
 
@@ -680,7 +683,7 @@ namespace MixedRealityExtension.Core
 				// TODO: Add ability to flag an actor for "high-frequency" updates
 				if (Time.time >= _nextUpdateTime)
 				{
-					_nextUpdateTime = Time.time + 0.2f + UnityEngine.Random.Range(-0.1f, 0.1f);
+					_nextUpdateTime = Time.time + UnityEngine.Random.Range(0.5f, 1.5f) / _updateFrequency;
 					SynchronizeApp();
 
 					// Give components the opportunity to synchronize the app.
@@ -1603,6 +1606,13 @@ namespace MixedRealityExtension.Core
 				{
 					_subscriptions |= subscription;
 				}
+			}
+		}
+		private void PatchUpdateFrequency(int? updateFrequency)
+		{
+			if (updateFrequency.HasValue)
+			{
+				_updateFrequency = updateFrequency.Value;
 			}
 		}
 
