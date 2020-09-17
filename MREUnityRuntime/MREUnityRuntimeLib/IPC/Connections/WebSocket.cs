@@ -428,7 +428,7 @@ namespace MixedRealityExtension.IPC.Connections
 			if (!disposed)
 			{
 				disposed = true;
-				Task.Run(() => CloseInternal(false, "Dispose")).Wait();
+				Task.Run(() => CloseInternal(true, "Dispose")).Wait();
 				Task.Run(() => DisposeInternal()).Wait();
 			}
 		}
