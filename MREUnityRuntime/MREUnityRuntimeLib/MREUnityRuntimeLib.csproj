@@ -86,7 +86,6 @@
     <Compile Include="Assets\AssetCache.cs" />
     <Compile Include="Assets\AssetLoadThrottling.cs" />
     <Compile Include="Assets\PrefabAnimationTargets.cs" />
-    <Compile Include="Assets\PrefabInstanceList.cs" />
     <Compile Include="Behaviors\ActionData\BaseActionData.cs" />
     <Compile Include="Behaviors\ActionData\BaseToolData.cs" />
     <Compile Include="Behaviors\ActionData\ButtonData.cs" />

@@ -30,15 +30,17 @@ namespace MixedRealityExtension.Assets
 			public readonly Object Asset;
 			public readonly ColliderGeometry ColliderGeometry;
 			public readonly AssetSource Source;
+			public readonly Object SourceAsset;
 
 			public AssetMetadata(Guid id, Guid containerId, Object asset,
-				ColliderGeometry collider = null, AssetSource source = null)
+				ColliderGeometry collider = null, AssetSource source = null, Object sourceAsset = null)
 			{
 				Id = id;
 				ContainerId = containerId;
-				Source = source;
 				Asset = asset;
 				ColliderGeometry = collider;
+				Source = source;
+				SourceAsset = sourceAsset;
 			}
 		}
 
@@ -99,6 +101,8 @@ namespace MixedRealityExtension.Assets
 				// copy sourced assets if requesting write-safe
 				if (writeSafe)
 				{
+					var oldId = metadata.Asset.GetInstanceID();
+					var oldWriteSafe = metadata.Source == null;
 					MakeWriteSafe(metadata);
 				}
 				return Assets[id.Value];
@@ -115,7 +119,7 @@ namespace MixedRealityExtension.Assets
 		{
 			foreach (var metadata in Assets.Values)
 			{
-				if (metadata.Asset == asset)
+				if (metadata.Asset == asset || metadata.SourceAsset == asset)
 				{
 					return metadata;
 				}
@@ -233,11 +237,12 @@ namespace MixedRealityExtension.Assets
 			}
 
 			var copyMetadata = new AssetMetadata(
-				metadata.Id,
-				metadata.ContainerId,
+				id: metadata.Id,
+				containerId: metadata.ContainerId,
 				asset: copyAsset,
-				metadata.ColliderGeometry,
-				source: null);
+				collider: metadata.ColliderGeometry,
+				source: null,
+				sourceAsset: originalAsset);
 			Assets[metadata.Id] = copyMetadata;
 
 			IEnumerable<AssetMetadata> dependents;
@@ -373,23 +378,6 @@ namespace MixedRealityExtension.Assets
 							sharedMats[i] = (UnityEngine.Material)updatedDependency.Value.Asset;
 							r.sharedMaterials = sharedMats;
 							break;
-						}
-					}
-
-					// update materials of actors based on this prefab
-					var instanceList = r.gameObject.GetComponent<PrefabInstanceList>();
-					foreach (var actor in instanceList.Instances)
-					{
-						var ra = actor.gameObject.GetComponent<Renderer>();
-						var sharedActorMats = ra.sharedMaterials;
-						for (int i = 0; i < sharedActorMats.Length; i++)
-						{
-							if (sharedActorMats[i] == (UnityEngine.Material)dependency.Value.Asset)
-							{
-								sharedActorMats[i] = (UnityEngine.Material)updatedDependency.Value.Asset;
-								ra.sharedMaterials = sharedActorMats;
-								break;
-							}
 						}
 					}
 				}

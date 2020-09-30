@@ -89,10 +89,6 @@ namespace MixedRealityExtension.Assets
 				destMap.AnimationTargets = sourceMap.AnimationTargets;
 			}
 
-			// created actors should refer back to the prefab
-			var prefabTrackers = new List<PrefabInstanceList>();
-			MWGOTreeWalker.VisitTree(prefab, go => prefabTrackers.Add(go.GetComponent<PrefabInstanceList>()));
-
 			// note: actor properties are set in App#ProcessCreatedActors
 			var actorList = new List<Actor>();
 			MWGOTreeWalker.VisitTree(instance, go =>
@@ -108,10 +104,6 @@ namespace MixedRealityExtension.Assets
 				}
 
 				var actor = go.AddComponent<Actor>();
-
-				// match this actor in the hierarchy with the corresponding gameobject in the prefab
-				prefabTrackers[actorList.Count].Instances.Add(actor);
-
 				actorList.Add(actor);
 			});
 
@@ -130,7 +122,7 @@ namespace MixedRealityExtension.Assets
 					break;
 				default:
 					throw new Exception(
-						$"Cannot load assets from unknown container type {payload.Source.ContainerType.ToString()}");
+						$"Cannot load assets from unknown container type {payload.Source.ContainerType}");
 			}
 
 			IList<Asset> assets = null;
@@ -368,9 +360,6 @@ namespace MixedRealityExtension.Assets
 						MWGOTreeWalker.VisitTree(rootObject, (go) =>
 						{
 							go.layer = MREAPI.AppsAPI.LayerApplicator.DefaultLayer;
-
-							// keep track of actors that reference this prefab
-							go.AddComponent<PrefabInstanceList>();
 						});
 
 						assets.Add(rootObject);

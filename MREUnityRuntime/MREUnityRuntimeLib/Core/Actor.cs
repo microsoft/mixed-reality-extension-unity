@@ -188,9 +188,51 @@ namespace MixedRealityExtension.Core
 		internal Attachment Attachment { get; } = new Attachment();
 		private Attachment _cachedAttachment = new Attachment();
 
-		internal Guid MaterialId { get; set; } = Guid.Empty;
-		internal Guid MeshId { get; set; } = Guid.Empty;
+		private Guid _materialId = Guid.Empty;
 		private bool ListeningForMaterialChanges = false;
+
+		internal Guid MaterialId
+		{
+			get
+			{
+				return _materialId;
+			}
+			set
+			{
+				_materialId = value;
+				if (!Renderer) return;
+
+				// look up and assign material, or default if none assigned
+				if (_materialId != Guid.Empty)
+				{
+					var updatedMaterialId = _materialId;
+					App.AssetManager.OnSet(_materialId, sharedMat =>
+					{
+						if (!this || !Renderer || _materialId != updatedMaterialId) return;
+
+						Renderer.sharedMaterial = (Material)sharedMat.Asset ?? MREAPI.AppsAPI.DefaultMaterial;
+
+						// keep this material up to date
+						if (!ListeningForMaterialChanges)
+						{
+							App.AssetManager.AssetReferenceChanged += CheckMaterialReferenceChanged;
+							ListeningForMaterialChanges = true;
+						}
+					});
+				}
+				else
+				{
+					Renderer.sharedMaterial = MREAPI.AppsAPI.DefaultMaterial;
+					if (ListeningForMaterialChanges)
+					{
+						App.AssetManager.AssetReferenceChanged -= CheckMaterialReferenceChanged;
+						ListeningForMaterialChanges = false;
+					}
+				}
+			}
+		}
+
+		internal Guid MeshId { get; set; } = Guid.Empty;
 
 		internal Mesh UnityMesh
 		{
@@ -1091,11 +1133,6 @@ namespace MixedRealityExtension.Core
 			// update renderers
 			if (appearance.MaterialId != null || appearance.MeshId != null)
 			{
-				// patch material
-				if (appearance.MaterialId != null)
-				{
-					MaterialId = appearance.MaterialId.Value;
-				}
 				// patch mesh
 				if (appearance.MeshId != null)
 				{
@@ -1133,31 +1170,10 @@ namespace MixedRealityExtension.Core
 						}
 					});
 
-					// look up and assign material, or default if none assigned
-					if (MaterialId != Guid.Empty)
+					// patch material
+					if (appearance.MaterialId != null)
 					{
-						var updatedMaterialId = MaterialId;
-						App.AssetManager.OnSet(MaterialId, sharedMat =>
-						{
-							if (!this || !Renderer || MaterialId != updatedMaterialId) return;
-							Renderer.sharedMaterial = (Material)sharedMat.Asset ?? MREAPI.AppsAPI.DefaultMaterial;
-
-							// keep this material up to date
-							if (!ListeningForMaterialChanges)
-							{
-								App.AssetManager.AssetReferenceChanged += CheckMaterialReferenceChanged;
-								ListeningForMaterialChanges = true;
-							}
-						});
-					}
-					else
-					{
-						Renderer.sharedMaterial = MREAPI.AppsAPI.DefaultMaterial;
-						if (ListeningForMaterialChanges)
-						{
-							App.AssetManager.AssetReferenceChanged -= CheckMaterialReferenceChanged;
-							ListeningForMaterialChanges = false;
-						}
+						MaterialId = appearance.MaterialId.Value;
 					}
 				}
 				// clean up unused components
