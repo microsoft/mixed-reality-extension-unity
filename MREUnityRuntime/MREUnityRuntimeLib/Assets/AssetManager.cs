@@ -101,8 +101,6 @@ namespace MixedRealityExtension.Assets
 				// copy sourced assets if requesting write-safe
 				if (writeSafe)
 				{
-					var oldId = metadata.Asset.GetInstanceID();
-					var oldWriteSafe = metadata.Source == null;
 					MakeWriteSafe(metadata);
 				}
 				return Assets[id.Value];

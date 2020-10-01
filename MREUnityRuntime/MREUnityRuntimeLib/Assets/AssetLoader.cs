@@ -103,8 +103,7 @@ namespace MixedRealityExtension.Assets
 					go.layer = MREAPI.AppsAPI.LayerApplicator.DefaultLayer;
 				}
 
-				var actor = go.AddComponent<Actor>();
-				actorList.Add(actor);
+				actorList.Add(go.AddComponent<Actor>());
 			});
 
 			return actorList;
