@@ -121,7 +121,7 @@ namespace MixedRealityExtension.Assets
 					break;
 				default:
 					throw new Exception(
-						$"Cannot load assets from unknown container type {payload.Source.ContainerType.ToString()}");
+						$"Cannot load assets from unknown container type {payload.Source.ContainerType}");
 			}
 
 			IList<Asset> assets = null;

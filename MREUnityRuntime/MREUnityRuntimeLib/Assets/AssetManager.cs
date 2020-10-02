@@ -30,15 +30,17 @@ namespace MixedRealityExtension.Assets
 			public readonly Object Asset;
 			public readonly ColliderGeometry ColliderGeometry;
 			public readonly AssetSource Source;
+			public readonly Object SourceAsset;
 
 			public AssetMetadata(Guid id, Guid containerId, Object asset,
-				ColliderGeometry collider = null, AssetSource source = null)
+				ColliderGeometry collider = null, AssetSource source = null, Object sourceAsset = null)
 			{
 				Id = id;
 				ContainerId = containerId;
-				Source = source;
 				Asset = asset;
 				ColliderGeometry = collider;
+				Source = source;
+				SourceAsset = sourceAsset;
 			}
 		}
 
@@ -115,7 +117,7 @@ namespace MixedRealityExtension.Assets
 		{
 			foreach (var metadata in Assets.Values)
 			{
-				if (metadata.Asset == asset)
+				if (metadata.Asset == asset || metadata.SourceAsset == asset)
 				{
 					return metadata;
 				}
@@ -233,106 +235,31 @@ namespace MixedRealityExtension.Assets
 			}
 
 			var copyMetadata = new AssetMetadata(
-				metadata.Id,
-				metadata.ContainerId,
+				id: metadata.Id,
+				containerId: metadata.ContainerId,
 				asset: copyAsset,
-				metadata.ColliderGeometry,
-				source: null);
+				collider: metadata.ColliderGeometry,
+				source: null,
+				sourceAsset: originalAsset);
 			Assets[metadata.Id] = copyMetadata;
 
 			IEnumerable<AssetMetadata> dependents;
 			if (originalAsset is UnityEngine.Texture tex)
 			{
-				// identify materials that use this texture
-				dependents = Assets.Values.Where(a =>
-				{
-					if (a.Asset is UnityEngine.Material mat)
-					{
-						return MREAPI.AppsAPI.MaterialPatcher.UsesTexture(App, mat, tex);
-					}
-					else return false;
-				}).ToArray();
+				dependents = MakeTextureWriteSafe(tex);
 			}
 			else if (originalAsset is UnityEngine.Material mat)
 			{
-				// update material's texture reference to the new copy
-				if (dependency != null && updatedDependency != null)
-				{
-					var matDef = MREAPI.AppsAPI.MaterialPatcher.GeneratePatch(App, mat);
-					var updatePatch = new Material();
-					if (matDef.MainTextureId == dependency.Value.Id)
-					{
-						updatePatch.MainTextureId = dependency.Value.Id;
-					}
-					if (matDef.EmissiveTextureId == dependency.Value.Id)
-					{
-						updatePatch.EmissiveTextureId = dependency.Value.Id;
-					}
-					MREAPI.AppsAPI.MaterialPatcher.ApplyMaterialPatch(App, (UnityEngine.Material)copyAsset, updatePatch);
-				}
-
-				// update actors that use this material
-				AssetReferenceChanged?.Invoke(metadata.Id);
-
-				// identify prefabs that reference this material
-				dependents = Assets.Values.Where(a =>
-				{
-					if (a.Asset is GameObject prefab)
-					{
-						var renderers = prefab.GetComponentsInChildren<Renderer>();
-
-						// if prefab is already write-safe, just update
-						if (a.Source == null)
-						{
-							foreach (var r in renderers)
-							{
-								var sharedMats = r.sharedMaterials;
-								for (int i = 0; i < sharedMats.Length; i++)
-								{
-									if (sharedMats[i] == mat)
-									{
-										sharedMats[i] = (UnityEngine.Material)copyAsset;
-										r.sharedMaterials = sharedMats;
-										break;
-									}
-								}
-							}
-							return false;
-						}
-						// gotta make the prefab write-safe
-						else
-						{
-							return renderers.Any(r => r.sharedMaterials.Any(m => m == mat));
-						}
-					}
-					else return false;
-				}).ToArray();
+				dependents = MakeMaterialWriteSafe(
+					metadata.Id,
+					mat,
+					(UnityEngine.Material)copyAsset,
+					dependency,
+					updatedDependency);
 			}
 			else if (copyAsset is GameObject prefab)
 			{
-				// copy prefab into local cache
-				prefab.transform.SetParent(CacheRootGO().transform, false);
-
-				// update materials
-				if (dependency != null && updatedDependency != null)
-				{
-					var renderers = prefab.GetComponentsInChildren<Renderer>();
-					foreach (var r in renderers)
-					{
-						var sharedMats = r.sharedMaterials;
-						for (int i = 0; i < sharedMats.Length; i++)
-						{
-							if (sharedMats[i] == (UnityEngine.Material)dependency.Value.Asset)
-							{
-								sharedMats[i] = (UnityEngine.Material)updatedDependency.Value.Asset;
-								r.sharedMaterials = sharedMats;
-								break;
-							}
-						}
-					}
-				}
-
-				dependents = new AssetMetadata[0];
+				dependents = MakePrefabWriteSafe(prefab, dependency, updatedDependency);
 			}
 			else
 			{
@@ -346,7 +273,115 @@ namespace MixedRealityExtension.Assets
 			}
 
 			// return original assets to cache
-			MREAPI.AppsAPI.AssetCache.StoreAssets(metadata.Source.ParsedUri, new Object[] { originalAsset }, metadata.Source.Version);
+			MREAPI.AppsAPI.AssetCache.StoreAssets(
+				metadata.Source.ParsedUri,
+				new Object[] { originalAsset },
+				metadata.Source.Version);
+		}
+
+		private IEnumerable<AssetMetadata> MakeTextureWriteSafe(UnityEngine.Texture tex)
+		{
+			// identify materials that use this texture
+			return Assets.Values.Where(a =>
+			{
+				if (a.Asset is UnityEngine.Material mat)
+				{
+					return MREAPI.AppsAPI.MaterialPatcher.UsesTexture(App, mat, tex);
+				}
+				else return false;
+			}).ToArray();
+		}
+
+		private IEnumerable<AssetMetadata> MakeMaterialWriteSafe(
+			Guid Id,
+			UnityEngine.Material mat,
+			UnityEngine.Material copyMat,
+			AssetMetadata? dependency,
+			AssetMetadata? updatedDependency)
+		{
+			// update material's texture reference to the new copy
+			if (dependency != null && updatedDependency != null)
+			{
+				var matDef = MREAPI.AppsAPI.MaterialPatcher.GeneratePatch(App, mat);
+				var updatePatch = new Material();
+				if (matDef.MainTextureId == dependency.Value.Id)
+				{
+					updatePatch.MainTextureId = dependency.Value.Id;
+				}
+				if (matDef.EmissiveTextureId == dependency.Value.Id)
+				{
+					updatePatch.EmissiveTextureId = dependency.Value.Id;
+				}
+				MREAPI.AppsAPI.MaterialPatcher.ApplyMaterialPatch(App, copyMat, updatePatch);
+			}
+
+			// update actors that use this material
+			AssetReferenceChanged?.Invoke(Id);
+
+			// identify prefabs that reference this material
+			return Assets.Values.Where(a =>
+			{
+				if (a.Asset is GameObject prefab)
+				{
+					var renderers = prefab.GetComponentsInChildren<Renderer>();
+
+					// if prefab is already write-safe, just update
+					if (a.Source == null)
+					{
+						foreach (var r in renderers)
+						{
+							var sharedMats = r.sharedMaterials;
+							for (int i = 0; i < sharedMats.Length; i++)
+							{
+								if (sharedMats[i] == mat)
+								{
+									sharedMats[i] = copyMat;
+									r.sharedMaterials = sharedMats;
+									break;
+								}
+							}
+						}
+						return false;
+					}
+					// gotta make the prefab write-safe
+					else
+					{
+						return renderers.Any(r => r.sharedMaterials.Any(m => m == mat));
+					}
+				}
+				else return false;
+			}).ToArray();
+		}
+
+		private IEnumerable<AssetMetadata> MakePrefabWriteSafe(
+			GameObject prefab,
+			AssetMetadata? dependency,
+			AssetMetadata? updatedDependency)
+		{
+			// copy prefab into local cache
+			prefab.transform.SetParent(CacheRootGO().transform, false);
+
+			// update materials
+			if (dependency != null && updatedDependency != null)
+			{
+				// update materials on the prefab
+				var renderers = prefab.GetComponentsInChildren<Renderer>();
+				foreach (var r in renderers)
+				{
+					var sharedMats = r.sharedMaterials;
+					for (int i = 0; i < sharedMats.Length; i++)
+					{
+						if (sharedMats[i] == (UnityEngine.Material)dependency.Value.Asset)
+						{
+							sharedMats[i] = (UnityEngine.Material)updatedDependency.Value.Asset;
+							r.sharedMaterials = sharedMats;
+							break;
+						}
+					}
+				}
+			}
+
+			return new AssetMetadata[0];
 		}
 	}
 }
