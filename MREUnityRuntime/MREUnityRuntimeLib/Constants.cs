@@ -61,5 +61,10 @@ namespace MixedRealityExtension
 		 * It is NOT compatibile with SDK versions older than 0.19.
 		 */
 		internal const bool UsePhysicsBridge = true;
+
+		/// <summary>
+		/// If we load an asset, and the server response does not contain an ETag, this is the asset's version
+		/// </summary>
+		internal const string UnversionedAssetVersion = "unversioned";
 	}
 }

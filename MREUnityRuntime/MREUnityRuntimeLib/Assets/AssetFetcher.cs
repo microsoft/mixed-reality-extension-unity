@@ -4,14 +4,13 @@ using MixedRealityExtension.API;
 using System;
 using System.Collections;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Networking;
 
 namespace MixedRealityExtension.Assets
 {
-	public static class AssetFetcher<T> where T : class
+	public static class AssetFetcher<T> where T : UnityEngine.Object
 	{
 		public struct FetchResult
 		{
@@ -40,6 +39,18 @@ namespace MixedRealityExtension.Assets
 				? MREAPI.AppsAPI.AssetCache.TryGetVersionSync(uri)
 				: await MREAPI.AppsAPI.AssetCache.TryGetVersion(uri);
 
+			// if the cached version is unversioned, i.e. the server doesn't support ETags, don't bother making request
+			if (ifNoneMatch == Constants.UnversionedAssetVersion)
+			{
+				var assets = MREAPI.AppsAPI.AssetCache.SupportsSync
+					? MREAPI.AppsAPI.AssetCache.LeaseAssetsSync(uri)
+					: await MREAPI.AppsAPI.AssetCache.LeaseAssets(uri);
+				result.Asset = assets.FirstOrDefault() as T;
+
+				MREAPI.AppsAPI.AssetCache.ReleaseLoadingLock(uri);
+				return result;
+			}
+
 			runner.StartCoroutine(LoadCoroutine());
 
 			// Spin asynchronously until the request completes.
@@ -49,7 +60,7 @@ namespace MixedRealityExtension.Assets
 			}
 
 			// handle caching
-			if (ifNoneMatch != null && result.ReturnCode == 304)
+			if (!string.IsNullOrEmpty(ifNoneMatch) && result.ReturnCode == 304)
 			{
 				var assets = MREAPI.AppsAPI.AssetCache.SupportsSync
 					? MREAPI.AppsAPI.AssetCache.LeaseAssetsSync(uri)
@@ -60,7 +71,7 @@ namespace MixedRealityExtension.Assets
 			{
 				MREAPI.AppsAPI.AssetCache.StoreAssets(
 					uri,
-					new UnityEngine.Object[] { result.Asset as UnityEngine.Object },
+					new UnityEngine.Object[] { result.Asset },
 					result.ETag);
 			}
 
@@ -93,7 +104,7 @@ namespace MixedRealityExtension.Assets
 				using (var scope = new AssetLoadThrottling.AssetLoadScope())
 				using (var www = new UnityWebRequest(uri, "GET", handler, null))
 				{
-					if (ifNoneMatch != null)
+					if (!string.IsNullOrEmpty(ifNoneMatch))
 					{
 						www.SetRequestHeader("If-None-Match", ifNoneMatch);
 					}
@@ -107,7 +118,7 @@ namespace MixedRealityExtension.Assets
 					else
 					{
 						result.ReturnCode = www.responseCode;
-						result.ETag = www.GetResponseHeader("ETag") ?? "unversioned";
+						result.ETag = www.GetResponseHeader("ETag") ?? Constants.UnversionedAssetVersion;
 
 						if (www.isHttpError)
 						{
