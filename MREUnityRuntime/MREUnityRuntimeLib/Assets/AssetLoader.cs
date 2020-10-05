@@ -173,7 +173,7 @@ namespace MixedRealityExtension.Assets
 			{
 				// set up loader
 				loader = new WebRequestLoader(rootUri);
-				if (!string.IsNullOrEmpty(cachedVersion))
+				if (cachedVersion != Constants.UnversionedAssetVersion && !string.IsNullOrEmpty(cachedVersion))
 				{
 					loader.BeforeRequestCallback += (msg) =>
 					{
@@ -188,7 +188,7 @@ namespace MixedRealityExtension.Assets
 				try
 				{
 					stream = await loader.LoadStreamAsync(URIHelper.GetFileFromUri(source.ParsedUri));
-					source.Version = loader.LastResponse.Headers.ETag?.Tag ?? "";
+					source.Version = loader.LastResponse.Headers.ETag?.Tag ?? Constants.UnversionedAssetVersion;
 				}
 				catch (HttpRequestException)
 				{
