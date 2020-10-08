@@ -1004,7 +1004,13 @@ namespace MixedRealityExtension.App
 				actor.ParentId = parent?.Id ?? actor.ParentId;
 				if (actor.Renderer != null)
 				{
-					actor.MaterialId = AssetManager.GetByObject(actor.Renderer.sharedMaterial)?.Id ?? Guid.Empty;
+					// only overwrite material if there's something in the cache, i.e. not a random library material
+					var matId = AssetManager.GetByObject(actor.Renderer.sharedMaterial)?.Id;
+					if (matId.HasValue)
+					{
+						actor.MaterialId = matId.Value;
+					}
+
 					actor.MeshId = AssetManager.GetByObject(actor.UnityMesh)?.Id ?? Guid.Empty;
 				}
 
