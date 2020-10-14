@@ -76,6 +76,9 @@ namespace MixedRealityExtension.App
 		#region Events - Public
 
 		/// <inheritdoc />
+		public event MWEventHandler OnWaitingForPermission;
+
+		/// <inheritdoc />
 		public event MWEventHandler OnConnecting;
 
 		/// <inheritdoc />
@@ -234,6 +237,7 @@ namespace MixedRealityExtension.App
 			SessionId = sessionId;
 
 			_appState = AppState.WaitingForPermission;
+			OnWaitingForPermission?.Invoke();
 
 			// download manifest
 			var manifestUri = new Uri(ServerAssetUri, "./manifest.json");
