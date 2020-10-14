@@ -272,7 +272,8 @@ namespace MixedRealityExtension.App
 
 			MREAPI.AppsAPI.PermissionManager.OnPermissionDecisionsChanged += OnPermissionsUpdated;
 
-			if (!grantedPerms.HasFlag(Permissions.Execution))
+			// make sure all needed perms are granted
+			if ((neededFlags & GrantedPermissions) != neededFlags)
 			{
 				Debug.LogError($"User has denied permission for the MRE '{ServerUri}' to run");
 				return;
