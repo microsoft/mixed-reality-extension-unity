@@ -192,7 +192,8 @@ namespace MixedRealityExtension.Assets
 				}
 				catch (HttpRequestException)
 				{
-					if (loader.LastResponse.StatusCode == System.Net.HttpStatusCode.NotModified)
+					if (loader.LastResponse != null
+						&& loader.LastResponse.StatusCode == System.Net.HttpStatusCode.NotModified)
 					{
 						source.Version = cachedVersion;
 					}
