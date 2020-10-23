@@ -79,6 +79,9 @@ namespace MixedRealityExtension.App
 		public event MWEventHandler OnWaitingForPermission;
 
 		/// <inheritdoc />
+		public event MWEventHandler OnPermissionDenied;
+
+		/// <inheritdoc />
 		public event MWEventHandler OnConnecting;
 
 		/// <inheritdoc />
@@ -276,6 +279,8 @@ namespace MixedRealityExtension.App
 			if ((neededFlags & GrantedPermissions) != neededFlags)
 			{
 				Debug.LogError($"User has denied permission for the MRE '{ServerUri}' to run");
+				OnPermissionDenied?.Invoke();
+				Shutdown(restartOnPermissionGrant: true);
 				return;
 			}
 
@@ -336,12 +341,15 @@ namespace MixedRealityExtension.App
 		}
 
 		/// <inheritdoc />
-		public void Shutdown()
+		public void Shutdown(bool restartOnPermissionGrant = false)
 		{
 			Disconnect();
 			FreeResources();
 
-			MREAPI.AppsAPI.PermissionManager.OnPermissionDecisionsChanged -= OnPermissionsUpdated;
+			if (restartOnPermissionGrant)
+			{
+				MREAPI.AppsAPI.PermissionManager.OnPermissionDecisionsChanged -= OnPermissionsUpdated;
+			}
 
 			if (_appState != AppState.Stopped)
 			{

@@ -22,6 +22,12 @@ namespace MixedRealityExtension.App
 		event MWEventHandler OnWaitingForPermission;
 
 		/// <summary>
+		/// Event that is raised when a permission required to run the app is denied by the host. Will be immediately
+		/// followed by <see cref="OnAppShutdown"/>.
+		/// </summary>
+		event MWEventHandler OnPermissionDenied;
+
+		/// <summary>
 		/// Event that is raised when the mixed reality extension app has connected to the app.
 		/// </summary>
 		event MWEventHandler OnConnecting;
@@ -135,7 +141,10 @@ namespace MixedRealityExtension.App
 		/// <summary>
 		/// Called to shut down the engine mixed reality extension app by the app process.
 		/// </summary>
-		void Shutdown();
+		/// <param name="restartOnPermissionGrant">If true, the MRE will <see cref="Startup(string, string)"/>
+		/// itself if its required permissions are granted. Only applies after <see cref="Startup(string, string)"/>
+		/// has been called explicitly at least once.</param>
+		void Shutdown(bool restartOnPermissionGrant = false);
 
 		/// <summary>
 		/// Update keyframed rigid bodies.
