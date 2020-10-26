@@ -254,7 +254,7 @@ namespace MixedRealityExtension.App
 				Debug.LogErrorFormat("Error downloading MRE manifest \"{0}\":\n{1}", manifestUri, e.ToString());
 				manifest = new AppManifest()
 				{
-					OptionalPermissions = new Permissions[] { Permissions.UserTracking, Permissions.UserInteraction }
+					Permissions = new Permissions[] { Permissions.UserTracking, Permissions.UserInteraction }
 				};
 			}
 
