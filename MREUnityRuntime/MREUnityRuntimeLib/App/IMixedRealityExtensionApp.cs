@@ -141,10 +141,7 @@ namespace MixedRealityExtension.App
 		/// <summary>
 		/// Called to shut down the engine mixed reality extension app by the app process.
 		/// </summary>
-		/// <param name="restartOnPermissionGrant">If true, the MRE will <see cref="Startup(string, string)"/>
-		/// itself if its required permissions are granted. Only applies after <see cref="Startup(string, string)"/>
-		/// has been called explicitly at least once.</param>
-		void Shutdown(bool restartOnPermissionGrant = false);
+		void Shutdown();
 
 		/// <summary>
 		/// Update keyframed rigid bodies.

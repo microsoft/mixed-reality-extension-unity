@@ -276,11 +276,15 @@ namespace MixedRealityExtension.App
 			MREAPI.AppsAPI.PermissionManager.OnPermissionDecisionsChanged += OnPermissionsUpdated;
 
 			// make sure all needed perms are granted
-			if ((neededFlags & GrantedPermissions) != neededFlags)
+			if (!GrantedPermissions.HasFlag(neededFlags))
 			{
 				Debug.LogError($"User has denied permission for the MRE '{ServerUri}' to run");
 				OnPermissionDenied?.Invoke();
-				Shutdown(restartOnPermissionGrant: true);
+				Shutdown();
+
+				// after shutdown, re-add the startup hooks
+				MREAPI.AppsAPI.PermissionManager.OnPermissionDecisionsChanged += OnPermissionsUpdated;
+				_appState = AppState.WaitingForPermission;
 				return;
 			}
 
@@ -341,15 +345,12 @@ namespace MixedRealityExtension.App
 		}
 
 		/// <inheritdoc />
-		public void Shutdown(bool restartOnPermissionGrant = false)
+		public void Shutdown()
 		{
 			Disconnect();
 			FreeResources();
 
-			if (restartOnPermissionGrant)
-			{
-				MREAPI.AppsAPI.PermissionManager.OnPermissionDecisionsChanged -= OnPermissionsUpdated;
-			}
+			MREAPI.AppsAPI.PermissionManager.OnPermissionDecisionsChanged -= OnPermissionsUpdated;
 
 			if (_appState != AppState.Stopped)
 			{
