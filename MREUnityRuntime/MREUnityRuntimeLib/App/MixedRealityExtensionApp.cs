@@ -76,6 +76,12 @@ namespace MixedRealityExtension.App
 		#region Events - Public
 
 		/// <inheritdoc />
+		public event MWEventHandler OnWaitingForPermission;
+
+		/// <inheritdoc />
+		public event MWEventHandler OnPermissionDenied;
+
+		/// <inheritdoc />
 		public event MWEventHandler OnConnecting;
 
 		/// <inheritdoc />
@@ -234,6 +240,7 @@ namespace MixedRealityExtension.App
 			SessionId = sessionId;
 
 			_appState = AppState.WaitingForPermission;
+			OnWaitingForPermission?.Invoke();
 
 			// download manifest
 			var manifestUri = new Uri(ServerAssetUri, "./manifest.json");
@@ -247,7 +254,7 @@ namespace MixedRealityExtension.App
 				Debug.LogErrorFormat("Error downloading MRE manifest \"{0}\":\n{1}", manifestUri, e.ToString());
 				manifest = new AppManifest()
 				{
-					OptionalPermissions = new Permissions[] { Permissions.UserTracking, Permissions.UserInteraction }
+					Permissions = new Permissions[] { Permissions.UserTracking, Permissions.UserInteraction }
 				};
 			}
 
@@ -268,9 +275,16 @@ namespace MixedRealityExtension.App
 
 			MREAPI.AppsAPI.PermissionManager.OnPermissionDecisionsChanged += OnPermissionsUpdated;
 
-			if (!grantedPerms.HasFlag(Permissions.Execution))
+			// make sure all needed perms are granted
+			if (!GrantedPermissions.HasFlag(neededFlags))
 			{
 				Debug.LogError($"User has denied permission for the MRE '{ServerUri}' to run");
+				OnPermissionDenied?.Invoke();
+				Shutdown();
+
+				// after shutdown, re-add the startup hooks
+				MREAPI.AppsAPI.PermissionManager.OnPermissionDecisionsChanged += OnPermissionsUpdated;
+				_appState = AppState.WaitingForPermission;
 				return;
 			}
 

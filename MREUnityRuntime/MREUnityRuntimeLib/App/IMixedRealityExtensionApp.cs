@@ -17,6 +17,17 @@ namespace MixedRealityExtension.App
 	public interface IMixedRealityExtensionApp
 	{
 		/// <summary>
+		/// Event that is raised just before this app makes its permissions request to the <see cref="IPermissionManager"/>.
+		/// </summary>
+		event MWEventHandler OnWaitingForPermission;
+
+		/// <summary>
+		/// Event that is raised when a permission required to run the app is denied by the host. Will be immediately
+		/// followed by <see cref="OnAppShutdown"/>.
+		/// </summary>
+		event MWEventHandler OnPermissionDenied;
+
+		/// <summary>
 		/// Event that is raised when the mixed reality extension app has connected to the app.
 		/// </summary>
 		event MWEventHandler OnConnecting;
