@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace MixedRealityExtension.Factories
@@ -39,7 +40,8 @@ namespace MixedRealityExtension.Factories
 			IEnumerable<Permissions> permissionsWanted,
 			Permissions permissionFlagsNeeded,
 			Permissions permissionFlagsWanted,
-			AppManifest appManifest)
+			AppManifest appManifest,
+			CancellationToken cancellationToken)
 		{
 			return Task.FromResult(GrantedPermissions);
 		}

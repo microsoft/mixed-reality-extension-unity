@@ -29,6 +29,7 @@ using Trace = MixedRealityExtension.Messaging.Trace;
 using Regex = System.Text.RegularExpressions.Regex;
 using System.Text;
 using System.Security.Cryptography;
+using System.Threading;
 
 namespace MixedRealityExtension.App
 {
@@ -72,6 +73,8 @@ namespace MixedRealityExtension.App
 		private int generation = 0;
 
 		public IMRELogger Logger { get; private set; }
+
+		private CancellationTokenSource permissionRequestCancelSource;
 
 		#region Events - Public
 
@@ -261,6 +264,13 @@ namespace MixedRealityExtension.App
 			var neededFlags = Permissions.Execution | (manifest.Permissions?.ToFlags() ?? Permissions.None);
 			var wantedFlags = manifest.OptionalPermissions?.ToFlags() ?? Permissions.None;
 
+			// set up cancel source
+			if (permissionRequestCancelSource != null)
+			{
+				permissionRequestCancelSource.Cancel();
+			}
+			permissionRequestCancelSource = new CancellationTokenSource();
+
 			// get permission to run from host app
 			var grantedPerms = await MREAPI.AppsAPI.PermissionManager.PromptForPermissions(
 				appLocation: ServerUri,
@@ -268,7 +278,11 @@ namespace MixedRealityExtension.App
 				permissionsWanted: manifest.OptionalPermissions,
 				permissionFlagsNeeded: neededFlags,
 				permissionFlagsWanted: wantedFlags,
-				appManifest: manifest);
+				appManifest: manifest,
+				cancellationToken: permissionRequestCancelSource.Token);
+
+			// clear cancel source once we don't need it anymore
+			permissionRequestCancelSource = null;
 
 			// only use permissions that are requested, even if the user offers more
 			GrantedPermissions = grantedPerms & (neededFlags | wantedFlags);
@@ -278,13 +292,8 @@ namespace MixedRealityExtension.App
 			// make sure all needed perms are granted
 			if (!GrantedPermissions.HasFlag(neededFlags))
 			{
-				Debug.LogError($"User has denied permission for the MRE '{ServerUri}' to run");
 				OnPermissionDenied?.Invoke();
-				Shutdown();
-
-				// after shutdown, re-add the startup hooks
-				MREAPI.AppsAPI.PermissionManager.OnPermissionDecisionsChanged += OnPermissionsUpdated;
-				_appState = AppState.WaitingForPermission;
+				Shutdown(reactivateOnPermissions: true);
 				return;
 			}
 
@@ -347,14 +356,27 @@ namespace MixedRealityExtension.App
 		/// <inheritdoc />
 		public void Shutdown()
 		{
+			Shutdown(false);
+		}
+
+		private void Shutdown(bool reactivateOnPermissions)
+		{
 			Disconnect();
 			FreeResources();
 
-			MREAPI.AppsAPI.PermissionManager.OnPermissionDecisionsChanged -= OnPermissionsUpdated;
+			if (!reactivateOnPermissions)
+			{
+				MREAPI.AppsAPI.PermissionManager.OnPermissionDecisionsChanged -= OnPermissionsUpdated;
+				if (permissionRequestCancelSource != null)
+				{
+					permissionRequestCancelSource.Cancel();
+					permissionRequestCancelSource = null;
+				}
+			}
 
 			if (_appState != AppState.Stopped)
 			{
-				_appState = AppState.Stopped;
+				_appState = reactivateOnPermissions ? AppState.WaitingForPermission : AppState.Stopped;
 				OnAppShutdown?.Invoke();
 			}
 		}
