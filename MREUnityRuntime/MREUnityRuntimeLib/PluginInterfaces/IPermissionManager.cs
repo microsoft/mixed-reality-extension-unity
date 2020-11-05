@@ -3,6 +3,7 @@
 using MixedRealityExtension.Core;
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace MixedRealityExtension.PluginInterfaces
@@ -21,6 +22,7 @@ namespace MixedRealityExtension.PluginInterfaces
 		/// <param name="permissionFlagsNeeded">Same as permissionsNeeded, but in a bitfield.</param>
 		/// <param name="permissionFlagsWanted">Same as permissionsWanted, but in a bitfield.</param>
 		/// <param name="appManifest">The full app manifest, which includes enumerations of the required and optional permissions.</param>
+		/// <param name="cancellationToken">Used to cancel the request if it doesn't matter anymore.</param>
 		/// <returns></returns>
 		Task<Permissions> PromptForPermissions(
 			Uri appLocation,
@@ -28,7 +30,8 @@ namespace MixedRealityExtension.PluginInterfaces
 			IEnumerable<Permissions> permissionsWanted,
 			Permissions permissionFlagsNeeded,
 			Permissions permissionFlagsWanted,
-			AppManifest appManifest);
+			AppManifest appManifest,
+			CancellationToken cancellationToken);
 
 		/// <summary>
 		/// Get the currently granted permissions for the MRE origin without requesting new ones.
