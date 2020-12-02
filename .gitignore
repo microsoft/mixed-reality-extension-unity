@@ -329,3 +329,6 @@ ASALocalRun/
 .mfractor/
 
 *.orig
+
+MREUnityProjects.xml
+Dotfuscated/*
