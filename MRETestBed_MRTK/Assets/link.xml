@@ -1,6 +1,0 @@
-<linker>
-  <assembly fullname="MREUnityRuntimeLib" preserve="all"/>
-  <assembly fullname="System">
-    <type fullname="Mono.Net.Security.LegacyTlsProvider" preserve="all" />
-  </assembly>
-</linker>
