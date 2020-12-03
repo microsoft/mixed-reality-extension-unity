@@ -44,7 +44,15 @@ namespace MixedRealityExtension.RPC
 						return;
 					}
 				}
-				_handlers[payload.ProcName].Execute(payload.Args.Children().ToArray());
+
+				try
+				{
+					_handlers[payload.ProcName].Execute(payload.Args.Children().ToArray());
+				}
+				catch (Exception e)
+				{
+					UnityEngine.Debug.LogError(e);
+				}
 			}
 		}
 
