@@ -1,6 +1,6 @@
 {
   "name": "com.microsoft.mre.unityruntime",
-  "version": "0.20.4",
+  "version": "0.20.10",
   "displayName": "Mixed Reality Extension Unity Runtime",
   "description": "Implements the Unity host for Mixed Reality Extensions",
   "unity": "2019.4",
