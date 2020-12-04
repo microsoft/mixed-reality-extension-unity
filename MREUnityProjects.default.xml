@@ -1,4 +1,0 @@
-<projects> 
-    <projectTargetDir id="MRETestBed">..\MRETestBed\Assets\Assemblies</projectTargetDir> 
-	<projectTargetDir id="MRETestBed_MRTK">..\MRETestBed_MRTK\Assets\Assemblies</projectTargetDir>
-</projects> 
