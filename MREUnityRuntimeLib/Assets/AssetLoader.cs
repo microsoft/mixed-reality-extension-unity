@@ -497,7 +497,7 @@ namespace MixedRealityExtension.Assets
 			{
 				var soundUri = new Uri(_app.ServerAssetUri, def.Sound.Value.Uri);
 				source = new AssetSource(AssetContainerType.None, soundUri.AbsoluteUri);
-				var result = await AssetFetcher<UnityEngine.AudioClip>.LoadTask(_owner, soundUri);
+				var result = await AssetFetcher<UnityEngine.AudioClip>.LoadTask(_owner, soundUri, def.Sound.Value.Format);
 				unityAsset = result.Asset;
 				source.Version = result.ETag;
 				if (result.FailureMessage != null)
