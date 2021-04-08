@@ -244,6 +244,11 @@ namespace MixedRealityExtension.Assets
 		/// Duration in seconds.
 		/// </summary>
 		public float? Duration;
+
+		///<summary>
+		/// Audio format
+		///</summary>
+		public string Format;
 	}
 
 	/// <summary>
