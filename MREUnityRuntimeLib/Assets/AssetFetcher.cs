@@ -22,7 +22,7 @@ namespace MixedRealityExtension.Assets
 			public bool IsPopulated => ReturnCode != 0;
 		}
 
-		public static async Task<FetchResult> LoadTask(MonoBehaviour runner, Uri uri)
+		public static async Task<FetchResult> LoadTask(MonoBehaviour runner, Uri uri, string format = null)
 		{
 			// acquire the exclusive right to load this asset
 			if (!await MREAPI.AppsAPI.AssetCache.AcquireLoadingLock(uri))
@@ -83,7 +83,19 @@ namespace MixedRealityExtension.Assets
 				DownloadHandler handler;
 				if (typeof(T) == typeof(UnityEngine.AudioClip))
 				{
-					handler = new DownloadHandlerAudioClip(uri, AudioType.UNKNOWN);
+					AudioType audioType = AudioType.UNKNOWN;
+
+					if(format != null)
+					{
+						switch(format)
+						{
+							case "mp3":
+								audioType = AudioType.MPEG;
+								break;
+						}
+					}
+
+					handler = new DownloadHandlerAudioClip(uri, audioType);
 				}
 				else if (typeof(T) == typeof(UnityEngine.Texture))
 				{
