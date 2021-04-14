@@ -32,6 +32,7 @@ namespace MixedRealityExtension.API
 		/// <param name="dialogFactory"></param>
 		/// <param name="libraryFactory">The library resource factory to use within the runtime.</param>
 		/// <param name="videoPlayerFactory"></param>
+		/// <param name="edtiumBrowserFactory"></param>
 		/// <param name="primitiveFactory">The primitive factory to use within the runtime.</param>
 		/// <param name="gltfImporterFactory">The glTF loader factory. Uses default GLTFSceneImporter if omitted.</param>
 		/// <param name="materialPatcher">Overrides default material property map (color and mainTexture only).</param>
@@ -49,6 +50,7 @@ namespace MixedRealityExtension.API
 			IDialogFactory dialogFactory = null,
 			ILibraryResourceFactory libraryFactory = null,
 			IVideoPlayerFactory videoPlayerFactory = null,
+			IEDTiumBrowserFactory edtiumBrowserFactory = null,
 			// reasonable defaults provided
 			IPrimitiveFactory primitiveFactory = null,
 			IGLTFImporterFactory gltfImporterFactory = null,
@@ -67,6 +69,7 @@ namespace MixedRealityExtension.API
 			AppsAPI.DialogFactory = dialogFactory;
 			AppsAPI.LibraryResourceFactory = libraryFactory;
 			AppsAPI.VideoPlayerFactory = videoPlayerFactory;
+			AppsAPI.EDTiumBrowserFactory = edtiumBrowserFactory;
 
 			// reasonable defaults provided
 			AppsAPI.PrimitiveFactory = primitiveFactory ?? new MWPrimitiveFactory();
@@ -125,6 +128,7 @@ namespace MixedRealityExtension.API
 		internal ILibraryResourceFactory LibraryResourceFactory { get; set; }
 
 		internal IVideoPlayerFactory VideoPlayerFactory { get; set; }
+		internal IEDTiumBrowserFactory EDTiumBrowserFactory { get; set; }
 
 		internal IGLTFImporterFactory GLTFImporterFactory { get; set; }
 
