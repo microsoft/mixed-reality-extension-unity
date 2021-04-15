@@ -328,6 +328,29 @@ namespace MixedRealityExtension.Messaging.Payloads
 	/// App => Engine
 	/// Payload for when the app wants to set animation state.
 	/// </summary>
+	public class SetBrowserState : NetworkCommandPayload
+	{
+		/// <summary>
+		/// The id of the actor containing the browser instance.
+		/// </summary>
+		public Guid ActorId { get; set; }
+
+		/// <summary>
+		/// Command type (start, update, or stop)
+		/// </summary>
+		public BrowserCommand BrowserCommand { get; set; }
+
+		/// <summary>
+		/// runtime configurable options.
+		/// </summary>
+		public BrowserStateOptions Options { get; set; }
+
+	}
+
+	/// <summary>
+	/// App => Engine
+	/// Payload for when the app wants to set animation state.
+	/// </summary>
 	public class SetMediaState : NetworkCommandPayload
 	{
 		/// <summary>

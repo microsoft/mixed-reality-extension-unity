@@ -230,6 +230,12 @@ namespace MixedRealityExtension.Core
 			ProcessActorCommand(payload.ActorId, payload, onCompleteCallback);
 		}
 
+		[CommandHandler(typeof(SetBrowserState))]
+		private void OnSetBrowserState(SetBrowserState payload, Action onCompleteCallback)
+		{
+			ProcessActorCommand(payload.ActorId, payload, onCompleteCallback);
+		}
+
 		[CommandHandler(typeof(SetMediaState))]
 		private void OnSetMediaState(SetMediaState payload, Action onCompleteCallback)
 		{

@@ -1842,6 +1842,23 @@ namespace MixedRealityExtension.Core
 			onCompleteCallback?.Invoke();
 		}
 
+		
+		[CommandHandler(typeof(SetBrowserState))]
+		private void OnSetBrowserState(SetBrowserState payload, Action onCompleteCallback) {
+
+			switch (payload.BrowserCommand)
+			{
+				case BrowserCommand.Create:
+					break;
+				case BrowserCommand.Destroy:
+					break;
+				case BrowserCommand.Update:
+					break;
+			}
+
+			onCompleteCallback?.Invoke();
+		}
+
 		[CommandHandler(typeof(SetMediaState))]
 		private void OnSetMediaState(SetMediaState payload, Action onCompleteCallback)
 		{

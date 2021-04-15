@@ -12,7 +12,7 @@ namespace MixedRealityExtension.PluginInterfaces
 {
 	public interface IEDTiumBrowser
 	{
-		void Navigate(string uri);
+		void ApplyBrowserStateOptions(BrowserStateOptions options);
 		void Destroy();
 	}
 }
