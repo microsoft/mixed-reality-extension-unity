@@ -41,6 +41,8 @@ namespace MixedRealityExtension.Core
 		private UnityCollider _collider;
 		private ColliderPatch _pendingColliderPatch;
 		private LookAtComponent _lookAt;
+
+		private IEDTiumBrowser _edtiumBrowserInstance;
 		class MediaInstance
 		{
 			public Guid MediaAssetId { get; }
@@ -1848,11 +1850,22 @@ namespace MixedRealityExtension.Core
 
 			switch (payload.BrowserCommand)
 			{
-				case BrowserCommand.Create:
-					break;
 				case BrowserCommand.Destroy:
+					if (_edtiumBrowserInstance != null)
+					{
+						_edtiumBrowserInstance.Destroy();
+						_edtiumBrowserInstance = null;
+					}
 					break;
 				case BrowserCommand.Update:
+					if (_edtiumBrowserInstance == null)
+					{
+						var factory = MREAPI.AppsAPI.EDTiumBrowserFactory
+									?? throw new ArgumentException("Cannot start browser - EDTiumBrowserFactory not implemented.");
+						_edtiumBrowserInstance = factory.CreateBrowser(this);
+					}
+
+					_edtiumBrowserInstance.ApplyBrowserStateOptions(payload.Options);
 					break;
 			}
 

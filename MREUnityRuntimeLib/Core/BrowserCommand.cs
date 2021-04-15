@@ -8,18 +8,12 @@ namespace MixedRealityExtension
 	public enum BrowserCommand
 	{
 		/// <summary>
-		/// Start a new instance
+		/// Destroy an instance
 		/// </summary>
-		Create,
-
+		Destroy,
 		/// <summary>
 		/// Modify an existing instance
 		/// </summary>
-		Update,
-
-		/// <summary>
-		/// Destroy an instance
-		/// </summary>
-		Destroy
+		Update
 	}
 }
