@@ -326,7 +326,7 @@ namespace MixedRealityExtension.Messaging.Payloads
 
 	/// <summary>
 	/// App => Engine
-	/// Payload for when the app wants to set animation state.
+	/// Payload for when the app wants to set the browser state.
 	/// </summary>
 	public class SetBrowserState : NetworkCommandPayload
 	{
