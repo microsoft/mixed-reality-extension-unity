@@ -1847,7 +1847,7 @@ namespace MixedRealityExtension.Core
 		
 		[CommandHandler(typeof(SetBrowserState))]
 		private void OnSetBrowserState(SetBrowserState payload, Action onCompleteCallback) {
-
+			Guid id = payload.ActorId;
 			switch (payload.BrowserCommand)
 			{
 				case BrowserCommand.Destroy:
@@ -1858,11 +1858,17 @@ namespace MixedRealityExtension.Core
 					}
 					break;
 				case BrowserCommand.Update:
+					// Create the browser if it doesn't exist
 					if (_edtiumBrowserInstance == null)
 					{
 						var factory = MREAPI.AppsAPI.EDTiumBrowserFactory
 									?? throw new ArgumentException("Cannot start browser - EDTiumBrowserFactory not implemented.");
-						_edtiumBrowserInstance = factory.CreateBrowser(this);
+						_edtiumBrowserInstance = factory.CreateBrowser(this, (state) => {
+							App.Protocol.Send(new BrowserStateChanged() {
+								ActorId = id,
+								Options = state
+							});
+						});
 					}
 
 					_edtiumBrowserInstance.ApplyBrowserStateOptions(payload.Options);

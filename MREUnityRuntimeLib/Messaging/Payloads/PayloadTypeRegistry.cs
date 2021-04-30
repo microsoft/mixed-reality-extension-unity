@@ -13,6 +13,7 @@ namespace MixedRealityExtension.Messaging.Payloads
 	[PayloadType(typeof(AppToEngineRPC), "app2engine-rpc")]
 	[PayloadType(typeof(AssetsLoaded), "assets-loaded")]
 	[PayloadType(typeof(AssetUpdate), "asset-update")]
+	[PayloadType(typeof(BrowserStateChanged), "browser-state-changed")]
 	[PayloadType(typeof(CreateAnimation), "create-animation")]
 	[PayloadType(typeof(CreateAnimation2), "create-animation-2")]
 	[PayloadType(typeof(CreateAsset), "create-asset")]

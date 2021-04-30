@@ -25,6 +25,6 @@ namespace MixedRealityExtension.PluginInterfaces
 	/// </summary>
 	public interface IEDTiumBrowserFactory
 	{
-		IEDTiumBrowser CreateBrowser(IActor parent);
+		IEDTiumBrowser CreateBrowser(IActor parent, Action<BrowserStateOptions> stateChanged);
 	}
 }

@@ -106,6 +106,23 @@ namespace MixedRealityExtension.Messaging.Payloads
 	}
 
 	/// <summary>
+	/// Engine => App
+	/// Payload for notifying the app when browser state changes
+	/// </summary>
+	public class BrowserStateChanged : NetworkCommandPayload
+	{
+		/// <summary>
+		/// The id of the actor containing the browser instance.
+		/// </summary>
+		public Guid ActorId { get; set; }
+
+		/// <summary>
+		/// Browser options.
+		/// </summary>
+		public BrowserStateOptions Options { get; set; }
+	}
+
+	/// <summary>
 	/// App => Engine
 	/// Payload for when the app wants to destroy one or more actors.
 	/// </summary>
@@ -344,7 +361,6 @@ namespace MixedRealityExtension.Messaging.Payloads
 		/// runtime configurable options.
 		/// </summary>
 		public BrowserStateOptions Options { get; set; }
-
 	}
 
 	/// <summary>
