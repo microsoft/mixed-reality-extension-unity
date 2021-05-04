@@ -1,5 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
+
+using System;
+
 namespace MixedRealityExtension
 {
 	/// <summary>
@@ -7,6 +10,11 @@ namespace MixedRealityExtension
 	/// </summary>
 	public class BrowserStateOptions
 	{
+		/// <summary>
+		/// Hacky solution for message collation with the server
+		/// </summary>
+		public Guid? MessageId;
+
 		/// <summary>
 		/// The URI to navigate to.
 		/// </summary>

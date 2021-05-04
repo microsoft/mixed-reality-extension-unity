@@ -1844,35 +1844,80 @@ namespace MixedRealityExtension.Core
 			onCompleteCallback?.Invoke();
 		}
 
-		
+		private string GetBrowserCommandAsString(BrowserCommand command) {
+			string commandString = "Unknown";
+
+			switch(command) {
+				case BrowserCommand.Update:
+					commandString = "Update";
+					break;
+				case BrowserCommand.Open:
+					commandString = "Open";
+					break;
+				case BrowserCommand.Destroy:
+					commandString = "Destroy";
+					break;
+			}
+
+			return commandString;
+		}
+		private Queue<BrowserStateOptions> queuedBrowserUpdateRequests = new Queue<BrowserStateOptions>();
+
 		[CommandHandler(typeof(SetBrowserState))]
 		private void OnSetBrowserState(SetBrowserState payload, Action onCompleteCallback) {
 			Guid id = payload.ActorId;
-			switch (payload.BrowserCommand)
-			{
-				case BrowserCommand.Destroy:
-					if (_edtiumBrowserInstance != null)
-					{
-						_edtiumBrowserInstance.Destroy();
-						_edtiumBrowserInstance = null;
-					}
-					break;
-				case BrowserCommand.Update:
-					// Create the browser if it doesn't exist
-					if (_edtiumBrowserInstance == null)
-					{
-						var factory = MREAPI.AppsAPI.EDTiumBrowserFactory
-									?? throw new ArgumentException("Cannot start browser - EDTiumBrowserFactory not implemented.");
-						_edtiumBrowserInstance = factory.CreateBrowser(this, (state) => {
+			Debug.LogWarning($"[EDTium:MRE] MRE payload received command={GetBrowserCommandAsString(payload.BrowserCommand)} | url={payload.Options.Url}");
+
+			if(payload.BrowserCommand == BrowserCommand.Destroy) {
+				if (_edtiumBrowserInstance != null)
+				{
+					_edtiumBrowserInstance.Destroy();
+					_edtiumBrowserInstance = null;
+				}
+			} else {
+				// Open commands will be ignored when _edtiumBrowserInstance exists
+				bool shouldUpdate = payload.BrowserCommand == BrowserCommand.Update;
+				// Create the browser if it doesn't exist
+				if (_edtiumBrowserInstance == null)
+				{
+					Debug.LogWarning($"[EDTium:MRE] Creating Browser");
+					shouldUpdate = true;
+					var factory = MREAPI.AppsAPI.EDTiumBrowserFactory
+								?? throw new ArgumentException("Cannot start browser - EDTiumBrowserFactory not implemented.");
+
+					_edtiumBrowserInstance = factory.CreateBrowser(this, (state) => {
+						Debug.LogWarning($"[EDTium:MRE] state change detected - {state.Url}...Pending requests={queuedBrowserUpdateRequests.Count}");
+						bool isUpdateCausedByServerRequest = false;
+						if (queuedBrowserUpdateRequests.Count > 0) {
+							BrowserStateOptions pendingRequest = queuedBrowserUpdateRequests.Peek();
+							isUpdateCausedByServerRequest = pendingRequest.Url == state.Url;
+							Debug.LogWarning($"[EDTium:MRE] Has pending request...Checking ({pendingRequest.Url} == {state.Url}) | ${isUpdateCausedByServerRequest}");
+						}
+
+						// HACKY! Don't notify the server if an update happens prior to a request being processed
+						if (!isUpdateCausedByServerRequest && queuedBrowserUpdateRequests.Count == 0) {
+							Debug.LogWarning($"[EDTium:MRE] Notify server for update {state.MessageId}");
+							state.MessageId = Guid.NewGuid();
 							App.Protocol.Send(new BrowserStateChanged() {
 								ActorId = id,
 								Options = state
 							});
-						});
-					}
+						} else if (isUpdateCausedByServerRequest && queuedBrowserUpdateRequests.Count > 0) {
+							queuedBrowserUpdateRequests.Dequeue();
+							Debug.LogWarning($"[EDTium:MRE] Request handled, popping... Pending requests={queuedBrowserUpdateRequests.Count}");
+						} else {
+							Debug.LogWarning($"[EDTium:MRE] Update will not be shared with the server");
+						}
+					});
+				}
 
+				if (shouldUpdate) {
+					queuedBrowserUpdateRequests.Enqueue(payload.Options);
+					Debug.LogWarning($"[EDTium:MRE] Queueing request and dispatching update... Pending requests={queuedBrowserUpdateRequests.Count}");
 					_edtiumBrowserInstance.ApplyBrowserStateOptions(payload.Options);
-					break;
+				} else {
+					Debug.LogWarning($"[EDTium:MRE] Skipping update... Pending requests={queuedBrowserUpdateRequests.Count}");
+				}
 			}
 
 			onCompleteCallback?.Invoke();

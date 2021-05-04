@@ -12,6 +12,10 @@ namespace MixedRealityExtension
 		/// </summary>
 		Destroy,
 		/// <summary>
+		/// Open a new browser instance
+		/// </summary>
+		Open,
+		/// <summary>
 		/// Modify an existing instance
 		/// </summary>
 		Update
