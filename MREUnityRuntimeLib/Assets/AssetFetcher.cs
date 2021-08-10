@@ -35,47 +35,71 @@ namespace MixedRealityExtension.Assets
 				Asset = null,
 				FailureMessage = null
 			};
-			var ifNoneMatch = MREAPI.AppsAPI.AssetCache.SupportsSync
-				? MREAPI.AppsAPI.AssetCache.TryGetVersionSync(uri)
-				: await MREAPI.AppsAPI.AssetCache.TryGetVersion(uri);
+			string ifNoneMatch;
+			Coroutine loadCoroutine = null;
 
-			// if the cached version is unversioned, i.e. the server doesn't support ETags, don't bother making request
-			if (ifNoneMatch == Constants.UnversionedAssetVersion)
+			try
 			{
-				var assets = MREAPI.AppsAPI.AssetCache.SupportsSync
-					? MREAPI.AppsAPI.AssetCache.LeaseAssetsSync(uri)
-					: await MREAPI.AppsAPI.AssetCache.LeaseAssets(uri);
-				result.Asset = assets.FirstOrDefault() as T;
+				ifNoneMatch = MREAPI.AppsAPI.AssetCache.SupportsSync
+					? MREAPI.AppsAPI.AssetCache.TryGetVersionSync(uri)
+					: await MREAPI.AppsAPI.AssetCache.TryGetVersion(uri);
 
+				// if the cached version is unversioned, i.e. the server doesn't support ETags, don't bother making request
+				if (ifNoneMatch == Constants.UnversionedAssetVersion)
+				{
+					var assets = MREAPI.AppsAPI.AssetCache.SupportsSync
+						? MREAPI.AppsAPI.AssetCache.LeaseAssetsSync(uri)
+						: await MREAPI.AppsAPI.AssetCache.LeaseAssets(uri);
+					result.Asset = assets.FirstOrDefault() as T;
+
+					MREAPI.AppsAPI.AssetCache.ReleaseLoadingLock(uri);
+					return result;
+				}
+
+				loadCoroutine = runner.StartCoroutine(LoadCoroutine());
+
+				// Spin asynchronously until the request completes.
+				float timeout = Time.realtimeSinceStartup + 31;
+				while (!result.IsPopulated)
+				{
+					if (Time.realtimeSinceStartup > timeout)
+					{
+						throw new TimeoutException("Took too long to download asset, releasing lock");
+					}
+					await Task.Delay(10);
+				}
+				loadCoroutine = null;
+
+				// handle caching
+				if (!string.IsNullOrEmpty(ifNoneMatch) && result.ReturnCode == 304)
+				{
+					var assets = MREAPI.AppsAPI.AssetCache.SupportsSync
+						? MREAPI.AppsAPI.AssetCache.LeaseAssetsSync(uri)
+						: await MREAPI.AppsAPI.AssetCache.LeaseAssets(uri);
+					result.Asset = assets.FirstOrDefault() as T;
+				}
+				else if (result.Asset != null)
+				{
+					MREAPI.AppsAPI.AssetCache.StoreAssets(
+						uri,
+						new UnityEngine.Object[] { result.Asset },
+						result.ETag);
+				}
+			}
+			catch (Exception e)
+			{
+				MREAPI.Logger.LogError(e.ToString());
+				throw;
+			}
+			finally
+			{
+				if (loadCoroutine != null)
+				{
+					runner.StopCoroutine(loadCoroutine);
+				}
 				MREAPI.AppsAPI.AssetCache.ReleaseLoadingLock(uri);
-				return result;
 			}
 
-			runner.StartCoroutine(LoadCoroutine());
-
-			// Spin asynchronously until the request completes.
-			while (!result.IsPopulated)
-			{
-				await Task.Delay(10);
-			}
-
-			// handle caching
-			if (!string.IsNullOrEmpty(ifNoneMatch) && result.ReturnCode == 304)
-			{
-				var assets = MREAPI.AppsAPI.AssetCache.SupportsSync
-					? MREAPI.AppsAPI.AssetCache.LeaseAssetsSync(uri)
-					: await MREAPI.AppsAPI.AssetCache.LeaseAssets(uri);
-				result.Asset = assets.FirstOrDefault() as T;
-			}
-			else if (result.Asset != null)
-			{
-				MREAPI.AppsAPI.AssetCache.StoreAssets(
-					uri,
-					new UnityEngine.Object[] { result.Asset },
-					result.ETag);
-			}
-
-			MREAPI.AppsAPI.AssetCache.ReleaseLoadingLock(uri);
 			return result;
 
 			IEnumerator LoadCoroutine()
@@ -114,7 +138,7 @@ namespace MixedRealityExtension.Assets
 				}
 
 				using (var scope = new AssetLoadThrottling.AssetLoadScope())
-				using (var www = new UnityWebRequest(uri, "GET", handler, null))
+				using (var www = new UnityWebRequest(uri, "GET", handler, null) { timeout = 30 })
 				{
 					if (!string.IsNullOrEmpty(ifNoneMatch))
 					{
