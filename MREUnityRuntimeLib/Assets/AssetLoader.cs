@@ -164,67 +164,82 @@ namespace MixedRealityExtension.Assets
 				throw new TimeoutException("Failed to acquire exclusive loading rights for " + source.ParsedUri);
 			}
 
-			var cachedVersion = MREAPI.AppsAPI.AssetCache.SupportsSync
-				? MREAPI.AppsAPI.AssetCache.TryGetVersionSync(source.ParsedUri)
-				: await MREAPI.AppsAPI.AssetCache.TryGetVersion(source.ParsedUri);
-
-			// Wait asynchronously until the load throttler lets us through.
-			using (var scope = await AssetLoadThrottling.AcquireLoadScope())
-			{
-				// set up loader
-				loader = new WebRequestLoader(rootUri);
-				if (cachedVersion != Constants.UnversionedAssetVersion && !string.IsNullOrEmpty(cachedVersion))
-				{
-					loader.BeforeRequestCallback += (msg) =>
-					{
-						if (msg.RequestUri == source.ParsedUri)
-						{
-							msg.Headers.Add("If-None-Match", cachedVersion);
-						}
-					};
-				}
-
-				// download root gltf file, check for cache hit
-				try
-				{
-					stream = await loader.LoadStreamAsync(URIHelper.GetFileFromUri(source.ParsedUri));
-					source.Version = loader.LastResponse.Headers.ETag?.Tag ?? Constants.UnversionedAssetVersion;
-				}
-				catch (HttpRequestException)
-				{
-					if (loader.LastResponse != null
-						&& loader.LastResponse.StatusCode == System.Net.HttpStatusCode.NotModified)
-					{
-						source.Version = cachedVersion;
-					}
-					else
-					{
-						throw;
-					}
-				}
-			}
-
-			IList<Asset> assetDefs = new List<Asset>(30);
 			DeterministicGuids guidGenerator = new DeterministicGuids(UtilMethods.StringToGuid(
 				$"{containerId}:{source.ParsedUri.AbsoluteUri}"));
-			IList<UnityEngine.Object> assets;
+			IList<UnityEngine.Object> assets = new List<UnityEngine.Object>();
+			IList<Asset> assetDefs = new List<Asset>(30);
 
-			// fetch assets from glTF stream or cache
-			if (source.Version != cachedVersion)
+			try
 			{
-				assets = await LoadGltfFromStream(loader, stream, colliderType);
-				MREAPI.AppsAPI.AssetCache.StoreAssets(source.ParsedUri, assets, source.Version);
-			}
-			else
-			{
-				var assetsEnum = MREAPI.AppsAPI.AssetCache.SupportsSync
-					? MREAPI.AppsAPI.AssetCache.LeaseAssetsSync(source.ParsedUri)
-					: await MREAPI.AppsAPI.AssetCache.LeaseAssets(source.ParsedUri);
-				assets = assetsEnum.ToList();
-			}
+				var cachedVersion = MREAPI.AppsAPI.AssetCache.SupportsSync
+					? MREAPI.AppsAPI.AssetCache.TryGetVersionSync(source.ParsedUri)
+					: await MREAPI.AppsAPI.AssetCache.TryGetVersion(source.ParsedUri);
 
-			// the cache is updated, release the lock
-			MREAPI.AppsAPI.AssetCache.ReleaseLoadingLock(source.ParsedUri);
+				// Wait asynchronously until the load throttler lets us through.
+				using (var scope = await AssetLoadThrottling.AcquireLoadScope())
+				{
+					// set up loader
+					loader = new WebRequestLoader(rootUri);
+					if (cachedVersion != Constants.UnversionedAssetVersion && !string.IsNullOrEmpty(cachedVersion))
+					{
+						loader.BeforeRequestCallback += (msg) =>
+						{
+							if (msg.RequestUri == source.ParsedUri)
+							{
+								msg.Headers.Add("If-None-Match", cachedVersion);
+							}
+						};
+					}
+
+					// download root gltf file, check for cache hit
+					try
+					{
+						var loadTask = loader.LoadStreamAsync(URIHelper.GetFileFromUri(source.ParsedUri));
+						if (await Task.WhenAny(loadTask, Task.Delay(30_000)) != loadTask)
+						{
+							throw new TimeoutException($"glTF took too long to load: {source.ParsedUri}");
+						}
+						stream = loadTask.Result;
+						source.Version = loader.LastResponse.Headers.ETag?.Tag ?? Constants.UnversionedAssetVersion;
+					}
+					catch (HttpRequestException)
+					{
+						if (loader.LastResponse != null
+							&& loader.LastResponse.StatusCode == System.Net.HttpStatusCode.NotModified)
+						{
+							source.Version = cachedVersion;
+						}
+						else
+						{
+							throw;
+						}
+					}
+				}
+
+				// fetch assets from glTF stream or cache
+				if (source.Version != cachedVersion)
+				{
+					assets = await LoadGltfFromStream(loader, stream, colliderType);
+					MREAPI.AppsAPI.AssetCache.StoreAssets(source.ParsedUri, assets, source.Version);
+				}
+				else
+				{
+					var assetsEnum = MREAPI.AppsAPI.AssetCache.SupportsSync
+						? MREAPI.AppsAPI.AssetCache.LeaseAssetsSync(source.ParsedUri)
+						: await MREAPI.AppsAPI.AssetCache.LeaseAssets(source.ParsedUri);
+					assets = assetsEnum.ToList();
+				}
+			}
+			catch (Exception e)
+			{
+				MREAPI.Logger.LogError(e.ToString());
+				throw;
+			}
+			finally
+			{
+				// the cache is updated, release the lock
+				MREAPI.AppsAPI.AssetCache.ReleaseLoadingLock(source.ParsedUri);
+			}
 
 			// catalog assets
 			int textureIndex = 0, meshIndex = 0, materialIndex = 0, prefabIndex = 0;
